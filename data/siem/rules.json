@@ -1,0 +1,189 @@
+{
+  "rule-77a73920": {
+    "rule_id": "rule-77a73920",
+    "name": "暴力破解检测",
+    "description": "同一IP在5分钟内登录失败超过10次",
+    "severity": "high",
+    "category": "auth",
+    "condition": {
+      "event_type": "auth",
+      "action": "failure",
+      "group_by": "source_ip",
+      "threshold": 10,
+      "time_window": 300
+    },
+    "enabled": true,
+    "triggered_count": 0,
+    "tags": []
+  },
+  "rule-09cf1640": {
+    "rule_id": "rule-09cf1640",
+    "name": "异常登录时间检测",
+    "description": "用户在非工作时间（凌晨2-6点）登录成功",
+    "severity": "medium",
+    "category": "auth",
+    "condition": {
+      "event_type": "auth",
+      "action": "success",
+      "time_range": [
+        2,
+        6
+      ],
+      "group_by": "username"
+    },
+    "enabled": true,
+    "triggered_count": 0,
+    "tags": []
+  },
+  "rule-b9cdf143": {
+    "rule_id": "rule-b9cdf143",
+    "name": "端口扫描检测",
+    "description": "同一IP在1分钟内访问超过50个不同端口",
+    "severity": "high",
+    "category": "network",
+    "condition": {
+      "event_type": "network",
+      "group_by": "source_ip",
+      "distinct_field": "destination_port",
+      "threshold": 50,
+      "time_window": 60
+    },
+    "enabled": true,
+    "triggered_count": 0,
+    "tags": []
+  },
+  "rule-55faba38": {
+    "rule_id": "rule-55faba38",
+    "name": "Web攻击检测",
+    "description": "请求中包含SQL注入/XSS/命令注入特征",
+    "severity": "high",
+    "category": "web",
+    "condition": {
+      "event_type": "web",
+      "pattern_match": [
+        "union select",
+        "<script",
+        "or 1=1",
+        "; cat /",
+        "cmd.exe",
+        "powershell"
+      ],
+      "field": "message"
+    },
+    "enabled": true,
+    "triggered_count": 0,
+    "tags": []
+  },
+  "rule-e3071f01": {
+    "rule_id": "rule-e3071f01",
+    "name": "敏感文件访问",
+    "description": "访问敏感文件（/etc/passwd、.env、.git等）",
+    "severity": "medium",
+    "category": "web",
+    "condition": {
+      "event_type": "web",
+      "pattern_match": [
+        "/etc/passwd",
+        "/.env",
+        "/.git",
+        "web.config",
+        "wp-config.php"
+      ],
+      "field": "message"
+    },
+    "enabled": true,
+    "triggered_count": 0,
+    "tags": []
+  },
+  "rule-b2d2be09": {
+    "rule_id": "rule-b2d2be09",
+    "name": "可疑进程启动",
+    "description": "启动可疑进程（cmd.exe、powershell、bash、nc等）",
+    "severity": "high",
+    "category": "process",
+    "condition": {
+      "event_type": "process",
+      "pattern_match": [
+        "cmd.exe",
+        "powershell",
+        "bash",
+        "nc.exe",
+        "netcat",
+        "mimikatz",
+        "cobalt"
+      ],
+      "field": "message"
+    },
+    "enabled": true,
+    "triggered_count": 0,
+    "tags": []
+  },
+  "rule-c4163f93": {
+    "rule_id": "rule-c4163f93",
+    "name": "防火墙大量拒绝",
+    "description": "防火墙在1分钟内拒绝超过100个连接",
+    "severity": "medium",
+    "category": "firewall",
+    "condition": {
+      "event_type": "firewall",
+      "action": "deny",
+      "threshold": 100,
+      "time_window": 60
+    },
+    "enabled": true,
+    "triggered_count": 0,
+    "tags": []
+  },
+  "rule-ebe339dd": {
+    "rule_id": "rule-ebe339dd",
+    "name": "异常数据外发",
+    "description": "单连接外发数据超过100MB",
+    "severity": "critical",
+    "category": "network",
+    "condition": {
+      "event_type": "network",
+      "field": "metadata.bytes_out",
+      "operator": ">",
+      "value": 104857600
+    },
+    "enabled": true,
+    "triggered_count": 0,
+    "tags": []
+  },
+  "rule-bdcc7533": {
+    "rule_id": "rule-bdcc7533",
+    "name": "新用户首次登录",
+    "description": "新用户首次登录系统",
+    "severity": "low",
+    "category": "auth",
+    "condition": {
+      "event_type": "auth",
+      "action": "success",
+      "first_seen": true,
+      "group_by": "username"
+    },
+    "enabled": true,
+    "triggered_count": 0,
+    "tags": []
+  },
+  "rule-05d7dc1b": {
+    "rule_id": "rule-05d7dc1b",
+    "name": "多次403/401错误",
+    "description": "同一IP在5分钟内收到超过20个403/401响应",
+    "severity": "medium",
+    "category": "web",
+    "condition": {
+      "event_type": "web",
+      "status_in": [
+        "401",
+        "403"
+      ],
+      "group_by": "source_ip",
+      "threshold": 20,
+      "time_window": 300
+    },
+    "enabled": true,
+    "triggered_count": 0,
+    "tags": []
+  }
+}

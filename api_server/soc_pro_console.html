@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SOC Pro · 安全运营中心</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#121821; --panel2:#18212d; --border:#243040;
+  --fg:#e6edf3; --muted:#8b98a8; --accent:#4fc3f7; --ok:#2ecc71;
+  --warn:#f1c40f; --high:#ff7043; --crit:#ff1744; --ai:#ce93d8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  font-size:13px;line-height:1.5;}
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 18px;background:linear-gradient(90deg,#10161d,#16202c);
+  border-bottom:1px solid var(--border);}
+header h1{font-size:16px;margin:0;color:var(--accent)}
+header .sub{color:var(--muted);font-size:12px;margin-left:10px}
+button{background:#1c2733;color:var(--fg);border:1px solid var(--border);
+  padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px}
+button:hover{background:#243240}
+button.primary{background:#1565c0;border-color:#1976d2}
+button.danger{background:#b71c1c;border-color:#c62828}
+.tabbar{display:flex;gap:2px;padding:8px 18px;background:#0e141b;
+  border-bottom:1px solid var(--border);overflow-x:auto}
+.tabbar .tab{padding:6px 14px;cursor:pointer;border-radius:4px;
+  color:var(--muted);white-space:nowrap}
+.tabbar .tab.active{background:#1c2733;color:var(--accent)}
+main{padding:14px 18px}
+.panel{background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;padding:12px;margin-bottom:12px}
+.panel h3{margin:0 0 8px;font-size:13px;color:var(--accent)}
+.grid{display:grid;gap:12px}
+.grid.c2{grid-template-columns:1fr 1fr}
+.grid.c3{grid-template-columns:1fr 1fr 1fr}
+.grid.c4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1100px){.grid.c3,.grid.c4{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.grid.c2,.grid.c3,.grid.c4{grid-template-columns:1fr}}
+.kpi{background:var(--panel2);border:1px solid var(--border);
+  border-radius:6px;padding:10px 12px}
+.kpi .v{font-size:22px;font-weight:600}
+.kpi .l{color:var(--muted);font-size:11px}
+.kpi.crit .v{color:var(--crit)} .kpi.high .v{color:var(--high)}
+.kpi.ok .v{color:var(--ok)} .kpi.ai .v{color:var(--ai)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:5px 8px;border-bottom:1px solid var(--border);
+  text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+.badge{display:inline-block;padding:1px 7px;border-radius:10px;
+  font-size:11px}
+.badge.critical{background:#5b1320;color:#ff8a80}
+.badge.high{background:#4e2a1a;color:#ffab91}
+.badge.medium{background:#4a3d16;color:#ffd54f}
+.badge.low{background:#1f3a4a;color:#81d4fa}
+.bar{height:8px;background:#1c2733;border-radius:4px;overflow:hidden}
+.bar > i{display:block;height:100%;background:var(--accent)}
+.stage{display:flex;align-items:center;gap:8px;padding:6px 0;
+  border-bottom:1px dashed var(--border)}
+.stage .dot{width:10px;height:10px;border-radius:50%;
+  background:#2a3441;flex:none}
+.stage.done .dot{background:var(--ok)}
+.stage.active .dot{background:var(--accent);
+  box-shadow:0 0 8px var(--accent)}
+.log{background:#0a0e13;border:1px solid var(--border);
+  border-radius:4px;padding:8px;height:260px;overflow:auto;
+  font-family:Consolas,monospace;font-size:11px;white-space:pre-wrap}
+.log .l{color:#4fc3f7}.log .ok{color:#2ecc71}
+.log .warn{color:#f1c40f}.log .err{color:#ff5252}
+.log .ai{color:#ce93d8}.log .think{color:#b39ddb}
+.thought{background:#1a1425;border-left:3px solid var(--ai);
+  padding:6px 10px;margin:4px 0;border-radius:3px;color:var(--ai);
+  font-style:italic;font-size:12px}
+.alertitem{padding:6px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;gap:8px}
+.muted{color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input,select,textarea{background:#0e141b;color:var(--fg);
+  border:1px solid var(--border);padding:5px 8px;border-radius:4px;
+  font-size:12px}
+canvas{background:#0a0e13;border-radius:4px}
+.hidden{display:none}
+footer{padding:8px 18px;color:var(--muted);font-size:11px;
+  border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🛡 SOC Pro <span class="sub">安全运营中心 · 七阶段闭环</span></h1></div>
+  <div class="row">
+    <button class="primary" onclick="startRun()">▶ 启动七阶段巡检</button>
+    <button onclick="refreshAll()">🔄 刷新大屏</button>
+    <span id="taskBadge" class="muted">未启动任务</span>
+  </div>
+</header>
+
+<div class="tabbar">
+  <div class="tab active" data-tab="screen">📊 SOC 大屏</div>
+  <div class="tab" data-tab="flow">🔄 七阶段流程</div>
+  <div class="tab" data-tab="alert">🚨 告警管理</div>
+  <div class="tab" data-tab="ir">🛠 事件响应</div>
+  <div class="tab" data-tab="hunt">🔭 威胁狩猎</div>
+  <div class="tab" data-tab="pm">📝 事件复盘</div>
+  <div class="tab" data-tab="report">📄 报告</div>
+</div>
+
+<main>
+<!-- ====================== SOC 大屏 ====================== -->
+<section id="tab-screen">
+  <div class="grid c4">
+    <div class="kpi"><div class="l">告警总数</div><div class="v" id="kpiAlerts">-</div></div>
+    <div class="kpi crit"><div class="l">Critical</div><div class="v" id="kpiCrit">-</div></div>
+    <div class="kpi high"><div class="l">High</div><div class="v" id="kpiHigh">-</div></div>
+    <div class="kpi ok"><div class="l">规则启用</div><div class="v" id="kpiRules">-</div></div>
+  </div>
+  <div class="grid c2" style="margin-top:12px">
+    <div class="panel">
+      <h3>告警趋势（24h）</h3>
+      <canvas id="trendCanvas" width="520" height="200"></canvas>
+    </div>
+    <div class="panel">
+      <h3>攻击源分布（地理）</h3>
+      <div id="mapList"></div>
+    </div>
+  </div>
+  <div class="grid c2">
+    <div class="panel">
+      <h3>Top 攻击类型</h3>
+      <div id="topTypes"></div>
+    </div>
+    <div class="panel">
+      <h3>实时告警滚动</h3>
+      <div id="alertFeed" style="max-height:260px;overflow:auto"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== 七阶段流程 ====================== -->
+<section id="tab-flow" class="hidden">
+  <div class="panel">
+    <h3>整体进度</h3>
+    <div class="bar" style="margin:6px 0"><i id="overallBar" style="width:0%"></i></div>
+    <div class="row muted"><span id="overallText">等待启动</span></div>
+  </div>
+  <div class="grid c2">
+    <div class="panel"><h3>七阶段状态</h3><div id="stageList"></div></div>
+    <div class="panel"><h3>思考过程</h3><div id="thoughtBox" style="max-height:320px;overflow:auto"></div></div>
+  </div>
+  <div class="panel"><h3>实时日志流</h3><div id="logBox" class="log"></div></div>
+</section>
+
+<!-- ====================== 告警管理 ====================== -->
+<section id="tab-alert" class="hidden">
+  <div class="panel">
+    <div class="row">
+      <button class="primary" onclick="genAlerts()">从命中生成告警</button>
+      <button onclick="loadAlerts()">刷新</button>
+      <span class="muted">状态: <select id="alertStatus">
+        <option value="">全部</option><option>new</option>
+        <option>confirmed</option><option>in_progress</option>
+        <option>resolved</option><option>closed</option></select></span>
+    </div>
+  </div>
+  <div class="panel"><h3>告警列表</h3>
+    <table id="alertTable"><thead><tr>
+      <th>级别</th><th>标题</th><th>源IP</th><th>用户</th>
+      <th>状态</th><th>ATT&CK</th><th>操作</th></tr></thead>
+      <tbody></tbody></table>
+  </div>
+</section>
+
+<!-- ====================== 事件响应 ====================== -->
+<section id="tab-ir" class="hidden">
+  <div class="grid c2">
+    <div class="panel"><h3>SOAR 剧本</h3><div id="pbList"></div></div>
+    <div class="panel"><h3>工单</h3>
+      <button class="primary" onclick="loadTickets()">刷新工单</button>
+      <table id="ticketTable" style="margin-top:6px"><thead><tr>
+        <th>ID</th><th>标题</th><th>优先级</th><th>状态</th></tr></thead>
+        <tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== 威胁狩猎 ====================== -->
+<section id="tab-hunt" class="hidden">
+  <div class="grid c2">
+    <div class="panel"><h3>预设狩猎查询</h3><div id="huntList"></div></div>
+    <div class="panel"><h3>攻击链 / 异常检测</h3>
+      <button onclick="loadChain()">攻击链</button>
+      <button onclick="loadAnomaly()">异常检测</button>
+      <div id="chainOut" style="margin-top:8px"></div>
+    </div>
+  </div>
+  <div class="panel"><h3>狩猎发现</h3>
+    <table id="findTable"><thead><tr>
+      <th>查询</th><th>摘要</th><th>级别</th><th>状态</th></tr></thead>
+      <tbody></tbody></table>
+  </div>
+</section>
+
+<!-- ====================== 事件复盘 ====================== -->
+<section id="tab-pm" class="hidden">
+  <div class="panel"><h3>复盘报告</h3>
+    <button class="primary" onclick="genPM()">生成本次复盘</button>
+    <div id="pmList" style="margin-top:8px"></div>
+  </div>
+</section>
+
+<!-- ====================== 报告 ====================== -->
+<section id="tab-report" class="hidden">
+  <div class="panel"><h3>生成 SOC 运营报告</h3>
+    <button class="primary" onclick="genReport()">生成 MD+HTML 报告</button>
+    <div id="reportOut" style="margin-top:10px;white-space:pre-wrap"
+         class="muted"></div>
+  </div>
+</section>
+</main>
+
+<footer>SOC Pro · 方向1 SOC 安全运营做深 · 内存字典存储 · 真实工具未安装时明确提示不 mock</footer>
+
+<script>
+const API='/api/v1/soc-pro';
+let ws=null, curTask='';
+
+async function api(p,opt){
+  const r=await fetch(API+p,Object.assign({headers:{'Content-Type':'application/json'}},opt||{}));
+  return r.json();
+}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function sevBadge(s){return `<span class="badge ${s}">${s}</span>`;}
+
+// ---- tabs ----
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));
+    document.getElementById('tab-'+t.dataset.tab).classList.remove('hidden');
+  };
+});
+
+// ---- 大屏 ----
+async function refreshAll(){
+  const d=await api('/dashboard/full'); if(!d.success)return;
+  const o=d.data.overview;
+  document.getElementById('kpiAlerts').textContent=o.alerts_total;
+  document.getElementById('kpiCrit').textContent=o.alerts_critical;
+  document.getElementById('kpiHigh').textContent=o.alerts_high;
+  document.getElementById('kpiRules').textContent=o.rules_enabled+'/'+o.rules_total;
+  drawTrend(d.data.trend_24h.series);
+  document.getElementById('mapList').innerHTML=(d.data.map||[]).map(m=>
+    `<div class="alertitem"><span>${esc(m.region)}</span>
+     <span class="muted">${m.count}</span></div>`).join('')||'<span class="muted">暂无数据</span>';
+  document.getElementById('topTypes').innerHTML=(d.data.top_types||[]).map(t=>
+    `<div class="alertitem"><span>${esc(t.category)}</span>
+     <span class="muted">${t.count}</span></div>`).join('');
+  document.getElementById('alertFeed').innerHTML=(d.data.recent_alerts||[]).map(a=>
+    `<div class="alertitem">${sevBadge(a.severity)}
+     <span style="flex:1">${esc(a.title)}</span>
+     <span class="muted">${esc(a.src_ip)}</span></div>`).join('')||
+     '<span class="muted">暂无告警，点击"启动七阶段巡检"</span>';
+}
+function drawTrend(series){
+  const c=document.getElementById('trendCanvas'),x=c.getContext('2d');
+  const W=c.width,H=c.height;x.clearRect(0,0,W,H);
+  if(!series||!series.length)return;
+  const max=Math.max(...series.map(p=>p.value),1);
+  const bw=W/series.length;
+  series.forEach((p,i)=>{
+    const h=p.value/max*(H-20);
+    x.fillStyle='#1976d2';x.fillRect(i*bw+2,H-h,bw-4,h);
+  });
+  x.fillStyle='#8b98a8';x.font='10px sans-serif';
+  x.fillText('0',2,H-4);x.fillText('max:'+max,W-60,H-4);
+}
+
+// ---- 七阶段 ----
+function renderStages(list){
+  const el=document.getElementById('stageList');
+  el.innerHTML=(list||[]).map(s=>
+    `<div class="stage" data-key="${s.key}">
+      <span class="dot"></span>
+      <span style="flex:1">${esc(s.label)}</span>
+      <span class="muted">${s.progress}%</span></div>`).join('');
+}
+async function loadStages(){
+  const d=await api('/stages'); if(d.success)renderStages(d.data.stages);
+}
+function markStage(key,state){
+  document.querySelectorAll('#stageList .stage').forEach(n=>{
+    n.classList.remove('active','done');
+    if(n.dataset.key===key)n.classList.add(state);
+  });
+}
+function appendLog(ev){
+  const box=document.getElementById('logBox');
+  const cls=(ev.level||'INFO').toLowerCase();
+  const div=document.createElement('div');
+  div.className=cls;
+  div.textContent=`[${ev.timestamp||''}] ${ev.level||''} ${ev.message||''}`;
+  box.appendChild(div);box.scrollTop=box.scrollHeight;
+}
+function appendThought(t){
+  const box=document.getElementById('thoughtBox');
+  const div=document.createElement('div');
+  div.className='thought';div.textContent='💭 '+t;
+  box.appendChild(div);box.scrollTop=box.scrollHeight;
+}
+
+async function startRun(){
+  const r=await api('/start',{method:'POST',body:JSON.stringify({name:'SOC 全流程巡检'})});
+  if(!r.success){alert(r.error);return;}
+  curTask=r.data.task_id;
+  document.getElementById('taskBadge').textContent='任务: '+curTask;
+  document.getElementById('logBox').innerHTML='';
+  document.getElementById('thoughtBox').innerHTML='';
+  connectWS(curTask);
+}
+function connectWS(tid){
+  if(ws)try{ws.close();}catch(e){}
+  const proto=location.protocol==='https:'?'wss':'ws';
+  ws=new WebSocket(`${proto}://${location.host}${API}/ws/${tid}`);
+  ws.onmessage=e=>{
+    const ev=JSON.parse(e.data);
+    if(ev.type==='progress'){
+      document.getElementById('overallBar').style.width=ev.overall+'%';
+      document.getElementById('overallText').textContent=
+        `${ev.stage_label} · 整体 ${ev.overall}%`;
+      markStage(ev.stage,ev.overall>=100?'done':'active');
+    }else if(ev.type==='log'){appendLog(ev);}
+    else if(ev.type==='thought'){appendThought(ev.thought);}
+    else if(ev.type==='alert'){refreshAll();}
+    else if(ev.type==='result'){refreshAll();loadAlerts();}
+  };
+}
+
+// ---- 告警 ----
+async function genAlerts(){await api('/alerts/generate',{method:'POST'});loadAlerts();}
+async function loadAlerts(){
+  const st=document.getElementById('alertStatus').value;
+  const d=await api('/alerts'+(st?('?status='+st):''));
+  const tb=document.querySelector('#alertTable tbody');
+  tb.innerHTML=(d.data.alerts||[]).map(a=>
+    `<tr><td>${sevBadge(a.severity)}</td>
+     <td>${esc(a.title)}</td><td>${esc(a.src_ip)}</td>
+     <td>${esc(a.user)}</td><td>${esc(a.status)}</td>
+     <td>${esc(a.mitre)}</td>
+     <td><button onclick="aiAnalyze('${a.alert_id}')">AI</button>
+         <button onclick="resolveAlert('${a.alert_id}','resolved')">解决</button>
+     </td></tr>`).join('');
+}
+async function resolveAlert(id,st){
+  await api('/alerts/'+id+'/status',{method:'POST',
+    body:JSON.stringify({status:st})});loadAlerts();
+}
+async function aiAnalyze(id){
+  const d=await api('/ai/analert/'+id,{method:'POST'});
+  alert('AI 判定: '+d.data.verdict+'\n评分: '+d.data.score+
+        '\n建议: '+(d.data.response_advice||[]).join('；'));
+}
+
+// ---- 事件响应 ----
+async function loadTickets(){
+  const d=await api('/tickets');
+  document.querySelector('#ticketTable tbody').innerHTML=
+    (d.data.tickets||[]).map(t=>
+      `<tr><td>${t.ticket_id}</td><td>${esc(t.title)}</td>
+       <td>${sevBadge(t.priority)}</td><td>${esc(t.status)}</td></tr>`).join('');
+  const p=await api('/soar/playbooks');
+  document.getElementById('pbList').innerHTML=(p.data.playbooks||[]).map(b=>
+    `<div class="alertitem"><span>${esc(b.name)}</span>
+     <button onclick="runPB('${b.pb_id}')">执行</button></div>`).join('');
+}
+async function runPB(pid){
+  const d=await api('/soar/playbooks/'+pid+'/run',{method:'POST',
+    body:JSON.stringify({context:{src_ip:'1.2.3.4',user:'admin'}})});
+  alert('剧本执行完成: '+JSON.stringify(d.data.results||[]).slice(0,200));
+}
+
+// ---- 狩猎 ----
+async function loadHunt(){
+  const q=await api('/hunting/queries');
+  document.getElementById('huntList').innerHTML=(q.data.queries||[]).map(x=>
+    `<div class="alertitem"><span>${esc(x.name)} <span class="muted">${x.mitre}</span></span>
+     <button onclick="runHunt('${x.qid}')">运行</button></div>`).join('');
+  const f=await api('/hunting/finds');
+  document.querySelector('#findTable tbody').innerHTML=(f.data.finds||[]).map(x=>
+    `<tr><td>${esc(x.query)}</td><td>${esc(x.summary).slice(0,80)}</td>
+     <td>${sevBadge(x.severity)}</td><td>${esc(x.status)}</td></tr>`).join('');
+}
+async function runHunt(qid){await api('/hunting/run',{method:'POST',
+  body:JSON.stringify({qid:qid})});loadHunt();}
+async function loadChain(){
+  const d=await api('/hunting/attack-chain');
+  document.getElementById('chainOut').innerHTML=
+    (d.data.nodes||[]).map(n=>`<div class="alertitem">
+     <span>${n.tactic}</span><span class="muted">${n.mitre} ×${n.count}</span></div>`).join('')
+    ||'<span class="muted">暂无</span>';
+}
+async function loadAnomaly(){
+  const d=await api('/hunting/anomaly');
+  document.getElementById('chainOut').innerHTML=JSON.stringify(d.data,null,2);
+}
+
+// ---- 复盘 ----
+async function genPM(){
+  const d=await api('/postmortem/generate',{method:'POST',
+    body:JSON.stringify({title:'SOC 巡检复盘',incident:curTask||'auto'})});
+  loadPM();
+}
+async function loadPM(){
+  const d=await api('/postmortem/list');
+  document.getElementById('pmList').innerHTML=(d.data.reports||[]).map(r=>
+    `<div class="panel" style="background:var(--panel2)">
+      <b>${esc(r.title)}</b> <span class="muted">${r.created_at}</span>
+      <div class="muted" style="margin-top:4px">根因: ${(r.root_causes||[]).join('；')}</div>
+    </div>`).join('');
+}
+
+// ---- 报告 ----
+async function genReport(){
+  const d=await api('/report/generate',{method:'POST',
+    body:JSON.stringify({fmt:'both'})});
+  document.getElementById('reportOut').textContent=
+    '✅ 报告已生成\nMD: '+d.data.md_path+'\nHTML: '+d.data.html_path+
+    '\n\n'+d.data.markdown;
+}
+
+// init
+loadStages();refreshAll();
+setInterval(()=>{if(!curTask)refreshAll();},15000);
+</script>
+</body>
+</html>

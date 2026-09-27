@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 安全测试平台 · 统一控制台</title>
+<style>
+  :root{
+    --bg:#0a0e17; --card:#111827; --border:#1f2937;
+    --primary:#00d4ff; --text:#e0e6ed; --muted:#8b96a5;
+    --danger:#ff4d5e; --warn:#ffb020; --ok:#2ecc71;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Segoe UI","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text); overflow:hidden;
+  }
+  /* ============ 布局 ============ */
+  .layout{display:flex; flex-direction:column; height:100vh}
+  .body{display:flex; flex:1; min-height:0}
+  /* ============ 侧边栏 ============ */
+  .sidebar{
+    width:220px; min-width:220px; background:#0c111c; border-right:1px solid var(--border);
+    display:flex; flex-direction:column; overflow-y:auto; transition:margin .25s ease;
+  }
+  .sidebar.closed{margin-left:-220px}
+  .brand{
+    padding:16px 18px; font-size:16px; font-weight:700; color:var(--primary);
+    border-bottom:1px solid var(--border); letter-spacing:.5px;
+  }
+  .brand small{display:block;color:var(--muted);font-weight:400;font-size:11px;margin-top:3px}
+  .nav{flex:1; padding:8px 0}
+  .nav-item{
+    display:flex; align-items:center; gap:10px; padding:10px 18px; cursor:pointer;
+    color:var(--text); font-size:14px; border-left:3px solid transparent; user-select:none;
+  }
+  .nav-item:hover{background:#141b2b}
+  .nav-item.active{background:#142033; border-left-color:var(--primary); color:var(--primary)}
+  .nav-item .arrow{margin-left:auto; font-size:10px; color:var(--muted); transition:transform .2s}
+  .nav-group.open .arrow{transform:rotate(90deg)}
+  .subnav{display:none; background:#0a0f19}
+  .nav-group.open .subnav{display:block}
+  .subnav .nav-item{padding-left:38px; font-size:13px}
+  .nav-icon{width:18px; text-align:center;}
+  /* ============ 顶栏 ============ */
+  .topbar{
+    height:52px; background:#0c111c; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; padding:0 16px; gap:16px; flex:0 0 auto;
+  }
+  .hamburger{cursor:pointer;font-size:18px;color:var(--text);padding:4px 8px;border:1px solid var(--border);border-radius:6px}
+  .status-pill{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .dot.ok{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+  .dot.warn{background:var(--warn)}
+  .dot.bad{background:var(--danger)}
+  .spacer{flex:1}
+  .bell{position:relative;cursor:pointer;font-size:16px}
+  .badge{
+    position:absolute;top:-6px;right:-8px;background:var(--danger);color:#fff;
+    font-size:10px;border-radius:9px;padding:1px 5px;min-width:16px;text-align:center;
+  }
+  #clock{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .user{font-size:13px;color:var(--text)}
+  .user b{color:var(--primary)}
+  /* ============ 主区 ============ */
+  .main{flex:1; position:relative; min-width:0; background:var(--bg)}
+  #contentFrame{width:100%; height:100%; border:none; display:block; background:var(--bg)}
+  #dashboardView{position:absolute;inset:0;overflow-y:auto;display:none;padding:20px}
+  #placeholderView{position:absolute;inset:0;overflow-y:auto;display:none;padding:20px}
+  .main.show-dashboard #dashboardView{display:block}
+  .main.show-dashboard #contentFrame{display:none}
+  .main.show-placeholder #placeholderView{display:block}
+  .main.show-placeholder #contentFrame{display:none}
+  /* ============ 仪表盘 ============ */
+  .page-title{font-size:18px;margin-bottom:16px;color:var(--text)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+  .card .label{font-size:12px;color:var(--muted)}
+  .card .value{font-size:26px;font-weight:700;margin-top:6px;color:var(--text)}
+  .card .value.c{color:var(--primary)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
+  .panel h3{font-size:14px;margin-bottom:12px;color:var(--primary);font-weight:600}
+  .act-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+  .act-item:last-child{border-bottom:none}
+  .act-time{color:var(--muted);font-size:11px}
+  .tag{padding:1px 8px;border-radius:10px;font-size:11px}
+  .tag.completed{background:rgba(46,204,113,.15);color:var(--ok)}
+  .tag.running{background:rgba(0,212,255,.15);color:var(--primary)}
+  .tag.failed{background:rgba(255,77,94,.15);color:var(--danger)}
+  .sev-row{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12px}
+  .sev-bar{flex:1;height:8px;background:#0a0f19;border-radius:4px;overflow:hidden}
+  .sev-fill{height:100%;border-radius:4px}
+  .tool-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border)}
+  .tool-row:last-child{border:none}
+  .tool-row .ok{color:var(--ok)} .tool-row .no{color:var(--danger)}
+  /* 趋势迷你柱状图 */
+  .trend{display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:6px}
+  .trend .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+  .trend .bar{width:70%;background:linear-gradient(180deg,var(--primary),#007a99);border-radius:3px 3px 0 0}
+  .trend .d{font-size:10px;color:var(--muted)}
+  /* 占位页 */
+  .placeholder{max-width:640px;margin:60px auto;text-align:center}
+  .placeholder .big{font-size:48px;margin-bottom:14px}
+  .placeholder h2{color:var(--primary);margin-bottom:10px}
+  .placeholder p{color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:18px}
+  .placeholder ul{text-align:left;display:inline-block;color:var(--text);font-size:13px;line-height:2}
+  /* 移动端 */
+  @media(max-width:768px){
+    .sidebar{position:fixed;z-index:50;height:100%}
+    .topbar .user,.topbar #clock{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- 顶栏 -->
+  <div class="topbar">
+    <div class="hamburger" id="hamburger">&#9776;</div>
+    <div class="status-pill"><span class="dot ok" id="apiDot"></span>API <span id="apiText">在线</span></div>
+    <div class="status-pill"><span class="dot ok" id="toolDot"></span>工具 <span id="toolText">--/--</span></div>
+    <div class="spacer"></div>
+    <div class="user">租户：<b>默认企业版</b> &nbsp;|&nbsp; 用户：<b>admin</b></div>
+    <div class="bell" title="通知">&#128276;<span class="badge" id="bellBadge">0</span></div>
+    <div id="clock">--:--:--</div>
+  </div>
+
+  <div class="body">
+    <!-- 侧边栏 -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">AI 安全测试平台<small>Unified Platform Console</small></div>
+      <nav class="nav" id="nav"></nav>
+    </aside>
+
+    <!-- 主内容 -->
+    <main class="main" id="main">
+      <!-- 自定义仪表盘 -->
+      <div id="dashboardView">
+        <div class="page-title">仪表盘 · 系统总览</div>
+        <div class="cards">
+          <div class="card"><div class="label">总评估数</div><div class="value c" id="ovAssess">-</div></div>
+          <div class="card"><div class="label">漏洞总数</div><div class="value" id="ovVulns">-</div></div>
+          <div class="card"><div class="label">活跃任务</div><div class="value" id="ovTasks">-</div></div>
+          <div class="card"><div class="label">活跃告警</div><div class="value" id="ovAlerts">-</div></div>
+          <div class="card"><div class="label">可用工具</div><div class="value" id="ovTools">-</div></div>
+        </div>
+        <div class="grid2">
+          <div class="panel">
+            <h3>最近 7 天评估趋势</h3>
+            <div class="trend" id="trendChart"></div>
+          </div>
+          <div class="panel">
+            <h3>风险分布（按严重程度）</h3>
+            <div id="sevList"></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="panel">
+            <h3>最近活动</h3>
+            <div id="activityList"><div class="act-time">加载中…</div></div>
+          </div>
+          <div class="panel">
+            <h3>工具状态</h3>
+            <div id="toolList"><div class="act-time">加载中…</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 占位页（开发中模块） -->
+      <div id="placeholderView">
+        <div class="placeholder">
+          <div class="big">&#128680;</div>
+          <h2 id="phTitle">模块开发中</h2>
+          <p id="phDesc">该模块正在紧张开发中，敬请期待。</p>
+          <ul id="phFeatures"></ul>
+        </div>
+      </div>
+
+      <!-- iframe 加载既有控制台 -->
+      <iframe id="contentFrame" title="content"></iframe>
+    </main>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============ 导航定义 ============ */
+/* route: "dashboard"=自定义仪表盘; "/xxx"=iframe加载既有控制台; "ph:xxx"=占位页 */
+var MENU = [
+  {key:"dashboard", label:"仪表盘", icon:"&#9632;", route:"dashboard"},
+  {key:"assessment", label:"安全评估", icon:"&#128737;", children:[
+    {key:"quick", label:"一键评估", route:"/assessment"},
+    {key:"unified", label:"全域评估", route:"/unified-console"},
+    {key:"domains", label:"4领域Tab", route:"ph:domains"}
+  ]},
+  {key:"defense", label:"防御中心", icon:"&#128737;", children:[
+    {key:"ids", label:"IDS", route:"ph:ids"},
+    {key:"log", label:"日志分析", route:"ph:log"},
+    {key:"baseline", label:"基线检查", route:"ph:baseline"},
+    {key:"hunt", label:"威胁狩猎", route:"ph:hunt"}
+  ]},
+  {key:"vuln", label:"漏洞管理", icon:"&#128027;", route:"/vuln-database"},
+  {key:"monitor", label:"监控中心", icon:"&#128200;", children:[
+    {key:"scheduler", label:"定时任务", route:"ph:scheduler"},
+    {key:"alerts", label:"告警", route:"ph:alerts"}
+  ]},
+  {key:"collab", label:"协作中心", icon:"&#128101;", children:[
+    {key:"ctasks", label:"任务", route:"ph:ctasks"},
+    {key:"notify", label:"通知", route:"ph:notify"}
+  ]},
+  {key:"reports", label:"报告中心", icon:"&#128196;", route:"ph:reports"},
+  {key:"settings", label:"系统设置", icon:"&#9881;", route:"ph:settings"},
+  {key:"commercial", label:"商业管理", icon:"&#128188;", route:"/commercial-console"}
+];
+
+var PLACEHOLDERS = {
+  domains:{title:"4领域评估", desc:"面向 Web / 主机 / API / 移动 四大领域的专项安全评估工作台。",
+    features:["Web 应用漏洞专项","主机安全配置核查","API 接口鉴权与越权检测","移动 App 静态/动态分析"]},
+  ids:{title:"IDS 入侵检测", desc:"基于规则与异常模型的实时入侵检测与告警联动。",
+    features:["特征规则匹配","异常流量告警","事件联动封禁","规则在线更新"]},
+  log:{title:"日志分析", desc:"集中采集系统与应用日志，自动做基线偏离与威胁关联分析。",
+    features:["多源日志聚合","基线偏离检测","攻击链还原","异常行为高亮"]},
+  baseline:{title:"基线检查", desc:"主机/中间件/数据库安全基线合规核查与一键加固建议。",
+    features:["CIS 基线模板","一键合规评分","加固建议导出","历史对比追踪"]},
+  hunt:{title:"威胁狩猎", desc:"基于 SIEM 数据的主动威胁狩猎与攻击者 TTP 还原。",
+    features:["威胁情报 IoC 匹配","横向移动检测","持久化痕迹识别","狩猎报告输出"]},
+  scheduler:{title:"定时任务", desc:"周期性扫描与巡检任务调度中心。",
+    features:["Cron 式任务编排","失败自动重试","执行历史查询","结果定时推送"]},
+  alerts:{title:"告警中心", desc:"全平台告警的统一接收、分级与处置工作台。",
+    features:["告警分级降噪","工单化处置","通知渠道配置","告警统计看板"]},
+  ctasks:{title:"协作任务", desc:"多人协同渗透测试任务分配与进度跟踪。",
+    features:["任务看板","成员权限分配","进度实时同步","批注与留痕"]},
+  notify:{title:"通知中心", desc:"平台内通知与消息订阅管理。",
+    features:["站内信","邮件/钉钉通知","订阅规则配置","未读聚合"]},
+  reports:{title:"报告中心", desc:"评估与扫描报告的集中生成、导出与归档。",
+    features:["PDF/Word 导出","报告模板自定义","历史版本对比","一键分享链接"]},
+  settings:{title:"系统设置", desc:"平台参数、工具路径、LLM 与安全策略配置。",
+    features:["工具路径管理","LLM 模型配置","安全策略开关","备份与恢复"]}
+};
+
+/* ============ 渲染导航 ============ */
+var nav = document.getElementById("nav");
+function renderNav(){
+  nav.innerHTML = "";
+  MENU.forEach(function(item){
+    if(item.children){
+      var grp = document.createElement("div");
+      grp.className = "nav-group"; grp.dataset.key = item.key;
+      var head = document.createElement("div");
+      head.className = "nav-item";
+      head.innerHTML = '<span class="nav-icon">'+item.icon+'</span><span>'+item.label+'</span><span class="arrow">&#9654;</span>';
+      head.onclick = function(){ grp.classList.toggle("open"); };
+      grp.appendChild(head);
+      var sub = document.createElement("div"); sub.className="subnav";
+      item.children.forEach(function(ch){
+        var s = document.createElement("div");
+        s.className = "nav-item"; s.dataset.route = ch.route; s.dataset.key = ch.key;
+        s.innerHTML = '<span>'+ch.label+'</span>';
+        s.onclick = function(){ selectRoute(ch.route, s); };
+        sub.appendChild(s);
+      });
+      grp.appendChild(sub);
+      nav.appendChild(grp);
+    } else {
+      var el = document.createElement("div");
+      el.className = "nav-item"; el.dataset.route = item.route; el.dataset.key = item.key;
+      el.innerHTML = '<span class="nav-icon">'+item.icon+'</span><span>'+item.label+'</span>';
+      el.onclick = function(){ selectRoute(item.route, el); };
+      nav.appendChild(el);
+    }
+  });
+}
+
+/* ============ 路由切换 ============ */
+var main = document.getElementById("main");
+var frame = document.getElementById("contentFrame");
+var dashView = document.getElementById("dashboardView");
+var phView = document.getElementById("placeholderView");
+
+function setActive(el){
+  var all = nav.querySelectorAll(".nav-item");
+  all.forEach(function(n){ n.classList.remove("active"); });
+  if(el){ el.classList.add("active"); }
+}
+
+function selectRoute(route, el){
+  setActive(el);
+  main.classList.remove("show-dashboard","show-placeholder");
+  if(route === "dashboard"){
+    main.classList.add("show-dashboard");
+    loadDashboard();
+  } else if(typeof route === "string" && route.indexOf("ph:") === 0){
+    var key = route.slice(3);
+    showPlaceholder(key);
+    main.classList.add("show-placeholder");
+  } else {
+    frame.src = route;
+  }
+  // 移动端选择后收起侧栏
+  if(window.innerWidth <= 768){ sidebar.classList.add("closed"); }
+}
+
+function showPlaceholder(key){
+  var p = PLACEHOLDERS[key] || {title:"模块开发中", desc:"该模块正在开发中。", features:[]};
+  document.getElementById("phTitle").textContent = p.title;
+  document.getElementById("phDesc").textContent = p.desc;
+  var ul = document.getElementById("phFeatures");
+  ul.innerHTML = "";
+  p.features.forEach(function(f){
+    var li = document.createElement("li"); li.textContent = "• " + f; ul.appendChild(li);
+  });
+}
+
+/* ============ 仪表盘数据 ============ */
+function apiGet(url){
+  return fetch(url).then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); });
+}
+
+function loadDashboard(){
+  apiGet("/api/platform/overview").then(function(d){
+    document.getElementById("ovAssess").textContent = d.total_assessments;
+    document.getElementById("ovVulns").textContent = d.total_vulnerabilities;
+    document.getElementById("ovTasks").textContent = d.active_tasks;
+    document.getElementById("ovAlerts").textContent = d.active_alerts;
+    document.getElementById("ovTools").textContent = d.tools_available + "/" + d.tools_total;
+    renderTrend(d.trend_7d || []);
+    renderSeverity(d.vuln_by_severity || {});
+    document.getElementById("toolText").textContent = d.tools_available + "/" + d.tools_total;
+  }).catch(function(){
+    document.getElementById("ovAssess").textContent = "--";
+  });
+
+  apiGet("/api/platform/tools-status").then(function(d){
+    renderTools(d.tools || []);
+    document.getElementById("toolText").textContent = d.available + "/" + d.total;
+    document.getElementById("toolDot").className = "dot " + (d.available > 0 ? "ok" : "warn");
+  }).catch(function(){});
+
+  apiGet("/api/platform/recent-activity?limit=8").then(function(d){
+    renderActivity(d.activities || []);
+  }).catch(function(){});
+}
+
+function renderTrend(data){
+  var box = document.getElementById("trendChart");
+  box.innerHTML = "";
+  var max = 1;
+  data.forEach(function(x){ max = Math.max(max, x.assessments || 0); });
+  data.forEach(function(x){
+    var col = document.createElement("div"); col.className = "col";
+    var h = Math.round(((x.assessments||0)/max)*100);
+    col.innerHTML = '<div class="bar" style="height:'+h+'%" title="'+x.assessments+'"></div><div class="d">'+x.date+'</div>';
+    box.appendChild(col);
+  });
+}
+
+function renderSeverity(m){
+  var colors = {critical:"#ff4d5e", high:"#ff8a3d", medium:"#ffb020", low:"#00d4ff", info:"#8b96a5"};
+  var names  = {critical:"严重", high:"高危", medium:"中危", low:"低危", info:"信息"};
+  var box = document.getElementById("sevList"); box.innerHTML = "";
+  var total = 0; for(var k in m){ total += m[k]; }
+  total = total || 1;
+  ["critical","high","medium","low","info"].forEach(function(k){
+    var v = m[k] || 0;
+    var row = document.createElement("div"); row.className = "sev-row";
+    row.innerHTML = '<span style="width:44px">'+names[k]+'</span>'+
+      '<div class="sev-bar"><div class="sev-fill" style="width:'+Math.round(v/total*100)+'%;background:'+colors[k]+'"></div></div>'+
+      '<span style="width:36px;text-align:right">'+v+'</span>';
+    box.appendChild(row);
+  });
+}
+
+function renderTools(tools){
+  var box = document.getElementById("toolList"); box.innerHTML = "";
+  tools.forEach(function(t){
+    var row = document.createElement("div"); row.className = "tool-row";
+    row.innerHTML = '<span>'+t.label+'</span>'+
+      '<span class="'+(t.available?"ok":"no")+'">'+(t.available?("✓ "+(t.version||"已安装")):"✗ 未安装")+'</span>';
+    box.appendChild(row);
+  });
+}
+
+function renderActivity(list){
+  var box = document.getElementById("activityList"); box.innerHTML = "";
+  if(!list.length){ box.innerHTML = '<div class="act-time">暂无活动</div>'; return; }
+  list.forEach(function(a){
+    var st = (a.status||"unknown").toLowerCase();
+    var tagCls = st.indexOf("fail")>=0 ? "failed" : (st==="running"||st==="pending"||st==="processing" ? "running" : "completed");
+    var item = document.createElement("div"); item.className = "act-item";
+    item.innerHTML = '<div><span style="color:var(--primary)">'+a.type+'</span> · '+a.description+
+      '<div class="act-time">'+(a.time||"")+'</div></div>'+
+      '<span class="tag '+tagCls+'">'+a.status+'</span>';
+    box.appendChild(item);
+  });
+}
+
+/* ============ 顶栏：时钟 / API状态 / 通知 ============ */
+function tickClock(){
+  var n = new Date();
+  function p(x){ return (x<10?"0":"")+x; }
+  document.getElementById("clock").textContent =
+    n.getFullYear()+"-"+p(n.getMonth()+1)+"-"+p(n.getDate())+" "+p(n.getHours())+":"+p(n.getMinutes())+":"+p(n.getSeconds());
+}
+setInterval(tickClock, 1000); tickClock();
+
+function checkHealth(){
+  apiGet("/api/platform/health").then(function(d){
+    var dot = document.getElementById("apiDot"), txt = document.getElementById("apiText");
+    if(d.status === "healthy"){ dot.className="dot ok"; txt.textContent="在线"; }
+    else if(d.status === "degraded"){ dot.className="dot warn"; txt.textContent="降级"; }
+    else { dot.className="dot bad"; txt.textContent="异常"; }
+  }).catch(function(){
+    document.getElementById("apiDot").className="dot bad";
+    document.getElementById("apiText").textContent="离线";
+  });
+  apiGet("/api/platform/recent-activity?limit=1").then(function(d){
+    // 未读数用活跃任务/告警近似，这里固定展示健康状态衍生值
+  }).catch(function(){});
+}
+setInterval(checkHealth, 15000);
+
+/* ============ 侧栏折叠 ============ */
+var sidebar = document.getElementById("sidebar");
+document.getElementById("hamburger").onclick = function(){ sidebar.classList.toggle("closed"); };
+
+/* ============ 启动 ============ */
+renderNav();
+selectRoute("dashboard", null);
+// 默认选中仪表盘对应的视觉
+var firstItem = nav.querySelector('.nav-item');
+if(firstItem){ firstItem.classList.add("active"); }
+checkHealth();
+</script>
+</body>
+</html>

@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>二进制逆向与漏洞挖掘控制台</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --border: #30363d;
+  --text: #c9d1d9;
+  --muted: #8b949e;
+  --accent: #58a6ff;
+  --green: #3fb950;
+  --red: #f85149;
+  --yellow: #d29922;
+  --orange: #db6d28;
+  --purple: #bc8cff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+  background: var(--bg); color: var(--text);
+  font-size: 14px; line-height: 1.6;
+}
+header {
+  background: var(--panel); border-bottom: 1px solid var(--border);
+  padding: 12px 20px; display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 10px;
+}
+header h1 { font-size: 18px; color: var(--accent); }
+header .meta { color: var(--muted); font-size: 12px; }
+nav {
+  background: var(--panel); border-bottom: 1px solid var(--border);
+  display: flex; overflow-x: auto; flex-wrap: wrap;
+}
+nav button {
+  background: transparent; border: none; color: var(--muted);
+  padding: 12px 18px; cursor: pointer; font-size: 13px;
+  border-bottom: 2px solid transparent; white-space: nowrap;
+  transition: all .15s;
+}
+nav button:hover { color: var(--text); background: rgba(88,166,255,.08); }
+nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+main { padding: 20px; max-width: 1400px; margin: 0 auto; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+.card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px; margin-bottom: 16px;
+}
+.card h2 { font-size: 15px; color: var(--accent); margin-bottom: 12px; }
+.card h3 { font-size: 13px; color: var(--text); margin: 10px 0 6px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.stat {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 14px;
+}
+.stat .num { font-size: 24px; font-weight: 600; color: var(--accent); }
+.stat .lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+button.btn {
+  background: var(--accent); color: #fff; border: none;
+  padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;
+}
+button.btn:hover { opacity: .9; }
+button.btn.secondary { background: var(--border); color: var(--text); }
+input, select, textarea {
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); padding: 8px; border-radius: 4px;
+  font-size: 13px; width: 100%; font-family: inherit;
+}
+textarea { font-family: "Consolas", "Monaco", monospace; min-height: 80px; }
+label { font-size: 12px; color: var(--muted); display: block; margin: 8px 0 4px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+.row > div { flex: 1; min-width: 140px; }
+pre {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px; overflow-x: auto;
+  font-family: "Consolas", "Monaco", monospace; font-size: 12px;
+  white-space: pre-wrap; word-break: break-all; max-height: 500px;
+  overflow-y: auto;
+}
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+th { color: var(--muted); font-weight: 500; }
+.sev-critical { color: var(--red); font-weight: 600; }
+.sev-high { color: var(--orange); font-weight: 600; }
+.sev-medium { color: var(--yellow); }
+.sev-low { color: var(--green); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+.badge.green { background: rgba(63,185,80,.15); color: var(--green); }
+.badge.red { background: rgba(248,81,73,.15); color: var(--red); }
+.badge.yellow { background: rgba(210,153,34,.15); color: var(--yellow); }
+.badge.blue { background: rgba(88,166,255,.15); color: var(--accent); }
+.badge.purple { background: rgba(188,140,255,.15); color: var(--purple); }
+.muted { color: var(--muted); font-size: 12px; }
+.log { color: var(--green); }
+.error { color: var(--red); }
+@media (max-width: 768px) {
+  main { padding: 10px; }
+  nav button { padding: 10px 12px; font-size: 12px; }
+  .grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡️ 二进制逆向与漏洞挖掘平台</h1>
+  <span class="meta">第27轮升级方向3 · v27.3.0</span>
+</header>
+<nav id="nav">
+  <button data-tab="overview" class="active">📊 二进制总览</button>
+  <button data-tab="disasm">🔍 反汇编</button>
+  <button data-tab="decompile">📝 反编译</button>
+  <button data-tab="vuln">💥 漏洞挖掘</button>
+  <button data-tab="patch">🔧 补丁对比</button>
+  <button data-tab="malware">🦠 恶意代码</button>
+  <button data-tab="pack">📦 壳检测</button>
+  <button data-tab="settings">⚙️ 系统设置</button>
+</nav>
+<main>
+
+<!-- ====================== 总览 ====================== -->
+<div class="tab-pane active" id="tab-overview">
+  <div class="card">
+    <h2>平台总览</h2>
+    <div class="grid" id="overview-stats"></div>
+  </div>
+  <div class="card">
+    <h2>模块状态</h2>
+    <div id="overview-modules"></div>
+  </div>
+  <div class="card">
+    <h2>最近任务</h2>
+    <div id="overview-tasks"></div>
+  </div>
+</div>
+
+<!-- ====================== 反汇编 ====================== -->
+<div class="tab-pane" id="tab-disasm">
+  <div class="card">
+    <h2>反汇编引擎</h2>
+    <div class="row">
+      <div>
+        <label>架构</label>
+        <select id="disasm-arch">
+          <option value="x86_64">x86-64</option>
+          <option value="x86">x86 (32-bit)</option>
+          <option value="arm">ARM</option>
+          <option value="arm64">ARM64</option>
+          <option value="mips">MIPS</option>
+          <option value="powerpc">PowerPC</option>
+          <option value="riscv">RISC-V</option>
+          <option value="sparc">SPARC</option>
+          <option value="s390x">SystemZ</option>
+        </select>
+      </div>
+      <div>
+        <label>基址 (hex)</label>
+        <input id="disasm-base" value="0x100000">
+      </div>
+      <div>
+        <button class="btn" onclick="runDisasm()">反汇编</button>
+      </div>
+      <div>
+        <button class="btn secondary" onclick="loadSampleX86()">加载 x86 样本</button>
+      </div>
+      <div>
+        <button class="btn secondary" onclick="loadSampleARM()">加载 ARM 样本</button>
+      </div>
+    </div>
+    <label>机器码 (hex)</label>
+    <textarea id="disasm-hex" placeholder="554889e54883ec10..."></textarea>
+  </div>
+  <div class="card">
+    <h2>反汇编结果</h2>
+    <pre id="disasm-result">点击"反汇编"查看结果...</pre>
+  </div>
+  <div class="card">
+    <h2>分析统计</h2>
+    <div id="disasm-stats"></div>
+  </div>
+</div>
+
+<!-- ====================== 反编译 ====================== -->
+<div class="tab-pane" id="tab-decompile">
+  <div class="card">
+    <h2>反编译引擎</h2>
+    <div class="row">
+      <div>
+        <label>函数名</label>
+        <input id="decomp-fn" value="demo_function">
+      </div>
+      <div>
+        <label>架构</label>
+        <select id="decomp-arch">
+          <option value="x86_64">x86-64</option>
+          <option value="x86">x86</option>
+          <option value="arm">ARM</option>
+        </select>
+      </div>
+      <div>
+        <button class="btn" onclick="runDecompile()">反编译</button>
+      </div>
+      <div>
+        <button class="btn secondary" onclick="decompileDemo()">示例反编译</button>
+      </div>
+    </div>
+    <label>机器码 (hex)</label>
+    <textarea id="decomp-hex"></textarea>
+  </div>
+  <div class="card">
+    <h2>C 伪代码</h2>
+    <pre id="decomp-result">点击"反编译"查看 C 伪代码...</pre>
+  </div>
+</div>
+
+<!-- ====================== 漏洞挖掘 ====================== -->
+<div class="tab-pane" id="tab-vuln">
+  <div class="card">
+    <h2>漏洞挖掘</h2>
+    <div class="row">
+      <div>
+        <label>架构</label>
+        <select id="vuln-arch">
+          <option value="x86_64">x86-64</option>
+          <option value="x86">x86</option>
+          <option value="arm">ARM</option>
+        </select>
+      </div>
+      <div><button class="btn" onclick="runVulnScan()">扫描</button></div>
+      <div><button class="btn secondary" onclick="runVulnDemo()">示例扫描</button></div>
+      <div><button class="btn secondary" onclick="runFuzz()">模糊测试</button></div>
+      <div><button class="btn secondary" onclick="runSymbolic()">符号执行</button></div>
+    </div>
+    <label>机器码 (hex) — 留空使用内置样本</label>
+    <textarea id="vuln-hex"></textarea>
+  </div>
+  <div class="card">
+    <h2>漏洞发现</h2>
+    <div id="vuln-result">扫描后显示...</div>
+  </div>
+  <div class="card">
+    <h2>危险 API 库</h2>
+    <div id="vuln-apis"></div>
+  </div>
+</div>
+
+<!-- ====================== 补丁对比 ====================== -->
+<div class="tab-pane" id="tab-patch">
+  <div class="card">
+    <h2>补丁对比分析</h2>
+    <div class="row">
+      <div><button class="btn" onclick="runPatchDiff()">对比</button></div>
+      <div><button class="btn secondary" onclick="runPatchDemo()">示例对比</button></div>
+      <div><button class="btn secondary" onclick="listPatches()">补丁列表</button></div>
+    </div>
+    <label>旧版本 (hex)</label>
+    <textarea id="patch-old" placeholder="留空使用内置样本"></textarea>
+    <label>新版本 (hex)</label>
+    <textarea id="patch-new" placeholder="留空使用内置补丁样本"></textarea>
+  </div>
+  <div class="card">
+    <h2>差异结果</h2>
+    <pre id="patch-result">点击"对比"查看差异...</pre>
+  </div>
+  <div class="card">
+    <h2>补丁管理</h2>
+    <div id="patch-list"></div>
+  </div>
+</div>
+
+<!-- ====================== 恶意代码 ====================== -->
+<div class="tab-pane" id="tab-malware">
+  <div class="card">
+    <h2>恶意代码分析</h2>
+    <div class="row">
+      <div>
+        <label>文件名</label>
+        <input id="malware-name" value="sample.bin">
+      </div>
+      <div><button class="btn" onclick="runMalware()">分析</button></div>
+      <div><button class="btn secondary" onclick="runMalwareDemo()">示例分析</button></div>
+      <div><button class="btn secondary" onclick="listFamilies()">家族库</button></div>
+    </div>
+    <label>文件内容 (hex) — 留空使用内置样本</label>
+    <textarea id="malware-hex"></textarea>
+  </div>
+  <div class="card">
+    <h2>分析报告</h2>
+    <div id="malware-result">分析后显示...</div>
+  </div>
+  <div class="card">
+    <h2>家族特征库</h2>
+    <div id="malware-families"></div>
+  </div>
+</div>
+
+<!-- ====================== 壳检测 ====================== -->
+<div class="tab-pane" id="tab-pack">
+  <div class="card">
+    <h2>壳检测与脱壳</h2>
+    <div class="row">
+      <div>
+        <label>文件名</label>
+        <input id="pack-name" value="sample.exe">
+      </div>
+      <div><button class="btn" onclick="runPackDetect()">检测壳</button></div>
+      <div><button class="btn secondary" onclick="runPackDemo()">示例检测</button></div>
+      <div><button class="btn secondary" onclick="listSignatures()">特征库</button></div>
+    </div>
+    <label>文件内容 (hex) — 留空使用内置 UPX 样本</label>
+    <textarea id="pack-hex"></textarea>
+  </div>
+  <div class="card">
+    <h2>检测结果</h2>
+    <div id="pack-result">检测后显示...</div>
+  </div>
+  <div class="card">
+    <h2>已知壳特征</h2>
+    <div id="pack-signatures"></div>
+  </div>
+</div>
+
+<!-- ====================== 系统设置 ====================== -->
+<div class="tab-pane" id="tab-settings">
+  <div class="card">
+    <h2>系统设置</h2>
+    <div id="settings-list">加载中...</div>
+  </div>
+  <div class="card">
+    <h2>任务状态</h2>
+    <div id="settings-tasks">加载中...</div>
+  </div>
+  <div class="card">
+    <h2>关于</h2>
+    <p class="muted">二进制逆向与漏洞挖掘平台 · 第27轮升级方向3</p>
+    <p class="muted">支持架构: x86 / x86-64 / ARM / ARM64 / MIPS / PowerPC / RISC-V / SPARC / SystemZ</p>
+    <p class="muted">功能: 反汇编 / 反编译 / 漏洞挖掘 / 补丁对比 / 恶意代码分析 / 壳检测</p>
+  </div>
+</div>
+
+</main>
+
+<script>
+const API = "/api/v1/binary-reverse";
+
+// ---------- Tab 切换 ----------
+document.querySelectorAll("#nav button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#nav button").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    if (btn.dataset.tab === "overview") loadOverview();
+  });
+});
+
+// ---------- 工具 ----------
+async function api(path, opts) {
+  try {
+    const r = await fetch(API + path, opts);
+    return await r.json();
+  } catch (e) {
+    return { success: false, error: String(e) };
+  }
+}
+async function post(path, body) {
+  return api(path, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(body || {})
+  });
+}
+function sevBadge(s) {
+  return `<span class="badge sev-${s}">${s}</span>`;
+}
+
+// ---------- 总览 ----------
+async function loadOverview() {
+  const r = await api("/overview");
+  if (!r.success) { document.getElementById("overview-stats").innerText = r.error; return; }
+  const s = r.data.stats || {};
+  document.getElementById("overview-stats").innerHTML = `
+    <div class="stat"><div class="num">${s.sample_instructions||0}</div><div class="lbl">样本指令数</div></div>
+    <div class="stat"><div class="num">${s.sample_basic_blocks||0}</div><div class="lbl">基本块</div></div>
+    <div class="stat"><div class="num">${s.sample_functions||0}</div><div class="lbl">识别函数</div></div>
+    <div class="stat"><div class="num">${s.vuln_findings||0}</div><div class="lbl">漏洞评分</div></div>
+  `;
+  document.getElementById("overview-modules").innerHTML =
+    Object.entries(r.data.modules||{}).map(([k,v]) =>
+      `<span class="badge green">${k}</span> `).join("");
+  document.getElementById("overview-tasks").innerHTML =
+    (r.data.recent_tasks||[]).map(t =>
+      `<div>${t.task_id} · ${t.kind} · ${t.status}</div>`).join("") || "<span class='muted'>暂无任务</span>";
+}
+
+// ---------- 反汇编 ----------
+const X86_HEX = "554889e54883ec10c745fc00000000837dfc0a7d0a8b45fc0145fcebf3b800000000c9c3";
+const ARM_HEX = "04e02de50030a0e3033083e20000a0e304e9d4e41eff2fe1";
+function loadSampleX86() { document.getElementById("disasm-hex").value = X86_HEX; }
+function loadSampleARM() { document.getElementById("disasm-hex").value = ARM_HEX; }
+
+async function runDisasm() {
+  const arch = document.getElementById("disasm-arch").value;
+  const base = parseInt(document.getElementById("disasm-base").value) || 0x100000;
+  const hex = document.getElementById("disasm-hex").value.trim();
+  const r = await post("/disasm/run", {hex_bytes: hex, arch, base});
+  if (!r.success) { document.getElementById("disasm-result").innerText = "错误: " + r.error; return; }
+  const lines = (r.data.instructions||[]).map(i =>
+    `${i.address}:  ${(i.bytes||"").padEnd(20)} ${i.mnemonic.padEnd(8)} ${i.op_str||""}`);
+  document.getElementById("disasm-result").innerText =
+    `; 架构: ${r.data.architecture}  指令数: ${r.data.instruction_count}\n\n` + lines.join("\n");
+  const a = await post("/disasm/analyze", {hex_bytes: hex, arch, base});
+  if (a.success) {
+    document.getElementById("disasm-stats").innerHTML =
+      `<div class="grid">
+        <div class="stat"><div class="num">${a.data.instructions}</div><div class="lbl">指令</div></div>
+        <div class="stat"><div class="num">${a.data.basic_blocks}</div><div class="lbl">基本块</div></div>
+        <div class="stat"><div class="num">${a.data.branches}</div><div class="lbl">分支</div></div>
+        <div class="stat"><div class="num">${a.data.calls}</div><div class="lbl">调用</div></div>
+      </div>`;
+  }
+}
+
+// ---------- 反编译 ----------
+function decompileDemo() {
+  document.getElementById("decomp-hex").value = X86_HEX;
+  runDecompile();
+}
+async function runDecompile() {
+  const arch = document.getElementById("decomp-arch").value;
+  const fn = document.getElementById("decomp-fn").value || "sub_1000";
+  const hex = document.getElementById("decomp-hex").value.trim();
+  const r = await post("/decompile/run", {hex_bytes: hex, arch, func_name: fn});
+  if (!r.success) { document.getElementById("decomp-result").innerText = "错误: " + r.error; return; }
+  document.getElementById("decomp-result").innerText = r.data.pseudocode;
+}
+
+// ---------- 漏洞挖掘 ----------
+async function runVulnScan() {
+  const arch = document.getElementById("vuln-arch").value;
+  const hex = document.getElementById("vuln-hex").value.trim();
+  const r = await post("/vuln/scan", {hex_bytes: hex, arch});
+  renderVuln(r.data || {});
+}
+async function runVulnDemo() {
+  const r = await api("/vuln/demo");
+  renderVuln(r.data || {});
+}
+function renderVuln(d) {
+  const fs = d.findings || [];
+  let html = `<p>风险等级: ${sevBadge(d.risk_level||"unknown")}  风险分: ${d.risk_score||0}</p>`;
+  if (fs.length) {
+    html += `<table><tr><th>ID</th><th>类型</th><th>严重度</th><th>符号</th><th>地址</th><th>描述</th></tr>`;
+    fs.forEach(f => {
+      html += `<tr><td>${f.vuln_id}</td><td>${f.type}</td>
+        <td>${sevBadge(f.severity)}</td><td>${f.symbol}</td>
+        <td>${f.address}</td><td>${f.description}</td></tr>`;
+    });
+    html += "</table>";
+  } else html += "<p class='muted'>未发现明显漏洞</p>";
+  document.getElementById("vuln-result").innerHTML = html;
+}
+async function runFuzz() {
+  const r = await post("/vuln/fuzz", {seeds: 8});
+  if (r.success) alert("模糊测试: " + r.data.seeds_generated + " 个种子, " + r.data.crashes + " 个崩溃");
+}
+async function runSymbolic() {
+  const r = await post("/vuln/symbolic", {max_paths: 16});
+  if (r.success) alert("符号执行: 探索 " + r.data.paths_explored + " 条路径");
+}
+
+async function loadVulnAPIs() {
+  const r = await api("/vuln/dangerous-apis");
+  if (r.success) {
+    document.getElementById("vuln-apis").innerHTML =
+      Object.entries(r.data).map(([k,v]) =>
+        `<span class="badge yellow">${k}</span> `).join("");
+  }
+}
+
+// ---------- 补丁对比 ----------
+async function runPatchDiff() {
+  const old = document.getElementById("patch-old").value.trim();
+  const nw = document.getElementById("patch-new").value.trim();
+  const r = await post("/patch/diff", {old_hex: old, new_hex: nw});
+  if (!r.success) { document.getElementById("patch-result").innerText = r.error; return; }
+  let txt = `旧大小: ${r.data.old_size}  新大小: ${r.data.new_size}\n`;
+  txt += `差异块: ${r.data.hunk_count}  新增行: ${r.data.summary.added_lines}\n\n`;
+  (r.data.hunks||[]).forEach((h,i) => {
+    txt += `--- 块 ${i+1} @行${h.old_start} ---\n`;
+    h.removed.forEach(x => txt += `- ${x}\n`);
+    h.added.forEach(x => txt += `+ ${x}\n`);
+  });
+  document.getElementById("patch-result").innerText = txt;
+}
+async function runPatchDemo() {
+  const r = await api("/patch/demo");
+  if (r.success) {
+    document.getElementById("patch-result").innerText =
+      "差异块: " + r.data.hunk_count + " 个\n新增: " + r.data.summary.added_lines +
+      " 行\n删除: " + r.data.summary.removed_lines + " 行";
+  }
+}
+async function listPatches() {
+  const r = await api("/patch/list");
+  if (r.success) {
+    document.getElementById("patch-list").innerHTML =
+      "<table><tr><th>CVE</th><th>产品</th><th>严重度</th><th>状态</th><th>摘要</th></tr>" +
+      r.data.map(p => `<tr><td>${p.cve}</td><td>${p.product}</td>
+        <td>${sevBadge(p.severity)}</td><td>${p.status}</td><td>${p.summary}</td></tr>`).join("") +
+      "</table>";
+  }
+}
+
+// ---------- 恶意代码 ----------
+async function runMalware() {
+  const hex = document.getElementById("malware-hex").value.trim();
+  const name = document.getElementById("malware-name").value;
+  const r = await post("/malware/analyze", {hex_bytes: hex, file_name: name});
+  renderMalware(r.data || {});
+}
+async function runMalwareDemo() {
+  const r = await api("/malware/demo");
+  renderMalware(r.data || {});
+}
+function renderMalware(d) {
+  let html = `
+    <p>判定: ${sevBadge(d.verdict||"unknown")}</p>
+    <p>家族: ${d.family_match || "未识别"} (置信度: ${d.family_confidence||0}%)</p>
+    <p>文件类型: ${d.file_type}  大小: ${d.file_size} 字节</p>
+    <p>SHA256: <span class='muted'>${(d.sha256||"").substring(0,32)}...</span></p>
+    <p>反调试: ${d.anti_debug ? sevBadge("是") : "否"}  反虚拟机: ${d.anti_vm ? sevBadge("是") : "否"}</p>
+    <p>风险分: ${d.risk_score||0}</p>
+  `;
+  if (d.suspicious_strings && d.suspicious_strings.length) {
+    html += "<h3>可疑字符串</h3><ul>" +
+      d.suspicious_strings.slice(0,15).map(s => `<li>${s}</li>`).join("") + "</ul>";
+  }
+  if (d.c2_indicators && d.c2_indicators.length) {
+    html += "<h3>C2 指标</h3><ul>" +
+      d.c2_indicators.map(c => `<li class='error'>${c}</li>`).join("") + "</ul>";
+  }
+  document.getElementById("malware-result").innerHTML = html;
+}
+async function listFamilies() {
+  const r = await api("/malware/families");
+  if (r.success) {
+    document.getElementById("malware-families").innerHTML =
+      "<table><tr><th>家族</th><th>严重度</th><th>特征数</th></tr>" +
+      Object.entries(r.data).map(([k,v]) =>
+        `<tr><td>${k}</td><td>${sevBadge(v.severity)}</td><td>${v.patterns.length}</td></tr>`).join("") +
+      "</table>";
+  }
+}
+
+// ---------- 壳检测 ----------
+async function runPackDetect() {
+  const hex = document.getElementById("pack-hex").value.trim();
+  const name = document.getElementById("pack-name").value;
+  const r = await post("/pack/detect", {hex_bytes: hex, file_name: name});
+  renderPack(r.data || {});
+}
+async function runPackDemo() {
+  const r = await api("/pack/demo");
+  renderPack(r.data || {});
+}
+function renderPack(d) {
+  let html = `
+    <p>加壳: ${d.is_packed ? sevBadge("是") : "否"}</p>
+    <p>壳类型: <span class='badge purple'>${d.packer||"none"}</span></p>
+    <p>熵值: ${d.entropy} (>=7.5 视为加壳)</p>
+    <p>OEP: ${d.oep_candidate||"-"}</p>
+    <p>推荐工具: ${d.unpacker_tool||"-"}</p>
+    <p class='muted'>${d.notes||""}</p>
+  `;
+  if (d.sections && d.sections.length) {
+    html += "<h3>节区</h3><table><tr><th>名称</th><th>原始大小</th><th>熵</th></tr>" +
+      d.sections.map(s => `<tr><td>${s.name}</td><td>${s.rawsize}</td><td>${s.entropy}</td></tr>`).join("") +
+      "</table>";
+  }
+  document.getElementById("pack-result").innerHTML = html;
+}
+async function listSignatures() {
+  const r = await api("/pack/signatures");
+  if (r.success) {
+    document.getElementById("pack-signatures").innerHTML =
+      "<table><tr><th>壳</th><th>入口节</th><th>最低熵</th><th>脱壳工具</th></tr>" +
+      Object.entries(r.data).map(([k,v]) =>
+        `<tr><td>${k}</td><td>${v.ep_section}</td><td>${v.entropy_min}</td><td>${v.unpacker}</td></tr>`).join("") +
+      "</table>";
+  }
+}
+
+// ---------- 设置 ----------
+async function loadSettings() {
+  const r = await api("/settings");
+  if (r.success) {
+    document.getElementById("settings-list").innerHTML =
+      "<table><tr><th>键</th><th>值</th></tr>" +
+      Object.entries(r.data).map(([k,v]) =>
+        `<tr><td>${k}</td><td>${JSON.stringify(v)}</td></tr>`).join("") + "</table>";
+  }
+  const t = await api("/tasks");
+  if (t.success) {
+    document.getElementById("settings-tasks").innerHTML =
+      t.data.length ? "<table><tr><th>ID</th><th>类型</th><th>状态</th><th>时间</th></tr>" +
+      t.data.map(x => `<tr><td>${x.task_id}</td><td>${x.kind}</td><td>${x.status}</td><td>${x.created_at}</td></tr>`).join("") + "</table>"
+      : "<p class='muted'>暂无任务</p>";
+  }
+}
+
+// ---------- 初始化 ----------
+loadOverview();
+loadVulnAPIs();
+loadSettings();
+</script>
+</body>
+</html>

@@ -1,0 +1,331 @@
+{
+  "summary": {
+    "total_tests": 16,
+    "passed": 12,
+    "failed": 4,
+    "pass_rate": "75.0%",
+    "overall_avg_time_ms": 10.49,
+    "total_duration_sec": 2.03,
+    "categories": {
+      "import": {
+        "count": 2,
+        "passed": 2,
+        "avg_time_ms": 0.0
+      },
+      "data_structure": {
+        "count": 3,
+        "passed": 3,
+        "avg_time_ms": 3.92
+      },
+      "module_init": {
+        "count": 3,
+        "passed": 0,
+        "avg_time_ms": 0.0
+      },
+      "api": {
+        "count": 2,
+        "passed": 2,
+        "avg_time_ms": 0.01
+      },
+      "database": {
+        "count": 1,
+        "passed": 1,
+        "avg_time_ms": 56.09
+      },
+      "string": {
+        "count": 2,
+        "passed": 1,
+        "avg_time_ms": 0.27
+      },
+      "json": {
+        "count": 2,
+        "passed": 2,
+        "avg_time_ms": 1.21
+      },
+      "memory": {
+        "count": 1,
+        "passed": 1,
+        "avg_time_ms": 55.05
+      }
+    },
+    "slowest_tests": [
+      {
+        "name": "SQLite操作(1000条)",
+        "avg_time_ms": 56.09
+      },
+      {
+        "name": "大列表创建(100万条)",
+        "avg_time_ms": 55.05
+      },
+      {
+        "name": "字典操作(1万条)",
+        "avg_time_ms": 5.85
+      },
+      {
+        "name": "集合操作(1万条)",
+        "avg_time_ms": 4.21
+      },
+      {
+        "name": "JSON反序列化(1000条)",
+        "avg_time_ms": 2.09
+      }
+    ],
+    "fastest_tests": [
+      {
+        "name": "标准库导入",
+        "avg_time_ms": 0.0
+      },
+      {
+        "name": "第三方库导入",
+        "avg_time_ms": 0.0
+      },
+      {
+        "name": "Prompt注入检测器初始化",
+        "avg_time_ms": 0
+      },
+      {
+        "name": "云安全扫描器初始化",
+        "avg_time_ms": 0
+      },
+      {
+        "name": "二进制分析器初始化",
+        "avg_time_ms": 0
+      }
+    ]
+  },
+  "results": [
+    {
+      "test_name": "标准库导入",
+      "category": "import",
+      "iterations": 20,
+      "avg_time_ms": 0.0,
+      "min_time_ms": 0.0,
+      "max_time_ms": 0.01,
+      "median_time_ms": 0.0,
+      "std_dev_ms": 0.0,
+      "throughput_ops_per_sec": 239234.42,
+      "memory_usage_mb": 0.0,
+      "passed": true,
+      "details": {}
+    },
+    {
+      "test_name": "第三方库导入",
+      "category": "import",
+      "iterations": 10,
+      "avg_time_ms": 0.0,
+      "min_time_ms": 0.0,
+      "max_time_ms": 0.01,
+      "median_time_ms": 0.0,
+      "std_dev_ms": 0.0,
+      "throughput_ops_per_sec": 219298.26,
+      "memory_usage_mb": 0.0,
+      "passed": true,
+      "details": {}
+    },
+    {
+      "test_name": "字典操作(1万条)",
+      "category": "data_structure",
+      "iterations": 5,
+      "avg_time_ms": 5.85,
+      "min_time_ms": 4.57,
+      "max_time_ms": 7.63,
+      "median_time_ms": 5.75,
+      "std_dev_ms": 1.14,
+      "throughput_ops_per_sec": 170.85,
+      "memory_usage_mb": 0.0,
+      "passed": true,
+      "details": {}
+    },
+    {
+      "test_name": "列表操作(1万条)",
+      "category": "data_structure",
+      "iterations": 5,
+      "avg_time_ms": 1.7,
+      "min_time_ms": 1.27,
+      "max_time_ms": 2.49,
+      "median_time_ms": 1.54,
+      "std_dev_ms": 0.48,
+      "throughput_ops_per_sec": 587.83,
+      "memory_usage_mb": 0.0,
+      "passed": true,
+      "details": {}
+    },
+    {
+      "test_name": "集合操作(1万条)",
+      "category": "data_structure",
+      "iterations": 5,
+      "avg_time_ms": 4.21,
+      "min_time_ms": 2.97,
+      "max_time_ms": 4.9,
+      "median_time_ms": 4.58,
+      "std_dev_ms": 0.8,
+      "throughput_ops_per_sec": 237.76,
+      "memory_usage_mb": 0.0,
+      "passed": true,
+      "details": {}
+    },
+    {
+      "test_name": "Prompt注入检测器初始化",
+      "category": "module_init",
+      "iterations": 0,
+      "avg_time_ms": 0,
+      "min_time_ms": 0,
+      "max_time_ms": 0,
+      "median_time_ms": 0,
+      "std_dev_ms": 0,
+      "throughput_ops_per_sec": 0,
+      "memory_usage_mb": 0.0,
+      "passed": false,
+      "details": {
+        "error": "No module named 'ai_security'"
+      }
+    },
+    {
+      "test_name": "云安全扫描器初始化",
+      "category": "module_init",
+      "iterations": 0,
+      "avg_time_ms": 0,
+      "min_time_ms": 0,
+      "max_time_ms": 0,
+      "median_time_ms": 0,
+      "std_dev_ms": 0,
+      "throughput_ops_per_sec": 0,
+      "memory_usage_mb": 0.0,
+      "passed": false,
+      "details": {
+        "error": "No module named 'cloud_security'"
+      }
+    },
+    {
+      "test_name": "二进制分析器初始化",
+      "category": "module_init",
+      "iterations": 0,
+      "avg_time_ms": 0,
+      "min_time_ms": 0,
+      "max_time_ms": 0,
+      "median_time_ms": 0,
+      "std_dev_ms": 0,
+      "throughput_ops_per_sec": 0,
+      "memory_usage_mb": 0.0,
+      "passed": false,
+      "details": {
+        "error": "No module named 'client_security'"
+      }
+    },
+    {
+      "test_name": "API响应处理(模拟)",
+      "category": "api",
+      "iterations": 50,
+      "avg_time_ms": 0.02,
+      "min_time_ms": 0.02,
+      "max_time_ms": 0.04,
+      "median_time_ms": 0.02,
+      "std_dev_ms": 0.01,
+      "throughput_ops_per_sec": 41203.13,
+      "memory_usage_mb": 0.0,
+      "passed": true,
+      "details": {}
+    },
+    {
+      "test_name": "健康检查(模拟)",
+      "category": "api",
+      "iterations": 100,
+      "avg_time_ms": 0.0,
+      "min_time_ms": 0.0,
+      "max_time_ms": 0.0,
+      "median_time_ms": 0.0,
+      "std_dev_ms": 0.0,
+      "throughput_ops_per_sec": 1996007.28,
+      "memory_usage_mb": 0.0,
+      "passed": true,
+      "details": {}
+    },
+    {
+      "test_name": "SQLite操作(1000条)",
+      "category": "database",
+      "iterations": 3,
+      "avg_time_ms": 56.09,
+      "min_time_ms": 46.43,
+      "max_time_ms": 72.93,
+      "median_time_ms": 48.91,
+      "std_dev_ms": 14.63,
+      "throughput_ops_per_sec": 17.83,
+      "memory_usage_mb": 0.0,
+      "passed": true,
+      "details": {}
+    },
+    {
+      "test_name": "正则匹配(4个模式)",
+      "category": "string",
+      "iterations": 0,
+      "avg_time_ms": 0,
+      "min_time_ms": 0,
+      "max_time_ms": 0,
+      "median_time_ms": 0,
+      "std_dev_ms": 0,
+      "throughput_ops_per_sec": 0,
+      "memory_usage_mb": 0.0,
+      "passed": false,
+      "details": {
+        "error": "name 're' is not defined"
+      }
+    },
+    {
+      "test_name": "字符串拼接(1000次)",
+      "category": "string",
+      "iterations": 20,
+      "avg_time_ms": 0.55,
+      "min_time_ms": 0.34,
+      "max_time_ms": 1.26,
+      "median_time_ms": 0.47,
+      "std_dev_ms": 0.23,
+      "throughput_ops_per_sec": 1824.9,
+      "memory_usage_mb": 0.0,
+      "passed": true,
+      "details": {}
+    },
+    {
+      "test_name": "JSON序列化(100用户)",
+      "category": "json",
+      "iterations": 50,
+      "avg_time_ms": 0.34,
+      "min_time_ms": 0.2,
+      "max_time_ms": 0.71,
+      "median_time_ms": 0.31,
+      "std_dev_ms": 0.12,
+      "throughput_ops_per_sec": 2966.78,
+      "memory_usage_mb": 0.0,
+      "passed": true,
+      "details": {}
+    },
+    {
+      "test_name": "JSON反序列化(1000条)",
+      "category": "json",
+      "iterations": 50,
+      "avg_time_ms": 2.09,
+      "min_time_ms": 1.01,
+      "max_time_ms": 4.24,
+      "median_time_ms": 1.81,
+      "std_dev_ms": 0.89,
+      "throughput_ops_per_sec": 478.26,
+      "memory_usage_mb": 0.0,
+      "passed": true,
+      "details": {}
+    },
+    {
+      "test_name": "大列表创建(100万条)",
+      "category": "memory",
+      "iterations": 1,
+      "avg_time_ms": 55.05,
+      "min_time_ms": 55.05,
+      "max_time_ms": 55.05,
+      "median_time_ms": 55.05,
+      "std_dev_ms": 0,
+      "throughput_ops_per_sec": 18.17,
+      "memory_usage_mb": 8.0,
+      "passed": true,
+      "details": {}
+    }
+  ],
+  "generated_at": 1788156599.4868069
+}

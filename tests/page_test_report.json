@@ -1,0 +1,187 @@
+{
+  "target": "ai-hacking-agent 前端页面",
+  "generated_at": "2026-09-12 18:31:43",
+  "import_error": null,
+  "summary": {
+    "total": 19,
+    "passed": 19,
+    "failed": 0,
+    "blank_pages": 0,
+    "encoding_issues": 0,
+    "pass_rate": 100.0,
+    "seconds": 2.07
+  },
+  "results": [
+    {
+      "path": "/console-v7",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 33349,
+      "title": "AI Hacking Agent v7.0 - 统一安全控制台",
+      "missing_assets": []
+    },
+    {
+      "path": "/workbench",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 35806,
+      "title": "渗透测试工作台 - AI Hacking Agent",
+      "missing_assets": []
+    },
+    {
+      "path": "/combat-console",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 46940,
+      "title": "实战能力中心 - AI Hacking Agent",
+      "missing_assets": []
+    },
+    {
+      "path": "/dashboard",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 15649,
+      "title": "AI Hacking Agent - 安全运营仪表盘",
+      "missing_assets": []
+    },
+    {
+      "path": "/extended-console",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 56444,
+      "title": "扩展安全控制台 - AI Hacking Agent",
+      "missing_assets": []
+    },
+    {
+      "path": "/defense-console",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 14683,
+      "title": "防御中心 - AI Hacking Agent",
+      "missing_assets": []
+    },
+    {
+      "path": "/platform",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 21101,
+      "title": "AI 安全测试平台 · 统一控制台",
+      "missing_assets": []
+    },
+    {
+      "path": "/platform-v2",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 44134,
+      "title": "AI Hacking Agent - 统一安全平台 V2",
+      "missing_assets": []
+    },
+    {
+      "path": "/vuln-database",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 30918,
+      "title": "漏洞数据库管理 - AI Hacking Agent",
+      "missing_assets": []
+    },
+    {
+      "path": "/workflow",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 24641,
+      "title": "渗透测试工作流 - AI Hacking Agent",
+      "missing_assets": []
+    },
+    {
+      "path": "/assessment",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 26037,
+      "title": "一键安全评估 - AI Hacking Agent",
+      "missing_assets": []
+    },
+    {
+      "path": "/advanced-console",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 66821,
+      "title": "高级安全控制台 - AI Hacking Agent",
+      "missing_assets": []
+    },
+    {
+      "path": "/enhanced-console",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 58214,
+      "title": "AI Hacking Agent - 增强控制台 v9.0",
+      "missing_assets": []
+    },
+    {
+      "path": "/console",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 30689,
+      "title": "AI Hacking Agent - 控制台",
+      "missing_assets": []
+    },
+    {
+      "path": "/ai-assistant",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 9637,
+      "title": "AI安全助手",
+      "missing_assets": []
+    },
+    {
+      "path": "/unified-console",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 25108,
+      "title": "全域安全评估平台",
+      "missing_assets": []
+    },
+    {
+      "path": "/commercial-console",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 25052,
+      "title": "商业控制台 - Commercial Console",
+      "missing_assets": []
+    },
+    {
+      "path": "/",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 25444,
+      "title": "AI Hacking Agent - 系统控制台",
+      "missing_assets": []
+    },
+    {
+      "path": "/docs",
+      "status_code": 200,
+      "passed": true,
+      "issues": [],
+      "size_bytes": 22908,
+      "title": "AI Hacking Agent API - 专业接口文档",
+      "missing_assets": []
+    }
+  ]
+}

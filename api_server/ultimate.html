@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>空前升级控制台 - AI全栈安全平台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0a0e1a; color: #e2e8f0; min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 50%, #1e3a5f 100%); padding: 24px 40px; border-bottom: 2px solid #3b82f6; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 28px; background: linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header .nav { display: flex; gap: 24px; }
+        .header .nav a { color: #94a3b8; text-decoration: none; font-size: 14px; transition: color 0.3s; }
+        .header .nav a:hover { color: #60a5fa; }
+        .container { max-width: 1600px; margin: 0 auto; padding: 30px 40px; }
+        .module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .module-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 16px; padding: 24px; border: 1px solid #334155; transition: all 0.3s; cursor: pointer; }
+        .module-card:hover { transform: translateY(-4px); border-color: #3b82f6; box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2); }
+        .module-card .icon { font-size: 40px; margin-bottom: 12px; }
+        .module-card h3 { font-size: 18px; color: #f1f5f9; margin-bottom: 8px; }
+        .module-card p { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+        .module-card .status { display: inline-block; margin-top: 12px; padding: 4px 12px; border-radius: 20px; font-size: 12px; background: #065f46; color: #6ee7b7; }
+        .panel { background: #1e293b; border-radius: 16px; padding: 24px; border: 1px solid #334155; margin-bottom: 20px; }
+        .panel h2 { font-size: 20px; color: #f1f5f9; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 10px; }
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .stat-box { background: #0f172a; border-radius: 12px; padding: 16px; text-align: center; border: 1px solid #334155; }
+        .stat-box .num { font-size: 32px; font-weight: bold; color: #60a5fa; }
+        .stat-box .label { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+        .btn { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.3s; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .btn-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        input, select, textarea { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 10px 14px; border-radius: 10px; font-size: 14px; width: 100%; }
+        input:focus, select:focus { outline: none; border-color: #3b82f6; }
+        .form-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-end; }
+        .form-row > div { flex: 1; }
+        .form-row label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #0f172a; color: #94a3b8; font-size: 13px; font-weight: 500; }
+        td { font-size: 14px; }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-critical { background: #7f1d1d; color: #fca5a5; }
+        .badge-high { background: #7c2d12; color: #fdba74; }
+        .badge-medium { background: #713f12; color: #fde047; }
+        .badge-low { background: #14532d; color: #86efac; }
+        .badge-info { background: #1e3a5f; color: #7dd3fc; }
+        .loading { display: none; text-align: center; padding: 40px; }
+        .loading.active { display: block; }
+        .spinner { border: 3px solid #334155; border-top: 3px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .output-box { background: #0f172a; border-radius: 12px; padding: 20px; margin-top: 16px; font-family: 'Courier New', monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto; border: 1px solid #334155; }
+        .kill-chain { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; }
+        .kill-phase { flex: 1; min-width: 120px; background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%); border-radius: 10px; padding: 14px; text-align: center; border: 1px solid #3b82f6; position: relative; }
+        .kill-phase .phase-num { font-size: 24px; font-weight: bold; color: #60a5fa; }
+        .kill-phase .phase-name { font-size: 13px; color: #e2e8f0; margin-top: 4px; }
+        .kill-phase .phase-desc { font-size: 11px; color: #94a3b8; margin-top: 6px; }
+        .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #334155; }
+        .tab { padding: 12px 24px; cursor: pointer; font-size: 14px; color: #94a3b8; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.3s; }
+        .tab.active { color: #60a5fa; border-bottom-color: #3b82f6; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ 空前升级控制台</h1>
+        <div class="nav">
+            <a href="/dashboard">仪表盘</a>
+            <a href="/console">控制台</a>
+            <a href="/tools">工具</a>
+            <a href="/agents">智能体</a>
+            <a href="/vuln-database">漏洞库</a>
+        </div>
+    </div>
+    <div class="container">
+        <!-- 6大模块概览 -->
+        <div class="module-grid">
+            <div class="module-card" onclick="switchTab('agents')">
+                <div class="icon">🤖</div>
+                <h3>多智能体协作</h3>
+                <p>4大智能体真正协作：侦察→漏洞扫描→验证→报告，ReAct推理+工具调用链</p>
+                <span class="status">✅ 已激活</span>
+            </div>
+            <div class="module-card" onclick="switchTab('exploit')">
+                <div class="icon">💥</div>
+                <h3>漏洞利用框架</h3>
+                <p>Metasploit API集成+POC执行引擎+Payload生成，8大经典漏洞POC库</p>
+                <span class="status">✅ 已激活</span>
+            </div>
+            <div class="module-card" onclick="switchTab('monitor')">
+                <div class="icon">📡</div>
+                <h3>持续监控系统</h3>
+                <p>定时扫描+变更检测+告警推送，实时监控目标状态变化</p>
+                <span class="status">✅ 已激活</span>
+            </div>
+            <div class="module-card" onclick="switchTab('knowledge')">
+                <div class="icon">🧠</div>
+                <h3>攻击链知识库</h3>
+                <p>MITRE ATT&CK映射+Kill Chain 7阶段建模+8大攻击模式详解</p>
+                <span class="status">✅ 已激活</span>
+            </div>
+            <div class="module-card" onclick="switchTab('visual')">
+                <div class="icon">📊</div>
+                <h3>实时可视化引擎</h3>
+                <p>WebSocket推送+攻击图谱+实时仪表盘，攻击路径可视化</p>
+                <span class="status">✅ 已激活</span>
+            </div>
+            <div class="module-card" onclick="switchTab('perf')">
+                <div class="icon">⚡</div>
+                <h3>性能优化器</h3>
+                <p>缓存层+连接池+懒加载路由，提升响应速度和并发能力</p>
+                <span class="status">✅ 已激活</span>
+            </div>
+        </div>
+
+        <!-- Tab内容 -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('agents')">🤖 智能体协作</div>
+            <div class="tab" onclick="switchTab('exploit')">💥 漏洞利用</div>
+            <div class="tab" onclick="switchTab('monitor')">📡 持续监控</div>
+            <div class="tab" onclick="switchTab('knowledge')">🧠 攻击链</div>
+            <div class="tab" onclick="switchTab('visual')">📊 可视化</div>
+            <div class="tab" onclick="switchTab('perf')">⚡ 性能</div>
+        </div>
+
+        <!-- 智能体协作 -->
+        <div id="tab-agents" class="tab-content active">
+            <div class="panel">
+                <h2>🚀 一键渗透测试工作流</h2>
+                <p style="color:#94a3b8;margin-bottom:16px;">输入目标IP，4大智能体自动协作完成：侦察→漏洞扫描→验证→报告</p>
+                <div class="form-row">
+                    <div><label>目标IP/域名</label><input id="workflowTarget" value="127.0.0.1"></div>
+                    <div style="flex:none;"><button class="btn btn-success" onclick="runWorkflow()">▶ 启动工作流</button></div>
+                </div>
+                <div id="workflowOutput" class="output-box">等待启动...</div>
+            </div>
+        </div>
+
+        <!-- 漏洞利用 -->
+        <div id="tab-exploit" class="tab-content">
+            <div class="panel">
+                <h2>📚 POC漏洞利用库</h2>
+                <div class="form-row">
+                    <div><label>搜索关键词（CVE ID/漏洞名/类型）</label><input id="pocSearch" placeholder="如：Log4Shell、rce、CVE-2021-44228"></div>
+                    <div style="flex:none;"><button class="btn" onclick="searchPoc()">搜索</button></div>
+                </div>
+                <div id="pocList"></div>
+            </div>
+            <div class="panel">
+                <h2>⚡ Payload生成器</h2>
+                <div class="form-row">
+                    <div><label>CVE ID</label><input id="payloadCve" value="CVE-2021-44228"></div>
+                    <div><label>攻击者IP/域名</label><input id="payloadAttacker" value="ATTACKER_IP"></div>
+                    <div style="flex:none;"><button class="btn btn-danger" onclick="generatePayload()">生成Payload</button></div>
+                </div>
+                <div id="payloadOutput" class="output-box">等待生成...</div>
+            </div>
+        </div>
+
+        <!-- 持续监控 -->
+        <div id="tab-monitor" class="tab-content">
+            <div class="panel">
+                <h2>📡 添加监控目标</h2>
+                <div class="form-row">
+                    <div><label>目标IP/域名</label><input id="monitorTarget" placeholder="如：192.168.1.1"></div>
+                    <div><label>扫描间隔（秒）</label><input id="monitorInterval" type="number" value="3600"></div>
+                    <div style="flex:none;"><button class="btn btn-success" onclick="addMonitorTarget()">添加监控</button></div>
+                </div>
+            </div>
+            <div class="panel">
+                <h2>📊 监控状态</h2>
+                <div id="monitorStatus" class="stats-row"></div>
+                <button class="btn" onclick="refreshMonitor()">刷新状态</button>
+            </div>
+            <div class="panel">
+                <h2>🔔 告警列表</h2>
+                <div id="monitorAlerts"></div>
+            </div>
+        </div>
+
+        <!-- 攻击链 -->
+        <div id="tab-knowledge" class="tab-content">
+            <div class="panel">
+                <h2>🔗 网络杀伤链 7 阶段</h2>
+                <div id="killChain" class="kill-chain"></div>
+            </div>
+            <div class="panel">
+                <h2>🎯 MITRE ATT&CK 攻击模式</h2>
+                <div id="attackPatterns"></div>
+            </div>
+        </div>
+
+        <!-- 可视化 -->
+        <div id="tab-visual" class="tab-content">
+            <div class="panel">
+                <h2>📈 实时仪表盘数据</h2>
+                <div id="visualMetrics" class="stats-row"></div>
+                <button class="btn" onclick="refreshVisual()">刷新数据</button>
+            </div>
+        </div>
+
+        <!-- 性能 -->
+        <div id="tab-perf" class="tab-content">
+            <div class="panel">
+                <h2>⚡ 性能优化器统计</h2>
+                <div id="perfStats" class="stats-row"></div>
+                <button class="btn" onclick="refreshPerf()">刷新统计</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "cF_fK3wzzFd3sDU-WykQzDbAKNhn_Jjoyphbmh-adLtwx5ShhU8oLpt94aV_uECT";
+        const API_BASE = "http://127.0.0.1:8000";
+
+        async function apiCall(endpoint, options = {}) {
+            const headers = { "X-API-Key": API_KEY, "Content-Type": "application/json", ...options.headers };
+            const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+            return res.json();
+        }
+
+        function switchTab(name) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
+            if (name === 'knowledge') loadKnowledge();
+            if (name === 'monitor') refreshMonitor();
+            if (name === 'visual') refreshVisual();
+            if (name === 'perf') refreshPerf();
+            if (name === 'exploit') searchPoc();
+        }
+
+        async function runWorkflow() {
+            const target = document.getElementById('workflowTarget').value;
+            const output = document.getElementById('workflowOutput');
+            output.textContent = `🚀 启动渗透测试工作流，目标: ${target}\n阶段1/4: 侦察智能体工作中...`;
+            try {
+                const result = await apiCall('/api/v1/ultimate/pentest-workflow', {
+                    method: 'POST',
+                    body: JSON.stringify({ target: target })
+                });
+                output.textContent = JSON.stringify(result, null, 2);
+            } catch(e) {
+                output.textContent = `❌ 执行失败: ${e.message}`;
+            }
+        }
+
+        async function searchPoc() {
+            const keyword = document.getElementById('pocSearch').value;
+            const url = keyword ? `/api/v1/ultimate/poc-library?keyword=${encodeURIComponent(keyword)}` : '/api/v1/ultimate/poc-library';
+            try {
+                const data = await apiCall(url);
+                let html = `<p style="color:#94a3b8;margin-bottom:12px;">找到 ${data.total} 个POC</p>`;
+                html += '<table><thead><tr><th>CVE ID</th><th>名称</th><th>严重级别</th><th>类型</th><th>操作</th></tr></thead><tbody>';
+                data.results.forEach(p => {
+                    const sevClass = 'badge-' + (p.severity || 'low');
+                    html += `<tr><td><code style="color:#60a5fa;">${p.cve_id}</code></td><td>${p.name}</td><td><span class="badge ${sevClass}">${p.severity}</span></td><td>${p.type}</td><td><button class="btn" style="padding:6px 12px;font-size:12px;" onclick="showPocDetail('${p.cve_id}')">详情</button></td></tr>`;
+                });
+                html += '</tbody></table>';
+                document.getElementById('pocList').innerHTML = html;
+            } catch(e) {
+                document.getElementById('pocList').innerHTML = `<div class="output-box">加载失败: ${e.message}</div>`;
+            }
+        }
+
+        async function showPocDetail(cveId) {
+            try {
+                const data = await apiCall(`/api/v1/ultimate/poc/${cveId}`);
+                alert(`POC详情 - ${cveId}\n\n名称: ${data.name}\n严重级别: ${data.severity}\n类型: ${data.type}\n\n描述: ${data.description}\n\n影响版本: ${(data.affected || []).join(', ')}\n\n修复方案: ${data.remediation}`);
+            } catch(e) {
+                alert('加载失败: ' + e.message);
+            }
+        }
+
+        async function generatePayload() {
+            const cveId = document.getElementById('payloadCve').value;
+            const attacker = document.getElementById('payloadAttacker').value;
+            try {
+                const result = await apiCall('/api/v1/ultimate/payload/generate', {
+                    method: 'POST',
+                    body: JSON.stringify({ cve_id: cveId, attacker_host: attacker })
+                });
+                document.getElementById('payloadOutput').textContent = JSON.stringify(result, null, 2);
+            } catch(e) {
+                document.getElementById('payloadOutput').textContent = `❌ 生成失败: ${e.message}`;
+            }
+        }
+
+        async function addMonitorTarget() {
+            const target = document.getElementById('monitorTarget').value;
+            const interval = document.getElementById('monitorInterval').value;
+            try {
+                const result = await apiCall('/api/v1/ultimate/monitor/target', {
+                    method: 'POST',
+                    body: JSON.stringify({ target: target, scan_interval: parseInt(interval) })
+                });
+                alert(result.message);
+                refreshMonitor();
+            } catch(e) {
+                alert('添加失败: ' + e.message);
+            }
+        }
+
+        async function refreshMonitor() {
+            try {
+                const status = await apiCall('/api/v1/ultimate/monitor/status');
+                document.getElementById('monitorStatus').innerHTML = `
+                    <div class="stat-box"><div class="num">${status.targets_count}</div><div class="label">监控目标</div></div>
+                    <div class="stat-box"><div class="num">${status.total_scans}</div><div class="label">总扫描次数</div></div>
+                    <div class="stat-box"><div class="num">${status.active_alerts}</div><div class="label">活跃告警</div></div>
+                    <div class="stat-box"><div class="num">${status.monitoring ? '运行中' : '待机'}</div><div class="label">监控状态</div></div>
+                `;
+                const alerts = await apiCall('/api/v1/ultimate/monitor/alerts');
+                if (alerts.total === 0) {
+                    document.getElementById('monitorAlerts').innerHTML = '<p style="color:#64748b;text-align:center;padding:20px;">暂无告警</p>';
+                } else {
+                    let html = '<table><thead><tr><th>时间</th><th>类型</th><th>严重级别</th><th>目标</th><th>消息</th></tr></thead><tbody>';
+                    alerts.alerts.slice(-10).reverse().forEach(a => {
+                        html += `<tr><td>${new Date(a.timestamp * 1000).toLocaleString()}</td><td>${a.type}</td><td><span class="badge badge-${a.severity}">${a.severity}</span></td><td>${a.target}</td><td>${a.message}</td></tr>`;
+                    });
+                    html += '</tbody></table>';
+                    document.getElementById('monitorAlerts').innerHTML = html;
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        async function loadKnowledge() {
+            try {
+                const kc = await apiCall('/api/v1/ultimate/kill-chain');
+                let html = '';
+                kc.phases.forEach(p => {
+                    html += `<div class="kill-phase"><div class="phase-num">${p.phase}</div><div class="phase-name">${p.name}</div><div class="phase-desc">${p.description.substring(0, 30)}...</div></div>`;
+                });
+                document.getElementById('killChain').innerHTML = html;
+
+                const patterns = await apiCall('/api/v1/ultimate/attack-patterns');
+                let phtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">';
+                Object.entries(patterns).forEach(([key, p]) => {
+                    phtml += `<div style="background:#0f172a;padding:16px;border-radius:10px;border:1px solid #334155;">
+                        <h4 style="color:#60a5fa;margin-bottom:8px;">${p.name}</h4>
+                        <p style="font-size:12px;color:#94a3b8;margin-bottom:8px;">战术: ${(p.tactics || []).join('、')}</p>
+                        ${p.common_cves ? `<p style="font-size:11px;color:#64748b;">常见CVE: ${p.common_cves.join(', ')}</p>` : ''}
+                    </div>`;
+                });
+                phtml += '</div>';
+                document.getElementById('attackPatterns').innerHTML = phtml;
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        async function refreshVisual() {
+            try {
+                const data = await apiCall('/api/v1/ultimate/dashboard');
+                const m = data.metrics;
+                document.getElementById('visualMetrics').innerHTML = `
+                    <div class="stat-box"><div class="num">${m.total_scans}</div><div class="label">总扫描数</div></div>
+                    <div class="stat-box"><div class="num">${m.vulnerabilities_found}</div><div class="label">发现漏洞</div></div>
+                    <div class="stat-box"><div class="num" style="color:#f87171;">${m.critical_vulns}</div><div class="label">严重漏洞</div></div>
+                    <div class="stat-box"><div class="num" style="color:#fb923c;">${m.high_vulns}</div><div class="label">高危漏洞</div></div>
+                    <div class="stat-box"><div class="num" style="color:#facc15;">${m.medium_vulns}</div><div class="label">中危漏洞</div></div>
+                    <div class="stat-box"><div class="num" style="color:#4ade80;">${m.low_vulns}</div><div class="label">低危漏洞</div></div>
+                `;
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        async function refreshPerf() {
+            try {
+                const stats = await apiCall('/api/v1/ultimate/performance');
+                document.getElementById('perfStats').innerHTML = `
+                    <div class="stat-box"><div class="num">${stats.total_requests}</div><div class="label">总请求数</div></div>
+                    <div class="stat-box"><div class="num">${stats.cache_hits}</div><div class="label">缓存命中</div></div>
+                    <div class="stat-box"><div class="num">${stats.cache_misses}</div><div class="label">缓存未命中</div></div>
+                    <div class="stat-box"><div class="num">${stats.cache_hit_rate}%</div><div class="label">缓存命中率</div></div>
+                    <div class="stat-box"><div class="num">${stats.cache_size}</div><div class="label">缓存条目</div></div>
+                `;
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        // 初始化
+        searchPoc();
+    </script>
+</body>
+</html>

@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高级威胁检测与响应 · 控制台</title>
+<style>
+:root{
+  --bg:#0d1117; --bg2:#161b22; --bg3:#1f2630; --border:#2d333b;
+  --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950;
+  --red:#f85149; --orange:#d29922; --purple:#bc8cff; --cyan:#39d2c0; --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:230px;background:var(--bg2);border-right:1px solid var(--border);padding:18px 0;position:fixed;top:0;bottom:0;left:0;overflow-y:auto;z-index:100}
+.sidebar .brand{padding:0 20px 16px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.sidebar .brand h1{font-size:15px;color:var(--accent)}
+.sidebar .brand small{color:var(--muted);font-size:11px}
+.nav-btn{display:block;width:100%;text-align:left;padding:10px 20px;background:none;border:none;color:var(--text);cursor:pointer;font-size:13px;border-left:3px solid transparent}
+.nav-btn:hover{background:var(--bg3)}
+.nav-btn.active{background:var(--bg3);border-left-color:var(--accent);color:var(--accent)}
+.main{flex:1;margin-left:230px;padding:22px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.topbar h2{font-size:20px}
+.badge{background:var(--bg3);border:1px solid var(--border);padding:3px 10px;border-radius:20px;font-size:12px;color:var(--muted)}
+.page{display:none}.page.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.card h3{font-size:12px;color:var(--muted);font-weight:normal;margin-bottom:6px}
+.card .num{font-size:26px;font-weight:bold;color:var(--accent)}
+.card.green .num{color:var(--green)}.card.red .num{color:var(--red)}.card.orange .num{color:var(--orange)}.card.purple .num{color:var(--purple)}.card.cyan .num{color:var(--cyan)}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.panel h3{margin-bottom:12px;font-size:15px;color:var(--accent)}
+label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;font-size:13px;font-family:inherit}
+textarea{min-height:80px;resize:vertical}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+button.btn{background:var(--accent);color:#fff;border:none;padding:9px 18px;border-radius:6px;cursor:pointer;font-size:13px;margin-top:12px}
+button.btn:hover{opacity:.88}
+button.btn.ghost{background:var(--bg3);color:var(--text)}
+button.btn.danger{background:var(--red)}
+pre.out{background:#0a0d12;border:1px solid var(--border);border-radius:6px;padding:12px;overflow:auto;max-height:360px;font-size:12px;color:#a5d6ff;margin-top:10px;white-space:pre-wrap;word-break:break-all}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+th,td{border:1px solid var(--border);padding:7px 10px;text-align:left}
+th{background:var(--bg3);color:var(--muted);font-weight:normal}
+tr:hover td{background:var(--bg3)}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold}
+.tag.critical{background:#3d1418;color:var(--red)}
+.tag.high{background:#3d2e14;color:var(--orange)}
+.tag.medium{background:#2d2a14;color:#d29922}
+.tag.low{background:#1a2e1a;color:var(--green)}
+.tag.open{background:#1a253d;color:var(--accent)}
+.tag.closed{background:#1a2e1a;color:var(--green)}
+.toast{position:fixed;top:20px;right:20px;background:var(--bg3);border:1px solid var(--accent);padding:10px 20px;border-radius:6px;display:none;z-index:9999}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.sidebar{width:60px}.sidebar .brand h1,.sidebar .brand small,.nav-btn .lbl{display:none}.main{margin-left:60px}.two-col{grid-template-columns:1fr}}
+.chain-bar{display:flex;align-items:center;gap:4px;margin:10px 0;flex-wrap:wrap}
+.chain-step{padding:6px 12px;border-radius:6px;font-size:11px;border:1px solid var(--border);background:var(--bg3)}
+.chain-step.done{background:#1a3a2a;color:var(--green);border-color:var(--green)}
+.chain-arrow{color:var(--muted);font-size:14px}
+.meter{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;margin-top:4px}
+.meter-fill{height:100%;border-radius:4px;transition:width .3s}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>高级威胁检测</h1>
+      <small>UEBA + ML + APT + 狩猎</small>
+    </div>
+    <button class="nav-btn active" data-page="overview"><span class="lbl">威胁总览</span></button>
+    <button class="nav-btn" data-page="ueba"><span class="lbl">UEBA 用户行为</span></button>
+    <button class="nav-btn" data-page="ml"><span class="lbl">ML 异常检测</span></button>
+    <button class="nav-btn" data-page="apt"><span class="lbl">APT 检测</span></button>
+    <button class="nav-btn" data-page="chain"><span class="lbl">攻击链分析</span></button>
+    <button class="nav-btn" data-page="hunt"><span class="lbl">威胁狩猎</span></button>
+    <button class="nav-btn" data-page="settings"><span class="lbl">系统设置</span></button>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <h2 id="page-title">威胁总览</h2>
+      <span class="badge" id="status-badge">● 加载中...</span>
+    </div>
+
+    <!-- ========== 总览 ========== -->
+    <div class="page active" id="page-overview">
+      <div class="grid">
+        <div class="card red"><h3>总威胁数</h3><div class="num" id="ov-threats">-</div></div>
+        <div class="card orange"><h3>未处理告警</h3><div class="num" id="ov-alerts">-</div></div>
+        <div class="card purple"><h3>活跃攻击链</h3><div class="num" id="ov-chains">-</div></div>
+        <div class="card cyan"><h3>狩猎任务</h3><div class="num" id="ov-hunts">-</div></div>
+        <div class="card green"><h3>响应率</h3><div class="num" id="ov-response">-</div></div>
+      </div>
+      <div class="panel">
+        <h3>威胁类型分布</h3>
+        <div id="ov-types"></div>
+      </div>
+      <div class="panel">
+        <h3>7日威胁趋势</h3>
+        <div id="ov-trend"></div>
+      </div>
+      <div class="panel">
+        <h3>综合数据</h3>
+        <pre class="out" id="ov-out">加载中...</pre>
+      </div>
+    </div>
+
+    <!-- ========== UEBA ========== -->
+    <div class="page" id="page-ueba">
+      <div class="grid">
+        <div class="card"><h3>监控用户数</h3><div class="num" id="ueba-users">-</div></div>
+        <div class="card"><h3>监控实体数</h3><div class="num" id="ueba-entities">-</div></div>
+        <div class="card red"><h3>高风险用户</h3><div class="num" id="ueba-highrisk">-</div></div>
+        <div class="card orange"><h3>UEBA 告警</h3><div class="num" id="ueba-alerts">-</div></div>
+      </div>
+      <div class="panel">
+        <h3>行为偏离检测</h3>
+        <div class="row">
+          <div><label>用户ID</label><input id="dev-uid" value="U0001"></div>
+          <div><label>登录时间(时)</label><input id="dev-hour" type="number" value="3"></div>
+          <div><label>地点</label><input id="dev-loc" value="上海"></div>
+          <div><label>设备</label><input id="dev-dev" value="MacBook-Pro"></div>
+          <div><label>今日登录次数</label><input id="dev-count" type="number" value="8"></div>
+          <div><label>数据访问量(MB)</label><input id="dev-data" type="number" value="1500"></div>
+        </div>
+        <button class="btn" onclick="runDeviation()">检测偏离</button>
+        <pre class="out" id="dev-out">结果将显示在这里...</pre>
+      </div>
+      <div class="panel">
+        <h3>用户风险列表</h3>
+        <button class="btn ghost" onclick="loadUebaUsers()">刷新用户列表</button>
+        <div id="ueba-user-table"></div>
+      </div>
+      <div class="panel">
+        <h3>UEBA 告警</h3>
+        <button class="btn ghost" onclick="loadUebaAlerts()">刷新告警</button>
+        <div id="ueba-alert-table"></div>
+      </div>
+      <div class="panel">
+        <h3>同行群体分析</h3>
+        <button class="btn ghost" onclick="loadPeerGroups()">分析同行群体</button>
+        <pre class="out" id="peer-out">点击按钮执行分析...</pre>
+      </div>
+    </div>
+
+    <!-- ========== ML ========== -->
+    <div class="page" id="page-ml">
+      <div class="grid">
+        <div class="card"><h3>模型总数</h3><div class="num" id="ml-models">-</div></div>
+        <div class="card red"><h3>检测到异常</h3><div class="num" id="ml-anomalies">-</div></div>
+        <div class="card orange"><h3>漂移告警</h3><div class="num" id="ml-drift">-</div></div>
+        <div class="card cyan"><h3>算法可用</h3><div class="num" id="ml-algos">-</div></div>
+      </div>
+      <div class="panel">
+        <h3>模型列表</h3>
+        <button class="btn ghost" onclick="loadMLModels()">刷新模型</button>
+        <div id="ml-model-table"></div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <h3>训练新模型</h3>
+          <label>算法</label>
+          <select id="train-algo">
+            <option value="isolation_forest">孤立森林</option>
+            <option value="one_class_svm">One-Class SVM</option>
+            <option value="lof">LOF</option>
+            <option value="zscore">Z-Score</option>
+            <option value="seasonal_decomp">季节性分解</option>
+          </select>
+          <label>样本数</label><input id="train-samples" type="number" value="500">
+          <button class="btn" onclick="trainModel()">开始训练</button>
+          <pre class="out" id="train-out">训练结果...</pre>
+        </div>
+        <div class="panel">
+          <h3>实时推理</h3>
+          <label>模型ID</label><input id="infer-model" value="model-isolation_forest-v1">
+          <label>特征(逗号分隔)</label><input id="infer-features" value="1.2,3.4,5.6,7.8,9.0,1.1,2.2,3.3">
+          <button class="btn" onclick="runInfer()">执行推理</button>
+          <pre class="out" id="infer-out">推理结果...</pre>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>漂移检测</h3>
+        <label>模型ID</label><input id="drift-model" value="model-isolation_forest-v1">
+        <button class="btn ghost" onclick="checkDrift()">检测漂移</button>
+        <pre class="out" id="drift-out">漂移报告...</pre>
+      </div>
+      <div class="panel">
+        <h3>异常事件列表</h3>
+        <button class="btn ghost" onclick="loadMLAnomalies()">刷新异常</button>
+        <pre class="out" id="ml-anom-out">加载异常事件...</pre>
+      </div>
+    </div>
+
+    <!-- ========== APT ========== -->
+    <div class="page" id="page-apt">
+      <div class="grid">
+        <div class="card"><h3>ATT&CK 技术</h3><div class="num" id="apt-techs">-</div></div>
+        <div class="card red"><h3>渗出事件</h3><div class="num" id="apt-exfil">-</div></div>
+        <div class="card orange"><h3>C2 基础设施</h3><div class="num" id="apt-c2">-</div></div>
+        <div class="card purple"><h3>狩猎任务</h3><div class="num" id="apt-hunts">-</div></div>
+      </div>
+      <div class="panel">
+        <h3>ATT&CK 战术检测</h3>
+        <label>战术ID</label>
+        <select id="apt-tactic">
+          <option value="TA0001">初始访问</option>
+          <option value="TA0002">执行</option>
+          <option value="TA0003">持久化</option>
+          <option value="TA0004">权限提升</option>
+          <option value="TA0005">防御规避</option>
+          <option value="TA0006">凭证访问</option>
+          <option value="TA0007">发现</option>
+          <option value="TA0008">横向移动</option>
+          <option value="TA0009">收集</option>
+          <option value="TA0011">命令与控制</option>
+          <option value="TA0010">数据渗出</option>
+          <option value="TA0040">影响</option>
+        </select>
+        <button class="btn" onclick="detectTactic()">检测战术</button>
+        <pre class="out" id="tactic-out">战术检测结果...</pre>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <h3>C2 检测</h3>
+          <label>域名</label><input id="c2-domain" value="update-check.cc">
+          <label>IP</label><input id="c2-ip" value="45.xxx.xxx.xxx">
+          <button class="btn" onclick="detectC2()">检测 C2</button>
+          <pre class="out" id="c2-out">C2 检测结果...</pre>
+        </div>
+        <div class="panel">
+          <h3>渗出检测</h3>
+          <label>用户</label><input id="exf-user" value="user001">
+          <label>传输量(MB)</label><input id="exf-volume" type="number" value="800">
+          <label>协议</label>
+          <select id="exf-proto"><option>HTTPS</option><option>DNS</option><option>FTP</option><option>SSH</option></select>
+          <button class="btn" onclick="detectExfil()">检测渗出</button>
+          <pre class="out" id="exf-out">渗出检测结果...</pre>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>已知 APT 画像 TTP 匹配</h3>
+        <label>观测 TTPs(逗号分隔)</label>
+        <input id="ttp-input" value="T1566,T1059,T1071,T1003,T1041">
+        <button class="btn" onclick="matchTTP()">匹配画像</button>
+        <pre class="out" id="ttp-out">TTP 匹配结果...</pre>
+      </div>
+      <div class="panel">
+        <h3>C2 基础设施列表</h3>
+        <button class="btn ghost" onclick="loadC2List()">刷新列表</button>
+        <div id="c2-list"></div>
+      </div>
+    </div>
+
+    <!-- ========== 攻击链 ========== -->
+    <div class="page" id="page-chain">
+      <div class="grid">
+        <div class="card"><h3>检测链总数</h3><div class="num" id="chain-total">-</div></div>
+        <div class="card red"><h3>严重链</h3><div class="num" id="chain-critical">-</div></div>
+        <div class="card green"><h3>已完成链</h3><div class="num" id="chain-done">-</div></div>
+        <div class="card cyan"><h3>知识库模板</h3><div class="num" id="chain-kb">-</div></div>
+      </div>
+      <div class="panel">
+        <h3>攻击链列表</h3>
+        <button class="btn ghost" onclick="loadChains()">刷新列表</button>
+        <div id="chain-list"></div>
+      </div>
+      <div class="panel">
+        <h3>攻击链操作</h3>
+        <div class="row">
+          <div><label>链ID</label><input id="chain-id" value="CHAIN-001"></div>
+        </div>
+        <button class="btn" onclick="chainReconstruct()">重建时间线</button>
+        <button class="btn ghost" onclick="chainAnalyze()">深度分析</button>
+        <button class="btn ghost" onclick="chainPredict()">预测下一步</button>
+        <button class="btn ghost" onclick="chainVisualize()">可视化数据</button>
+        <pre class="out" id="chain-out">操作结果...</pre>
+      </div>
+      <div class="panel">
+        <h3>杀伤链覆盖</h3>
+        <div class="chain-bar" id="killchain-bar"></div>
+      </div>
+      <div class="panel">
+        <h3>攻击链知识库</h3>
+        <button class="btn ghost" onclick="loadChainKB()">加载知识库</button>
+        <pre class="out" id="chain-kb-out">知识库内容...</pre>
+      </div>
+    </div>
+
+    <!-- ========== 威胁狩猎 ========== -->
+    <div class="page" id="page-hunt">
+      <div class="grid">
+        <div class="card"><h3>狩猎会话</h3><div class="num" id="hunt-sessions">-</div></div>
+        <div class="card"><h3>模板数</h3><div class="num" id="hunt-templates">-</div></div>
+        <div class="card green"><h3>狩猎覆盖率</h3><div class="num" id="hunt-coverage">-</div></div>
+        <div class="card purple"><h3>成功率</h3><div class="num" id="hunt-success">-</div></div>
+      </div>
+      <div class="panel">
+        <h3>狩猎查询</h3>
+        <label>查询语句</label>
+        <textarea id="hunt-query" placeholder="SELECT * FROM auth_logs WHERE ...">SELECT * FROM auth_logs WHERE login_hour NOT BETWEEN 7 AND 20</textarea>
+        <div class="row">
+          <div><label>查询类型</label>
+            <select id="hunt-qtype"><option value="sql">SQL</option><option value="regex">正则</option><option value="ml">ML</option><option value="aggregate">聚合</option></select>
+          </div>
+          <div><label>时间范围(小时)</label><input id="hunt-range" type="number" value="24"></div>
+        </div>
+        <button class="btn" onclick="runHuntQuery()">执行查询</button>
+        <pre class="out" id="hunt-out">查询结果...</pre>
+      </div>
+      <div class="panel">
+        <h3>狩猎工作流</h3>
+        <label>狩猎假设</label>
+        <input id="hunt-hypothesis" value="可能存在异常 PowerShell 执行行为">
+        <button class="btn" onclick="runHuntWorkflow()">启动完整狩猎工作流</button>
+        <pre class="out" id="hunt-wf-out">工作流执行结果...</pre>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <h3>预置模板库</h3>
+          <button class="btn ghost" onclick="loadTemplates()">刷新模板</button>
+          <div id="tpl-list"></div>
+        </div>
+        <div class="panel">
+          <h3>狩猎度量指标</h3>
+          <button class="btn ghost" onclick="loadHuntMetrics()">加载度量</button>
+          <pre class="out" id="hunt-metrics-out">度量数据...</pre>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>IOC 匹配</h3>
+        <label>IOC列表(逗号分隔)</label>
+        <input id="ioc-input" value="45.xxx.xxx.xxx, update-check.cc, a1b2c3d4e5f6">
+        <button class="btn" onclick="iocMatch()">匹配 IOC</button>
+        <pre class="out" id="ioc-out">IOC 匹配结果...</pre>
+      </div>
+    </div>
+
+    <!-- ========== 系统设置 ========== -->
+    <div class="page" id="page-settings">
+      <div class="panel">
+        <h3>检测规则配置</h3>
+        <div class="row">
+          <div><label>UEBA 启用</label><select id="set-ueba"><option value="true">启用</option><option value="false">禁用</option></select></div>
+          <div><label>ML 异常检测</label><select id="set-ml"><option value="true">启用</option><option value="false">禁用</option></select></div>
+          <div><label>APT 检测</label><select id="set-apt"><option value="true">启用</option><option value="false">禁用</option></select></div>
+          <div><label>灵敏度</label><select id="set-sens"><option value="low">低</option><option value="medium" selected>中</option><option value="high">高</option></select></div>
+        </div>
+        <button class="btn" onclick="saveSettings('detection_rules')">保存检测规则</button>
+      </div>
+      <div class="panel">
+        <h3>模型配置</h3>
+        <div class="row">
+          <div><label>默认算法</label><select id="set-algo"><option>isolation_forest</option><option>lof</option><option>zscore</option></select></div>
+          <div><label>自动重训练</label><select id="set-retrain"><option value="true">启用</option><option value="false">禁用</option></select></div>
+          <div><label>漂移阈值</label><input id="set-threshold" type="number" step="0.05" value="0.2"></div>
+        </div>
+        <button class="btn" onclick="saveSettings('model_config')">保存模型配置</button>
+      </div>
+      <div class="panel">
+        <h3>告警配置</h3>
+        <div class="row">
+          <div><label>最低严重级别</label><select id="set-severity"><option>low</option><option selected>medium</option><option>high</option><option>critical</option></select></div>
+          <div><label>自动响应</label><select id="set-auto"><option value="true">启用</option><option value="false">禁用</option></select></div>
+        </div>
+        <button class="btn" onclick="saveSettings('alert_config')">保存告警配置</button>
+      </div>
+      <div class="panel">
+        <h3>当前系统设置</h3>
+        <button class="btn ghost" onclick="loadSettings()">刷新设置</button>
+        <pre class="out" id="settings-out">加载设置...</pre>
+      </div>
+      <div class="panel">
+        <h3>审计日志</h3>
+        <button class="btn ghost" onclick="loadAuditLogs()">加载审计日志</button>
+        <pre class="out" id="audit-out">审计日志...</pre>
+      </div>
+      <div class="panel">
+        <h3>生成综合报表</h3>
+        <button class="btn" onclick="genReport()">生成报表</button>
+        <pre class="out" id="report-out">报表内容...</pre>
+      </div>
+    </div>
+
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "/api/v1/advanced-threat";
+
+async function api(path, opts={}){
+  try{
+    const r = await fetch(API+path, {headers:{"Content-Type":"application/json"}, ...opts});
+    const j = await r.json();
+    if(!j.success) throw new Error(j.error || "请求失败");
+    return j.data;
+  }catch(e){ throw e; }
+}
+function show(el, data){ document.getElementById(el).textContent = typeof data==="string"?data:JSON.stringify(data,null,2); }
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none",2200); }
+function tag(level){ const lv=(level||"low").toLowerCase(); return `<span class="tag ${lv}">${lv}</span>`; }
+
+// 导航
+document.querySelectorAll(".nav-btn").forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll(".nav-btn").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    document.getElementById("page-"+b.dataset.page).classList.add("active");
+    document.getElementById("page-title").textContent = b.querySelector(".lbl").textContent;
+  };
+});
+
+// ========== 总览 ==========
+async function loadOverview(){
+  try{
+    document.getElementById("status-badge").textContent="● 在线";
+    const o = await api("/dashboard/overview");
+    document.getElementById("ov-threats").textContent = o.total_threats;
+    document.getElementById("ov-alerts").textContent = o.open_alerts;
+    document.getElementById("ov-chains").textContent = o.active_chains;
+    document.getElementById("ov-hunts").textContent = o.hunt_tasks;
+    document.getElementById("ov-response").textContent = (o.response_rate*100).toFixed(1)+"%";
+    const tt = o.threat_types;
+    document.getElementById("ov-types").innerHTML = `<table><thead><tr><th>类型</th><th>数量</th></tr></thead><tbody>` +
+      Object.entries(tt).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join("") + "</tbody></table>";
+    const trend = o.threat_trend_7d;
+    const maxV = Math.max(...trend.map(t=>t.threats),1);
+    document.getElementById("ov-trend").innerHTML = trend.map(t=>{
+      const w = (t.threats/maxV*100).toFixed(0);
+      return `<div style="margin:4px 0"><span style="display:inline-block;width:50px">${t.date}</span>
+        <div class="meter" style="display:inline-block;width:70%"><div class="meter-fill" style="width:${w}%;background:var(--accent)"></div></div>
+        <span style="margin-left:8px">${t.threats}</span></div>`;
+    }).join("");
+    show("ov-out", o);
+  }catch(e){ show("ov-out", "加载失败: "+e.message); }
+}
+
+// ========== UEBA ==========
+async function loadUebaOverview(){
+  try{
+    const o = await api("/ueba/overview");
+    document.getElementById("ueba-users").textContent = o.total_users;
+    document.getElementById("ueba-entities").textContent = o.total_entities;
+    document.getElementById("ueba-highrisk").textContent = o.high_risk_users;
+    document.getElementById("ueba-alerts").textContent = o.total_alerts;
+  }catch(e){}
+}
+async function runDeviation(){
+  try{
+    const body = {
+      user_id: document.getElementById("dev-uid").value,
+      login_hour: +document.getElementById("dev-hour").value,
+      location: document.getElementById("dev-loc").value,
+      device: document.getElementById("dev-dev").value,
+      login_count_today: +document.getElementById("dev-count").value,
+      data_access_mb: +document.getElementById("dev-data").value,
+    };
+    show("dev-out", await api("/ueba/detect-deviation",{method:"POST",body:JSON.stringify(body)}));
+  }catch(e){ show("dev-out","错误: "+e.message); }
+}
+async function loadUebaUsers(){
+  try{
+    const users = await api("/ueba/users");
+    document.getElementById("ueba-user-table").innerHTML =
+      "<table><thead><tr><th>ID</th><th>用户名</th><th>部门</th><th>角色</th><th>风险分</th><th>级别</th></tr></thead><tbody>" +
+      users.slice(0,15).map(u=>`<tr><td>${u.user_id}</td><td>${u.username}</td><td>${u.department}</td><td>${u.role}</td><td>${u.risk_score}</td><td>${tag(u.risk_level)}</td></tr>`).join("") +
+      "</tbody></table>";
+  }catch(e){ toast("加载失败"); }
+}
+async function loadUebaAlerts(){
+  try{
+    const alerts = await api("/ueba/alerts");
+    document.getElementById("ueba-alert-table").innerHTML =
+      "<table><thead><tr><th>告警ID</th><th>用户</th><th>类型</th><th>级别</th><th>分数</th><th>状态</th></tr></thead><tbody>" +
+      alerts.slice(0,15).map(a=>`<tr><td>${a.alert_id}</td><td>${a.username}</td><td>${a.alert_type}</td><td>${tag(a.severity)}</td><td>${a.risk_score}</td><td>${tag(a.status)}</td></tr>`).join("") +
+      "</tbody></table>";
+  }catch(e){ toast("加载失败"); }
+}
+async function loadPeerGroups(){
+  try{ show("peer-out", await api("/ueba/peer-groups")); }
+  catch(e){ show("peer-out","错误: "+e.message); }
+}
+
+// ========== ML ==========
+async function loadMLOverview(){
+  try{
+    const o = await api("/ml/overview");
+    document.getElementById("ml-models").textContent = o.total_models;
+    document.getElementById("ml-anomalies").textContent = o.total_anomalies;
+    document.getElementById("ml-drift").textContent = o.drift_alerts;
+    document.getElementById("ml-algos").textContent = o.algorithms_available;
+  }catch(e){}
+}
+async function loadMLModels(){
+  try{
+    const models = await api("/ml/models");
+    document.getElementById("ml-model-table").innerHTML =
+      "<table><thead><tr><th>模型ID</th><th>算法</th><th>版本</th><th>精度</th><th>F1</th><th>漂移分</th><th>状态</th></tr></thead><tbody>" +
+      models.map(m=>`<tr><td>${m.model_id}</td><td>${m.algorithm_name}</td><td>${m.version}</td><td>${m.train_accuracy}</td><td>${m.f1_score}</td><td>${m.drift_score}</td><td>${tag(m.status)}</td></tr>`).join("") +
+      "</tbody></table>";
+  }catch(e){ toast("加载失败"); }
+}
+async function trainModel(){
+  try{
+    const body = {algorithm_id: document.getElementById("train-algo").value, n_samples: +document.getElementById("train-samples").value};
+    show("train-out", await api("/ml/train",{method:"POST",body:JSON.stringify(body)}));
+  }catch(e){ show("train-out","错误: "+e.message); }
+}
+async function runInfer(){
+  try{
+    const fid = document.getElementById("infer-model").value;
+    const feats = document.getElementById("infer-features").value.split(",").map(Number);
+    show("infer-out", await api("/ml/infer",{method:"POST",body:JSON.stringify({model_id:fid, features:feats})}));
+  }catch(e){ show("infer-out","错误: "+e.message); }
+}
+async function checkDrift(){
+  try{ show("drift-out", await api("/ml/drift/"+document.getElementById("drift-model").value)); }
+  catch(e){ show("drift-out","错误: "+e.message); }
+}
+async function loadMLAnomalies(){
+  try{ show("ml-anom-out", await api("/ml/anomalies")); }
+  catch(e){ show("ml-anom-out","错误: "+e.message); }
+}
+
+// ========== APT ==========
+async function loadAPTOverview(){
+  try{
+    const o = await api("/apt/overview");
+    document.getElementById("apt-techs").textContent = o.total_techniques;
+    document.getElementById("apt-exfil").textContent = o.exfiltration_events;
+    document.getElementById("apt-c2").textContent = o.c2_infrastructure_tracked;
+    document.getElementById("apt-hunts").textContent = o.hunt_jobs_completed;
+  }catch(e){}
+}
+async function detectTactic(){
+  try{ show("tactic-out", await api("/apt/tactics/"+document.getElementById("apt-tactic").value+"/detect")); }
+  catch(e){ show("tactic-out","错误: "+e.message); }
+}
+async function detectC2(){
+  try{
+    const body = {domain: document.getElementById("c2-domain").value, ip: document.getElementById("c2-ip").value};
+    show("c2-out", await api("/apt/detect-c2",{method:"POST",body:JSON.stringify(body)}));
+  }catch(e){ show("c2-out","错误: "+e.message); }
+}
+async function detectExfil(){
+  try{
+    const body = {
+      source_user: document.getElementById("exf-user").value,
+      volume_mb: +document.getElementById("exf-volume").value,
+      protocol: document.getElementById("exf-proto").value,
+      destination: "203.0.113.10",
+    };
+    show("exf-out", await api("/apt/detect-exfiltration",{method:"POST",body:JSON.stringify(body)}));
+  }catch(e){ show("exf-out","错误: "+e.message); }
+}
+async function matchTTP(){
+  try{
+    const ttps = document.getElementById("ttp-input").value.split(",").map(s=>s.trim());
+    show("ttp-out", await api("/apt/match-ttp",{method:"POST",body:JSON.stringify({ttps})}));
+  }catch(e){ show("ttp-out","错误: "+e.message); }
+}
+async function loadC2List(){
+  try{
+    const list = await api("/apt/c2-infrastructure");
+    document.getElementById("c2-list").innerHTML =
+      "<table><thead><tr><th>C2 ID</th><th>域名</th><th>IP</th><th>端口</th><th>DGA分</th><th>威胁</th></tr></thead><tbody>" +
+      list.map(c=>`<tr><td>${c.c2_id}</td><td>${c.domain}</td><td>${c.ip}</td><td>${c.port}</td><td>${c.dga_score}</td><td>${tag(c.threat_level)}</td></tr>`).join("") +
+      "</tbody></table>";
+  }catch(e){ toast("加载失败"); }
+}
+
+// ========== 攻击链 ==========
+async function loadChainOverview(){
+  try{
+    const o = await api("/chain/overview");
+    document.getElementById("chain-total").textContent = o.total_detected_chains;
+    document.getElementById("chain-critical").textContent = o.critical_chains;
+    document.getElementById("chain-done").textContent = o.active_chains;
+    document.getElementById("chain-kb").textContent = o.known_chains_in_kb;
+  }catch(e){}
+}
+async function loadChains(){
+  try{
+    const chains = await api("/chain/list");
+    document.getElementById("chain-list").innerHTML =
+      "<table><thead><tr><th>链ID</th><th>名称</th><th>阶段数</th><th>严重度</th><th>状态</th><th>归因</th></tr></thead><tbody>" +
+      chains.map(c=>`<tr><td>${c.chain_id}</td><td>${c.name}</td><td>${c.phase_count}</td><td>${tag(c.severity)}</td><td>${tag(c.status)}</td><td>${c.attribution||"-"}</td></tr>`).join("") +
+      "</tbody></table>";
+  }catch(e){ toast("加载失败"); }
+}
+async function chainReconstruct(){
+  try{ show("chain-out", await api("/chain/"+document.getElementById("chain-id").value+"/reconstruct")); }
+  catch(e){ show("chain-out","错误: "+e.message); }
+}
+async function chainAnalyze(){
+  try{ show("chain-out", await api("/chain/"+document.getElementById("chain-id").value+"/analyze")); }
+  catch(e){ show("chain-out","错误: "+e.message); }
+}
+async function chainPredict(){
+  try{ show("chain-out", await api("/chain/"+document.getElementById("chain-id").value+"/predict")); }
+  catch(e){ show("chain-out","错误: "+e.message); }
+}
+async function chainVisualize(){
+  try{
+    const v = await api("/chain/"+document.getElementById("chain-id").value+"/visualize");
+    show("chain-out", v);
+    if(v.kill_chain_coverage){
+      document.getElementById("killchain-bar").innerHTML = v.kill_chain_coverage.map((p,i)=>
+        `<div class="chain-step ${p.covered?'done':''}">${p.phase}</div>${i<v.kill_chain_coverage.length-1?'<span class="chain-arrow">→</span>':''}`
+      ).join("");
+    }
+  }catch(e){ show("chain-out","错误: "+e.message); }
+}
+async function loadChainKB(){
+  try{ show("chain-kb-out", await api("/chain/knowledge-base")); }
+  catch(e){ show("chain-kb-out","错误: "+e.message); }
+}
+
+// ========== 威胁狩猎 ==========
+async function loadHuntOverview(){
+  try{
+    const o = await api("/hunt/overview");
+    document.getElementById("hunt-sessions").textContent = o.total_hunt_sessions;
+    document.getElementById("hunt-templates").textContent = o.templates;
+    document.getElementById("hunt-coverage").textContent = (o.hunt_coverage*100).toFixed(0)+"%";
+    document.getElementById("hunt-success").textContent = (o.hunt_success_rate*100).toFixed(0)+"%";
+  }catch(e){}
+}
+async function runHuntQuery(){
+  try{
+    const q = document.getElementById("hunt-query").value;
+    const t = document.getElementById("hunt-qtype").value;
+    const h = +document.getElementById("hunt-range").value;
+    show("hunt-out", await api(`/hunt/query?query=${encodeURIComponent(q)}&query_type=${t}&time_range_h=${h}`));
+  }catch(e){ show("hunt-out","错误: "+e.message); }
+}
+async function runHuntWorkflow(){
+  try{
+    const body = {hypothesis: document.getElementById("hunt-hypothesis").value, time_range_h: 48};
+    show("hunt-wf-out", await api("/hunt/workflow",{method:"POST",body:JSON.stringify(body)}));
+  }catch(e){ show("hunt-wf-out","错误: "+e.message); }
+}
+async function loadTemplates(){
+  try{
+    const tpls = await api("/hunt/templates");
+    document.getElementById("tpl-list").innerHTML =
+      "<table><thead><tr><th>ID</th><th>名称</th><th>Tactic</th><th>命中率</th></tr></thead><tbody>" +
+      tpls.map(t=>`<tr><td>${t.template_id}</td><td>${t.name}</td><td>${t.tactic}</td><td>${(t.hit_rate*100).toFixed(0)}%</td></tr>`).join("") +
+      "</tbody></table>";
+  }catch(e){ toast("加载失败"); }
+}
+async function loadHuntMetrics(){
+  try{ show("hunt-metrics-out", await api("/hunt/metrics")); }
+  catch(e){ show("hunt-metrics-out","错误: "+e.message); }
+}
+async function iocMatch(){
+  try{
+    const iocs = document.getElementById("ioc-input").value.split(",").map(s=>s.trim());
+    show("ioc-out", await api("/hunt/ioc-match",{method:"POST",body:JSON.stringify({iocs})}));
+  }catch(e){ show("ioc-out","错误: "+e.message); }
+}
+
+// ========== 设置 ==========
+async function loadSettings(){
+  try{ show("settings-out", await api("/settings")); }
+  catch(e){ show("settings-out","错误: "+e.message); }
+}
+async function saveSettings(section){
+  try{
+    let updates = {};
+    if(section==="detection_rules"){
+      updates = {
+        ueba_enabled: document.getElementById("set-ueba").value==="true",
+        ml_anomaly_enabled: document.getElementById("set-ml").value==="true",
+        apt_detection_enabled: document.getElementById("set-apt").value==="true",
+        sensitivity: document.getElementById("set-sens").value,
+      };
+    } else if(section==="model_config"){
+      updates = {
+        default_algorithm: document.getElementById("set-algo").value,
+        auto_retrain: document.getElementById("set-retrain").value==="true",
+        retrain_threshold_drift: +document.getElementById("set-threshold").value,
+      };
+    } else if(section==="alert_config"){
+      updates = {
+        min_severity: document.getElementById("set-severity").value,
+        auto_response_enabled: document.getElementById("set-auto").value==="true",
+      };
+    }
+    const r = await api("/settings/"+section,{method:"PUT",body:JSON.stringify({updates})});
+    toast("设置已保存");
+    show("settings-out", r);
+  }catch(e){ toast("保存失败: "+e.message); }
+}
+async function loadAuditLogs(){
+  try{ show("audit-out", await api("/audit-logs")); }
+  catch(e){ show("audit-out","错误: "+e.message); }
+}
+async function genReport(){
+  try{ show("report-out", await api("/report")); }
+  catch(e){ show("report-out","错误: "+e.message); }
+}
+
+// 初始化
+loadOverview();
+loadUebaOverview(); loadUebaUsers(); loadUebaAlerts();
+loadMLOverview(); loadMLModels();
+loadAPTOverview(); loadC2List();
+loadChainOverview(); loadChains();
+loadHuntOverview(); loadTemplates();
+loadSettings();
+</script>
+</body>
+</html>

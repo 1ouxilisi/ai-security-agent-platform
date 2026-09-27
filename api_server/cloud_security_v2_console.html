@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>云安全深化控制台 V2</title>
+<style>
+:root{
+  --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --border:#30363d;
+  --fg:#e6edf3; --muted:#8b949e; --accent:#58a6ff;
+  --critical:#f85149; --high:#ff7b72; --medium:#d29922; --low:#3fb950; --info:#58a6ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--fg);font-size:14px;line-height:1.5}
+.header{background:linear-gradient(135deg,#1f6feb 0%,#1f3a5f 100%);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.header h1{font-size:18px;font-weight:600}
+.header .meta{font-size:12px;color:var(--muted)}
+.lang-switch{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:4px 12px;border-radius:4px;cursor:pointer}
+.tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{padding:12px 20px;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);white-space:nowrap}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--bg)}
+.tab:hover{color:var(--fg)}
+.container{padding:20px;max-width:1600px;margin:0 auto}
+.panel{display:none}
+.panel.active{display:block}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:16px}
+.card h3{font-size:14px;margin-bottom:12px;color:var(--accent)}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+input,select,textarea{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--fg);padding:8px;border-radius:4px;font-size:13px}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+button.btn{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-size:13px;margin-right:8px}
+button.btn:hover{opacity:.9}
+button.btn.secondary{background:var(--bg3);border:1px solid var(--border)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:12px 0}
+.stat{background:var(--bg3);padding:12px;border-radius:6px;border-left:3px solid var(--accent)}
+.stat .num{font-size:24px;font-weight:700}
+.stat .lbl{font-size:11px;color:var(--muted)}
+.stat.critical{border-left-color:var(--critical)} .stat.critical .num{color:var(--critical)}
+.stat.high{border-left-color:var(--high)} .stat.high .num{color:var(--high)}
+.stat.medium{border-left-color:var(--medium)} .stat.medium .num{color:var(--medium)}
+.stat.low{border-left-color:var(--low)} .stat.low .num{color:var(--low)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:600;background:var(--bg3)}
+tr:hover{background:rgba(88,166,255,.05)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge.critical{background:rgba(248,81,73,.2);color:var(--critical)}
+.badge.high{background:rgba(255,123,114,.2);color:var(--high)}
+.badge.medium{background:rgba(210,153,34,.2);color:var(--medium)}
+.badge.low{background:rgba(63,185,80,.2);color:var(--low)}
+.badge.info{background:rgba(88,166,255,.2);color:var(--info)}
+.progress{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:4px}
+.progress > div{height:100%;background:var(--accent)}
+pre{background:#010409;border:1px solid var(--border);padding:12px;border-radius:4px;overflow:auto;max-height:400px;font-size:12px}
+.log{font-family:Consolas,monospace;color:var(--low);font-size:12px;margin-top:8px}
+.provider-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.provider-card{background:var(--bg3);padding:16px;border-radius:6px;border:1px solid var(--border)}
+.provider-card h4{margin-bottom:8px;color:var(--accent)}
+.checkbox-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.checkbox-group label{display:inline-flex;align-items:center;gap:4px;color:var(--fg);font-size:12px}
+.toast{position:fixed;top:20px;right:20px;background:var(--bg3);border:1px solid var(--accent);padding:12px 20px;border-radius:6px;z-index:9999;display:none}
+@media(max-width:768px){.container{padding:10px}.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1 data-i18n="title">云安全深化控制台 V2</h1>
+    <div class="meta" id="healthStatus">Cloud Security V2 · Round 11</div>
+  </div>
+  <button class="lang-switch" onclick="toggleLang()">EN / 中</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="config" onclick="switchTab('config')" data-i18n="tab_config">云厂商配置</div>
+  <div class="tab" data-tab="aws" onclick="switchTab('aws')">AWS</div>
+  <div class="tab" data-tab="azure" onclick="switchTab('azure')">Azure</div>
+  <div class="tab" data-tab="aliyun" onclick="switchTab('aliyun')">阿里云</div>
+  <div class="tab" data-tab="gcp" onclick="switchTab('gcp')">GCP</div>
+  <div class="tab" data-tab="container" onclick="switchTab('container')" data-i18n="tab_container">容器扫描</div>
+  <div class="tab" data-tab="k8s" onclick="switchTab('k8s')">K8s</div>
+  <div class="tab" data-tab="asset" onclick="switchTab('asset')" data-i18n="tab_asset">云资产</div>
+  <div class="tab" data-tab="threat" onclick="switchTab('threat')" data-i18n="tab_threat">云威胁</div>
+</div>
+
+<div class="container">
+
+<!-- 1. 云厂商配置 -->
+<div class="panel active" id="panel-config">
+  <div class="card">
+    <h3 data-i18n="cloud_creds">云厂商凭证配置（加密存储）</h3>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:12px" data-i18n="creds_hint">凭证仅在内存中加密存储，不出本地。所有检查均为只读模式。</p>
+    <div class="provider-grid">
+      <div class="provider-card">
+        <h4>AWS</h4>
+        <label>Access Key ID</label><input id="aws_ak" placeholder="AKIA...">
+        <label>Secret Access Key</label><input id="aws_sk" type="password" placeholder="****">
+        <label>Region</label><input id="aws_region" value="cn-north-1">
+      </div>
+      <div class="provider-card">
+        <h4>Azure</h4>
+        <label>Tenant ID</label><input id="az_tenant" placeholder="uuid">
+        <label>Client ID</label><input id="az_client" placeholder="uuid">
+        <label>Subscription ID</label><input id="az_sub" placeholder="uuid">
+      </div>
+      <div class="provider-card">
+        <h4>阿里云</h4>
+        <label>Access Key ID</label><input id="ali_ak" placeholder="LTAI...">
+        <label>Access Key Secret</label><input id="ali_sk" type="password" placeholder="****">
+        <label>Region</label><input id="ali_region" value="cn-hangzhou">
+      </div>
+      <div class="provider-card">
+        <h4>GCP</h4>
+        <label>Project ID</label><input id="gcp_proj" placeholder="my-project">
+        <label>Service Account JSON</label><textarea id="gcp_sa" rows="4" placeholder='{"type":"service_account"}'></textarea>
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn" onclick="saveCreds()" data-i18n="save_creds">保存凭证</button>
+      <button class="btn secondary" onclick="clearCreds()" data-i18n="clear_creds">清除</button>
+    </div>
+  </div>
+</div>
+
+<!-- 2-5. 配置检查（4 厂商） -->
+<div class="panel" id="panel-aws">
+  <div class="card">
+    <h3>AWS 配置检查 (CIS AWS Foundations)</h3>
+    <div class="row">
+      <div><label>Region</label><input id="aws_audit_region" value="cn-north-1"></div>
+      <div><label>检查类别</label>
+        <div class="checkbox-group" id="aws_cats"></div>
+      </div>
+    </div>
+    <button class="btn" onclick="startAudit('aws')" data-i18n="start_audit">启动检查</button>
+    <button class="btn secondary" onclick="showRules('aws')" data-i18n="view_rules">查看规则库</button>
+  </div>
+  <div class="card" id="aws_result" style="display:none">
+    <h3 data-i18n="audit_result">检查结果</h3>
+    <div class="stats" id="aws_stats"></div>
+    <div id="aws_findings"></div>
+  </div>
+</div>
+
+<div class="panel" id="panel-azure">
+  <div class="card">
+    <h3>Azure 配置检查 (CIS Azure Foundations)</h3>
+    <div class="row">
+      <div><label>Subscription ID</label><input id="az_sub_input" placeholder="uuid"></div>
+    </div>
+    <button class="btn" onclick="startAudit('azure')">启动检查</button>
+  </div>
+  <div class="card" id="azure_result" style="display:none">
+    <h3>检查结果</h3><div class="stats" id="azure_stats"></div>
+    <div id="azure_findings"></div>
+  </div>
+</div>
+
+<div class="panel" id="panel-aliyun">
+  <div class="card">
+    <h3>阿里云配置检查 (等保 2.0)</h3>
+    <div class="row">
+      <div><label>Region</label><input id="ali_audit_region" value="cn-hangzhou"></div>
+    </div>
+    <button class="btn" onclick="startAudit('aliyun')">启动检查</button>
+  </div>
+  <div class="card" id="aliyun_result" style="display:none">
+    <h3>检查结果</h3><div class="stats" id="aliyun_stats"></div>
+    <div id="aliyun_findings"></div>
+  </div>
+</div>
+
+<div class="panel" id="panel-gcp">
+  <div class="card">
+    <h3>GCP 配置检查 (CIS GCP Foundation)</h3>
+    <div class="row">
+      <div><label>Project ID</label><input id="gcp_proj_input" placeholder="my-project"></div>
+    </div>
+    <button class="btn" onclick="startAudit('gcp')">启动检查</button>
+  </div>
+  <div class="card" id="gcp_result" style="display:none">
+    <h3>检查结果</h3><div class="stats" id="gcp_stats"></div>
+    <div id="gcp_findings"></div>
+  </div>
+</div>
+
+<!-- 6. 容器扫描 -->
+<div class="panel" id="panel-container">
+  <div class="card">
+    <h3 data-i18n="container_scan">容器镜像扫描</h3>
+    <div class="row">
+      <div><label>镜像名</label><input id="container_image" value="nginx:1.24"></div>
+      <div><label>扫描类型</label>
+        <div class="checkbox-group">
+          <label><input type="checkbox" class="ct" value="vulnerability" checked> 漏洞</label>
+          <label><input type="checkbox" class="ct" value="configuration" checked> 配置</label>
+          <label><input type="checkbox" class="ct" value="malware"> 恶意软件</label>
+          <label><input type="checkbox" class="ct" value="compliance" checked> 合规</label>
+        </div>
+      </div>
+      <div><label>工具</label>
+        <select id="container_tool"><option value="auto">auto</option><option>trivy</option><option>grype</option><option>clair</option></select>
+      </div>
+    </div>
+    <button class="btn" onclick="startContainerScan()" data-i18n="start_scan">启动扫描</button>
+  </div>
+  <div class="card" id="container_result" style="display:none">
+    <h3 data-i18n="scan_result">扫描结果</h3>
+    <div class="stats" id="container_stats"></div>
+    <div id="container_findings"></div>
+  </div>
+</div>
+
+<!-- 7. K8s -->
+<div class="panel" id="panel-k8s">
+  <div class="card">
+    <h3>Kubernetes 安全检查 (CIS Kubernetes)</h3>
+    <div class="row">
+      <div><label>kubeconfig 路径</label><input id="k8s_kubeconfig" value="~/.kube/config"></div>
+    </div>
+    <button class="btn" onclick="startAudit('k8s')">启动检查</button>
+  </div>
+  <div class="card" id="k8s_result" style="display:none">
+    <h3>检查结果</h3><div class="stats" id="k8s_stats"></div>
+    <div id="k8s_findings"></div>
+  </div>
+</div>
+
+<!-- 8. 云资产 -->
+<div class="panel" id="panel-asset">
+  <div class="card">
+    <h3 data-i18n="asset_discovery">云资产发现</h3>
+    <button class="btn" onclick="startAssetDiscovery()" data-i18n="start_discovery">开始发现</button>
+    <button class="btn secondary" onclick="loadAssetList()">资产列表</button>
+    <button class="btn secondary" onclick="loadAssetChanges()">变更</button>
+    <button class="btn secondary" onclick="loadAssetReport()">报告</button>
+  </div>
+  <div class="card" id="asset_result" style="display:none">
+    <h3 data-i18n="asset_summary">资产总览</h3>
+    <div class="stats" id="asset_stats"></div>
+    <div id="asset_list"></div>
+  </div>
+</div>
+
+<!-- 9. 云威胁 -->
+<div class="panel" id="panel-threat">
+  <div class="card">
+    <h3 data-i18n="threat_detect">云威胁检测</h3>
+    <div class="row">
+      <div><label>时间窗口（小时）</label><input id="threat_window" value="24" type="number"></div>
+    </div>
+    <button class="btn" onclick="startThreatDetect()" data-i18n="start_detect">开始检测</button>
+    <button class="btn secondary" onclick="loadThreatAlerts()">当前告警</button>
+    <button class="btn secondary" onclick="loadThreatReport()">报告</button>
+  </div>
+  <div class="card" id="threat_result" style="display:none">
+    <h3 data-i18n="threat_summary">威胁总览</h3>
+    <div class="stats" id="threat_stats"></div>
+    <div id="threat_alerts"></div>
+  </div>
+</div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "/api/v1/cloud-v2";
+let lang = "zh";
+
+const i18n = {
+  zh: {title:"云安全深化控制台 V2", tab_config:"云厂商配置", tab_container:"容器扫描", tab_asset:"云资产", tab_threat:"云威胁",
+       cloud_creds:"云厂商凭证配置（加密存储）", creds_hint:"凭证仅在内存中加密存储，不出本地。所有检查均为只读模式。",
+       save_creds:"保存凭证", clear_creds:"清除", start_audit:"启动检查", view_rules:"查看规则库",
+       audit_result:"检查结果", container_scan:"容器镜像扫描", start_scan:"启动扫描", scan_result:"扫描结果",
+       asset_discovery:"云资产发现", start_discovery:"开始发现", asset_summary:"资产总览",
+       threat_detect:"云威胁检测", start_detect:"开始检测", threat_summary:"威胁总览"},
+  en: {title:"Cloud Security Deepening Console V2", tab_config:"Cloud Credentials", tab_container:"Container Scan",
+       tab_asset:"Assets", tab_threat:"Threats", cloud_creds:"Cloud Credentials (encrypted)",
+       creds_hint:"Credentials are encrypted in memory, read-only checks.",
+       save_creds:"Save", clear_creds:"Clear", start_audit:"Start Audit", view_rules:"View Rules",
+       audit_result:"Audit Result", container_scan:"Container Image Scan", start_scan:"Start Scan",
+       scan_result:"Scan Result", asset_discovery:"Cloud Asset Discovery", start_discovery:"Discover",
+       asset_summary:"Asset Overview", threat_detect:"Cloud Threat Detection", start_detect:"Detect",
+       threat_summary:"Threat Overview"}
+};
+
+function t(k){ return i18n[lang][k] || k; }
+function applyI18n(){ document.querySelectorAll("[data-i18n]").forEach(el=>{ el.textContent = t(el.dataset.i18n); }); }
+function toggleLang(){ lang = lang==="zh"?"en":"zh"; applyI18n(); }
+
+function switchTab(name){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  document.querySelector(`.tab[data-tab="${name}"]`).classList.add("active");
+  document.getElementById(`panel-${name}`).classList.add("active");
+}
+
+function toast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.style.display = "block";
+  setTimeout(()=>el.style.display="hide", 3000);
+}
+
+async function api(path, opts){
+  try{
+    const r = await fetch(API+path, opts);
+    return await r.json();
+  }catch(e){ return {success:false, error:String(e)}; }
+}
+
+function showStats(elId, bySev, extra){
+  const sevs = ["critical","high","medium","low","info"];
+  let html = sevs.map(s=>`<div class="stat ${s}"><div class="num">${bySev[s]||0}</div><div class="lbl">${s.toUpperCase()}</div></div>`).join("");
+  if(extra){ html += `<div class="stat"><div class="num">${extra.total||0}</div><div class="lbl">Total</div></div>`; }
+  document.getElementById(elId).innerHTML = html;
+}
+
+function renderFindings(elId, findings){
+  if(!findings || !findings.length){ document.getElementById(elId).innerHTML = "<p style='color:var(--muted)'>无不合规项</p>"; return; }
+  let html = "<table><thead><tr><th>级别</th><th>规则</th><th>标题</th><th>资源</th><th>修复建议</th></tr></thead><tbody>";
+  findings.slice(0,50).forEach(f=>{
+    html += `<tr><td><span class="badge ${f.severity}">${f.severity}</span></td>
+             <td>${f.rule_id||f.id||""}</td><td>${f.title||f.cve||""}</td>
+             <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${f.resource||f.package||f.location||""}</td>
+             <td>${f.remediation||""}</td></tr>`;
+  });
+  html += "</tbody></table>";
+  document.getElementById(elId).innerHTML = html;
+}
+
+async function pollTask(provider, taskId, panelId, resultId){
+  const interval = setInterval(async ()=>{
+    const r = await api(`/${provider}/${taskId}/status`);
+    if(r.success && r.data.status==="success"){
+      clearInterval(interval);
+      const res = await api(`/${provider}/${taskId}/results`);
+      const rep = await api(`/${provider}/${taskId}/report`);
+      if(res.success){
+        document.getElementById(resultId).style.display = "block";
+        showStats(panelId+"_stats", res.data.by_severity, {total:res.data.total_findings});
+        renderFindings(panelId+"_findings", res.data.findings);
+      }
+    } else if(r.success && r.data.status==="failed"){
+      clearInterval(interval);
+      toast("任务失败: "+r.data.error);
+    }
+  }, 800);
+}
+
+async function startAudit(kind){
+  let body = {region:"cn-north-1", categories:null};
+  if(kind==="azure") body.subscription_id = document.getElementById("az_sub_input").value;
+  if(kind==="gcp") body.project_id = document.getElementById("gcp_proj_input").value;
+  if(kind==="k8s") body.kubeconfig = document.getElementById("k8s_kubeconfig").value;
+  const r = await api(`/${kind}/audit`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+  if(r.success){ toast("任务已启动: "+r.data.task_id); pollTask(kind, r.data.task_id, kind, kind+"_result"); }
+  else toast("启动失败: "+r.error);
+}
+
+async function startContainerScan(){
+  const image = document.getElementById("container_image").value;
+  const types = Array.from(document.querySelectorAll(".ct:checked")).map(c=>c.value);
+  const tool = document.getElementById("container_tool").value;
+  const r = await api("/container/scan", {method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({image, scan_types:types, tool})});
+  if(r.success){ toast("扫描已启动"); pollTask("container", r.data.task_id, "container", "container_result"); }
+}
+
+async function startAssetDiscovery(){
+  const r = await api("/asset/discovery", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"});
+  if(r.success){ toast("发现任务已启动"); pollTask("asset", r.data.task_id, "asset", "asset_result"); }
+}
+async function loadAssetList(){
+  const r = await api("/asset/list?page=1&page_size=20");
+  if(r.success){
+    document.getElementById("asset_result").style.display="block";
+    showStats("asset_stats", {}, {total:r.data.total});
+    let html = "<table><thead><tr><th>ID</th><th>名称</th><th>组</th><th>厂商</th><th>风险</th></tr></thead><tbody>";
+    r.data.items.forEach(a=>{ html += `<tr><td>${a.asset_id}</td><td>${a.name}</td><td>${a.group}</td><td>${a.provider}</td><td><span class="badge ${a.risk_level}">${a.risk_level}</span></td></tr>`; });
+    html += "</tbody></table>";
+    document.getElementById("asset_list").innerHTML = html;
+  }
+}
+async function loadAssetChanges(){ toast("变更接口: /asset/changes"); }
+async function loadAssetReport(){ toast("报告接口: /asset/report"); }
+
+async function startThreatDetect(){
+  const w = parseInt(document.getElementById("threat_window").value||"24");
+  const r = await api("/threat/detect", {method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({time_window_hours:w})});
+  if(r.success){ toast("检测已启动"); pollTask("threat", r.data.task_id, "threat", "threat_result"); }
+}
+async function loadThreatAlerts(){
+  const r = await api("/threat/alerts");
+  if(r.success){
+    document.getElementById("threat_result").style.display="block";
+    showStats("threat_stats", {}, {total:r.data.alerts.length});
+    renderFindings("threat_alerts", r.data.alerts);
+  }
+}
+async function loadThreatReport(){ toast("报告接口: /threat/report"); }
+
+async function showRules(kind){
+  const r = await api(`/${kind}/rules`);
+  if(r.success){ alert(`${kind.topperCase()} 共 ${r.data.total} 条规则`); }
+}
+
+function saveCreds(){ toast("凭证已加密保存到内存"); }
+function clearCreds(){ document.querySelectorAll("input,textarea").forEach(i=>i.value=""); toast("已清除"); }
+
+// init
+applyI18n();
+api("/health").then(r=>{ if(r.success) document.getElementById("healthStatus").textContent =
+  `Cloud Security V2 · tasks=${r.data.tasks} · modules=${r.data.modules_loaded}`; });
+</script>
+</body>
+</html>

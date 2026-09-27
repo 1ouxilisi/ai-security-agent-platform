@@ -1,0 +1,19 @@
+{
+  "global_degraded": false,
+  "global_strategy": "default",
+  "configs": {
+    "/api/data": {
+      "enabled": false,
+      "strategy": "default",
+      "data": {
+        "msg": "降级"
+      },
+      "trigger_reason": "timeout",
+      "enabled_at": 1789344765.9375658,
+      "default_response": {
+        "cached": 1
+      },
+      "recovered_at": 1789344766.0815644
+    }
+  }
+}

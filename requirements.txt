@@ -1,0 +1,80 @@
+# =============================================================================
+# AI Hacking Agent - 完整依赖清单
+# 企业级AI安全测试平台
+# 安装: pip install -r requirements.txt
+# =============================================================================
+
+# ===== 核心框架 =====
+pydantic>=2.0.0              # 数据验证
+python-dotenv>=1.0.0          # 环境变量加载
+pyyaml>=6.0                    # YAML配置
+click>=8.1.0                   # CLI框架
+rich>=13.0.0                   # 终端美化
+tqdm>=4.66.0                   # 进度条
+loguru>=0.7.2                  # 日志
+
+# ===== AI与大模型 =====
+openai>=1.40.0                 # OpenAI兼容API客户端
+mcp>=1.2.0                     # MCP协议SDK
+httpx>=0.25.0                  # 异步HTTP客户端(openai依赖)
+
+# ===== Web API服务 (FastAPI) =====
+fastapi>=0.104.0               # REST API框架
+uvicorn>=0.24.0                # ASGI服务器
+starlette>=0.27.0,<0.40.0       # FastAPI底层 (固定版本范围避免1.x不兼容)
+python-multipart>=0.0.6        # 文件上传支持
+websockets>=12.0                # WebSocket支持
+jinja2>=3.1.0                  # HTML模板渲染
+
+# ===== 认证与安全 =====
+python-jose[cryptography]>=3.3.0  # JWT令牌
+passlib[bcrypt]>=1.7.4            # 密码哈希
+bcrypt>=4.0.0                      # 密码哈希算法
+
+# ===== 浏览器自动化 (Playwright) =====
+playwright>=1.40.0             # 浏览器自动化
+beautifulsoup4>=4.12.0         # HTML解析
+lxml>=5.0.0                     # XML/HTML解析器
+
+# ===== 桌面自动化 (Computer-use) =====
+pyautogui>=0.9.54              # 桌面GUI自动化
+pillow>=10.0.0                  # 图像处理
+opencv-python>=4.8.0            # 计算机视觉
+numpy>=1.24.0                    # 数值计算
+
+# ===== 安全工具封装 =====
+python-nmap>=0.7.1              # nmap封装
+requests>=2.31.0                 # HTTP请求
+aiohttp>=3.9.0                   # 异步HTTP
+
+# ===== Web UI (Streamlit) =====
+streamlit>=1.30.0               # Web界面
+pandas>=2.0.0                    # 数据分析
+matplotlib>=3.7.0                # 图表绘制
+plotly>=5.18.0                   # 交互式图表
+
+# ===== 数据库 =====
+# SQLite内置，无需额外安装
+sqlalchemy>=2.0.0               # ORM框架（database/models.py, db_manager.py, analytics.py 使用）
+# 可选: PostgreSQL支持
+# psycopg2-binary>=2.9.0
+# 可选: Redis支持
+# redis>=5.0.0
+
+# ===== 测试 =====
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0                # 测试覆盖率
+
+# ===== 开发工具(可选) =====
+# black>=23.0.0                   # 代码格式化
+# flake8>=6.0.0                   # 代码检查
+# mypy>=1.5.0                     # 类型检查
+# pre-commit>=3.0.0               # Git钩子
+
+# =============================================================================
+# 安装后需要执行的额外步骤:
+# 1. playwright install chromium    # 安装Playwright浏览器
+# 2. 安装系统安全工具: nmap, nuclei, sqlmap, nikto, dirsearch等
+# 3. 复制 .env.example 为 .env 并配置API密钥
+# =============================================================================

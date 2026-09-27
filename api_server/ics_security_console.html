@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工控安全控制台 · ICS/SCADA Security Console</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#2d3646;
+    --txt:#d7e0ee; --muted:#8b98ad; --accent:#39d0d8; --accent2:#5b8def;
+    --crit:#ff5d5d; --high:#ff9f43; --med:#feca57; --low:#1dd1a1; --ok:#2ecc71;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:"Microsoft YaHei","Segoe UI",sans-serif;font-size:14px;line-height:1.5}
+  header{padding:16px 24px;background:linear-gradient(90deg,#10242b,#0d1117);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+  header h1{font-size:18px;color:var(--accent);letter-spacing:1px}
+  header .sub{color:var(--muted);font-size:12px}
+  .badge{background:#1f6feb33;color:#79b8ff;border:1px solid #1f6feb66;padding:2px 8px;border-radius:10px;font-size:11px}
+  nav{display:flex;flex-wrap:wrap;gap:4px;padding:10px 24px;background:var(--panel);border-bottom:1px solid var(--border)}
+  nav button{background:transparent;border:1px solid transparent;color:var(--muted);padding:8px 14px;cursor:pointer;border-radius:6px;font-size:13px}
+  nav button:hover{color:var(--txt);background:var(--panel2)}
+  nav button.active{color:var(--accent);border-color:var(--accent);background:#39d0d818}
+  main{padding:20px 24px;max-width:1400px;margin:0 auto}
+  .tab{display:none}
+  .tab.active{display:block}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+  .card h2{font-size:15px;color:var(--accent);margin-bottom:12px;border-left:3px solid var(--accent);padding-left:8px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  label{color:var(--muted);font-size:12px}
+  input,select,textarea{background:var(--panel2);border:1px solid var(--border);color:var(--txt);padding:7px 10px;border-radius:5px;font-size:13px;font-family:inherit}
+  input[type=text]{min-width:260px}
+  textarea{width:100%;min-height:80px;font-family:Consolas,monospace;font-size:12px}
+  button.primary{background:var(--accent2);border:none;color:#fff;padding:8px 18px;border-radius:5px;cursor:pointer;font-size:13px}
+  button.primary:hover{filter:brightness(1.15)}
+  button.ghost{background:transparent;border:1px solid var(--border);color:var(--txt);padding:6px 12px;border-radius:5px;cursor:pointer;font-size:12px}
+  button.ghost:hover{border-color:var(--accent)}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+  th,td{border:1px solid var(--border);padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:var(--muted);font-weight:600}
+  tr:nth-child(even) td{background:#12171f}
+  .sev{padding:1px 8px;border-radius:9px;font-size:11px;font-weight:700}
+  .sev.critical{background:#ff5d5d22;color:var(--crit)}
+  .sev.high{background:#ff9f4322;color:var(--high)}
+  .sev.medium{background:#feca5722;color:var(--med)}
+  .sev.low{background:#1dd1a122;color:var(--low)}
+  .sev.none{background:#8b98ad22;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .stat{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:14px}
+  .stat .num{font-size:26px;font-weight:700;color:var(--accent)}
+  .stat .lbl{color:var(--muted);font-size:12px;margin-top:4px}
+  pre.out{background:#0a0e14;border:1px solid var(--border);border-radius:6px;padding:12px;max-height:420px;overflow:auto;font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap;word-break:break-all}
+  .muted{color:var(--muted);font-size:12px}
+  .note{background:#1f6feb18;border:1px solid #1f6feb44;padding:10px;border-radius:6px;font-size:12px;color:#9ecbff;margin-bottom:14px}
+  .progress{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-top:6px}
+  .progress > div{height:100%;background:linear-gradient(90deg,var(--low),var(--med),var(--high),var(--crit))}
+  .bar{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden}
+  .bar > div{height:100%;background:var(--accent2)}
+  .tag{display:inline-block;background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:11px;margin:1px}
+  .pill{display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px}
+  .pill.ok{background:#2ecc7122;color:var(--ok)} .pill.run{background:#feca5722;color:var(--med)}
+  .pill.fail{background:#ff5d5d22;color:var(--crit)}
+  footer{padding:16px 24px;color:var(--muted);font-size:11px;text-align:center;border-top:1px solid var(--border);margin-top:20px}
+  @media(max-width:760px){input[type=text]{min-width:100%} .row{flex-direction:column;align-items:stretch}}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚙ 工控安全控制台</h1>
+  <span class="sub">ICS / SCADA · PLC · DNP3 · OPC UA 安全评估（只读/检测视角）</span>
+  <span class="badge">v12.0</span>
+</header>
+
+<nav id="nav">
+  <button data-tab="discovery" class="active">资产发现</button>
+  <button data-tab="protocol">协议分析</button>
+  <button data-tab="vuln">漏洞检测</button>
+  <button data-tab="baseline">基线检查</button>
+  <button data-tab="anomaly">异常检测</button>
+  <button data-tab="threat">威胁情报</button>
+  <button data-tab="assessment">综合评估</button>
+</nav>
+
+<main>
+<div class="note">⚠ 合法边界：本控制台仅做<b>只读探测、离线帧分析、基线核查、威胁情报比对</b>，不向 PLC 下发任何写指令、不修改运行模式、不影响生产系统。请在授权范围内使用。</div>
+
+<!-- ============ 资产发现 ============ -->
+<section class="tab active" id="tab-discovery">
+  <div class="card">
+    <h2>工控资产发现（Modbus/S7/DNP3/CIP/FINS/OPC UA）</h2>
+    <div class="row">
+      <label>目标 IP（逗号分隔）</label>
+      <input type="text" id="disc-targets" value="192.168.0.10,192.168.0.11,192.168.0.20">
+      <button class="primary" onclick="runDiscovery()">启动发现</button>
+      <button class="ghost" onclick="loadAssets()">刷新资产库</button>
+    </div>
+    <div class="muted">探测端口：502 Modbus / 102 S7 / 20000 DNP3 / 44818 EtherNet-IP / 9600 FINS / 4840 OPC UA</div>
+  </div>
+  <div class="card">
+    <h2>资产列表</h2>
+    <div class="grid" id="disc-stats"></div>
+    <div id="disc-table"></div>
+  </div>
+</section>
+
+<!-- ============ 协议分析 ============ -->
+<section class="tab" id="tab-protocol">
+  <div class="card">
+    <h2>工控协议深度分析（离线帧解析）</h2>
+    <div class="row">
+      <label>协议</label>
+      <select id="proto-name">
+        <option value="modbus">Modbus TCP</option><option value="s7">S7comm</option>
+        <option value="dnp3">DNP3</option><option value="cip">EtherNet/IP CIP</option>
+        <option value="fins">Omron FINS</option><option value="opcua">OPC UA</option>
+      </select>
+      <button class="primary" onclick="runProtocol()">分析帧</button>
+      <button class="ghost" onclick="loadSupported()">支持的协议</button>
+    </div>
+    <label>帧（HEX，每行一帧，格式 {"data":"..","protocol":".."}）</label>
+    <textarea id="proto-frames">[
+ {"data":"000100000006010300000001","protocol":"modbus"},
+ {"data":"00020000000601050063FF00","protocol":"modbus"},
+ {"data":"00030000000801830202","protocol":"modbus"}
+]</textarea>
+  </div>
+  <div class="card"><h2>分析结果</h2><pre class="out" id="proto-out">暂无</pre></div>
+</section>
+
+<!-- ============ 漏洞检测 ============ -->
+<section class="tab" id="tab-vuln">
+  <div class="card">
+    <h2>工控漏洞检测（内置 100+ ICS 漏洞库）</h2>
+    <div class="row">
+      <label>厂商</label><input type="text" id="vuln-vendor" placeholder="如 Siemens / Rockwell">
+      <label>型号</label><input type="text" id="vuln-model" placeholder="如 S7-1200">
+      <button class="primary" onclick="runVulnScan()">按指纹匹配</button>
+      <button class="ghost" onclick="loadVulnDB()">浏览漏洞库</button>
+    </div>
+  </div>
+  <div class="card"><h2>检测结果</h2><div id="vuln-stats"></div><div id="vuln-table"></div></div>
+</section>
+
+<!-- ============ 基线检查 ============ -->
+<section class="tab" id="tab-baseline">
+  <div class="card">
+    <h2>工控安全基线检查（0-100 分）</h2>
+    <div class="row">
+      <button class="primary" onclick="runBaseline()">运行基线检查（演示证据）</button>
+      <button class="ghost" onclick="loadRules()">查看基线规则</button>
+    </div>
+    <div class="muted">证据为各规则 ID 是否合规的布尔字典；未提供的规则按"未核查"处理。</div>
+  </div>
+  <div class="card"><h2>合规评分</h2><div id="bl-score"></div><div id="bl-gaps"></div></div>
+</section>
+
+<!-- ============ 异常检测 ============ -->
+<section class="tab" id="tab-anomaly">
+  <div class="card">
+    <h2>工控异常行为检测</h2>
+    <div class="row">
+      <button class="primary" onclick="runAnomaly()">运行检测（演示样本）</button>
+      <button class="ghost" onclick="loadAlerts()">历史告警</button>
+    </div>
+    <div class="muted">检测：未授权功能码 / 越界写寄存器 / 轮询偏离 / 非工时操作 / 流量突增 / PLC 关键操作。</div>
+  </div>
+  <div class="card"><h2>告警</h2><div id="alm-stats"></div><div id="alm-table"></div></div>
+</section>
+
+<!-- ============ 威胁情报 ============ -->
+<section class="tab" id="tab-threat">
+  <div class="card">
+    <h2>工控威胁情报（50+ IOC · Stuxnet/TRITON/Industroyer）</h2>
+    <div class="row">
+      <button class="ghost" onclick="loadIOCs()">IOC 库</button>
+      <button class="ghost" onclick="loadCampaigns()">攻击活动</button>
+      <button class="primary" onclick="runMatch()">匹配观测值（演示）</button>
+    </div>
+    <label>观测值（JSON 数组）</label>
+    <textarea id="threat-obs">[
+ {"type":"sha256","value":"a3f7b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b"},
+ {"type":"file_path","value":"C:\\Windows\\System32\\trilog.exe"}
+]</textarea>
+  </div>
+  <div class="card"><h2>匹配结果</h2><pre class="out" id="threat-out">暂无</pre></div>
+</section>
+
+<!-- ============ 综合评估 ============ -->
+<section class="tab" id="tab-assessment">
+  <div class="card">
+    <h2>工控综合评估工作流</h2>
+    <div class="row">
+      <label>目标</label><input type="text" id="assess-targets" value="192.168.0.10,192.168.0.11">
+      <button class="primary" onclick="runAssessment()">启动综合评估</button>
+      <button class="ghost" onclick="loadHistory()">历史记录</button>
+    </div>
+    <div class="muted">流水线：资产发现 → 协议分析 → 漏洞检测 → 基线检查 → 异常检测 → 威胁比对 → 聚合评级 → 报告。</div>
+  </div>
+  <div class="card"><h2>整体风险</h2><div id="assess-risk"></div></div>
+  <div class="card"><h2>综合报告</h2><pre class="out" id="assess-report">暂无</pre></div>
+</section>
+</main>
+
+<footer>工控安全控制台 · 只读评估视角 · 仅用于授权安全测试 · © 2026</footer>
+
+<script>
+const BASE = "/api/v1/ics-security";
+const $ = id => document.getElementById(id);
+
+// Tab 切换
+document.querySelectorAll("#nav button").forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll("#nav button").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    btn.classList.add("active");
+    $("tab-"+btn.dataset.tab).classList.add("active");
+  };
+});
+
+async function api(path, opts){
+  try{
+    const r = await fetch(BASE+path, opts);
+    const j = await r.json();
+    if(!j.success){ console.error(path, j.error); }
+    return j;
+  }catch(e){ return {success:false, error:String(e)}; }
+}
+const post = (path, body)=>api(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body||{})});
+const sev = s=>`<span class="sev ${s||'none'}">${s||'-'}</span>`;
+
+// 轮询任务
+async function poll(taskId, onDone){
+  const t = setInterval(async ()=>{
+    const j = await api("/"+taskId.split("-")[0]+"/"+taskId+"/status").catch(()=>null);
+    if(!j || !j.data) return;
+    if(j.data.status==="success"||j.data.status==="failed"){
+      clearInterval(t); onDone && onDone(j.data);
+    }
+  }, 800);
+}
+
+// ---------- 资产发现 ----------
+async function runDiscovery(){
+  const targets = $("disc-targets").value.split(",").map(s=>s.trim()).filter(Boolean);
+  const j = await post("/discovery/scan",{targets});
+  if(!j.data) return;
+  const tid = j.data.task_id;
+  poll(tid, async ()=>{
+    const r = await api("/discovery/"+tid+"/results");
+    renderAssets(r.data||{});
+  });
+}
+function renderAssets(d){
+  const s = d.summary||{};
+  $("disc-stats").innerHTML = `
+    <div class="stat"><div class="num">${d.asset_count||0}</div><div class="lbl">发现资产</div></div>
+    <div class="stat"><div class="num">${(s.risk_distribution||{}).critical||0}</div><div class="lbl">高危资产</div></div>
+    <div class="stat"><div class="num">${Object.keys(s.by_type||{}).length}</div><div class="lbl">设备类型</div></div>
+    <div class="stat"><div class="num">${Object.keys(s.by_vendor||{}).length}</div><div class="lbl">厂商数</div></div>`;
+  let h = "<table><tr><th>ID</th><th>IP</th><th>类型</th><th>厂商</th><th>型号</th><th>协议</th><th>风险</th></tr>";
+  (d.assets||[]).forEach(a=>{
+    h += `<tr><td>${a.asset_id}</td><td>${a.ip}</td><td>${(a.device_types||[]).join(",")}</td>
+      <td>${a.fingerprint.vendor}</td><td>${a.fingerprint.model}</td>
+      <td>${(a.protocols||[]).map(p=>`<span class="tag">${p}</span>`).join("")}</td>
+      <td>${sev(a.risk.level)} (${a.risk.score})</td></tr>`;
+  });
+  $("disc-table").innerHTML = h+"</table>";
+}
+async function loadAssets(){
+  const r = await api("/assets/list");
+  renderAssets({assets:(r.data&&r.data.assets)||[], asset_count:(r.data&&r.data.total)||0, summary:{}});
+}
+
+// ---------- 协议分析 ----------
+async function runProtocol(){
+  let frames; try{ frames = JSON.parse($("proto-frames").value); }
+  catch(e){ $("proto-out").textContent = "JSON 解析失败: "+e; return; }
+  const j = await post("/protocol/analyze",{frames, protocol:$("proto-name").value});
+  if(!j.data) return;
+  poll(j.data.task_id, async ()=>{
+    const r = await api("/protocol/"+j.data.task_id+"/report");
+    $("proto-out").textContent = JSON.stringify(r.data, null, 2);
+  });
+}
+async function loadSupported(){
+  const r = await api("/protocol/supported");
+  $("proto-out").textContent = JSON.stringify(r.data, null, 2);
+}
+
+// ---------- 漏洞检测 ----------
+async function runVulnScan(){
+  const j = await post("/vulnerability/scan",{vendor:$("vuln-vendor").value||null, model:$("vuln-model").value||null});
+  if(!j.data) return;
+  poll(j.data.task_id, async ()=>{
+    const r = await api("/vulnerability/"+j.data.task_id+"/results");
+    const d = r.data||{};
+    const dist = d.severity_distribution||{};
+    $("vuln-stats").innerHTML = `<div class="grid">
+      <div class="stat"><div class="num">${d.finding_count||0}</div><div class="lbl">漏洞数</div></div>
+      <div class="stat"><div class="num" style="color:var(--crit)">${dist.critical||0}</div><div class="lbl">Critical</div></div>
+      <div class="stat"><div class="num" style="color:var(--high)">${dist.high||0}</div><div class="lbl">High</div></div>
+      <div class="stat"><div class="num" style="color:var(--med)">${dist.medium||0}</div><div class="lbl">Medium</div></div>
+    </div>`;
+    let h = "<table><tr><th>CVE</th><th>厂商</th><th>产品</th><th>类别</th><th>等级</th><th>修复</th></tr>";
+    (d.findings||[]).slice(0,30).forEach(v=>{
+      h += `<tr><td>${v.cve}</td><td>${v.vendor}</td><td>${v.product}</td><td>${v.category}</td>
+        <td>${sev(v.severity)}</td><td>${v.remediation}</td></tr>`;
+    });
+    $("vuln-table").innerHTML = h+"</table>";
+  });
+}
+async function loadVulnDB(){
+  const r = await api("/vulnerability/database");
+  $("vuln-table").innerHTML = `<pre class="out">${JSON.stringify(r.data,null,2)}</pre>`;
+}
+
+// ---------- 基线 ----------
+async function runBaseline(){
+  // 演示证据：部分合规 / 部分不合规
+  const ev = {"PLC-01":false,"PLC-02":true,"PLC-03":false,"PLC-04":true,"PLC-05":false,
+    "NET-01":false,"NET-02":true,"NET-05":false,"ACC-01":false,"ACC-03":true,
+    "LOG-01":true,"LOG-05":false,"PHY-01":true,"PHY-03":false};
+  const j = await post("/baseline/check",{evidence:ev});
+  if(!j.data) return;
+  poll(j.data.task_id, async ()=>{
+    const r = await api("/baseline/"+j.data.task_id+"/results");
+    const d = r.data||{};
+    $("bl-score").innerHTML = `
+      <div class="stat" style="margin-bottom:10px"><div class="num" style="color:${d.score>=70?'var(--ok)':'var(--high)'}">${d.score}/100</div>
+      <div class="lbl">${d.compliance_level} · 通过 ${(d.summary||{}).passed} / ${(d.summary||{}).total}</div>
+      <div class="progress"><div style="width:${d.score}%"></div></div></div>
+      <table><tr><th>类别</th><th>得分</th><th>通过/失败/未查</th></tr>` +
+      Object.entries(d.category_scores||{}).map(([k,v])=>
+        `<tr><td>${k}</td><td>${v.score}</td><td>${v.passed}/${v.failed}/${v.unknown}</td></tr>`).join("")+"</table>";
+    $("bl-gaps").innerHTML = "<h2 style='margin-top:14px'>差距分析</h2><table><tr><th>规则</th><th>要求</th><th>整改</th></tr>"+
+      (d.gap_analysis||[]).map(g=>`<tr><td>${g.rule_id} ${g.title}</td><td>${g.expected}</td><td>${g.remediation}</td></tr>`).join("")+"</table>";
+  });
+}
+async function loadRules(){
+  const r = await api("/baseline/rules");
+  $("bl-gaps").innerHTML = `<pre class="out">${JSON.stringify(r.data,null,2)}</pre>`;
+}
+
+// ---------- 异常 ----------
+async function runAnomaly(){
+  const payload = {
+    function_code_events:[
+      {function_code:3, src_ip:"192.168.0.5", dst_ip:"192.168.0.10", timestamp:"2026-09-14T10:00:00"},
+      {function_code:16, src_ip:"192.168.0.66", dst_ip:"192.168.0.10", timestamp:"2026-09-14T10:01:00"}],
+    write_events:[
+      {src:"192.168.0.66",dst:"192.168.0.10",register:"40001",value:"99999",is_whitelisted:false,ts:"2026-09-14T10:01:00"}],
+    critical_events:[{critical_op:"s7_download",src:"192.168.0.66",timestamp:"2026-09-14T23:30:00"}],
+    time_events:[{timestamp:"2026-09-14T23:45:00",operation:"s7_download",sensitive:true}]
+  };
+  const j = await post("/anomaly/detect",payload);
+  if(!j.data) return;
+  poll(j.data.task_id, async ()=>{
+    const r = await api("/anomaly/"+j.data.task_id+"/results");
+    const d = r.data||{}; const sd = d.severity_distribution||{};
+    $("alm-stats").innerHTML = `<div class="grid">
+      <div class="stat"><div class="num">${d.alarm_count||0}</div><div class="lbl">告警总数</div></div>
+      <div class="stat"><div class="num" style="color:var(--crit)">${sd.critical||0}</div><div class="lbl">Critical</div></div>
+      <div class="stat"><div class="num" style="color:var(--high)">${sd.high||0}</div><div class="lbl">High</div></div>
+      <div class="stat"><div class="num" style="color:var(--med)">${sd.medium||0}</div><div class="lbl">Medium</div></div>
+    </div>`;
+    $("alm-table").innerHTML = "<table><tr><th>ID</th><th>类型</th><th>等级</th><th>详情</th><th>响应</th></tr>"+
+      (d.alarms||[]).map(a=>`<tr><td>${a.alarm_id}</td><td>${a.type}</td><td>${sev(a.severity)}</td>
+      <td>${a.detail}</td><td>${a.response}</td></tr>`).join("")+"</table>";
+  });
+}
+async function loadAlerts(){
+  const r = await api("/anomaly/alerts");
+  $("alm-table").innerHTML = `<pre class="out">${JSON.stringify(r.data,null,2)}</pre>`;
+}
+
+// ---------- 威胁情报 ----------
+async function loadIOCs(){ const r = await api("/threat/iocs"); $("threat-out").textContent = JSON.stringify(r.data,null,2); }
+async function loadCampaigns(){ const r = await api("/threat/campaigns"); $("threat-out").textContent = JSON.stringify(r.data,null,2); }
+async function runMatch(){
+  let obs; try{ obs = JSON.parse($("threat-obs").value); }catch(e){ $("threat-out").textContent="JSON错误"; return; }
+  const r = await post("/threat/match",{observables:obs});
+  $("threat-out").textContent = JSON.stringify(r.data,null,2);
+}
+
+// ---------- 综合评估 ----------
+async function runAssessment(){
+  const targets = $("assess-targets").value.split(",").map(s=>s.trim()).filter(Boolean);
+  const j = await post("/assessment/run",{targets, baseline_evidence:{"NET-01":false,"PLC-02":true,"ACC-01":false}});
+  if(!j.data) return;
+  poll(j.data.task_id, async ()=>{
+    const r = await api("/assessment/"+j.data.task_id+"/report");
+    const d = r.data||{};
+    const risk = d.overall_risk||{};
+    $("assess-risk").innerHTML = `<div class="stat"><div class="num" style="color:var(--${(risk.level||'low')==='critical'?'crit':(risk.level==='high'?'high':'med')})">${risk.score}/100</div>
+      <div class="lbl">整体风险: ${risk.level}</div>
+      <ul style="margin-top:8px;color:var(--muted);font-size:12px">${(risk.drivers||[]).map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
+    $("assess-report").textContent = JSON.stringify(d,null,2);
+  });
+}
+async function loadHistory(){
+  const r = await api("/assessment/history");
+  $("assess-report").textContent = JSON.stringify(r.data,null,2);
+}
+</script>
+</body>
+</html>

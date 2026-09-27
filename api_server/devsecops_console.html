@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevSecOps 全链路安全控制台</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --border:#30363d; --fg:#e6edf3;
+  --muted:#8b949e; --accent:#58a6ff; --ok:#3fb950; --warn:#d29922;
+  --high:#f85149; --critical:#ff6b6b; --chip:#21262d;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);font-size:14px;line-height:1.5}
+header{padding:18px 28px;border-bottom:1px solid var(--border);
+  background:linear-gradient(90deg,#161b22,#0d1117)}
+header h1{margin:0;font-size:20px;letter-spacing:1px}
+header .sub{color:var(--muted);font-size:12px;margin-top:4px}
+.tabs{display:flex;gap:4px;padding:0 28px;background:var(--panel);
+  border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{padding:12px 18px;cursor:pointer;border:none;background:transparent;
+  color:var(--muted);font-size:14px;border-bottom:2px solid transparent;white-space:nowrap}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover{color:var(--fg)}
+main{padding:24px 28px;max-width:1400px;margin:0 auto}
+.panel{display:none}
+.panel.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:14px;margin-bottom:20px}
+.card{background:var(--panel);border:1px solid var(--border);
+  border-radius:8px;padding:16px}
+.card .label{color:var(--muted);font-size:12px}
+.card .value{font-size:26px;font-weight:600;margin-top:6px}
+.card .bar{height:6px;background:var(--chip);border-radius:3px;margin-top:10px}
+.card .bar > i{display:block;height:100%;border-radius:3px;
+  background:var(--accent);transition:width .4s}
+.row{display:flex;gap:14px;flex-wrap:wrap}
+.col{flex:1;min-width:320px}
+.box{background:var(--panel);border:1px solid var(--border);
+  border-radius:8px;padding:16px;margin-bottom:16px}
+.box h3{margin:0 0 12px;font-size:15px;color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:500;font-size:12px}
+tr:hover td{background:#1c2129}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;
+  background:var(--chip);color:var(--muted)}
+.badge.critical{background:#3d1418;color:var(--critical)}
+.badge.high{background:#3d2418;color:var(--high)}
+.badge.medium{background:#3d3418;color:var(--warn)}
+.badge.low{background:#1a2f1a;color:var(--ok)}
+.badge.ok{background:#1a2f1a;color:var(--ok)}
+button{background:var(--accent);color:#0d1117;border:none;padding:8px 16px;
+  border-radius:6px;cursor:pointer;font-size:13px;font-weight:500}
+button.secondary{background:var(--chip);color:var(--fg)}
+button:hover{opacity:.9}
+textarea,input,select{width:100%;background:#0d1117;color:var(--fg);
+  border:1px solid var(--border);border-radius:6px;padding:8px 10px;
+  font-family:inherit;font-size:13px}
+textarea{min-height:100px;resize:vertical}
+label{display:block;color:var(--muted);font-size:12px;margin:10px 0 4px}
+.pre{background:#0d1117;border:1px solid var(--border);border-radius:6px;
+  padding:12px;font-family:Consolas,monospace;font-size:12px;
+  white-space:pre-wrap;word-break:break-all;max-height:420px;overflow:auto}
+.muted{color:var(--muted);font-size:12px}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:6px 12px;font-size:13px}
+.kv .k{color:var(--muted)}
+.actions{display:flex;gap:10px;margin-top:10px}
+.alert{padding:10px 14px;border-radius:6px;margin:10px 0;font-size:13px}
+.alert.err{background:#3d1418;color:var(--critical);border:1px solid #5b2028}
+.alert.ok{background:#1a2f1a;color:var(--ok);border:1px solid #244a24}
+footer{padding:18px 28px;color:var(--muted);font-size:12px;
+  border-top:1px solid var(--border);text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>DevSecOps 全链路安全控制台</h1>
+  <div class="sub">第14轮升级 · 流水线 / 仓库 / 构建 / 部署 / 门禁 / 成熟度 · 防御视角</div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-tab="pipeline">流水线安全</button>
+  <button class="tab" data-tab="repo">代码仓库</button>
+  <button class="tab" data-tab="build">构建制品</button>
+  <button class="tab" data-tab="deploy">部署运行时</button>
+  <button class="tab" data-tab="gate">安全门禁</button>
+  <button class="tab" data-tab="maturity">成熟度评估</button>
+</div>
+
+<main>
+<!-- ============ 流水线安全 ============ -->
+<section class="panel active" id="panel-pipeline">
+  <div class="cards">
+    <div class="card"><div class="label">平台</div><div class="value">GitHub Actions</div></div>
+    <div class="card"><div class="label">密钥规则数</div><div class="value" id="pp-secrets">–</div></div>
+    <div class="card"><div class="label">脚本规则数</div><div class="value" id="pp-script">–</div></div>
+    <div class="card"><div class="label">安全评分</div><div class="value" id="pp-score">–</div>
+      <div class="bar"><i id="pp-score-bar" style="width:0%"></i></div></div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="box">
+        <h3>流水线配置审计</h3>
+        <label>平台</label>
+        <select id="pp-platform">
+          <option value="github_actions">GitHub Actions</option>
+          <option value="gitlab_ci">GitLab CI</option>
+          <option value="jenkins">Jenkins</option>
+        </select>
+        <label>YAML / Jenkinsfile 内容</label>
+        <textarea id="pp-yaml">on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: some/action@v1
+      - run: curl -fsSL https://x.sh | bash
+      - env:
+          DB_PASSWORD: prod123456
+        run: ./deploy.sh</textarea>
+        <div class="actions">
+          <button onclick="pipelineAudit()">运行审计</button>
+          <button class="secondary" onclick="loadPlatforms()">刷新规则库</button>
+        </div>
+      </div>
+      <div class="box">
+        <h3>硬编码密钥扫描</h3>
+        <textarea id="pp-secret-text">AWS_KEY=AKIAIOSFODNN7EXAMPLE
+token: ghp_1234567890abcdefghijklmnopqrstuvwxyz
+slack: xoxb-111-222-aaa
+password = "hunter2"</textarea>
+        <div class="actions"><button onclick="secretScan()">扫描</button></div>
+        <div id="pp-secret-result" class="pre"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="box">
+        <h3>审计发现</h3>
+        <div id="pp-findings"><span class="muted">点击"运行审计"开始</span></div>
+      </div>
+      <div class="box">
+        <h3>构建环境隔离 / 依赖锁定 / 签名</h3>
+        <div class="actions">
+          <button class="secondary" onclick="postJSON('/api/v1/devsecops/pipeline/isolation',{},'pp-isolation')">隔离评估</button>
+          <button class="secondary" onclick="postJSON('/api/v1/devsecops/pipeline/dep-locking',{ecosystem:'python',signals:{present_files:['requirements.txt'],unpinned_deps:['requests']}},'pp-lock')">依赖锁定</button>
+          <button class="secondary" onclick="postJSON('/api/v1/devsecops/pipeline/signing',{signals:{cosign_sign:true,cosign_verify:true,sbom_attest:true}},'pp-sign')">签名验证</button>
+        </div>
+        <div id="pp-isolation" class="pre"></div>
+        <div id="pp-lock" class="pre"></div>
+        <div id="pp-sign" class="pre"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 代码仓库 ============ -->
+<section class="panel" id="panel-repo">
+  <div class="cards">
+    <div class="card"><div class="label">Git 配置得分</div><div class="value" id="rp-git">–</div></div>
+    <div class="card"><div class="label">分支保护得分</div><div class="value" id="rp-bp">–</div></div>
+    <div class="card"><div class="label">Pre-commit 数</div><div class="value" id="rp-hooks">–</div></div>
+    <div class="card"><div class="label">整体得分</div><div class="value" id="rp-overall">–</div></div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="box">
+        <h3>综合仓库评估</h3>
+        <div class="actions">
+          <button onclick="repoFull()">运行全量评估</button>
+        </div>
+        <div id="rp-result" class="pre"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="box">
+        <h3>分支保护规则</h3>
+        <div id="rp-bp-table"></div>
+      </div>
+      <div class="box">
+        <h3>合并门禁</h3>
+        <div id="rp-gates"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 构建制品 ============ -->
+<section class="panel" id="panel-build">
+  <div class="cards">
+    <div class="card"><div class="label">Dockerfile 规则</div><div class="value" id="bd-rules">–</div></div>
+    <div class="card"><div class="label">Dockerfile 得分</div><div class="value" id="bd-score">–</div></div>
+    <div class="card"><div class="label">镜像漏洞数</div><div class="value" id="bd-vuln">–</div></div>
+    <div class="card"><div class="label">供应链风险</div><div class="value" id="bd-sc">–</div></div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="box">
+        <h3>Dockerfile 扫描</h3>
+        <label>Dockerfile 内容</label>
+        <textarea id="bd-df">FROM ubuntu:latest
+RUN apt-get install -y curl
+RUN curl -fsSL https://x.sh | bash
+ENV DB_PASSWORD=supersecret
+COPY . /app
+EXPOSE 8080-9090
+CMD ["./app"]</textarea>
+        <div class="actions"><button onclick="scanDockerfile()">扫描 Dockerfile</button></div>
+        <div id="bd-df-result" class="pre"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="box">
+        <h3>镜像漏洞 / 供应链</h3>
+        <div class="actions">
+          <button class="secondary" onclick="postJSON('/api/v1/devsecops/build/image',{image:'app:1.0.0'},'bd-img')">扫描镜像</button>
+          <button class="secondary" onclick="postJSON('/api/v1/devsecops/build/supply-chain',{signals:{typosquat:true,postinstall:false}},'bd-sc2')">供应链检测</button>
+          <button class="secondary" onclick="postJSON('/api/v1/devsecops/build/registry',{signals:{rbac:true,vuln_scan:false,retention:false}},'bd-reg')">制品库</button>
+        </div>
+        <div id="bd-img" class="pre"></div>
+        <div id="bd-sc2" class="pre"></div>
+        <div id="bd-reg" class="pre"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 部署运行时 ============ -->
+<section class="panel" id="panel-deploy">
+  <div class="cards">
+    <div class="card"><div class="label">工作负载得分</div><div class="value" id="dp-wl">–</div></div>
+    <div class="card"><div class="label">RBAC 过权</div><div class="value" id="dp-rbac">–</div></div>
+    <div class="card"><div class="label">Secrets 得分</div><div class="value" id="dp-secrets">–</div></div>
+    <div class="card"><div class="label">运行时告警</div><div class="value" id="dp-rt">–</div></div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="box">
+        <h3>K8s 工作负载审计</h3>
+        <div class="actions">
+          <button onclick="auditWorkload()">审计 Deployment</button>
+        </div>
+        <div id="dp-wl-result" class="pre"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="box">
+        <h3>RBAC / PSS / Istio</h3>
+        <div class="actions">
+          <button class="secondary" onclick="postJSON('/api/v1/devsecops/deploy/rbac',{signals:{}}, 'dp-rb')">RBAC</button>
+          <button class="secondary" onclick="postJSON('/api/v1/devsecops/deploy/pss',{signals:{enforced:'restricted'}},'dp-pss')">PSS</button>
+          <button class="secondary" onclick="postJSON('/api/v1/devsecops/deploy/secrets',{signals:{encryption_at_rest:true}}, 'dp-se')">Secrets</button>
+          <button class="secondary" onclick="postJSON('/api/v1/devsecops/deploy/istio',{signals:{mtls_strict:true}}, 'dp-is')">Istio</button>
+        </div>
+        <div id="dp-rb" class="pre"></div>
+        <div id="dp-pss" class="pre"></div>
+        <div id="dp-se" class="pre"></div>
+        <div id="dp-is" class="pre"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 安全门禁 ============ -->
+<section class="panel" id="panel-gate">
+  <div class="cards">
+    <div class="card"><div class="label">阻断规则</div><div class="value" id="gt-block">–</div></div>
+    <div class="card"><div class="label">警告规则</div><div class="value" id="gt-warn">–</div></div>
+    <div class="card"><div class="label">门禁决策</div><div class="value" id="gt-decision">–</div></div>
+    <div class="card"><div class="label">安全评分</div><div class="value" id="gt-score">–</div></div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="box">
+        <h3>门禁评估</h3>
+        <label>CRITICAL CVE 数</label>
+        <input id="gt-crit" value="1" type="number">
+        <label>HIGH CVE 数</label>
+        <input id="gt-high" value="4" type="number">
+        <label>硬编码密钥 critical</label>
+        <input id="gt-sec" value="0" type="number">
+        <label>制品已签名</label>
+        <select id="gt-sign"><option value="true">是</option><option value="false">否</option></select>
+        <div class="actions"><button onclick="gateEval()">运行门禁</button></div>
+        <div id="gt-result" class="pre"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="box">
+        <h3>流水线配置生成</h3>
+        <label>平台</label>
+        <select id="gt-platform">
+          <option value="github_actions">GitHub Actions</option>
+          <option value="gitlab_ci">GitLab CI</option>
+          <option value="jenkins">Jenkins</option>
+        </select>
+        <div class="actions"><button onclick="genConfig()">生成配置</button></div>
+        <div id="gt-cfg" class="pre"></div>
+      </div>
+      <div class="box">
+        <h3>规则库</h3>
+        <div id="gt-rules" class="pre"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 成熟度评估 ============ -->
+<section class="panel" id="panel-maturity">
+  <div class="cards">
+    <div class="card"><div class="label">总分</div><div class="value" id="mt-total">–</div></div>
+    <div class="card"><div class="label">等级</div><div class="value" id="mt-level">–</div></div>
+    <div class="card"><div class="label">工具链</div><div class="value" id="mt-tool">–</div></div>
+    <div class="card"><div class="label">流程</div><div class="value" id="mt-proc">–</div></div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="box">
+        <h3>综合成熟度</h3>
+        <div class="actions"><button onclick="maturityAssess()">评估</button></div>
+        <div id="mt-result" class="pre"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="box">
+        <h3>5 阶段模型</h3>
+        <div id="mt-levels"></div>
+      </div>
+      <div class="box">
+        <h3>下一步路线图</h3>
+        <div id="mt-roadmap" class="pre"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>DevSecOps 全链路安全 · 仅用于防御性评估 · 第14轮升级</footer>
+
+<script>
+const API = '/api/v1/devsecops';
+// ---- tabs ----
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-'+t.dataset.tab).classList.add('active');
+  };
+});
+// ---- helpers ----
+async function jget(url){
+  const r=await fetch(url); return r.json();
+}
+async function postJSON(url, body, outId){
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body||{})});
+    const j=await r.json();
+    if(outId){
+      document.getElementById(outId).textContent =
+        j.success? JSON.stringify(j.result||j.data,null,2) : ('ERROR: '+j.error);
+    }
+    return j;
+  }catch(e){
+    if(outId) document.getElementById(outId).textContent='FAIL: '+e;
+  }
+}
+const el = id=>document.getElementById(id);
+const sevBadge = s=>`<span class="badge ${s}">${s}</span>`;
+
+// ---- pipeline ----
+async function loadPlatforms(){
+  const j = await jget(API+'/pipeline/platforms');
+  if(j.success){
+    el('pp-secrets').textContent = j.data.secret_patterns_count;
+    el('pp-script').textContent = j.data.script_rules_count;
+  }
+}
+async function pipelineAudit(){
+  const body={platform:el('pp-platform').value, config_text:el('pp-yaml').value, signals:{}};
+  const j = await postJSON(API+'/pipeline/audit', body);
+  if(j.success){
+    const r=j.result;
+    el('pp-score').textContent=r.security_score;
+    el('pp-score-bar').style.width=r.security_score+'%';
+    el('pp-findings').innerHTML =
+      (r.findings||[]).map(f=>`<div style="margin:6px 0">${sevBadge(f.severity)} <b>${f.title}</b><div class="muted">${f.advice}</div></div>`).join('')
+      || '<span class="muted">无发现</span>';
+  }
+}
+async function secretScan(){
+  const j=await postJSON(API+'/pipeline/scan-secrets',
+    {content:el('pp-secret-text').value,source:'inline'},'pp-secret-result');
+}
+
+// ---- repo ----
+async function repoFull(){
+  const j = await postJSON(API+'/repo/full', {signals:{
+    branch_rules:['require_pr','require_review','no_force_push'],
+    hooks:['gitleaks','detect-private-key'],
+    merge_gates:['unit_test','sast','secret_scan','approval']
+  }},'rp-result');
+  if(j.success){
+    el('rp-git').textContent=j.result.git_config.score;
+    el('rp-bp').textContent=j.result.branch_protection.score;
+    el('rp-hooks').textContent=j.result.secret_scan.score;
+    el('rp-overall').textContent=j.result.overall_score;
+  }
+}
+
+// ---- build ----
+async function scanDockerfile(){
+  const j=await postJSON(API+'/build/dockerfile',
+    {content:el('bd-df').value,filename:'Dockerfile'},'bd-df-result');
+  if(j.success){
+    el('bd-score').textContent=j.result.score;
+    el('bd-rules').textContent=j.result.rules_total;
+  }
+}
+
+// ---- deploy ----
+async function auditWorkload(){
+  const manifest={metadata:{name:'api-deploy',namespace:'prod'},
+    spec:{template:{spec:{containers:[{name:'api',
+      image:'api:1.0',securityContext:{privileged:true},
+      env:[{name:'DB_PASSWORD',value:'x'}]}}]}}}};
+  const j=await postJSON(API+'/deploy/workload',{kind:'Deployment',manifest},'dp-wl-result');
+  if(j.success){ el('dp-wl').textContent=j.result.score; }
+}
+
+// ---- gate ----
+async function gateEval(){
+  const signals={
+    critical_cve:+el('gt-crit').value, high_cve:+el('gt-high').value,
+    secret_critical:+el('gt-sec').value,
+    artifact_signed: el('gt-sign').value==='true'
+  };
+  const j=await postJSON(API+'/gate/evaluate',{signals},'gt-result');
+  if(j.success){
+    el('gt-decision').textContent=j.result.decision;
+    el('gt-score').textContent=j.result.security_score;
+  }
+}
+async function genConfig(){
+  const j=await postJSON(API+'/gate/config',
+    {platform:el('gt-platform').value,gate_level:'L2'},'gt-cfg');
+}
+async function loadGateRules(){
+  const j=await jget(API+'/gate/rules');
+  if(j.success){
+    el('gt-block').textContent=j.data.block_rules.length;
+    el('gt-warn').textContent=j.data.warn_rules.length;
+    el('gt-rules').textContent=JSON.stringify(j.data.block_rules,null,2);
+  }
+}
+
+// ---- maturity ----
+async function maturityAssess(){
+  const j=await postJSON(API+'/maturity/assess',{signals:{
+    toolchain:55, process:40, culture:30, metrics:25, governance:50
+  }},'mt-result');
+  if(j.success){
+    el('mt-total').textContent=j.result.total_score;
+    el('mt-level').textContent=j.result.level_name;
+    el('mt-tool').textContent=j.result.dimensions[0].raw;
+    el('mt-proc').textContent=j.result.dimensions[1].raw;
+    el('mt-roadmap').textContent=(j.result.roadmap||[]).join('\n');
+  }
+}
+async function loadLevels(){
+  const j=await jget(API+'/maturity/levels');
+  if(j.success){
+    el('mt-levels').innerHTML = j.data.levels.map(l=>
+      `<div style="padding:6px 0"><b>${l.id} ${l.name}</b> <span class="muted">(${l.score_range[0]}-${l.score_range[1]})</span><div class="muted">${l.desc}</div></div>`
+    ).join('');
+  }
+}
+
+// init
+loadPlatforms(); loadGateRules(); loadLevels();
+</script>
+</body>
+</html>

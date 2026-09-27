@@ -1,0 +1,13 @@
+{
+  "enabled": false,
+  "server": "127.0.0.1",
+  "port": 514,
+  "protocol": "udp",
+  "format": "cef",
+  "facility": 16,
+  "app_name": "AIHackingAgent",
+  "vendor": "AISec",
+  "product": "AI-Hacking-Agent",
+  "version": "1.0.0",
+  "timeout": 5
+}

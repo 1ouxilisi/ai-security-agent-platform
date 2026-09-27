@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>商业产品体验极致 · Commercial Ultra</title>
+<style>
+:root{
+  --bg:#0d1117; --card:#161b22; --inset:#010409; --border:#30363d;
+  --fg:#e6edf3; --muted:#8b949e; --faint:#6e7681;
+  --accent:#a371f7; --ok:#3fb950; --warn:#d29922; --bad:#f85149; --info:#39d2c0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);
+  font-family:"Inter","Microsoft YaHei",system-ui,sans-serif;font-size:14px}
+header{padding:18px 26px;background:linear-gradient(90deg,#a371f733,#a371f700);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:20px}
+header .sub{color:var(--muted);font-size:13px}
+header .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+main{padding:22px 26px;max-width:1400px;margin:0 auto}
+.grid{display:grid;gap:16px}
+.g-2{grid-template-columns:1fr 1fr}
+.g-3{grid-template-columns:repeat(3,1fr)}
+.g-4{grid-template-columns:repeat(4,1fr)}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px}
+.panel h2{font-size:15px;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.kpi{background:var(--inset);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.kpi .v{font-size:24px;font-weight:800}
+.kpi .l{color:var(--muted);font-size:12px;margin-top:4px}
+.score{padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--card)}
+.score .ic{font-size:24px}
+.score .t{font-weight:700;margin:6px 0 4px}
+.score .d{color:var(--muted);font-size:12px}
+.score.pass{border-left:4px solid var(--ok)}
+.score.fail{border-left:4px solid var(--bad)}
+button{background:var(--accent);color:#0d1117;border:none;padding:8px 14px;border-radius:8px;
+  cursor:pointer;font-weight:600;font-size:13px}
+button:hover{filter:brightness(1.1)}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--border)}
+button.ghost:hover{border-color:var(--accent);color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:600}
+.tag{font-size:11px;padding:2px 8px;border-radius:10px;display:inline-block}
+.tag.pass{background:#3fb95022;color:var(--ok)}
+.tag.fail{background:#f8514922;color:var(--bad)}
+.tag.warn{background:#d2992222;color:var(--warn)}
+pre{background:var(--inset);border:1px solid var(--border);border-radius:8px;padding:10px;
+  font-size:12px;overflow:auto;max-height:240px;white-space:pre-wrap}
+input{background:var(--inset);border:1px solid var(--border);color:var(--fg);
+  padding:7px 10px;border-radius:8px;min-width:200px}
+.mono{font-family:Consolas,monospace;color:var(--info)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.plan{border:1px solid var(--border);border-radius:12px;padding:14px;background:var(--inset)}
+.plan.hot{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.plan .p{font-size:22px;font-weight:800}
+.plan ul{margin:8px 0 0 18px;color:var(--muted);font-size:12px}
+@media(max-width:1100px){.g-2,.g-3,.g-4{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>💼 商业产品体验极致控制台</h1>
+    <div class="sub">方向4 · 品牌官网 · 一键演示 · 客户门户 · 计费 · SLA · 备份 · 帮助中心</div>
+  </div>
+  <div class="right">
+    <button class="ghost" onclick="loadAll()">🔄 刷新</button>
+    <span class="tag pass">commercial-ultra</span>
+  </div>
+</header>
+
+<main>
+  <div class="grid g-4" id="scoreGrid" style="margin-bottom:16px"></div>
+
+  <div class="grid g-2">
+    <div class="panel">
+      <h2>🌐 品牌官网 / 定价</h2>
+      <div class="row">
+        <button onclick="loadPricing()">查看定价</button>
+        <button class="ghost" onclick="loadHome()">产品首页</button>
+        <button class="ghost" onclick="loadLeads()">销售线索</button>
+      </div>
+      <div class="grid g-3" id="planBox"></div>
+      <pre id="webOut">点击按钮查看官网数据…</pre>
+    </div>
+
+    <div class="panel">
+      <h2>🎬 一键产品演示</h2>
+      <div class="row">
+        <button onclick="startDemo()">▶️ 启动演示</button>
+        <button class="ghost" onclick="nextStep()">下一步引导</button>
+        <button class="ghost" onclick="runAll()">⚡ 一键跑完</button>
+      </div>
+      <pre id="demoOut">点击「启动演示」开始 5 步引导流程。</pre>
+    </div>
+  </div>
+
+  <div class="grid g-2">
+    <div class="panel">
+      <h2>👤 客户门户（演示账号 pro@demo.com / demo123）</h2>
+      <div class="row">
+        <input id="portalEmail" value="pro@demo.com" />
+        <input id="portalPwd" type="password" value="demo123" />
+        <button onclick="portalLogin()">登录</button>
+        <button class="ghost" onclick="portalProjects()">我的项目</button>
+      </div>
+      <pre id="portalOut">登录后可查看项目 / 报告 / 账单。</pre>
+    </div>
+
+    <div class="panel">
+      <h2>💳 计费系统 Pro</h2>
+      <div class="row">
+        <button onclick="billingScan()">记 1 次扫描</button>
+        <button onclick="billingSubscribe()">订阅 pro/月</button>
+        <button class="ghost" onclick="billingInvoices()">账单列表</button>
+      </div>
+      <pre id="billingOut">按量 + 订阅，Stripe/支付宝接口预留。</pre>
+    </div>
+  </div>
+
+  <div class="grid g-2">
+    <div class="panel">
+      <h2>📈 SLA 监控 / 状态页</h2>
+      <div class="row">
+        <div class="kpi"><div class="v mono" id="slaPct">--</div><div class="l">可用性 %</div></div>
+        <div class="kpi"><div class="v mono" id="slaLat">--</div><div class="l">平均延迟 ms</div></div>
+        <div class="kpi"><div class="v mono" id="slaInc">--</div><div class="l">未恢复事件</div></div>
+      </div>
+      <div class="row">
+        <button onclick="slaBad()">模拟故障</button>
+        <button class="ghost" onclick="slaRecover()">自动恢复</button>
+        <button class="ghost" onclick="slaAlerts()">告警</button>
+      </div>
+      <pre id="slaOut">目标可用性 99.95%。</pre>
+    </div>
+
+    <div class="panel">
+      <h2>💾 备份恢复</h2>
+      <div class="row">
+        <button onclick="backupCreate()">新建备份</button>
+        <button onclick="drift()">模拟数据漂移</button>
+        <button class="ghost" onclick="backupList()">备份历史</button>
+      </div>
+      <pre id="backupOut">策略：自动 / 保留 14 份 / 压缩加密。</pre>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>❓ 帮助中心</h2>
+    <div class="row">
+      <input id="helpKw" placeholder="搜索：扫描 / 报告 / 退款" />
+      <button onclick="helpSearch()">搜索</button>
+      <button class="ghost" onclick="helpFaq()">FAQ</button>
+      <button class="ghost" onclick="helpVideos()">视频教程</button>
+    </div>
+    <pre id="helpOut">文档 / FAQ / 视频教程 一体化。</pre>
+  </div>
+
+  <div class="panel">
+    <h2>🔌 端点清单（50+）</h2>
+    <table><thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+    <tbody id="epBody"></tbody></table>
+  </div>
+</main>
+
+<script>
+const API='/api/v1/commercial-ultra';
+let TOKEN=null, DEMO_ID=null;
+async function g(u){const r=await fetch(API+u);return r.json();}
+async function p(u,b,auth){
+  const h={'Content-Type':'application/json'};
+  if(auth&&TOKEN)h['Authorization']='Bearer '+TOKEN;
+  const r=await fetch(API+u,{method:'POST',headers:h,body:JSON.stringify(b||{})});return r.json();
+}
+function set(id,v){const e=document.getElementById(id); if(e)e.textContent=v;}
+
+async function loadScore(){
+  const d=await g('/scorecard'); if(!d.success)return;
+  document.getElementById('scoreGrid').innerHTML=Object.values(d.data).map(s=>`
+    <div class="score ${s.ok?'pass':'fail'}">
+      <div class="ic">${s.ok?'✅':'⛔'}</div>
+      <div class="t">${s.label}</div><div class="d">${s.detail}</div></div>`).join('');
+}
+async function loadPricing(){
+  const d=await g('/billing/pricing'); if(!d.success)return;
+  document.getElementById('planBox').innerHTML=d.data.plans.map(pl=>`
+    <div class="plan ${pl.highlight?'hot':''}">
+      <div style="font-weight:700">${pl.name}</div>
+      <div class="p">¥${pl.monthly}<span style="font-size:12px;color:var(--muted)">/月</span></div>
+      <ul>${pl.features.map(f=>`<li>${f}</li>`).join('')}</ul></div>`).join('');
+  set('webOut', JSON.stringify(d.data.plans.map(x=>x.name),null,0)+'\n年付价: pro='+d.data.plans.pro.yearly);
+}
+async function loadHome(){ const d=await g('/website/home'); set('webOut',JSON.stringify(d.data.hero,null,2)+'\n核心特性 '+d.data.core_features.length+' 项'); }
+async function loadLeads(){ const d=await g('/website/leads'); set('webOut',JSON.stringify(d.data.items,null,2)||'暂无线索'); }
+
+async function startDemo(){ const d=await p('/demo/start',{}); DEMO_ID=d.data.demo_id; set('demoOut','演示已启动: '+DEMO_ID+'\n下一步: /demo/next'); }
+async function nextStep(){ if(!DEMO_ID){await startDemo();} const d=await p('/demo/next/'+DEMO_ID,{}); set('demoOut','步骤 '+(d.data.step?d.data.step.step:'-')+' '+ (d.data.step?d.data.step.title:'') +'\n结果: '+JSON.stringify(d.data.result)); if(d.data.done){set('demoOut',document.getElementById('demoOut').textContent+'\n✅ 演示完成');} }
+async function runAll(){ if(!DEMO_ID){await startDemo();} const d=await p('/demo/run-all/'+DEMO_ID,{}); set('demoOut','一键跑完 '+d.data.steps_completed+' 步\n报告: '+JSON.stringify(d.data.report,null,2)); }
+
+async function portalLogin(){ const d=await p('/portal/login',{email:document.getElementById('portalEmail').value,password:document.getElementById('portalPwd').value}); if(d.success){TOKEN=d.data.token; set('portalOut','登录成功: '+d.data.company+'\n套餐: '+d.data.plan);} else set('portalOut','登录失败: '+d.error); }
+async function portalProjects(){ if(!TOKEN)await portalLogin(); const d=await g('/portal/projects'); if(!d.success){set('portalOut',d.error);return;} set('portalOut','我的项目 ('+d.data.items.length+'):\n'+d.data.items.map(p=>p.name+' ['+p.status+']').join('\n')); }
+
+async function billingScan(){ const d=await p('/billing/scan',{customer_id:'C-DEMO-00001',count:1}); set('billingOut',JSON.stringify(d.data,null,2)); }
+async function billingSubscribe(){ const d=await p('/billing/subscribe',{customer_id:'C-DEMO-00001',plan:'pro',period:'monthly'}); set('billingOut',JSON.stringify(d.data,null,2)); }
+async function billingInvoices(){ const d=await g('/billing/invoices'); set('billingOut','账单 ('+d.data.items.length+'):\n'+d.data.items.map(i=>i.invoice_id+' ¥'+i.amount+' '+i.status).join('\n')); }
+
+async function loadSla(){ const d=await g('/sla/availability'); if(!d.success)return; set('slaPct',d.data.availability_pct); set('slaLat',d.data.avg_latency_ms); set('slaInc','-'); }
+async function slaStatus(){ const d=await g('/sla/status-page'); set('slaOut','状态页: '+d.data.overall+' 可用率 '+d.data.availability_pct+'%'); }
+async function slaBad(){ const d=await p('/sla/probe',{ok:false,latency_ms:950}); set('slaOut','已注入故障: '+JSON.stringify(d.data)); loadSla(); }
+async function slaRecover(){ const d=await p('/sla/auto-recover',{}); set('slaOut','自动恢复: '+JSON.stringify(d.data)); loadSla(); }
+async function slaAlerts(){ const d=await g('/sla/alerts'); set('slaOut','告警 ('+d.data.items.length+'):\n'+d.data.items.map(a=>a.level+' '+a.message).join('\n')); }
+
+async function backupCreate(){ const d=await p('/backup/create',{label:'手动备份'}); set('backupOut','已创建: '+d.data.backup_id+' '+d.data.size_kb+'KB'); }
+async function drift(){ const d=await p('/backup/simulate-drift',{}); set('backupOut','数据漂移后 live_state: '+JSON.stringify(d.data)); }
+async function backupList(){ const d=await g('/backup/list'); set('backupOut','备份历史 ('+d.data.items.length+'):\n'+d.data.items.map(b=>b.backup_id+' '+b.label+' '+b.created_at).join('\n')); }
+
+async function helpSearch(){ const d=await g('/help/search?q='+encodeURIComponent(document.getElementById('helpKw').value)); set('helpOut','命中 '+d.data.total+' 条\n文档'+d.data.docs.length+' FAQ'+d.data.faqs.length+' 视频'+d.data.videos.length); }
+async function helpFaq(){ const d=await g('/help/faq'); set('helpOut',d.data.items.map(f=>'Q: '+f.q+'\nA: '+f.a).join('\n\n')); }
+async function helpVideos(){ const d=await g('/help/videos'); set('helpOut',d.data.items.map(v=>v.title+' ('+v.duration+')').join('\n')); }
+
+const EPS=[
+ ['GET','/overview','总览'],['GET','/scorecard','七项打分卡'],['GET','/all','批量合并'],
+ ['GET','/website/home','官网首页'],['GET','/website/features','功能页'],['GET','/website/pricing','定价页'],
+ ['GET','/website/docs','文档页'],['GET','/website/contact','联系页'],['POST','/website/lead','提交线索'],
+ ['GET','/website/leads','线索列表'],['GET','/website/analytics','站点统计'],
+ ['GET','/demo/scenes','演示脚本'],['POST','/demo/start','启动演示'],['POST','/demo/next/{id}','下一步'],
+ ['POST','/demo/run-all/{id}','一键跑完'],['GET','/demo/status/{id}','演示状态'],
+ ['POST','/portal/register','注册'],['POST','/portal/login','登录'],['POST','/portal/logout','登出'],
+ ['GET','/portal/me','当前用户'],['PUT','/portal/profile','更新资料'],['POST','/portal/change-password','改密码'],
+ ['GET','/portal/projects','项目列表'],['POST','/portal/projects','建项目'],['GET','/portal/projects/{id}','项目详情'],
+ ['DELETE','/portal/projects/{id}','删项目'],['GET','/portal/projects/{id}/reports','项目报告'],['GET','/portal/reports/{id}','报告详情'],
+ ['GET','/billing/pricing','定价'],['POST','/billing/scan','按量计费'],['POST','/billing/subscribe','订阅'],
+ ['POST','/billing/pay/{id}','发起支付'],['POST','/billing/pay/{id}/confirm','确认支付'],
+ ['GET','/billing/invoices','账单列表'],['GET','/billing/invoices/{id}','账单详情'],
+ ['GET','/billing/account/{id}','账户'],['GET','/billing/stats','计费统计'],
+ ['GET','/sla/status-page','状态页'],['GET','/sla/availability','可用性'],['POST','/sla/probe','探活'],
+ ['POST','/sla/auto-recover','自动恢复'],['GET','/sla/incidents','事件'],['GET','/sla/alerts','告警'],['GET','/sla/health','健康'],
+ ['POST','/backup/create','新建备份'],['GET','/backup/list','备份历史'],['POST','/backup/restore/{id}','一键恢复'],
+ ['DELETE','/backup/{id}','删备份'],['GET','/backup/policy','备份策略'],['PUT','/backup/policy','改策略'],
+ ['POST','/backup/simulate-drift','模拟漂移'],
+ ['GET','/help/docs','文档列表'],['GET','/help/docs/{id}','文档详情'],['GET','/help/faq','FAQ'],
+ ['GET','/help/videos','视频教程'],['GET','/help/search','帮助搜索'],
+];
+document.getElementById('epBody').innerHTML=EPS.map(e=>`<tr>
+ <td><span class="tag pass">${e[0]}</span></td>
+ <td class="mono">/api/v1/commercial-ultra${e[1]}</td><td>${e[2]}</td></tr>`).join('');
+
+function loadAll(){ loadScore(); loadPricing(); loadSla(); }
+loadAll();
+</script>
+</body>
+</html>

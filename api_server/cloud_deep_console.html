@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>云安全深度控制台</title>
+<style>
+  body { background:#0d1117; color:#c9d1d9; font-family:Consolas,Menlo,monospace;
+         margin:0; padding:20px; }
+  h1 { color:#ff7b72; border-bottom:1px solid #30363d; padding-bottom:8px; }
+  h2 { color:#7ee787; margin-top:20px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(420px,1fr));
+          gap:16px; }
+  .card { background:#161b22; border:1px solid #30363d; border-radius:8px;
+          padding:14px; }
+  button { background:#1f6feb; color:#fff; border:0; padding:8px 14px;
+           border-radius:6px; cursor:pointer; margin:4px 4px 4px 0; }
+  button.secondary { background:#30363d; }
+  pre { background:#010409; padding:10px; border-radius:6px;
+        overflow:auto; max-height:360px; font-size:12px; }
+  .ok { color:#3fb950; } .warn { color:#d29922; } .bad { color:#f85149; }
+</style>
+</head>
+<body>
+<h1>☁ 云安全深度控制台</h1>
+<p>真实云 API 对接（boto3）/ 安全组·存储桶·IAM·加密 配置检查 / 资产发现 / 风险评级</p>
+
+<div class="grid">
+  <div class="card">
+    <h2>凭证与环境</h2>
+    <button onclick="env()">检查凭证</button>
+    <button class="secondary" onclick="hint()">环境变量提示</button>
+    <pre id="envOut">未检查</pre>
+  </div>
+
+  <div class="card">
+    <h2>真实扫描</h2>
+    <button onclick="realScan()">运行真实扫描（需凭证）</button>
+    <button class="secondary" onclick="demoScan()">运行演示扫描</button>
+    <pre id="scanOut">未运行</pre>
+  </div>
+
+  <div class="card">
+    <h2>规则库</h2>
+    <button onclick="rules()">查看规则</button>
+    <pre id="rulesOut">未加载</pre>
+  </div>
+
+  <div class="card">
+    <h2>报告</h2>
+    <button onclick="listReports()">报告列表</button>
+    <pre id="repOut">未加载</pre>
+  </div>
+</div>
+
+<script>
+const API = "/api/v1/cloud-deep";
+async function j(m, u, b) {
+  const o = { method:m, headers:{"Content-Type":"application/json"} };
+  if (b) o.body = JSON.stringify(b);
+  const r = await fetch(API+u, o); return r.json();
+}
+function show(id, d) {
+  document.getElementById(id).textContent = JSON.stringify(d?.data||d, null, 2);
+}
+async function env() { show("envOut", await j("GET","/client/env")); }
+async function hint() { show("envOut", await j("GET","/client/hint")); }
+async function realScan() { show("scanOut",
+  await j("POST","/scan/real",{provider:"aws",region:""})); }
+async function demoScan() { show("scanOut", await j("GET","/scan/demo")); }
+async function rules() { show("rulesOut", await j("GET","/rules")); }
+async function listReports() { show("repOut", await j("GET","/reports")); }
+</script>
+</body>
+</html>

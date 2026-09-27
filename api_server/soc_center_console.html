@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>统一 SOC Center · 安全运营中心</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#121821; --panel2:#18212d; --border:#243040;
+  --fg:#e6edf3; --muted:#8b98a8; --accent:#4fc3f7; --ok:#2ecc71;
+  --warn:#f1c40f; --high:#ff7043; --crit:#ff1744; --ai:#ce93d8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  font-size:13px;line-height:1.5;}
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 16px;background:linear-gradient(90deg,#10161d,#16202c);
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+header h1{font-size:15px;margin:0;color:var(--accent)}
+header .sub{color:var(--muted);font-size:11px;margin-left:8px}
+button{background:#1c2733;color:var(--fg);border:1px solid var(--border);
+  padding:5px 10px;border-radius:4px;cursor:pointer;font-size:12px}
+button:hover{background:#243240}
+button.primary{background:#1565c0;border-color:#1976d2}
+button.danger{background:#b71c1c;border-color:#c62828}
+button.ok{background:#1b5e20;border-color:#2e7d32}
+input,select{background:#0e141b;color:var(--fg);border:1px solid var(--border);
+  padding:5px 8px;border-radius:4px;font-size:12px}
+/* 顶部领域导航 */
+.domainnav{display:flex;gap:4px;padding:6px 16px;background:#0e141b;
+  border-bottom:1px solid var(--border);overflow-x:auto}
+.domainnav .d{padding:4px 10px;cursor:pointer;border-radius:4px;
+  color:var(--muted);white-space:nowrap;font-size:12px;border:1px solid transparent}
+.domainnav .d:hover{background:#1c2733;color:var(--accent)}
+.domainnav .d.act{background:#1c2733;color:var(--accent);border-color:var(--border)}
+/* 三栏布局 */
+.layout{display:grid;grid-template-columns:280px 1fr 340px;gap:10px;
+  padding:10px 16px;min-height:calc(100vh - 160px)}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+@media(max-width:1200px){.layout{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;padding:10px;margin-bottom:10px}
+.panel h3{margin:0 0 8px;font-size:13px;color:var(--accent)}
+.kpi{background:var(--panel2);border:1px solid var(--border);
+  border-radius:6px;padding:8px 10px}
+.kpi .v{font-size:20px;font-weight:600}
+.kpi .l{color:var(--muted);font-size:11px}
+.kpi.crit .v{color:var(--crit)} .kpi.high .v{color:var(--high)}
+.kpi.ok .v{color:var(--ok)} .kpi.warn .v{color:var(--warn)}
+.grid{display:grid;gap:8px}
+.grid.c2{grid-template-columns:1fr 1fr}
+.grid.c3{grid-template-columns:1fr 1fr 1fr}
+.grid.c4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:700px){.grid.c3,.grid.c4{grid-template-columns:1fr 1fr}}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:4px 6px;border-bottom:1px solid var(--border);
+  text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+.badge{display:inline-block;padding:1px 6px;border-radius:10px;font-size:11px}
+.badge.critical{background:#5b1320;color:#ff8a80}
+.badge.high{background:#4e2a1a;color:#ffab91}
+.badge.medium{background:#4a3d16;color:#ffd54f}
+.badge.low{background:#1f3a4a;color:#81d4fa}
+.badge.new{background:#123a2a;color:#69f0ae}
+.badge.closed{background:#2a2a2a;color:#999}
+.bar{height:6px;background:#1c2733;border-radius:3px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent)}
+.scroll{max-height:340px;overflow:auto}
+.scroll.thin{max-height:260px}
+.item{padding:6px;border-bottom:1px solid var(--border);font-size:12px}
+.item:hover{background:#16202c}
+.muted{color:var(--muted)}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.score-ring{font-size:30px;font-weight:700}
+.bell{position:relative;cursor:pointer}
+.bell .cnt{position:absolute;top:-6px;right:-8px;background:var(--crit);
+  color:#fff;border-radius:10px;font-size:10px;padding:1px 5px}
+.drawer{position:fixed;top:0;right:-420px;width:400px;height:100vh;
+  background:var(--panel);border-left:1px solid var(--border);
+  transition:right .25s;z-index:100;overflow:auto;padding:14px}
+.drawer.open{right:0}
+.log{background:#0a0e13;border:1px solid var(--border);border-radius:4px;
+  padding:8px;height:180px;overflow:auto;font-family:Consolas,monospace;
+  font-size:11px;white-space:pre-wrap}
+footer{padding:8px 16px;color:var(--muted);font-size:11px;
+  border-top:1px solid var(--border)}
+.trendbar{display:flex;align-items:flex-end;gap:3px;height:80px}
+.trendbar .b{flex:1;background:var(--accent);border-radius:2px 2px 0 0;
+  min-height:2px;opacity:.8}
+.domainchip{display:inline-block;padding:2px 8px;margin:2px;border-radius:4px;
+  background:#1c2733;font-size:11px;cursor:pointer}
+.domainchip:hover{background:#243240;color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🛡 统一 SOC Center <span class="sub">安全运营中心 · 十六大领域统一视图</span></h1></div>
+  <div class="row">
+    <input id="globalSearch" placeholder="全局搜索任务/告警/漏洞/资产..." style="width:220px"
+           onkeydown="if(event.key==='Enter')doGlobalSearch()">
+    <button class="primary" onclick="doGlobalSearch()">🔍 搜索</button>
+    <button onclick="loadAll()">🔄 刷新</button>
+    <button onclick="toggleDrawer('notifDrawer')" class="bell">🔔 <span class="cnt" id="bellCnt">0</span></button>
+    <button onclick="toggleDrawer('cfgDrawer')">⚙️ 配置</button>
+  </div>
+</header>
+
+<div class="domainnav" id="domainNav"></div>
+
+<div class="layout">
+  <!-- 左：统一任务列表 -->
+  <div class="col">
+    <div class="panel">
+      <h3>📋 统一任务列表 <span class="muted" id="taskCount"></span></h3>
+      <div class="row" style="margin-bottom:6px">
+        <select id="taskFilterDomain" onchange="loadTasks()">
+          <option value="">全部领域</option>
+        </select>
+        <select id="taskFilterStatus" onchange="loadTasks()">
+          <option value="">全部状态</option>
+          <option value="running">进行中</option>
+          <option value="done">已完成</option>
+          <option value="failed">失败</option>
+          <option value="pending">待启动</option>
+        </select>
+      </div>
+      <div class="scroll thin" id="taskList"></div>
+    </div>
+    <div class="panel">
+      <h3>📜 实时事件流</h3>
+      <div class="scroll thin" id="eventStream"></div>
+    </div>
+  </div>
+
+  <!-- 中：统一仪表盘 -->
+  <div class="col">
+    <div class="grid c4">
+      <div class="kpi"><div class="l">综合安全评分</div><div class="v" id="kpiScore">-</div></div>
+      <div class="kpi crit"><div class="l">高危告警</div><div class="v" id="kpiHAlert">-</div></div>
+      <div class="kpi high"><div class="l">开放漏洞</div><div class="v" id="kpiOVuln">-</div></div>
+      <div class="kpi ok"><div class="l">在线资产</div><div class="v" id="kpiAsset">-</div></div>
+    </div>
+
+    <div class="panel">
+      <h3>📊 安全态势总览</h3>
+      <div class="grid c4">
+        <div class="kpi"><div class="l">总告警</div><div class="v" id="kpiAlert">-</div></div>
+        <div class="kpi crit"><div class="l">Critical</div><div class="v" id="kpiCrit">-</div></div>
+        <div class="kpi high"><div class="l">High</div><div class="v" id="kpiHigh">-</div></div>
+        <div class="kpi warn"><div class="l">Medium</div><div class="v" id="kpiMed">-</div></div>
+      </div>
+      <div class="grid c4" style="margin-top:8px">
+        <div class="kpi"><div class="l">总任务</div><div class="v" id="kpiTask">-</div></div>
+        <div class="kpi ok"><div class="l">进行中</div><div class="v" id="kpiRunning">-</div></div>
+        <div class="kpi"><div class="l">总漏洞</div><div class="v" id="kpiVuln">-</div></div>
+        <div class="kpi"><div class="l">总资产</div><div class="v" id="kpiAsset2">-</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>📈 7天安全趋势</h3>
+      <div class="row">
+        <span class="muted">告警:</span>
+        <div class="trendbar" id="trendAlert" style="flex:1"></div>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <span class="muted">漏洞:</span>
+        <div class="trendbar" id="trendVuln" style="flex:1"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>🏥 各领域健康度</h3>
+      <div id="domainHealth"></div>
+    </div>
+  </div>
+
+  <!-- 右：统一告警中心 -->
+  <div class="col">
+    <div class="panel">
+      <h3>🚨 统一告警中心 <span class="muted" id="alertCount"></span></h3>
+      <div class="row" style="margin-bottom:6px">
+        <select id="alertFilterSev" onchange="loadAlerts()">
+          <option value="">全部级别</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <select id="alertFilterStatus" onchange="loadAlerts()">
+          <option value="">全部状态</option>
+          <option value="new">新告警</option>
+          <option value="processing">处理中</option>
+          <option value="closed">已关闭</option>
+        </select>
+      </div>
+      <div class="scroll" id="alertList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 底部：统一操作日志 -->
+<div class="panel" style="margin:0 16px 10px">
+  <h3>📝 统一操作日志 <button style="float:right" onclick="loadLogs()">刷新</button></h3>
+  <div class="log" id="opLog"></div>
+</div>
+
+<footer>统一 SOC Center · 整合十六大领域 Pro · 数据为内存演示 · <a href="/workflow-linkage" style="color:var(--accent)">→ 领域联动工作流</a></footer>
+
+<!-- 通知抽屉 -->
+<div class="drawer" id="notifDrawer">
+  <div class="row"><h3 style="color:var(--accent);flex:1">🔔 通知中心</h3>
+    <button onclick="markAllRead()">全部已读</button>
+    <button onclick="toggleDrawer('notifDrawer')">✕</button></div>
+  <div id="notifList"></div>
+</div>
+
+<!-- 配置抽屉 -->
+<div class="drawer" id="cfgDrawer">
+  <div class="row"><h3 style="color:var(--accent);flex:1">⚙️ 统一配置中心</h3>
+    <button onclick="toggleDrawer('cfgDrawer')">✕</button></div>
+  <div id="cfgList"></div>
+</div>
+
+<script>
+const API = "/api/v1/soc-center";
+let DOMAINS = [];
+
+async function api(p){
+  try{
+    const r = await fetch(API+p);
+    const j = await r.json();
+    return j.data;
+  }catch(e){ console.error(e); return null; }
+}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function sevBadge(s){return `<span class="badge ${s}">${s}</span>`;}
+function timeAgo(ts){
+  if(!ts) return "-";
+  const d = (Date.now()/1000 - ts);
+  if(d<60) return "刚刚";
+  if(d<3600) return Math.floor(d/60)+"分钟前";
+  if(d<86400) return Math.floor(d/3600)+"小时前";
+  return Math.floor(d/86400)+"天前";
+}
+
+async function loadDomains(){
+  const d = await api("/domains");
+  DOMAINS = (d&&d.domains)||[];
+  const nav = document.getElementById("domainNav");
+  nav.innerHTML = DOMAINS.map(x=>`<div class="d" onclick="jumpDomain('${x.route}')">${x.icon} ${x.name}</div>`).join("");
+  const sel = document.getElementById("taskFilterDomain");
+  sel.innerHTML = '<option value="">全部领域</option>' +
+    DOMAINS.map(x=>`<option value="${x.key}">${x.name}</option>`).join("");
+}
+function jumpDomain(route){ location.href = route; }
+
+async function loadOverview(){
+  const o = await api("/dashboard/overview");
+  if(!o) return;
+  const s = o.score||{}, su = o.summary||{};
+  document.getElementById("kpiScore").textContent = s.overall_score||"-";
+  document.getElementById("kpiScore").parentElement.querySelector(".l").textContent = "综合安全评分 ("+(s.risk_level||"")+")";
+  const a = su.alerts||{}, v = su.vulns||{}, t = su.tasks||{}, ast = su.assets||{};
+  document.getElementById("kpiAlert").textContent = a.total||0;
+  document.getElementById("kpiCrit").textContent = a.critical||0;
+  document.getElementById("kpiHigh").textContent = a.high||0;
+  document.getElementById("kpiMed").textContent = a.medium||0;
+  document.getElementById("kpiHAlert").textContent = (a.critical||0)+(a.high||0);
+  document.getElementById("kpiTask").textContent = t.total||0;
+  document.getElementById("kpiRunning").textContent = t.running||0;
+  document.getElementById("kpiVuln").textContent = v.total||0;
+  document.getElementById("kpiOVuln").textContent = v.open||0;
+  document.getElementById("kpiAsset").textContent = ast.online||0;
+  document.getElementById("kpiAsset2").textContent = ast.total||0;
+  // 领域健康
+  const dh = o.domains||[];
+  document.getElementById("domainHealth").innerHTML = dh.map(x=>{
+    const c = x.level==="healthy"?"var(--ok)":x.level==="warning"?"var(--warn)":"var(--crit)";
+    return `<div class="item"><div class="row" style="justify-content:space-between">
+      <span>${x.icon} ${x.name}</span><span style="color:${c}">${x.score}分</span></div>
+      <div class="bar" style="margin-top:3px"><i style="width:${x.score}%;background:${c}"></i></div>
+      <div class="muted" style="font-size:11px">任务${x.tasks} 告警${x.open_alerts} 漏洞${x.open_vuln}</div>
+    </div>`;
+  }).join("");
+}
+
+async function loadTrend(){
+  const t = await api("/dashboard/trend?days=7");
+  if(!t) return;
+  const s = t.series||[];
+  const maxA = Math.max(...s.map(x=>x.alerts),1);
+  const maxV = Math.max(...s.map(x=>x.vulns),1);
+  document.getElementById("trendAlert").innerHTML = s.map(x=>`<div class="b" style="height:${x.alerts/maxA*100}%" title="${x.label}: ${x.alerts}"></div>`).join("");
+  document.getElementById("trendVuln").innerHTML = s.map(x=>`<div class="b" style="height:${x.vulns/maxV*100}%;background:var(--high)" title="${x.label}: ${x.vulns}"></div>`).join("");
+}
+
+async function loadTasks(){
+  const dom = document.getElementById("taskFilterDomain").value;
+  const st = document.getElementById("taskFilterStatus").value;
+  const q = `/tasks?limit=50${dom?"&domain="+dom:""}${st?"&status="+st:""}`;
+  const d = await api(q);
+  const items = (d&&d.tasks)||[];
+  document.getElementById("taskCount").textContent = `(${items.length})`;
+  document.getElementById("taskList").innerHTML = items.map(x=>{
+    const sc = x.status==="done"?"var(--ok)":x.status==="running"?"var(--accent)":x.status==="failed"?"var(--crit)":"var(--muted)";
+    return `<div class="item"><div class="row" style="justify-content:space-between">
+      <span>${esc(x.title)}</span><span style="color:${sc};font-size:11px">${x.status}</span></div>
+      <div class="muted" style="font-size:11px">${x.domain_name} · ${timeAgo(x.updated_at)} · ${x.progress}%</div></div>`;
+  }).join("") || '<div class="muted">无任务</div>';
+}
+
+async function loadAlerts(){
+  const sv = document.getElementById("alertFilterSev").value;
+  const st = document.getElementById("alertFilterStatus").value;
+  const q = `/alerts?limit=80${sv?"&severity="+sv:""}${st?"&status="+st:""}`;
+  const d = await api(q);
+  const items = (d&&d.alerts)||[];
+  document.getElementById("alertCount").textContent = `(${items.length})`;
+  document.getElementById("alertList").innerHTML = items.map(x=>
+    `<div class="item"><div class="row" style="justify-content:space-between">
+      <span>${sevBadge(x.severity)} ${esc(x.title)}</span></div>
+     <div class="muted" style="font-size:11px">${x.domain_name} · ${timeAgo(x.created_at)} · ${x.status}</div>
+     <div class="row" style="margin-top:4px">
+       <button class="ok" onclick="actAlert('${x.id}','confirmed')">确认</button>
+       <button onclick="actAlert('${x.id}','processing')">处理</button>
+       <button class="primary" onclick="actAlert('${x.id}','closed')">关闭</button>
+       <button class="danger" onclick="actAlert('${x.id}','false_positive')">误报</button>
+     </div></div>`).join("") || '<div class="muted">无告警</div>';
+}
+
+async function actAlert(id,status){
+  await fetch(`${API}/alerts/${id}/status`,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({status})});
+  loadAlerts(); loadOverview();
+}
+
+async function loadEvents(){
+  const d = await api("/dashboard/realtime-events?limit=30");
+  const items = (d&&d.events)||[];
+  document.getElementById("eventStream").innerHTML = items.map(x=>
+    `<div class="item"><span class="badge low">${x.type}</span> ${esc(x.message)}
+     <div class="muted" style="font-size:11px">${x.domain_name} · ${timeAgo(x.created_at)}</div></div>`).join("");
+}
+
+async function loadLogs(){
+  const d = await api("/logs?limit=60");
+  const items = (d&&d.logs)||[];
+  document.getElementById("opLog").textContent = items.map(x=>
+    `[${new Date(x.created_at*1000).toLocaleString()}] ${x.user} | ${x.action} | ${x.target} | ${x.detail}`).join("\n");
+}
+
+async function loadNotifs(){
+  const d = await api("/notifications?limit=30");
+  const items = (d&&d.items)||[];
+  document.getElementById("bellCnt").textContent = (d&&d.unread)||0;
+  document.getElementById("notifList").innerHTML = items.map(x=>
+    `<div class="item" style="${x.read?"opacity:.5":""}"><b>${esc(x.title)}</b>
+     <div class="muted" style="font-size:11px">${timeAgo(x.created_at)}</div></div>`).join("");
+}
+async function markAllRead(){
+  await fetch(`${API}/notifications/read-all`,{method:"POST"});
+  loadNotifs();
+}
+
+async function loadCfg(){
+  const d = await api("/config/all");
+  const obj = d||{};
+  document.getElementById("cfgList").innerHTML = Object.entries(obj).map(([k,v])=>
+    `<div class="item"><b>${k}</b><div class="muted" style="font-size:11px">
+     tool: ${v.tool_path} · threads: ${v.scan_params.threads} · 通知: ${(v.notify_channels||[]).join(",")}</div></div>`).join("");
+}
+
+async function doGlobalSearch(){
+  const q = document.getElementById("globalSearch").value.trim();
+  if(!q) return;
+  const d = await api("/search?q="+encodeURIComponent(q));
+  const r = (d&&d.results)||{};
+  let html = "<h3 style='color:var(--accent)'>搜索结果: "+esc(q)+"</h3>";
+  for(const k of ["tasks","alerts","vulns","assets","logs"]){
+    const arr = r[k]||[];
+    if(!arr.length) continue;
+    html += `<div class="panel"><h3>${k} (${arr.length})</h3>` + arr.slice(0,5).map(x=>
+      `<div class="item">${esc(x.title||x.name||x.action||"")} <span class="muted">${x.domain_name||x.domain||""}</span></div>`).join("") + "</div>";
+  }
+  if(html==="<h3 style='color:var(--accent)'>搜索结果: "+esc(q)+"</h3>") html += "<div class='muted'>无结果</div>";
+  alert(html.replace(/<[^>]+>/g,"\n"));
+}
+
+function toggleDrawer(id){
+  document.getElementById(id).classList.toggle("open");
+  if(id==="cfgDrawer") loadCfg();
+}
+
+async function loadAll(){
+  await loadDomains();
+  await Promise.all([loadOverview(),loadTrend(),loadTasks(),loadAlerts(),loadEvents(),loadLogs(),loadNotifs()]);
+}
+loadAll();
+setInterval(()=>{loadOverview();loadAlerts();loadEvents();loadNotifs();},10000);
+</script>
+</body>
+</html>

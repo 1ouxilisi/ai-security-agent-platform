@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Hacking Agent - 统一安全平台 V2</title>
+<style>
+/* ============ 主题变量（亮色/暗色两套） ============ */
+:root{
+  --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b;
+  --border:#e2e8f0; --primary:#2563eb; --primary-soft:#dbeafe;
+  --sidebar:#ffffff; --topbar:#ffffff; --hover:#f1f5f9;
+  --crit:#ef4444; --high:#f97316; --med:#eab308; --low:#22c55e; --info:#3b82f6;
+  --shadow:0 1px 3px rgba(15,23,42,.08); --overlay:rgba(15,23,42,.55);
+}
+[data-theme="dark"]{
+  --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8;
+  --border:#334155; --primary:#3b82f6; --primary-soft:#1e3a5f;
+  --sidebar:#1e293b; --topbar:#1e293b; --hover:#0f172a;
+  --shadow:0 1px 3px rgba(0,0,0,.4); --overlay:rgba(0,0,0,.7);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;overflow:hidden}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font:inherit;color:var(--text);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;outline:none}
+input:focus,select:focus{border-color:var(--primary)}
+/* ============ 布局骨架 ============ */
+.app{display:flex;height:100vh}
+#nav-sidebar{width:230px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:margin-left .25s}
+#nav-sidebar.collapsed{margin-left:-230px}
+.brand{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--border)}
+.brand .logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+.brand b{font-size:14px}
+.brand small{display:block;color:var(--muted);font-size:11px;font-weight:400}
+.nav{flex:1;overflow-y:auto;padding:10px 8px}
+.nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:8px;margin-bottom:2px;color:var(--muted);text-align:left}
+.nav-item:hover{background:var(--hover);color:var(--text)}
+.nav-item.active{background:var(--primary-soft);color:var(--primary);font-weight:600}
+.nav-item .ico{width:20px;text-align:center}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+#topbar{height:56px;background:var(--topbar);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 16px;flex-shrink:0}
+.top-search{flex:1;max-width:420px;display:flex;align-items:center;gap:8px}
+.top-search input{width:100%}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--muted)}
+.icon-btn:hover{background:var(--hover);color:var(--text)}
+.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+#content{flex:1;overflow-y:auto;padding:20px}
+.view{display:none}
+.view.active{display:block;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+/* ============ 通用组件 ============ */
+.page-head{margin-bottom:16px}
+.page-head h2{font-size:20px}
+.page-head p{color:var(--muted);margin-top:4px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.stat .num{font-size:26px;font-weight:700;margin:6px 0 2px}
+.stat .lbl{color:var(--muted);font-size:12px}
+.stat .trend{font-size:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.panel h3{font-size:15px;margin-bottom:12px}
+.chart-box{width:100%;overflow:hidden}
+.chart-box svg{width:100%;height:auto;display:block}
+.empty{padding:36px 12px;text-align:center;color:var(--muted)}
+.empty .big{font-size:34px;margin-bottom:8px}
+.btn{background:var(--primary);color:#fff;border-radius:8px;padding:9px 18px;font-weight:600}
+.btn:hover{opacity:.9}
+.btn.ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+.form-row{margin-bottom:12px}
+.form-row label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+.form-row input,.form-row select{width:100%}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;background:var(--primary-soft);color:var(--primary)}
+/* 骨架屏 */
+.skel{background:linear-gradient(90deg,var(--hover) 25%,var(--border) 50%,var(--hover) 75%);background-size:200% 100%;animation:sh 1.2s infinite;border-radius:6px}
+@keyframes sh{to{background-position:-200% 0}}
+/* 模态/遮罩 */
+.modal-mask{position:fixed;inset:0;background:var(--overlay);z-index:9000;display:none;align-items:flex-start;justify-content:center}
+.modal-mask.open{display:flex}
+/* 命令面板 */
+#palette{margin-top:12vh;width:560px;max-width:92vw;background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
+#palette input{width:100%;border:none;border-bottom:1px solid var(--border);border-radius:0;padding:16px 18px;font-size:15px}
+#palette-list{max-height:340px;overflow-y:auto;padding:8px}
+.pal-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;text-align:left;width:100%}
+.pal-item .k{margin-left:auto;font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:5px;padding:1px 7px}
+.pal-item.sel{background:var(--primary-soft);color:var(--primary)}
+/* 新手引导 */
+#ob-highlight{position:fixed;border:2px solid var(--primary);border-radius:10px;box-shadow:0 0 0 9999px var(--overlay);z-index:9500;display:none;pointer-events:none;transition:all .25s}
+#ob-pop{position:fixed;z-index:9600;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 16px 50px rgba(0,0,0,.35);padding:18px;width:340px;display:none}
+#ob-pop h4{margin-bottom:8px}
+#ob-pop p{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:14px}
+.ob-btns{display:flex;gap:8px;justify-content:space-between;align-items:center}
+.ob-step-idx{font-size:12px;color:var(--muted)}
+/* toast */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:8px;z-index:9999;opacity:0;transition:opacity .25s;pointer-events:none}
+#toast.show{opacity:1}
+.mobile-menu{display:none}
+.menu-list{list-style:none}
+.menu-list li{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--border);font-size:13px}
+.menu-list li:last-child{border:none}
+.menu-list .v{color:var(--muted)}
+/* 响应式 */
+@media (max-width:768px){
+  #nav-sidebar{position:fixed;z-index:800;height:100%;box-shadow:0 0 30px rgba(0,0,0,.3)}
+  #nav-sidebar.collapsed{margin-left:-230px}
+  .mobile-menu{display:flex}
+  .grid-2{grid-template-columns:1fr}
+  .top-search{display:none}
+}
+</style>
+<link rel="stylesheet" href="/static/css/responsive.css">
+</head>
+<body>
+<div class="app">
+  <!-- 左侧导航 -->
+  <aside id="nav-sidebar">
+    <div class="brand">
+      <div class="logo">A</div>
+      <div><b>AI Hacking Agent</b><small data-i18n="brand_sub">统一安全平台 V2</small></div>
+    </div>
+    <nav class="nav" id="nav-menu"></nav>
+  </aside>
+
+  <!-- 主区域 -->
+  <div class="main">
+    <header id="topbar">
+      <button class="icon-btn mobile-menu" id="btn-toggle-nav" title="菜单">☰</button>
+      <div class="top-search">
+        <input id="global-search" data-i18n-ph="search_ph" placeholder="搜索功能、目标、报告…">
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="btn-palette" title="Ctrl+K">⌘K</button>
+        <button class="icon-btn" id="btn-bell" title="通知">🔔</button>
+        <button class="icon-btn" id="btn-theme" title="主题">🌙</button>
+        <button class="icon-btn" id="btn-lang" title="语言">EN</button>
+        <div class="avatar" title="管理员">AD</div>
+      </div>
+    </header>
+
+    <main class="main-content" id="content">
+      <!-- 仪表盘 -->
+      <section class="view active" id="view-dashboard">
+        <div class="page-head">
+          <h2 data-i18n="dash_title">仪表盘</h2>
+          <p data-i18n="dash_sub">平台安全态势一览，快速发起评估</p>
+        </div>
+        <div class="cards" id="dash-cards"></div>
+        <div class="grid-2">
+          <div class="panel quick-assess-card" id="quick-assess-card">
+            <h3 data-i18n="quick_title">快速安全评估</h3>
+            <div class="form-row"><label data-i18n="target_label">目标地址（IP / 域名 / URL）</label>
+              <input id="qa-target" placeholder="example.com 或 192.168.1.10"></div>
+            <button class="btn" id="qa-run" data-i18n="run_btn">开始评估</button>
+            <p style="margin-top:10px;font-size:12px;color:var(--muted)" data-i18n="quick_hint">提交后将创建一次新的评估任务，可在「评估中心」查看进度。</p>
+          </div>
+          <div class="panel">
+            <h3 data-i18n="recent_title">最近活动</h3>
+            <div id="recent-list" class="empty"><div class="big">📭</div><div data-i18n="empty_recent">暂无活动记录</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 数据分析 -->
+      <section class="view" id="view-analytics">
+        <div class="page-head">
+          <h2 data-i18n="ana_title">数据分析</h2>
+          <p data-i18n="ana_sub">评估成果、漏洞趋势与风险分布</p>
+        </div>
+        <div class="cards" id="ana-cards"></div>
+        <div class="panel" style="margin-bottom:14px">
+          <h3><span data-i18n="trend_title">近30天漏洞趋势</span> <span class="badge" id="trend-badge">30D</span></h3>
+          <div class="chart-box" id="chart-line"><div class="skel" style="height:220px"></div></div>
+        </div>
+        <div class="grid-2">
+          <div class="panel"><h3 data-i18n="dist_title">严重程度分布</h3>
+            <div class="chart-box" id="chart-donut"><div class="skel" style="height:220px"></div></div></div>
+          <div class="panel"><h3 data-i18n="top_title">Top 风险目标</h3>
+            <div class="chart-box" id="chart-bars"><div class="skel" style="height:220px"></div></div></div>
+        </div>
+      </section>
+
+      <!-- 报告中心 -->
+      <section class="view" id="view-reports">
+        <div class="page-head">
+          <h2 data-i18n="rep_title">报告中心</h2>
+          <p data-i18n="rep_sub">选择评估、格式与模板，一键生成专业报告</p>
+        </div>
+        <div class="grid-2">
+          <div class="panel">
+            <h3 data-i18n="rep_form">生成报告</h3>
+            <div class="form-row"><label data-i18n="rep_assess_id">评估 ID</label>
+              <input id="rp-assess" placeholder="assess_xxxxxxxx"></div>
+            <div class="form-row"><label data-i18n="rep_format">输出格式</label>
+              <select id="rp-format"><option value="html">HTML</option><option value="pdf">PDF</option><option value="docx">Word</option><option value="xlsx">Excel</option></select></div>
+            <div class="form-row"><label data-i18n="rep_tpl">报告模板</label>
+              <select id="rp-template"><option value="">-</option></select></div>
+            <button class="btn" id="rp-generate" data-i18n="rep_gen_btn">生成报告</button>
+            <div id="rp-result" style="margin-top:12px"></div>
+          </div>
+          <div>
+            <div class="panel" style="margin-bottom:14px">
+              <h3 data-i18n="rep_formats_h">支持的格式</h3><div id="rp-formats"><div class="skel" style="height:60px"></div></div></div>
+            <div class="panel">
+              <h3 data-i18n="rep_tpls_h">可用模板</h3><div id="rp-templates"><div class="skel" style="height:80px"></div></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 其余视图占位 -->
+      <section class="view" id="view-assessment"><div class="page-head"><h2 data-i18n="nav_assessment">评估中心</h2></div><div class="panel empty"><div class="big">◎</div><div data-i18n="placeholder">该模块正在接入中，敬请期待</div></div></section>
+      <section class="view" id="view-assets"><div class="page-head"><h2 data-i18n="nav_assets">资产管理</h2></div><div class="panel empty"><div class="big">▣</div><div data-i18n="placeholder">该模块正在接入中，敬请期待</div></div></section>
+      <section class="view" id="view-compliance"><div class="page-head"><h2 data-i18n="nav_compliance">合规审计</h2></div><div class="panel empty"><div class="big">✔</div><div data-i18n="placeholder">该模块正在接入中，敬请期待</div></div></section>
+      <section class="view" id="view-attack-path"><div class="page-head"><h2 data-i18n="nav_attack_path">攻击路径</h2></div><div class="panel empty"><div class="big">➤</div><div data-i18n="placeholder">该模块正在接入中，敬请期待</div></div></section>
+      <section class="view" id="view-integrations"><div class="page-head"><h2 data-i18n="nav_integrations">集成管理</h2></div><div class="panel empty"><div class="big">⛓</div><div data-i18n="placeholder">该模块正在接入中，敬请期待</div></div></section>
+      <section class="view" id="view-alerts"><div class="page-head"><h2 data-i18n="nav_alerts">告警中心</h2></div><div class="panel empty"><div class="big">🔔</div><div data-i18n="placeholder">该模块正在接入中，敬请期待</div></div></section>
+      <section class="view" id="view-settings"><div class="page-head"><h2 data-i18n="nav_settings">系统设置</h2></div><div class="panel empty"><div class="big">⚙</div><div data-i18n="placeholder">该模块正在接入中，敬请期待</div></div></section>
+    </main>
+  </div>
+</div>
+
+<!-- 命令面板 -->
+<div class="modal-mask" id="palette-mask"><div id="palette">
+  <input id="palette-input" data-i18n-ph="palette_ph" placeholder="输入命令或搜索…">
+  <div id="palette-list"></div>
+</div></div>
+
+<!-- 新手引导高亮 & 弹窗 -->
+<div id="ob-highlight"></div>
+<div id="ob-pop">
+  <h4 id="ob-title"></h4><p id="ob-desc"></p>
+  <div class="ob-btns">
+    <button class="btn ghost" id="ob-skip" data-i18n="skip">跳过</button>
+    <span class="ob-step-idx" id="ob-idx"></span>
+    <span>
+      <button class="btn ghost" id="ob-prev" data-i18n="prev">上一步</button>
+      <button class="btn" id="ob-next" data-i18n="next">下一步</button>
+    </span>
+  </div>
+</div>
+
+<!-- 快捷键帮助 -->
+<div class="modal-mask" id="kbd-mask"><div class="panel" style="width:420px;margin-top:14vh">
+  <h3 data-i18n="kbd_title">键盘快捷键</h3>
+  <ul class="menu-list">
+    <li><span>Ctrl + K</span><span class="v" data-i18n="kbd_palette">命令面板</span></li>
+    <li><span>Ctrl + N</span><span class="v" data-i18n="kbd_new">新建评估</span></li>
+    <li><span>Ctrl + R</span><span class="v" data-i18n="kbd_reports">查看报告</span></li>
+    <li><span>Ctrl + D</span><span class="v" data-i18n="kbd_analytics">数据分析</span></li>
+    <li><span>Ctrl + /</span><span class="v" data-i18n="kbd_help">快捷键帮助</span></li>
+  </ul>
+  <div style="text-align:right;margin-top:10px"><button class="btn" id="kbd-close" data-i18n="done">完成</button></div>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+/* ==================== 多语言字典（>=50 键） ==================== */
+const I18N={
+zh:{brand_sub:"统一安全平台 V2",search_ph:"搜索功能、目标、报告…",skip:"跳过",prev:"上一步",next:"下一步",done:"完成",
+dash_title:"仪表盘",dash_sub:"平台安全态势一览，快速发起评估",quick_title:"快速安全评估",target_label:"目标地址（IP / 域名 / URL）",run_btn:"开始评估",quick_hint:"提交后将创建一次新的评估任务，可在「评估中心」查看进度。",recent_title:"最近活动",empty_recent:"暂无活动记录",
+ana_title:"数据分析",ana_sub:"评估成果、漏洞趋势与风险分布",trend_title:"近30天漏洞趋势",dist_title:"严重程度分布",top_title:"Top 风险目标",
+rep_title:"报告中心",rep_sub:"选择评估、格式与模板，一键生成专业报告",rep_form:"生成报告",rep_assess_id:"评估 ID",rep_format:"输出格式",rep_tpl:"报告模板",rep_gen_btn:"生成报告",rep_formats_h:"支持的格式",rep_tpls_h:"可用模板",
+nav_dashboard:"仪表盘",nav_assessment:"评估中心",nav_analytics:"数据分析",nav_assets:"资产管理",nav_compliance:"合规审计",nav_attack_path:"攻击路径",nav_reports:"报告中心",nav_integrations:"集成管理",nav_alerts:"告警中心",nav_settings:"系统设置",
+palette_ph:"输入命令或搜索…",cmd_new_assessment:"新建评估",cmd_view_reports:"查看报告",cmd_analytics:"数据分析",cmd_assets:"资产管理",cmd_compliance:"合规审计",cmd_integrations:"集成配置",cmd_toggle_theme:"切换主题",cmd_toggle_lang:"切换语言",cmd_view_alerts:"查看告警",cmd_shortcuts:"快捷键帮助",cmd_dashboard:"回到仪表盘",
+stat_assess:"总评估数",stat_vuln:"总漏洞数",stat_risk:"平均风险分",stat_high:"高危漏洞数",
+empty_ana:"暂无数据，先执行一次评估",err_load:"数据加载失败，请稍后重试",loading:"加载中…",
+crit:"严重",high:"高危",medium:"中危",low:"低危",info:"提示",
+placeholder:"该模块正在接入中，敬请期待",toast_started:"已提交评估任务",toast_done:"操作完成",
+kbd_title:"键盘快捷键",kbd_palette:"命令面板",kbd_new:"新建评估",kbd_reports:"查看报告",kbd_analytics:"数据分析",kbd_help:"快捷键帮助",
+rep_ok:"报告已生成",rep_fail:"报告生成失败",rep_nodata:"暂无模板数据",rep_noid:"请输入评估 ID",
+theme_label:"主题",lang_label:"语言",bell_label:"通知",user_label:"管理员"},
+en:{brand_sub:"Unified Security Platform V2",search_ph:"Search features, targets, reports…",skip:"Skip",prev:"Back",next:"Next",done:"Done",
+dash_title:"Dashboard",dash_sub:"Platform security overview & quick assessment",quick_title:"Quick Security Assessment",target_label:"Target (IP / domain / URL)",run_btn:"Run Assessment",quick_hint:"A new assessment task will be created; track it in Assessment Center.",recent_title:"Recent Activity",empty_recent:"No activity yet",
+ana_title:"Analytics",ana_sub:"Assessment outcomes, vuln trends & risk distribution",trend_title:"Vulnerability Trend (30 Days)",dist_title:"Severity Distribution",top_title:"Top Risky Targets",
+rep_title:"Report Center",rep_sub:"Pick an assessment, format & template to generate a pro report",rep_form:"Generate Report",rep_assess_id:"Assessment ID",rep_format:"Output Format",rep_tpl:"Template",rep_gen_btn:"Generate",rep_formats_h:"Supported Formats",rep_tpls_h:"Available Templates",
+nav_dashboard:"Dashboard",nav_assessment:"Assessment Center",nav_analytics:"Analytics",nav_assets:"Assets",nav_compliance:"Compliance",nav_attack_path:"Attack Path",nav_reports:"Reports",nav_integrations:"Integrations",nav_alerts:"Alerts",nav_settings:"Settings",
+palette_ph:"Type a command or search…",cmd_new_assessment:"New Assessment",cmd_view_reports:"View Reports",cmd_analytics:"Analytics",cmd_assets:"Assets",cmd_compliance:"Compliance Audit",cmd_integrations:"Integration Settings",cmd_toggle_theme:"Toggle Theme",cmd_toggle_lang:"Toggle Language",cmd_view_alerts:"View Alerts",cmd_shortcuts:"Keyboard Shortcuts",cmd_dashboard:"Back to Dashboard",
+stat_assess:"Total Assessments",stat_vuln:"Total Vulnerabilities",stat_risk:"Avg Risk Score",stat_high:"High-Severity Vulns",
+empty_ana:"No data yet — run an assessment first",err_load:"Failed to load data, please retry",loading:"Loading…",
+crit:"Critical",high:"High",medium:"Medium",low:"Low",info:"Info",
+placeholder:"This module is being integrated, stay tuned",toast_started:"Assessment task submitted",toast_done:"Done",
+kbd_title:"Keyboard Shortcuts",kbd_palette:"Command Palette",kbd_new:"New Assessment",kbd_reports:"View Reports",kbd_analytics:"Analytics",kbd_help:"Shortcut Help",
+rep_ok:"Report generated",rep_fail:"Report generation failed",rep_nodata:"No templates available",rep_noid:"Please enter an assessment ID",
+theme_label:"Theme",lang_label:"Language",bell_label:"Notifications",user_label:"Admin"}};
+
+const NAV=[
+ {id:"dashboard",icon:"▦",v:"nav_dashboard"},{id:"assessment",icon:"◎",v:"nav_assessment"},
+ {id:"analytics",icon:"📈",v:"nav_analytics"},{id:"assets",icon:"▣",v:"nav_assets"},
+ {id:"compliance",icon:"✔",v:"nav_compliance"},{id:"attack-path",icon:"➤",v:"nav_attack_path"},
+ {id:"reports",icon:"▤",v:"nav_reports"},{id:"integrations",icon:"⛓",v:"nav_integrations"},
+ {id:"alerts",icon:"🔔",v:"nav_alerts"},{id:"settings",icon:"⚙",v:"nav_settings"}];
+
+let lang=localStorage.getItem("ui_lang")||"zh";
+let theme=localStorage.getItem("ui_theme")||"light";
+
+function t(k){return (I18N[lang]&&I18N[lang][k])||I18N.zh[k]||k;}
+function applyLang(){
+  document.documentElement.lang=(lang==="zh"?"zh-CN":"en");
+  document.querySelectorAll("[data-i18n]").forEach(el=>el.textContent=t(el.dataset.i18n));
+  document.querySelectorAll("[data-i18n-ph]").forEach(el=>el.placeholder=t(el.dataset.i18nPh));
+  document.getElementById("btn-lang").textContent=(lang==="zh"?"EN":"中");
+  renderNav();applyI18nDynamic();
+}
+function applyTheme(th){
+  theme=th;document.documentElement.setAttribute("data-theme",th);
+  localStorage.setItem("ui_theme",th);
+  document.getElementById("btn-theme").textContent=(th==="dark"?"☀️":"🌙");
+}
+/* ==================== 通用工具 ==================== */
+function toast(msg){const el=document.getElementById("toast");el.textContent=msg;el.classList.add("show");clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove("show"),2200);}
+async function apiFetch(url,opts,timeout){
+  opts=opts||{};timeout=timeout||8000;
+  const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),timeout);
+  try{
+    const r=await fetch(url,Object.assign({signal:ctrl.signal},opts));
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    return await r.json();
+  }catch(e){return {__error:String(e)};}
+  finally{clearTimeout(timer);}
+}
+function emptyBox(msg){return '<div class="empty"><div class="big">📊</div><div>'+msg+'</div></div>';}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+/* ==================== 导航与视图 ==================== */
+function renderNav(){
+  const menu=document.getElementById("nav-menu");menu.innerHTML="";
+  NAV.forEach(n=>{
+    const b=document.createElement("button");b.className="nav-item";b.id="nav-"+n.id;
+    b.innerHTML='<span class="ico">'+n.icon+'</span><span>'+t(n.v)+"</span>";
+    b.onclick=()=>switchView(n.id);menu.appendChild(b);
+  });
+}
+function switchView(id){
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.getElementById("view-"+id).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
+  const cur=document.getElementById("nav-"+id);if(cur)cur.classList.add("active");
+  if(id==="analytics")loadAnalytics();
+  if(id==="reports")loadReports();
+  if(id==="dashboard")loadDashboard();
+  if(window.innerWidth<768)document.getElementById("nav-sidebar").classList.add("collapsed");
+}
+function applyI18nDynamic(){
+  if(document.getElementById("view-analytics").classList.contains("active"))loadAnalytics();
+}
+
+/* ==================== 仪表盘数据 ==================== */
+async function loadDashboard(){
+  const box=document.getElementById("dash-cards");
+  const res=await apiFetch("/api/v1/analytics/summary");
+  let d={};
+  if(res&&res.success&&res.data)d=res.data;
+  const row=(k,v,color)=>'<div class="card stat"><div class="lbl">'+t(k)+'</div><div class="num" style="color:'+(color||"inherit")+'">'+(v||0)+'</div></div>';
+  box.innerHTML=
+    row("stat_assess",d.total_assessments??d.assessments??d.total??0)+
+    row("stat_vuln",d.total_vulnerabilities??d.vulnerabilities??d.total_vulns??0)+
+    row("stat_risk",d.avg_risk_score??d.avg_risk??d.risk_score??0,"var(--primary)")+
+    row("stat_high",d.high_severity??d.high_count??d.high??0,"var(--crit)");
+}
+document.getElementById("qa-run").onclick=()=>{
+  const v=document.getElementById("qa-target").value.trim();
+  if(!v){toast(t("rep_noid"));return;}
+  toast(t("toast_started")+": "+v);
+};
+document.getElementById("btn-toggle-nav").onclick=()=>document.getElementById("nav-sidebar").classList.toggle("collapsed");
+
+/* ==================== SVG 图表 ==================== */
+const SERIES=[{k:"critical",c:"var(--crit)",n:"crit"},{k:"high",c:"var(--high)",n:"high"},{k:"medium",c:"var(--med)",n:"medium"},{k:"low",c:"var(--low)",n:"low"}];
+function normTrend(data){
+  // 兼容多种返回结构
+  let labels=[],series=SERIES.map(s=>({key:s.k,color:s.c,name:s.n,points:[]}));
+  let pts=[];
+  if(Array.isArray(data))pts=data;
+  else if(Array.isArray(data&&data.points))pts=data.points;
+  else if(Array.isArray(data&&data.dates)){
+    labels=data.dates;
+    const sr=data.series||{};
+    SERIES.forEach(s=>{const arr=sr[s.k]||sr[s.k+"_count"]||[];series.find(x=>x.key===s.k).points=arr.map(Number);});
+    return{labels,series};
+  }
+  pts.forEach(p=>{
+    labels.push(p.date||p.day||p.label||"");
+    SERIES.forEach(s=>{const v=p[s.k]??p[s.k+"_count"]??p.count??0;series.find(x=>x.key===s.k).points.push(Number(v)||0);});
+  });
+  return{labels,series};
+}
+function lineChartSVG(labels,series){
+  const W=660,H=240,padL=36,padB=28,padT=14,padR=10;
+  const iw=W-padL-padR,ih=H-padT-padB;
+  let maxV=1;series.forEach(s=>s.points.forEach(v=>{if(v>maxV)maxV=v;}));
+  if(labels.length===0)return emptyBoxSVG();
+  const x=i=>labels.length<=1?iw/2:padL+iw*i/(labels.length-1);
+  const y=v=>padT+ih-ih*v/maxV;
+  let g='<svg viewBox="0 0 '+W+' '+H+'" role="img">';
+  // 网格
+  for(let i=0;i<=4;i++){const yy=padT+ih*i/4;g+='<line x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'" stroke="var(--border)" stroke-width="1"/>';
+    g+='<text x="'+(padL-6)+'" y="'+(yy+4)+'" font-size="10" text-anchor="end" fill="var(--muted)">'+Math.round(maxV*(1-i/4))+'</text>';}
+  // X 轴标签（抽稀）
+  const step=Math.max(1,Math.ceil(labels.length/6));
+  labels.forEach((lb,i)=>{if(i%step===0)g+='<text x="'+x(i)+'" y="'+(H-8)+'" font-size="9" text-anchor="middle" fill="var(--muted)">'+esc(String(lb).slice(5))+'</text>';});
+  // 折线
+  series.forEach(s=>{
+    if(!s.points.length)return;
+    let d="";s.points.forEach((v,i)=>{d+=(i?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)+" ";});
+    g+='<path d="'+d+'" fill="none" stroke="'+s.color+'" stroke-width="2"/>';
+    s.points.forEach((v,i)=>g+='<circle cx="'+x(i).toFixed(1)+'" cy="'+y(v).toFixed(1)+'" r="2.5" fill="'+s.color+'"/>');
+  });
+  // 图例
+  let lx=padL;series.forEach(s=>{g+='<rect x="'+lx+'" y="2" width="9" height="9" rx="2" fill="'+s.color+'"/><text x="'+(lx+13)+'" y="11" font-size="10" fill="var(--muted)">'+t(s.name)+"</text>";lx+=90;});
+  return g+"</svg>";
+}
+function emptyBoxSVG(){return '<div class="empty"><div class="big">📊</div><div>'+t("empty_ana")+'</div></div>';}
+function donutSVG(segments){
+  const cx=120,cy=110,R=72,r=44;let total=0;
+  segments.forEach(s=>total+=Number(s.value)||0);
+  if(total<=0)return emptyBoxSVG();
+  let g='<svg viewBox="0 0 260 220" role="img">';
+  let ang=-Math.PI/2;
+  segments.forEach(s=>{
+    const frac=(Number(s.value)||0)/total;const a2=ang+frac*2*Math.PI;
+    const large=(a2-ang)>Math.PI?1:0;
+    const x1=cx+R*Math.cos(ang),y1=cy+R*Math.sin(ang),x2=cx+R*Math.cos(a2),y2=cy+R*Math.sin(a2);
+    const x3=cx+r*Math.cos(a2),y3=cy+r*Math.sin(a2),x4=cx+r*Math.cos(ang),y4=cy+r*Math.sin(ang);
+    g+='<path d="M'+x1.toFixed(1)+' '+y1.toFixed(1)+' A'+R+' '+R+' 0 '+large+' 1 '+x2.toFixed(1)+' '+y2.toFixed(1)+' L'+x3.toFixed(1)+' '+y3.toFixed(1)+' A'+r+' '+r+' 0 '+large+' 0 '+x4.toFixed(1)+' '+y4.toFixed(1)+' Z" fill="'+s.color+'"/>';
+    ang=a2;
+  });
+  g+='<text x="'+cx+'" y="'+(cy-2)+'" text-anchor="middle" font-size="20" font-weight="700" fill="var(--text)">'+total+'</text>';
+  g+='<text x="'+cx+'" y="'+(cy+16)+'" text-anchor="middle" font-size="10" fill="var(--muted)">'+t("stat_vuln")+'</text>';
+  let ly=30;segments.forEach(s=>{g+='<rect x="195" y="'+ly+'" width="10" height="10" rx="2" fill="'+s.color+'"/><text x="210" y="'+(ly+9)+'" font-size="11" fill="var(--text)">'+t(s.name)+' '+s.value+'</text>';ly+=24;});
+  return g+"</svg>";
+}
+function hBarSVG(items){
+  const W=620,rowH=34,padL=150,padR=60,top=10;
+  if(!items||!items.length)return emptyBoxSVG();
+  let maxV=1;items.forEach(it=>{if((it.value||0)>maxV)maxV=it.value;});
+  const H=top*2+items.length*rowH;
+  let g='<svg viewBox="0 0 '+W+' '+H+'" role="img">';
+  items.forEach((it,i)=>{
+    const y=top+i*rowH;const w=(W-padL-padR)*(it.value/maxV);
+    g+='<text x="'+(padL-8)+'" y="'+(y+rowH/2+4)+'" font-size="11" text-anchor="end" fill="var(--text)">'+esc(it.label).slice(0,22)+'</text>';
+    g+='<rect x="'+padL+'" y="'+(y+6)+'" width="'+(W-padL-padR)+'" height="'+(rowH-12)+'" rx="5" fill="var(--hover)"/>';
+    g+='<rect x="'+padL+'" y="'+(y+6)+'" width="'+Math.max(w,2)+'" height="'+(rowH-12)+'" rx="5" fill="var(--primary)"/>';
+    g+='<text x="'+(padL+w+8)+'" y="'+(y+rowH/2+4)+'" font-size="11" fill="var(--muted)">'+it.value+'</text>';
+  });
+  return g+"</svg>";
+}
+
+/* ==================== 数据分析页面 ==================== */
+async function loadAnalytics(){
+  // 摘要卡片
+  const cbox=document.getElementById("ana-cards");
+  cbox.innerHTML='<div class="card skel" style="height:80px"></div>'.repeat(4);
+  const sum=await apiFetch("/api/v1/analytics/summary");
+  let d={};if(sum&&sum.success&&sum.data)d=sum.data;
+  const card=(k,v,color)=>'<div class="card stat"><div class="lbl">'+t(k)+'</div><div class="num" style="color:'+(color||"inherit")+'">'+(v||0)+'</div></div>';
+  cbox.innerHTML=
+    card("stat_assess",d.total_assessments??d.assessments??d.total??0)+
+    card("stat_vuln",d.total_vulnerabilities??d.vulnerabilities??d.total_vulns??0)+
+    card("stat_risk",d.avg_risk_score??d.avg_risk??d.risk_score??0,"var(--primary)")+
+    card("stat_high",d.high_severity??d.high_count??d.high??0,"var(--crit)");
+
+  // 趋势折线
+  const lb=document.getElementById("chart-line");
+  const tr=await apiFetch("/api/v1/analytics/trends/vulnerabilities?days=30");
+  if(tr&&tr.success&&tr.data){
+    const{labels,series}=normTrend(tr.data);
+    const has=series.some(s=>s.points.some(v=>v>0));
+    lb.innerHTML=has?lineChartSVG(labels,series):emptyBoxSVG();
+  }else lb.innerHTML=emptyBoxSVG();
+
+  // 严重程度分布
+  const db=document.getElementById("chart-donut");
+  const ds=await apiFetch("/api/v1/analytics/distribution/severity");
+  const colorMap={critical:"var(--crit)",high:"var(--high)",medium:"var(--med)",low:"var(--low)",info:"var(--info)"};
+  let segs=[];
+  if(ds&&ds.success&&ds.data){
+    let raw=ds.data;
+    if(Array.isArray(raw))raw.forEach(r=>segs.push({name:r.severity||r.level||"info",value:r.count??r.value??0,color:colorMap[r.severity||r.level]||"var(--info)"}));
+    else Object.keys(raw).forEach(k=>segs.push({name:k,value:Number(raw[k])||0,color:colorMap[k]||"var(--info)"}));
+  }
+  const totalV=segs.reduce((a,b)=>a+(+b.value||0),0);
+  db.innerHTML=totalV>0?donutSVG(segs):emptyBoxSVG();
+
+  // Top 目标
+  const tb=document.getElementById("chart-bars");
+  const top=await apiFetch("/api/v1/analytics/top/targets?n=5");
+  let items=[];
+  if(top&&top.success&&Array.isArray(top.data)){
+    items=top.data.slice(0,5).map(r=>({label:r.target||r.name||r.host||"?",value:r.risk_score??r.risk??r.vuln_count??r.count??0}));
+  }else if(top&&top.success&&Array.isArray(top.data&&top.data.targets)){
+    items=top.data.targets.slice(0,5).map(r=>({label:r.target||r.name||"?",value:r.risk_score??r.risk??0}));
+  }
+  tb.innerHTML=items.length?hBarSVG(items):emptyBoxSVG();
+}
+
+/* ==================== 报告中心 ==================== */
+async function loadReports(){
+  const fm=await apiFetch("/api/v1/reporting/formats");
+  const fe=document.getElementById("rp-formats");
+  if(fm&&fm.success&&Array.isArray(fm.formats)){
+    fe.innerHTML='<ul class="menu-list">'+fm.formats.map(f=>'<li><span>'+esc(typeof f==="string"?f:(f.name||f.format))+'</span><span class="v">✓</span></li>').join("")+"</ul>";
+    const sel=document.getElementById("rp-format");
+    const avail=fm.formats.map(f=>(typeof f==="string"?f:(f.name||f.format)));
+    if(avail.length){sel.innerHTML=avail.map(a=>'<option value="'+esc(a)+'">'+esc(a.toUpperCase())+"</option>").join("");}
+  }else fe.innerHTML=emptyBox(t("rep_nodata"));
+
+  const tp=await apiFetch("/api/v1/reporting/templates");
+  const te=document.getElementById("rp-templates");const selT=document.getElementById("rp-template");
+  let list=[];
+  if(tp&&tp.success&&Array.isArray(tp.templates))list=tp.templates;
+  if(list.length){
+    te.innerHTML='<ul class="menu-list">'+list.map(x=>'<li><span>'+esc(x.name||x.id)+'</span><span class="v">'+esc(x.id||"")+'</span></li>').join("")+"</ul>";
+    selT.innerHTML='<option value="">-</option>'+list.map(x=>'<option value="'+esc(x.id||"")+'">'+esc(x.name||x.id)+"</option>").join("");
+  }else{te.innerHTML=emptyBox(t("rep_nodata"));selT.innerHTML='<option value="">-</option>';}
+}
+document.getElementById("rp-generate").onclick=async()=>{
+  const aid=document.getElementById("rp-assess").value.trim();
+  const fmt=document.getElementById("rp-format").value;
+  const tpl=document.getElementById("rp-template").value;
+  const out=document.getElementById("rp-result");
+  if(!aid){out.innerHTML='<div class="empty">'+t("rep_noid")+"</div>";return;}
+  out.innerHTML='<div class="skel" style="height:60px"></div>';
+  const res=await apiFetch("/api/v1/reporting/generate",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({assessment_data:{assessment_id:aid,id:aid},format:fmt,template_id:tpl||null})},15000);
+  if(res&&res.success){
+    out.innerHTML='<div class="card"><b style="color:var(--low)">✓ '+t("rep_ok")+'</b><br><small class="v">report_id: '+esc(res.report_id||"-")+'</small><br><a style="color:var(--primary)" href="'+esc(res.download_url||"#")+'">'+t("rep_gen_btn")+' →</a></div>';
+  }else out.innerHTML='<div class="empty">'+t("rep_fail")+(res&&res.detail?(": "+esc(res.detail)):"")+"</div>";
+};
+
+/* ==================== 命令面板 ==================== */
+const COMMANDS=[
+ {id:"dashboard",icon:"▦",label:"cmd_dashboard",run:()=>switchView("dashboard")},
+ {id:"assessment",icon:"◎",label:"cmd_new_assessment",run:()=>switchView("assessment")},
+ {id:"reports",icon:"▤",label:"cmd_view_reports",run:()=>switchView("reports")},
+ {id:"analytics",icon:"📈",label:"cmd_analytics",run:()=>switchView("analytics")},
+ {id:"assets",icon:"▣",label:"cmd_assets",run:()=>switchView("assets")},
+ {id:"compliance",icon:"✔",label:"cmd_compliance",run:()=>switchView("compliance")},
+ {id:"integrations",icon:"⛓",label:"cmd_integrations",run:()=>switchView("integrations")},
+ {id:"alerts",icon:"🔔",label:"cmd_view_alerts",run:()=>switchView("alerts")},
+ {id:"theme",icon:"◐",label:"cmd_toggle_theme",run:()=>{applyTheme(theme==="dark"?"light":"dark");}},
+ {id:"lang",icon:"🌐",label:"cmd_toggle_lang",run:()=>{lang=(lang==="zh"?"en":"zh");localStorage.setItem("ui_lang",lang);applyLang();}},
+ {id:"shortcuts",icon:"⌨",label:"cmd_shortcuts",run:()=>openKbd()}
+];
+let palSel=0,palFiltered=COMMANDS;
+function openPalette(){
+  document.getElementById("palette-mask").classList.add("open");
+  document.getElementById("palette-input").value="";renderPalette("");
+  setTimeout(()=>document.getElementById("palette-input").focus(),30);
+}
+function closePalette(){document.getElementById("palette-mask").classList.remove("open");}
+function renderPalette(q){
+  q=(q||"").toLowerCase();palSel=0;
+  palFiltered=COMMANDS.filter(c=>!q||t(c.label).toLowerCase().includes(q)||c.id.includes(q));
+  const box=document.getElementById("palette-list");
+  if(!palFiltered.length){box.innerHTML='<div class="empty">—</div>';return;}
+  box.innerHTML=palFiltered.map((c,i)=>'<button class="pal-item'+(i===0?" sel":"")+'" data-i="'+i+'"><span>'+c.icon+'</span><span>'+t(c.label)+"</span></button>").join("");
+  box.querySelectorAll(".pal-item").forEach(el=>{
+    el.onclick=()=>{const cmd=palFiltered[+el.dataset.i];closePalette();cmd.run();};
+  });
+}
+function palMove(d){palSel=Math.max(0,Math.min(palFiltered.length-1,palSel+d));
+  const items=document.querySelectorAll("#palette-list .pal-item");
+  items.forEach((el,i)=>el.classList.toggle("sel",i===palSel));
+  if(items[palSel])items[palSel].scrollIntoView({block:"nearest"});}
+function palExec(){if(palFiltered[palSel]){const c=palFiltered[palSel];closePalette();c.run();}}
+document.getElementById("palette-input").addEventListener("input",e=>renderPalette(e.target.value));
+document.getElementById("palette-mask").addEventListener("click",e=>{if(e.target.id==="palette-mask")closePalette();});
+document.getElementById("btn-palette").onclick=openPalette;
+function openKbd(){document.getElementById("kbd-mask").classList.add("open");}
+function closeKbd(){document.getElementById("kbd-mask").classList.remove("open");}
+document.getElementById("kbd-close").onclick=closeKbd;
+document.getElementById("kbd-mask").addEventListener("click",e=>{if(e.target.id==="kbd-mask")closeKbd();});
+
+/* ==================== 主题/语言按钮 ==================== */
+document.getElementById("btn-theme").onclick=()=>applyTheme(theme==="dark"?"light":"dark");
+document.getElementById("btn-lang").onclick=()=>{lang=(lang==="zh"?"en":"zh");localStorage.setItem("ui_lang",lang);applyLang();};
+document.getElementById("btn-bell").onclick=()=>switchView("alerts");
+
+/* ==================== 键盘快捷键 ==================== */
+document.addEventListener("keydown",e=>{
+  const inPal=document.getElementById("palette-mask").classList.contains("open");
+  if(e.ctrlKey&&(e.key==="k"||e.key==="K")){e.preventDefault();inPal?closePalette():openPalette();return;}
+  if(inPal){
+    if(e.key==="Escape"){closePalette();return;}
+    if(e.key==="ArrowDown"){e.preventDefault();palMove(1);return;}
+    if(e.key==="ArrowUp"){e.preventDefault();palMove(-1);return;}
+    if(e.key==="Enter"){e.preventDefault();palExec();return;}
+  }
+  if(e.ctrlKey&&(e.key==="/")){e.preventDefault();openKbd();return;}
+  if(!e.ctrlKey)return;
+  if(e.key==="n"||e.key==="N"){e.preventDefault();switchView("assessment");}
+  else if(e.key==="r"||e.key==="R"){e.preventDefault();switchView("reports");}
+  else if(e.key==="d"||e.key==="D"){e.preventDefault();switchView("analytics");}
+});
+
+/* ==================== 新手引导 ==================== */
+const BUILTIN_STEPS=[
+ {id:"welcome",title:{zh:"欢迎使用统一安全平台 V2",en:"Welcome to Unified Security Platform V2"},desc:{zh:"一站式安全运营控制台，1 分钟带您熟悉核心功能，随时可跳过。",en:"Your all-in-one security console. A 1-minute tour, skippable anytime."},target:null,pos:"center"},
+ {id:"nav",title:{zh:"左侧导航菜单",en:"Left Navigation"},desc:{zh:"所有功能模块都在这里：仪表盘、评估中心、数据分析、资产管理、报告中心等。",en:"All modules live here: Dashboard, Assessment, Analytics, Assets, Reports."},target:"#nav-sidebar",pos:"right"},
+ {id:"quick",title:{zh:"快速评估入口",en:"Quick Assessment"},desc:{zh:"在仪表盘输入目标地址即可发起一次快速安全评估。",en:"Enter a target on the Dashboard to run a quick assessment."},target:"#quick-assess-card",pos:"bottom"},
+ {id:"ana",title:{zh:"数据分析仪表盘",en:"Analytics Dashboard"},desc:{zh:"查看评估总量、漏洞趋势折线图、严重程度环形图与 Top 风险目标柱状图。",en:"View totals, vuln trend line chart, severity donut and top-target bars."},target:"#nav-analytics",pos:"right"},
+ {id:"rep",title:{zh:"报告生成",en:"Report Generation"},desc:{zh:"在报告中心选择评估 ID、输出格式（HTML/PDF/Word/Excel）与模板，一键生成报告。",en:"In Report Center pick assessment ID, format (HTML/PDF/Word/Excel) and template."},target:"#nav-reports",pos:"right"},
+ {id:"done",title:{zh:"开始使用",en:"You Are All Set"},desc:{zh:"按 Ctrl+K 随时打开命令面板，按 Ctrl+/ 查看全部快捷键。祝使用顺利！",en:"Press Ctrl+K anytime for the command palette, Ctrl+/ for shortcuts. Happy hunting!"},target:null,pos:"center"}
+];
+let obSteps=[],obIdx=0;
+async function startOnboarding(){
+  const res=await apiFetch("/api/v1/onboarding/steps");
+  if(res&&res.success&&Array.isArray(res.steps)&&res.steps.length){
+    obSteps=res.steps.map(s=>({id:s.id,title:{zh:s.title_zh||"",en:s.title_en||""},desc:{zh:s.description_zh||"",en:s.description_en||""},target:s.target_selector,pos:s.position||"center"}));
+  }else obSteps=BUILTIN_STEPS;
+  obIdx=0;showObStep();
+}
+function showObStep(){
+  if(obIdx>=obSteps.length){finishOnboarding();return;}
+  const s=obSteps[obIdx];
+  document.getElementById("ob-title").textContent=s.title[lang]||s.title.zh;
+  document.getElementById("ob-desc").textContent=s.desc[lang]||s.desc.zh;
+  document.getElementById("ob-idx").textContent=(obIdx+1)+" / "+obSteps.length;
+  document.getElementById("ob-prev").style.visibility=obIdx===0?"hidden":"visible";
+  document.getElementById("ob-next").textContent=obIdx===obSteps.length-1?t("done"):t("next");
+  const hl=document.getElementById("ob-highlight"),pop=document.getElementById("ob-pop");
+  let rect=null;
+  if(s.target){const el=document.querySelector(s.target);if(el)rect=el.getBoundingClientRect();}
+  if(rect){
+    hl.style.display="block";
+    hl.style.left=(rect.left-4)+"px";hl.style.top=(rect.top-4)+"px";
+    hl.style.width=(rect.width+8)+"px";hl.style.height=(rect.height+8)+"px";
+  }else{hl.style.display="none";}
+  // 弹窗定位
+  pop.style.display="block";
+  const pw=340,wh=window.innerWidth,hh=window.innerHeight;
+  let px=(wh-pw)/2,py=hh/2-60;
+  if(rect&&s.pos==="right"){px=Math.min(rect.right+16,wh-pw-10);py=rect.top;}
+  else if(rect&&s.pos==="bottom"){px=Math.max(10,Math.min(rect.left,wh-pw-10));py=rect.bottom+16;}
+  pop.style.left=px+"px";pop.style.top=py+"px";
+  // 记录当前步骤到后端（不阻塞）
+  apiFetch("/api/v1/onboarding/complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:"default_user",step:s.id})});
+}
+function finishOnboarding(){
+  document.getElementById("ob-highlight").style.display="none";
+  document.getElementById("ob-pop").style.display="none";
+  localStorage.setItem("onboarding_completed","1");
+  apiFetch("/api/v1/onboarding/complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:"default_user"})});
+}
+document.getElementById("ob-next").onclick=()=>{obIdx++;showObStep();};
+document.getElementById("ob-prev").onclick=()=>{obIdx=Math.max(0,obIdx-1);showObStep();};
+document.getElementById("ob-skip").onclick=finishOnboarding;
+
+/* ==================== 全局搜索框（回车打开命令面板） ==================== */
+document.getElementById("global-search").addEventListener("keydown",e=>{if(e.key==="Enter"){openPalette();}});
+
+/* ==================== 初始化 ==================== */
+applyTheme(theme);
+applyLang();
+switchView("dashboard");
+if(window.innerWidth<768)document.getElementById("nav-sidebar").classList.add("collapsed");
+window.addEventListener("resize",()=>{
+  if(window.innerWidth>=768)document.getElementById("nav-sidebar").classList.remove("collapsed");
+});
+if(localStorage.getItem("onboarding_completed")!=="1"){
+  setTimeout(startOnboarding,500);
+}
+</script>
+<script src="/static/js/i18n.js"></script>
+<script src="/static/js/mobile-nav.js"></script>
+
+<!-- Round8: mobile + i18n boot -->
+<div id="lang-switcher" style="position:fixed;top:10px;right:10px;z-index:1300;display:flex;gap:6px;">
+  <button type="button" data-lang="zh-CN" class="lang-btn" style="min-height:44px;padding:8px 14px;background:#161b22;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;cursor:pointer;font-size:13px;">中文</button>
+  <button type="button" data-lang="en-US" class="lang-btn" style="min-height:44px;padding:8px 14px;background:#161b22;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;cursor:pointer;font-size:13px;">EN</button>
+</div>
+<script>
+(function(){
+  function bindLangSwitch(){
+    var btns = document.querySelectorAll('#lang-switcher .lang-btn');
+    btns.forEach(function(b){
+      b.addEventListener('click', function(){
+        var lang = b.getAttribute('data-lang');
+        if (window.i18n) window.i18n.setLanguage(lang);
+      });
+    });
+    function highlight(){
+      var cur = (window.i18n && window.i18n.getLanguage()) || 'zh-CN';
+      btns.forEach(function(b){
+        var active = b.getAttribute('data-lang') === cur;
+        b.style.borderColor = active ? '#58a6ff' : '#30363d';
+        b.style.color = active ? '#58a6ff' : '#c9d1d9';
+      });
+    }
+    window.addEventListener('i18n:change', highlight);
+    // initial highlight once i18n boots
+    var tries = 0;
+    var t = setInterval(function(){ if (window.i18n) { highlight(); clearInterval(t); } else if (++tries > 50) clearInterval(t); }, 100);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindLangSwitch);
+  else bindLangSwitch();
+})();
+</script>
+
+</body>
+</html>

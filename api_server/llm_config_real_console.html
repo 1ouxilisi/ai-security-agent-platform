@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Key 配置引导</title>
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#a371f7;--ok:#3fb950;--warn:#d29922;--err:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI",Microsoft YaHei,sans-serif;padding:16px;font-size:14px}
+h1{font-size:22px;margin-bottom:4px} h2{font-size:16px;margin:18px 0 10px;color:var(--accent)}
+.sub{color:var(--muted);margin-bottom:16px;font-size:13px}
+.notice{background:#a371f722;border:1px solid #a371f766;padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px}
+.stat .n{font-size:24px;font-weight:700} .stat .l{color:var(--muted);font-size:12px;margin-top:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px}
+.card .name{font-weight:600;font-size:15px} .card .desc{color:var(--muted);font-size:12px;margin:4px 0}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.b-ok{background:#3fb95022;color:var(--ok)} .b-no{background:#f8514922;color:var(--err)}
+.b-br{background:#d2992222;color:var(--warn)}
+.btn{background:var(--accent);color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-right:6px;margin-top:6px}
+.btn:hover{opacity:.9} .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+input,select,textarea{background:#0d1117;border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px;width:100%;margin:4px 0}
+label{font-size:12px;color:var(--muted);display:block;margin-top:6px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.result{background:#010409;border:1px solid var(--border);border-radius:6px;padding:10px;margin-top:8px;font-size:12px;white-space:pre-wrap;font-family:Consolas,monospace}
+a{color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:12px} th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left}
+</style>
+</head>
+<body>
+<h1>🔑 LLM Key 配置引导</h1>
+<div class="sub">真实 HTTP 连通性测试 · Key 加密存储 · 多提供商 · 用量与费用统计</div>
+<div class="notice">🔒 所有 Key 通过 Fernet/XOR 加密落盘到 data/llm_config.json，不明文存储。</div>
+
+<div class="stats" id="stats"></div>
+
+<h2>📋 配置流程</h2>
+<div class="card" id="guide"></div>
+
+<h2>🧩 提供商选择与 Key 配置</h2>
+<div class="grid" id="providers"></div>
+
+<h2>✅ 已配置 Key</h2>
+<table><thead><tr><th>提供商</th><th>Key</th><th>模型</th><th>Base URL</th><th>默认</th><th>操作</th></tr></thead><tbody id="keys"></tbody></table>
+
+<h2>📊 用量统计（24h）</h2>
+<div class="card" id="usage"></div>
+
+<script>
+const API='/api/v1/llm-real-config';
+async function jget(u){const r=await fetch(API+u);return r.json();}
+async function jpost(u,b){const r=await fetch(API+u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});return r.json();}
+async function jdel(u){const r=await fetch(API+u,{method:'DELETE'});return r.json();}
+
+async function loadAll(){
+  const d=await jget('/dashboard');const s=d.data;
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><div class="n">${s.configured_keys.total_configured}</div><div class="l">已配置 Key</div></div>
+    <div class="stat"><div class="n">${s.usage_24h.total_calls}</div><div class="l">24h 调用</div></div>
+    <div class="stat"><div class="n">${s.usage_24h.total_tokens}</div><div class="l">24h Tokens</div></div>
+    <div class="stat"><div class="n">$${s.usage_24h.total_cost_usd}</div><div class="l">24h 费用</div></div>`;
+  const g=await jget('/guide');
+  document.getElementById('guide').innerHTML='<ol>'+g.data.steps.map(x=>'<li>'+x+'</li>').join('')+'</ol>'+
+    (g.data.any_configured?'':'<div style="color:var(--warn);margin-top:8px">⚠ 尚未配置任何 Key，AI 功能将提示「请先配置」。</div>');
+  const pEl=document.getElementById('providers');pEl.innerHTML='';
+  for(const p of s.providers){
+    pEl.innerHTML+=`<div class="card">
+      <div class="name">${p.name}</div>
+      <div class="desc">${p.free_quota||''}</div>
+      <label>API Key</label><input id="key_${p.id}" type="password" placeholder="sk-...">
+      <label>Base URL</label><input id="url_${p.id}" value="${p.default_base_url}">
+      <label>模型</label><select id="model_${p.id}">${p.models.map(m=>`<option>${m}</option>`).join('')}</select>
+      <button class="btn" onclick="save('${p.id}')">保存</button>
+      <button class="btn btn-ghost" onclick="test('${p.id}')">测试</button>
+      <a class="btn btn-ghost" href="${p.apply_url}" target="_blank">申请 Key</a>
+      <div class="result" id="res_${p.id}"></div>
+    </div>`;
+  }
+  loadKeys();loadUsage();
+}
+async function save(pid){
+  const body={provider:pid,api_key:document.getElementById('key_'+pid).value,
+    base_url:document.getElementById('url_'+pid).value,
+    model:document.getElementById('model_'+pid).value};
+  const r=await jpost('/keys',body);
+  document.getElementById('res_'+pid).textContent=JSON.stringify(r.data||r.error);
+  loadKeys();
+}
+async function test(pid){
+  const body={provider:pid,api_key:document.getElementById('key_'+pid).value||null,
+    base_url:document.getElementById('url_'+pid).value||null,
+    model:document.getElementById('model_'+pid).value||null};
+  document.getElementById('res_'+pid).textContent='测试中...';
+  const r=await jpost('/test',body);
+  document.getElementById('res_'+pid).textContent=JSON.stringify(r.data||r,null,2);
+  loadUsage();
+}
+async function loadKeys(){
+  const d=await jget('/keys');
+  const tb=document.getElementById('keys');tb.innerHTML='';
+  for(const k of d.data.keys){
+    tb.innerHTML+=`<tr><td>${k.provider}</td><td>${k.api_key_masked}</td>
+      <td>${k.model||'-'}</td><td style="font-size:11px">${(k.base_url||'').slice(0,30)}</td>
+      <td>${k.is_default?'<span class="badge b-ok">默认</span>':''}</td>
+      <td>
+        ${k.is_default?'':`<button class="btn btn-ghost" onclick="setDefault('${k.provider}')">设为默认</button>`}
+        <button class="btn btn-ghost" onclick="testSaved('${k.provider}')">测试</button>
+        <button class="btn btn-ghost" onclick="delKey('${k.provider}')">删除</button>
+      </td></tr>`;
+  }
+}
+async function setDefault(pid){await jpost('/keys/default',{provider:pid});loadKeys();}
+async function delKey(pid){if(confirm('删除该 Key?')){await jdel('/keys/'+pid);loadKeys();}}
+async function testSaved(pid){
+  const r=await jpost('/test/'+pid);
+  alert(JSON.stringify(r.data||r,null,2));
+}
+async function loadUsage(){
+  const d=await jget('/usage/24h');
+  const el=document.getElementById('usage');
+  el.innerHTML=`<div>总调用: ${d.data.total_calls} · Tokens: ${d.data.total_tokens} · 费用: $${d.data.total_cost_usd}</div>
+    <pre style="margin-top:6px">${JSON.stringify(d.data.by_provider,null,2)}</pre>`;
+}
+loadAll();
+</script>
+</body>
+</html>

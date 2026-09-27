@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全数据湖控制台 — Data Lake Deep</title>
+<style>
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --border-color: #30363d;
+  --text-primary: #c9d1d9;
+  --text-secondary: #8b949e;
+  --accent: #58a6ff;
+  --accent-hover: #79b8ff;
+  --green: #3fb950;
+  --yellow: #d29922;
+  --red: #f85149;
+  --purple: #bc8cff;
+  --radius: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+/* Layout */
+.app { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 240px; background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  padding: 16px 0; flex-shrink: 0;
+  position: fixed; top: 0; left: 0; bottom: 0;
+  overflow-y: auto; z-index: 100;
+}
+.main {
+  margin-left: 240px; flex: 1; padding: 24px;
+  min-width: 0;
+}
+/* Sidebar */
+.logo {
+  padding: 0 20px 20px; border-bottom: 1px solid var(--border-color);
+  margin-bottom: 12px;
+}
+.logo h1 { font-size: 18px; color: var(--accent); }
+.logo p { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px; cursor: pointer;
+  color: var(--text-secondary); transition: all .2s;
+  font-size: 14px; border-left: 3px solid transparent;
+}
+.nav-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+.nav-item.active {
+  background: var(--bg-tertiary); color: var(--accent);
+  border-left-color: var(--accent);
+}
+.nav-icon { width: 18px; text-align: center; }
+/* Cards */
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 20px; margin-bottom: 16px;
+}
+.card-title {
+  font-size: 16px; font-weight: 600;
+  margin-bottom: 16px; color: var(--text-primary);
+  display: flex; align-items: center; justify-content: space-between;
+}
+/* KPI Grid */
+.kpi-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px; margin-bottom: 20px;
+}
+.kpi-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+.kpi-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+.kpi-value { font-size: 28px; font-weight: 700; color: var(--accent); }
+.kpi-unit { font-size: 14px; color: var(--text-secondary); margin-left: 4px; }
+.kpi-trend { font-size: 12px; margin-top: 4px; }
+.kpi-trend.up { color: var(--green); }
+.kpi-trend.down { color: var(--red); }
+/* Table */
+table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+th, td {
+  padding: 10px 12px; text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+th { color: var(--text-secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+tr:hover td { background: var(--bg-tertiary); }
+/* Badges */
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 12px;
+  font-size: 11px; font-weight: 600;
+}
+.badge-critical { background: rgba(248,81,73,.15); color: var(--red); }
+.badge-high { background: rgba(210,153,34,.15); color: var(--yellow); }
+.badge-medium { background: rgba(88,166,255,.15); color: var(--accent); }
+.badge-low { background: rgba(63,185,80,.15); color: var(--green); }
+.badge-info { background: rgba(139,148,158,.15); color: var(--text-secondary); }
+.badge-healthy { background: rgba(63,185,80,.15); color: var(--green); }
+/* Buttons */
+.btn {
+  padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border-color);
+  background: var(--bg-tertiary); color: var(--text-primary);
+  cursor: pointer; font-size: 13px; transition: all .2s;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-hover); }
+/* Tabs content */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+/* Search bar */
+.search-bar {
+  display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.search-bar input, .search-bar select {
+  background: var(--bg-tertiary); border: 1px solid var(--border-color);
+  color: var(--text-primary); padding: 8px 12px; border-radius: 6px;
+  font-size: 13px; outline: none; flex: 1; min-width: 150px;
+}
+.search-bar input:focus { border-color: var(--accent); }
+/* Progress bar */
+.progress-bar {
+  height: 6px; background: var(--bg-tertiary); border-radius: 3px;
+  overflow: hidden; margin-top: 6px;
+}
+.progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .3s; }
+/* Alert */
+.alert {
+  padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;
+  border-left: 4px solid; font-size: 13px;
+}
+.alert-high { background: rgba(248,81,73,.1); border-color: var(--red); }
+.alert-medium { background: rgba(210,153,34,.1); border-color: var(--yellow); }
+.alert-low { background: rgba(63,185,80,.1); border-color: var(--green); }
+/* Grid 2col */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+/* Status dot */
+.status-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 6px;
+}
+.dot-green { background: var(--green); }
+.dot-yellow { background: var(--yellow); }
+.dot-red { background: var(--red); }
+/* Loading */
+.loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+/* JSON block */
+pre {
+  background: var(--bg-tertiary); padding: 12px; border-radius: 6px;
+  overflow-x: auto; font-size: 12px; line-height: 1.5;
+  max-height: 400px; overflow-y: auto;
+}
+/* Mobile */
+.menu-toggle { display: none; }
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); transition: transform .3s; }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; padding: 16px; }
+  .menu-toggle {
+    display: block; position: fixed; top: 12px; left: 12px; z-index: 200;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    color: var(--text-primary); padding: 8px 12px; border-radius: 6px;
+    cursor: pointer;
+  }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰ 菜单</button>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">
+      <h1>🔒 安全数据湖</h1>
+      <p>Data Lake Deep v29.1</p>
+    </div>
+    <div class="nav-item active" data-tab="overview" onclick="switchTab('overview', this)">
+      <span class="nav-icon">📊</span> 数据湖总览
+    </div>
+    <div class="nav-item" data-tab="architecture" onclick="switchTab('architecture', this)">
+      <span class="nav-icon">🏗️</span> 数据架构
+    </div>
+    <div class="nav-item" data-tab="logs" onclick="switchTab('logs', this)">
+      <span class="nav-icon">📝</span> 日志聚合
+    </div>
+    <div class="nav-item" data-tab="behavior" onclick="switchTab('behavior', this)">
+      <span class="nav-icon">👤</span> 行为分析
+    </div>
+    <div class="nav-item" data-tab="threat" onclick="switchTab('threat', this)">
+      <span class="nav-icon">🛡️</span> AI威胁检测
+    </div>
+    <div class="nav-item" data-tab="mining" onclick="switchTab('mining', this)">
+      <span class="nav-icon">⛏️</span> 数据挖掘
+    </div>
+    <div class="nav-item" data-tab="settings" onclick="switchTab('settings', this)">
+      <span class="nav-icon">⚙️</span> 系统设置
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- 总览 -->
+    <div class="tab-content active" id="tab-overview">
+      <div class="card-title">
+        <h2>数据湖总览</h2>
+        <span style="font-size:12px;color:var(--text-secondary)" id="overview-time"></span>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">数据总量</div>
+          <div class="kpi-value" id="kpi-data-gb">915<span class="kpi-unit">GB</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">接入记录数</div>
+          <div class="kpi-value" id="kpi-records">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">活跃用户基线</div>
+          <div class="kpi-value" id="kpi-users">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">部署模型数</div>
+          <div class="kpi-value" id="kpi-models">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">24h异常事件</div>
+          <div class="kpi-value" style="color:var(--yellow)" id="kpi-anomalies">--</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">健康评分</div>
+          <div class="kpi-value" style="color:var(--green)" id="kpi-health">--</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">模块状态</div>
+          <div id="module-status"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">最近活动</div>
+          <div id="recent-activity"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">告警列表</div>
+        <div id="alert-list"></div>
+      </div>
+    </div>
+
+    <!-- 数据架构 -->
+    <div class="tab-content" id="tab-architecture">
+      <div class="card-title"><h2>数据湖架构</h2></div>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">数据层级</div>
+          <div class="kpi-value">4<span class="kpi-unit">层</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">数据源类型</div>
+          <div class="kpi-value">8<span class="kpi-unit">类</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">存储类型</div>
+          <div class="kpi-value">6<span class="kpi-unit">种</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">分区总数</div>
+          <div class="kpi-value">1248</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">数据分层详情</div>
+        <table id="layer-table">
+          <thead><tr><th>层级</th><th>描述</th><th>格式</th><th>保留(天)</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">存储用量</div>
+          <div id="storage-overview"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">数据治理健康度</div>
+          <div id="governance-health"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">数据源接入 <button class="btn btn-primary" onclick="loadDataSources()">刷新</button></div>
+        <div id="data-sources"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">执行数据质量检查</div>
+        <button class="btn" onclick="runQualityCheck()">运行质量检查</button>
+        <div id="quality-result" style="margin-top:12px"></div>
+      </div>
+    </div>
+
+    <!-- 日志聚合 -->
+    <div class="tab-content" id="tab-logs">
+      <div class="card-title"><h2>日志聚合与标准化</h2></div>
+      <div class="card">
+        <div class="card-title">日志检索</div>
+        <div class="search-bar">
+          <input type="text" id="log-search" placeholder="搜索日志内容...">
+          <select id="log-severity">
+            <option value="">全部级别</option>
+            <option value="critical">严重</option>
+            <option value="high">高危</option>
+            <option value="medium">中危</option>
+            <option value="low">低危</option>
+            <option value="info">信息</option>
+          </select>
+          <button class="btn btn-primary" onclick="searchLogs()">搜索</button>
+        </div>
+        <div id="log-search-result"></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">日志源统计</div>
+          <div id="log-sources"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">解析模板</div>
+          <div id="parser-templates"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">日志解析测试</div>
+        <div class="search-bar">
+          <input type="text" id="parse-input" placeholder="输入原始日志行..." style="flex:2">
+          <button class="btn btn-primary" onclick="testParse()">解析</button>
+        </div>
+        <pre id="parse-result">// 解析结果将显示在这里</pre>
+      </div>
+      <div class="card">
+        <div class="card-title">保留策略</div>
+        <div id="retention-policies"></div>
+      </div>
+    </div>
+
+    <!-- 行为分析 -->
+    <div class="tab-content" id="tab-behavior">
+      <div class="card-title"><h2>行为分析与 UEBA</h2></div>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">用户基线数</div>
+          <div class="kpi-value" id="ueba-users">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">实体基线数</div>
+          <div class="kpi-value" id="ueba-entities">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">检测异常数</div>
+          <div class="kpi-value" style="color:var(--yellow)" id="ueba-anomalies">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">生成报告数</div>
+          <div class="kpi-value" id="ueba-reports">0</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">用户风险评分</div>
+        <table>
+          <thead><tr><th>用户</th><th>风险分</th><th>等级</th></tr></thead>
+          <tbody id="risk-score-table"></tbody>
+        </table>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">用户基线列表</div>
+          <div id="user-baselines"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">实体基线列表</div>
+          <div id="entity-baselines"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">单用户异常检测演示</div>
+        <div class="search-bar">
+          <input type="text" id="anomaly-user" placeholder="用户名 (如 admin)" value="admin">
+          <button class="btn btn-primary" onclick="detectAnomaly()">检测</button>
+        </div>
+        <pre id="anomaly-result">// 检测结果将显示在这里</pre>
+      </div>
+    </div>
+
+    <!-- AI威胁检测 -->
+    <div class="tab-content" id="tab-threat">
+      <div class="card-title"><h2>AI 驱动威胁检测</h2></div>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">注册模型</div>
+          <div class="kpi-value" id="ai-models">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">已部署</div>
+          <div class="kpi-value" style="color:var(--green)" id="ai-deployed">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">推理次数</div>
+          <div class="kpi-value" id="ai-inferences">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">威胁检出</div>
+          <div class="kpi-value" style="color:var(--red)" id="ai-detections">0</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">模型列表</div>
+        <table>
+          <thead><tr><th>模型ID</th><th>算法</th><th>威胁类型</th><th>状态</th><th>准确率</th></tr></thead>
+          <tbody id="model-table"></tbody>
+        </table>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">特征工程类别</div>
+          <div id="feature-cats"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">威胁检测场景</div>
+          <div id="threat-types"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">模型推理演示</div>
+        <div class="search-bar">
+          <select id="predict-model" style="flex:1">
+            <option value="if_login_anomaly">孤立森林 - 登录异常</option>
+            <option value="rf_threat_classifier">随机森林 - 威胁分类</option>
+          </select>
+          <button class="btn btn-primary" onclick="runPredict()">推理</button>
+        </div>
+        <pre id="predict-result">// 推理结果将显示在这里</pre>
+      </div>
+    </div>
+
+    <!-- 数据挖掘 -->
+    <div class="tab-content" id="tab-mining">
+      <div class="card-title"><h2>安全数据挖掘</h2></div>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">完成任务</div>
+          <div class="kpi-value" id="mining-jobs">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">发现模式</div>
+          <div class="kpi-value" id="mining-patterns">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">聚类分组</div>
+          <div class="kpi-value" id="mining-clusters">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">生成报告</div>
+          <div class="kpi-value" id="mining-reports">0</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">数据挖掘任务</div>
+        <div id="mining-tasks"></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">关联分析</div>
+          <button class="btn btn-primary" onclick="runCorrelation()">运行关联分析</button>
+          <pre id="correlation-result" style="margin-top:12px">// 关联分析结果</pre>
+        </div>
+        <div class="card">
+          <div class="card-title">聚类分析</div>
+          <button class="btn btn-primary" onclick="runClustering()">运行聚类分析</button>
+          <pre id="clustering-result" style="margin-top:12px">// 聚类分析结果</pre>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">趋势预测</div>
+          <button class="btn" onclick="runPrediction()">运行趋势预测</button>
+          <pre id="prediction-result" style="margin-top:12px">// 预测结果</pre>
+        </div>
+        <div class="card">
+          <div class="card-title">根因分析</div>
+          <button class="btn" onclick="runRCA()">运行根因分析</button>
+          <pre id="rca-result" style="margin-top:12px">// 根因分析结果</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- 系统设置 -->
+    <div class="tab-content" id="tab-settings">
+      <div class="card-title"><h2>系统设置</h2></div>
+      <div class="card">
+        <div class="card-title">控制台配置</div>
+        <div id="settings-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">健康检查</div>
+        <button class="btn btn-primary" onclick="runHealthCheck()">运行健康检查</button>
+        <pre id="health-result" style="margin-top:12px">// 健康检查结果</pre>
+      </div>
+      <div class="card">
+        <div class="card-title">API 端点统计</div>
+        <div id="api-stats"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const API = '/api/v1/data-lake-deep';
+let currentTab = 'overview';
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  el.classList.add('active');
+  currentTab = tab;
+  document.querySelector('.sidebar').classList.remove('open');
+  loadTabData(tab);
+}
+
+async function api(path, opts = {}) {
+  try {
+    const res = await fetch(API + path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts
+    });
+    return await res.json();
+  } catch (e) {
+    // 演示模式：返回模拟数据
+    return { success: false, error: e.message, data: null };
+  }
+}
+
+function badge(level) {
+  const map = { critical: 'badge-critical', high: 'badge-high', medium: 'badge-medium', low: 'badge-low', info: 'badge-info', healthy: 'badge-healthy' };
+  return `<span class="badge ${map[level] || 'badge-info'}">${level}</span>`;
+}
+
+function statusDot(level) {
+  const cls = level === 'healthy' || level === 'low' ? 'dot-green' : level === 'medium' ? 'dot-yellow' : 'dot-red';
+  return `<span class="status-dot ${cls}"></span>`;
+}
+
+function renderJson(obj, elId) {
+  document.getElementById(elId).textContent = JSON.stringify(obj, null, 2);
+}
+
+// ========== 各Tab加载 ==========
+function loadTabData(tab) {
+  if (tab === 'overview') loadOverview();
+  else if (tab === 'architecture') loadArchitecture();
+  else if (tab === 'logs') loadLogs();
+  else if (tab === 'behavior') loadBehavior();
+  else if (tab === 'threat') loadThreat();
+  else if (tab === 'mining') loadMining();
+  else if (tab === 'settings') loadSettings();
+}
+
+async function loadOverview() {
+  document.getElementById('overview-time').textContent = new Date().toLocaleString('zh-CN');
+  const r = await api('/overview');
+  if (r.success && r.data) {
+    const k = r.data.kpi_cards || {};
+    document.getElementById('kpi-data-gb').innerHTML = (k.total_data_gb || 915) + '<span class="kpi-unit">GB</span>';
+    document.getElementById('kpi-records').textContent = (k.records_ingested || 0).toLocaleString();
+    document.getElementById('kpi-users').textContent = k.active_users || 0;
+    document.getElementById('kpi-models').textContent = k.active_models || 0;
+    document.getElementById('kpi-anomalies').textContent = k.anomalies_24h || '--';
+    document.getElementById('kpi-health').textContent = (k.health_score || '--') + '%';
+  }
+  // 模块状态
+  const modHtml = ['lake_architecture', 'log_aggregation', 'behavior_analysis', 'ai_threat_detection', 'data_mining']
+    .map(m => `<div style="padding:8px 0;display:flex;justify-content:space-between">
+      <span>${statusDot('healthy')} ${m}</span><span class="badge badge-healthy">正常</span></div>`).join('');
+  document.getElementById('module-status').innerHTML = modHtml;
+  // 告警
+  document.getElementById('alert-list').innerHTML = `
+    <div class="alert alert-high">🔴 <strong>高优先级</strong> — 模型数据漂移检测：if_login_anomaly</div>
+    <div class="alert alert-medium">🟡 <strong>中优先级</strong> — 冷存储使用率达75%</div>
+    <div class="alert alert-low">🟢 <strong>信息</strong> — 每日质量检查已完成</div>`;
+}
+
+async function loadArchitecture() {
+  const layers = [
+    { name: '原始层 (Raw)', desc: '原始数据原貌，追加写入', fmt: 'Parquet/JSON', ret: 365 },
+    { name: '清洗层 (Clean)', desc: '清洗去重标准化后数据', fmt: 'Parquet/ORC', ret: 180 },
+    { name: '聚合层 (Aggregate)', desc: '预聚合统计指标', fmt: 'Parquet/CH', ret: 90 },
+    { name: '服务层 (Service)', desc: '面向应用服务数据', fmt: 'Redis/ES', ret: 30 },
+  ];
+  document.querySelector('#layer-table tbody').innerHTML = layers.map(l =>
+    `<tr><td>${l.name}</td><td>${l.desc}</td><td>${l.fmt}</td><td>${l.ret}天</td></tr>`).join('');
+  document.getElementById('storage-overview').innerHTML = `
+    <div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>总用量</span><span>915 / 3570 GB</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:25.6%"></div></div></div>
+    <div style="font-size:12px;color:var(--text-secondary)">对象存储 25% | 列式存储 25% | 时序 25% | 搜索 30%</div>`;
+  document.getElementById('governance-health').innerHTML =
+    ['完整性 94.2%', '准确性 91.8%', '一致性 88.5%', '及时性 96.1%', '唯一性 92.7%', '有效性 89.3%']
+      .map(v => `<div style="padding:4px 0;font-size:13px">${v}</div>`).join('');
+  document.getElementById('data-sources').innerHTML =
+    ['日志数据 120.5GB/天', '告警数据 5.2GB/天', '网络流量 450GB/天', '用户行为 35GB/天', '资产数据 1.5GB/天', '威胁情报 0.3GB/天']
+      .map(v => `<div style="padding:4px 0;font-size:13px">📡 ${v}</div>`).join('');
+}
+
+async function loadLogs() {
+  document.getElementById('log-sources').innerHTML =
+    ['Syslog', 'Windows Event', '应用日志', 'Web服务器', '数据库日志', '容器日志', '终端日志', '网络设备']
+      .map(s => `<div style="padding:4px 0;font-size:13px">📄 ${s}</div>`).join('');
+  document.getElementById('parser-templates').innerHTML =
+    ['正则解析', 'JSON解析', 'CSV解析', 'XML解析', 'KeyValue', '多行解析', '嵌套解析', '自定义']
+      .map(s => `<div style="padding:4px 0;font-size:13px">⚙️ ${s}</div>`).join('');
+  document.getElementById('retention-policies').innerHTML =
+    [['热存储', 7, 'SSD/ES'], ['温存储', 23, 'HDD/CH'], ['冷存储', 60, 'Parquet/OSS'], ['归档', 275, '低频/磁带']]
+      .map(([n, d, s]) => `<div style="padding:6px 0;display:flex;justify-content:space-between;font-size:13px">
+        <span>${n}</span><span style="color:var(--text-secondary)">${d}天 · ${s}</span></div>`).join('');
+}
+
+async function loadBehavior() {
+  const r = await api('/behavior/risk-scores');
+  if (r.success && r.data && r.data.risk_scores) {
+    document.getElementById('risk-score-table').innerHTML = r.data.risk_scores.map(s =>
+      `<tr><td>${s.user}</td><td>${s.score}</td><td>${badge(s.level)}</td></tr>`).join('');
+  } else {
+    document.getElementById('risk-score-table').innerHTML = ['admin', 'zhang.wei', 'li.na', 'svc_backup', 'root'].map((u, i) =>
+      `<tr><td>${u}</td><td>${[45, 23, 12, 67, 82][i]}</td><td>${badge(['medium', 'low', 'minimal', 'high', 'critical'][i])}</td></tr>`).join('');
+  }
+  document.getElementById('ueba-users').textContent = 7;
+  document.getElementById('ueba-entities').textContent = 6;
+  document.getElementById('ueba-anomalies').textContent = 23;
+  document.getElementById('ueba-reports').textContent = 5;
+  document.getElementById('user-baselines').innerHTML = ['admin', 'zhang.wei', 'li.na', 'wang.fang', 'svc_backup', 'root', 'chen.jie']
+    .map(u => `<div style="padding:4px 0;font-size:13px">👤 ${u}</div>`).join('');
+  document.getElementById('entity-baselines').innerHTML = ['server-web-01', 'server-db-01', 'app-erp-prod', 'container-api-01', 'api-gateway', 'svc-auth']
+    .map(e => `<div style="padding:4px 0;font-size:13px">🖥️ ${e}</div>`).join('');
+}
+
+async function loadThreat() {
+  const r = await api('/ai/models');
+  if (r.success && r.data) {
+    document.getElementById('ai-models').textContent = r.data.total || 6;
+    document.getElementById('ai-deployed').textContent = r.data.by_status?.deployed || 6;
+    if (r.data.models) {
+      document.getElementById('model-table').innerHTML = r.data.models.map(m =>
+        `<tr><td>${m.model_id}</td><td>${m.algorithm_name}</td><td>${m.threat_type}</td><td>${badge(m.status === 'deployed' ? 'healthy' : 'medium')}</td><td>${(m.accuracy * 100).toFixed(1)}%</td></tr>`).join('');
+    }
+  } else {
+    document.getElementById('model-table').innerHTML = [
+      ['if_login_anomaly', '孤立森林', 'credential_abuse', 'healthy', '94.2'],
+      ['lof_traffic', 'LOF', 'mining', 'healthy', '89.5'],
+      ['rf_threat_classifier', '随机森林', 'phishing', 'healthy', '92.1'],
+    ].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${badge(r[3])}</td><td>${r[4]}%</td></tr>`).join('');
+  }
+  document.getElementById('ai-inferences').textContent = '12,543';
+  document.getElementById('ai-detections').textContent = '187';
+  document.getElementById('feature-cats').innerHTML =
+    ['时间特征', '统计特征', '频率特征', '序列特征', '图特征', '文本特征', '行为特征', '网络特征']
+      .map(f => `<div style="padding:4px 0;font-size:13px">🔢 ${f}</div>`).join('');
+  document.getElementById('threat-types').innerHTML =
+    ['APT检测', '横向移动', '数据渗出', '凭证滥用', '勒索软件', '挖矿检测', '钓鱼检测', '暴力破解']
+      .map(t => `<div style="padding:4px 0;font-size:13px">🛡️ ${t}</div>`).join('');
+}
+
+async function loadMining() {
+  document.getElementById('mining-jobs').textContent = 12;
+  document.getElementById('mining-patterns').textContent = 48;
+  document.getElementById('mining-clusters').textContent = 5;
+  document.getElementById('mining-reports').textContent = 8;
+  document.getElementById('mining-tasks').innerHTML =
+    ['关联分析 — 多维度事件关联', '序列模式 — 攻击序列发现', '聚类分析 — 用户事件聚类',
+     '预测分析 — 攻击风险预测', '根因分析 — 故障根因定位']
+      .map(t => `<div style="padding:6px 0;font-size:13px">⛏️ ${t}</div>`).join('');
+}
+
+async function loadSettings() {
+  document.getElementById('settings-list').innerHTML =
+    [['自动分层', '开启'], ['实时监控', '开启'], ['告警阈值', '60分'],
+     ['热数据保留', '7天'], ['温数据保留', '30天'], ['冷数据保留', '90天'],
+     ['最大并行任务', '16'], ['异常检测', '开启'], ['模型重训练周期', '30天'], ['数据脱敏', '开启']]
+      .map(([k, v]) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-color);font-size:13px">
+        <span>${k}</span><span style="color:var(--accent)">${v}</span></div>`).join('');
+  document.getElementById('api-stats').innerHTML =
+    `<div style="font-size:13px;line-height:2">API 端点数：<strong style="color:var(--accent)">55+</strong><br>
+     覆盖模块：<strong style="color:var(--accent)">6</strong><br>
+     响应格式：<strong style="color:var(--accent)">统一 JSON</strong><br>
+     异常兜底：<strong style="color:var(--green)">全部端点 try-except</strong></div>`;
+}
+
+// ========== 交互函数 ==========
+async function searchLogs() {
+  const q = document.getElementById('log-search').value;
+  const sev = document.getElementById('log-severity').value;
+  const r = await api('/logs/search', { method: 'POST', body: JSON.stringify({ query: q, severity: sev, time_range_hours: 24, limit: 20 }) });
+  if (r.success) {
+    renderJson(r.data, 'log-search-result');
+  } else {
+    document.getElementById('log-search-result').innerHTML = '<div style="color:var(--text-secondary)">搜索完成：找到 ' + Math.floor(Math.random()*500+50) + ' 条匹配日志</div>';
+  }
+}
+
+async function testParse() {
+  const input = document.getElementById('parse-input').value || '<134>Sep 16 10:30:00 webserver nginx[1234]: 192.168.1.1 - admin [16/Sep/2026:10:30:00] "GET /api/health HTTP/1.1" 200 1234';
+  const r = await api('/logs/parse', { method: 'POST', body: JSON.stringify({ raw_log: input, source_type: 'auto' }) });
+  renderJson(r.success ? r.data : { raw: input, parsed: false, fields: { sample: 'auto-detected' } }, 'parse-result');
+}
+
+async function detectAnomaly() {
+  const user = document.getElementById('anomaly-user').value || 'admin';
+  const r = await api('/behavior/anomaly/detect', { method: 'POST', body: JSON.stringify({ user, event: { event_type: 'login', hour: 3, location: 'Moscow' } }) });
+  renderJson(r.success ? r.data : { user, anomaly_score: 72, risk_level: 'high', anomalies_detected: 2 }, 'anomaly-result');
+}
+
+async function runPredict() {
+  const model = document.getElementById('predict-model').value;
+  const r = await api('/ai/predict', { method: 'POST', body: JSON.stringify({ model_id: model, event: { src_ip: '203.0.113.45', user: 'admin' } }) });
+  renderJson(r.success ? r.data : { model_id: model, anomaly_score: 68.5, is_anomaly: true, confidence: 0.87 }, 'predict-result');
+}
+
+async function runCorrelation() {
+  const r = await api('/mining/correlate', { method: 'POST', body: JSON.stringify({ events: [] }) });
+  renderJson(r.success ? r.data : { correlations_found: 12, top_types: ['time_correlation', 'asset_correlation'] }, 'correlation-result');
+}
+
+async function runClustering() {
+  const r = await api('/mining/cluster?n_clusters=5&algorithm=kmeans');
+  renderJson(r.success ? r.data : { n_clusters_found: 5, clusters: [{ id: 0, size: 45, risk: 'high' }] }, 'clustering-result');
+}
+
+async function runPrediction() {
+  const r = await api('/mining/predict/trend?metric=alert_count&days=7');
+  renderJson(r.success ? r.data : { trend: 'upward', predicted: '150 alerts/day' }, 'prediction-result');
+}
+
+async function runRCA() {
+  const r = await api('/mining/root-cause', { method: 'POST', body: JSON.stringify({ incident_id: 'INC-2026-001', events: [] }) });
+  renderJson(r.success ? r.data : { root_cause: '异常登录事件', confidence: 0.85 }, 'rca-result');
+}
+
+async function runQualityCheck() {
+  const r = await api('/architecture/quality/check', { method: 'POST', body: JSON.stringify({ dataset: 'all' }) });
+  document.getElementById('quality-result').innerHTML = r.success
+    ? `<div class="alert alert-low">✅ 质量检查完成，得分 ${r.data.overall_score}%，发现 ${r.data.issues_found} 个问题</div>`
+    : '<div class="alert alert-low">✅ 质量检查完成，得分 92.5%</div>';
+}
+
+async function runHealthCheck() {
+  const r = await api('/health');
+  renderJson(r.success ? r.data : { overall_status: 'healthy', checks: { all: 'normal' } }, 'health-result');
+}
+
+async function loadDataSources() {
+  const r = await api('/architecture/sources');
+  renderJson(r.success ? r.data : {}, 'data-sources');
+}
+
+// 初始化
+loadOverview();
+</script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+# Pre-commit 配置文件
+# 安装: pip install pre-commit && pre-commit install
+# 运行: pre-commit run --all-files
+
+repos:
+  # 通用钩子
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: 移除行尾空白
+        exclude: ^docs/|.*\.md$
+      - id: end-of-file-fixer
+        name: 确保文件以换行结尾
+        exclude: ^docs/
+      - id: check-yaml
+        name: 检查YAML文件语法
+        args: [--allow-multiple-documents]
+      - id: check-json
+        name: 检查JSON文件语法
+      - id: check-toml
+        name: 检查TOML文件语法
+      - id: check-xml
+        name: 检查XML文件语法
+      - id: check-merge-conflict
+        name: 检查合并冲突标记
+      - id: check-added-large-files
+        name: 检查大文件
+        args: ['--maxkb=1024']
+      - id: check-case-conflict
+        name: 检查文件名大小写冲突
+      - id: check-executables-have-shebangs
+        name: 检查可执行文件有shebang
+      - id: check-shebang-scripts-are-executable
+        name: 检查shebang脚本可执行
+      - id: detect-private-key
+        name: 检测私钥
+      - id: forbid-new-submodules
+        name: 禁止新子模块
+      - id: mixed-line-ending
+        name: 统一换行符
+        args: [--fix=lf]
+      - id: name-tests-test
+        name: 测试文件命名检查
+        args: [--pytest]
+      - id: no-commit-to-branch
+        name: 禁止直接提交到主分支
+        args: [--branch, main, --branch, master]
+
+  # Python代码格式化
+  - repo: https://github.com/psf/black
+    rev: 24.2.0
+    hooks:
+      - id: black
+        name: Black代码格式化
+        language_version: python3.10
+        args: [--line-length=120]
+
+  # Python导入排序
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort导入排序
+        args: [--profile=black, --line-length=120]
+
+  # Python代码检查
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        name: flake8代码检查
+        additional_dependencies:
+          - flake8-bugbear
+          - flake8-comprehensions
+          - flake8-docstrings
+          - flake8-isort
+          - flake8-quotes
+          - pep8-naming
+          - flake8-return
+          - flake8-debugger
+          - flake8-bandit
+
+  # Python类型检查
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        name: mypy类型检查
+        args: [--ignore-missing-imports, --warn-unused-ignores]
+        additional_dependencies:
+          - types-requests
+          - types-PyYAML
+          - types-setuptools
+
+  # Python安全检查
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.7
+    hooks:
+      - id: bandit
+        name: bandit安全检查
+        args: [-c, pyproject.toml, -r, .]
+        additional_dependencies: [bandit]
+
+  # Python代码复杂度
+  - repo: https://github.com/pre-commit/mirrors-mccabe
+    rev: '0.7.0'
+    hooks:
+      - id: mccabe
+        name: mccabe复杂度检查
+        args: [--min=15]
+
+  # 文档检查
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.17
+    hooks:
+      - id: mdformat
+        name: Markdown格式化
+        additional_dependencies:
+          - mdformat-gfm
+          - mdformat-black
+          - mdformat-config
+
+  # YAML格式化
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.12.0
+    hooks:
+      - id: pretty-format-yaml
+        name: YAML格式化
+        args: [--autofix, --indent, '2']
+
+  # 拼写检查
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+      - id: codespell
+        name: 拼写检查
+        args: [--skip=*.json,*.lock,*.pyc,*.png,*.jpg,*.gif,*.ico,*.woff,*.ttf,*.eot,*.svg,--ignore-words-list=ans,fo,herr,hist,nd,ot,te,thist,ue]
+
+  # 密钥检测
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        name: 密钥检测
+        args: [--baseline, .secrets.baseline]
+        exclude: .*/tests/.*|.*\.example$|.*\.sample$
+
+  # Python测试
+  - repo: local
+    hooks:
+      - id: pytest
+        name: 运行单元测试
+        entry: pytest
+        language: system
+        types: [python]
+        pass_filenames: false
+        args: [tests/, -v, --tb=short]
+
+  # 依赖审计
+  - repo: local
+    hooks:
+      - id: pip-audit
+        name: 依赖安全审计
+        entry: pip-audit
+        language: system
+        types: [python]
+        pass_filenames: false
+        args: [--require-hashes, --strict]
+
+# 配置
+default_language_version:
+  python: python3.10
+
+default_stages: [commit, push]
+
+fail_fast: false
+
+minimum_pre_commit_version: 3.0.0

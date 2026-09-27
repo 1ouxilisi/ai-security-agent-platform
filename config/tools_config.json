@@ -1,0 +1,266 @@
+{
+  "comment": "AI Hacking Agent 安全工具路径配置（深化版）",
+  "comment2": "若工具不在系统PATH中，请在此指定完整路径；支持 %VAR% 环境变量展开",
+  "tools": {
+    "nmap": {
+      "path": "",
+      "windows_path": "C:\\Program Files (x86)\\Nmap\\nmap.exe",
+      "linux_path": "/usr/bin/nmap",
+      "enabled": true,
+      "description": "网络端口扫描工具",
+      "version_check_command": [
+        "--version"
+      ],
+      "args_template": [
+        "-sV",
+        "-sC",
+        "-p",
+        "{ports}",
+        "--open",
+        "-oX",
+        "-"
+      ],
+      "output_format": "xml",
+      "installed": false,
+      "version": "",
+      "last_check": "",
+      "install_methods": [
+        "download",
+        "chocolatey",
+        "manual"
+      ]
+    },
+    "sqlmap": {
+      "path": "",
+      "windows_path": "%USERPROFILE%\\tools\\sqlmap\\sqlmap.py",
+      "linux_path": "/usr/bin/sqlmap",
+      "wrapper": "python",
+      "enabled": true,
+      "description": "SQL注入检测与利用工具",
+      "version_check_command": [
+        "--version"
+      ],
+      "args_template": [
+        "-u",
+        "{url}",
+        "--batch",
+        "--level",
+        "{level}",
+        "--risk",
+        "{risk}"
+      ],
+      "output_format": "terminal",
+      "defaults": {
+        "comment": "默认扫描参数",
+        "level": 1,
+        "risk": 1,
+        "threads": 1,
+        "timeout": 300
+      },
+      "installed": false,
+      "version": "",
+      "last_check": "",
+      "install_methods": [
+        "pip",
+        "download",
+        "wsl",
+        "manual"
+      ]
+    },
+    "nuclei": {
+      "path": "",
+      "windows_path": "%USERPROFILE%\\tools\\nuclei.exe",
+      "linux_path": "/usr/bin/nuclei",
+      "enabled": true,
+      "description": "基于模板的漏洞扫描工具",
+      "version_check_command": [
+        "-version"
+      ],
+      "args_template": [
+        "-u",
+        "{url}",
+        "-json",
+        "-silent"
+      ],
+      "output_format": "jsonl",
+      "installed": false,
+      "version": "",
+      "last_check": "",
+      "install_methods": [
+        "download",
+        "manual"
+      ]
+    },
+    "masscan": {
+      "path": "",
+      "windows_path": "",
+      "linux_path": "/usr/bin/masscan",
+      "enabled": false,
+      "description": "高速端口扫描工具（Windows建议使用WSL）",
+      "wsl_command": "wsl masscan",
+      "wsl": {
+        "comment": "WSL 运行配置",
+        "enabled": true,
+        "distro": "",
+        "sudo": false
+      },
+      "rate": 1000,
+      "version_check_command": [
+        "--version"
+      ],
+      "args_template": [
+        "{target}",
+        "-p",
+        "{ports}",
+        "--rate",
+        "{rate}",
+        "-oJ",
+        "-"
+      ],
+      "output_format": "json",
+      "installed": false,
+      "version": "",
+      "last_check": "",
+      "install_methods": [
+        "wsl",
+        "manual"
+      ]
+    },
+    "nikto": {
+      "path": "",
+      "windows_path": "%USERPROFILE%\\tools\\nikto\\program\\nikto.pl",
+      "linux_path": "/usr/bin/nikto",
+      "wrapper": "perl",
+      "perl_path": "perl",
+      "enabled": true,
+      "description": "Web服务器漏洞扫描工具",
+      "version_check_command": [
+        "-Version"
+      ],
+      "args_template": [
+        "-h",
+        "{url}",
+        "-Format",
+        "json"
+      ],
+      "output_format": "json",
+      "installed": false,
+      "version": "",
+      "last_check": "",
+      "install_methods": [
+        "download",
+        "wsl",
+        "manual"
+      ]
+    },
+    "metasploit": {
+      "path": "",
+      "windows_path": "C:\\metasploit-framework\\bin\\msfconsole.bat",
+      "linux_path": "/usr/bin/msfconsole",
+      "enabled": false,
+      "description": "渗透测试框架（仅允许 auxiliary/scanner 与 auxiliary/gather 信息收集模块）",
+      "rpc_enabled": false,
+      "msfrpcd_host": "127.0.0.1",
+      "msfrpcd_port": 55553,
+      "msfrpcd_user": "msf",
+      "msfrpcd_password": "msf",
+      "rpc": {
+        "comment": "RPC 连接参数（优先级高于顶层字段）",
+        "msfrpcd_host": "127.0.0.1",
+        "msfrpcd_port": 55553,
+        "msfrpcd_user": "msf",
+        "msfrpcd_password": "msf",
+        "timeout": 10
+      },
+      "allowed_module_prefixes": [
+        "auxiliary/scanner/",
+        "auxiliary/gather/"
+      ],
+      "blocked_module_prefixes": [
+        "exploit/",
+        "post/",
+        "payload/",
+        "auxiliary/admin/"
+      ],
+      "installed": false,
+      "version": "",
+      "last_check": "",
+      "install_methods": [
+        "download",
+        "manual"
+      ]
+    },
+    "hashcat": {
+      "path": "",
+      "windows_path": "%USERPROFILE%\\tools\\hashcat\\hashcat.exe",
+      "linux_path": "/usr/bin/hashcat",
+      "enabled": false,
+      "description": "密码哈希破解工具（可选）",
+      "version_check_command": [
+        "--version"
+      ],
+      "args_template": [
+        "-m",
+        "{hash_mode}",
+        "{hash_file}"
+      ],
+      "installed": false,
+      "version": "",
+      "last_check": "",
+      "install_methods": [
+        "download",
+        "manual"
+      ]
+    },
+    "dirsearch": {
+      "path": "",
+      "windows_path": "%USERPROFILE%\\tools\\dirsearch\\dirsearch.py",
+      "linux_path": "/usr/bin/dirsearch",
+      "wrapper": "python",
+      "enabled": false,
+      "description": "Web目录爆破工具",
+      "version_check_command": [
+        "--version"
+      ],
+      "args_template": [
+        "-u",
+        "{url}",
+        "-o",
+        "{output}"
+      ],
+      "installed": false,
+      "version": "",
+      "last_check": "",
+      "install_methods": [
+        "download",
+        "pip",
+        "manual"
+      ]
+    },
+    "hydra": {
+      "path": "",
+      "windows_path": "",
+      "linux_path": "/usr/bin/hydra",
+      "enabled": false,
+      "description": "网络登录暴力破解工具（可选）",
+      "installed": false,
+      "version": "",
+      "last_check": "",
+      "install_methods": [
+        "wsl",
+        "download",
+        "manual"
+      ]
+    }
+  },
+  "settings": {
+    "comment": "全局运行设置",
+    "timeout": 300,
+    "default_timeout": 300,
+    "max_concurrent": 3,
+    "result_dir": "data/tool_outputs",
+    "output_directory": "data/tool_outputs",
+    "auto_install_missing": false,
+    "use_wsl_for_linux_tools": true
+  }
+}

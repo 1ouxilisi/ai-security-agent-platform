@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全服务交付平台控制台 · Round 14 · 方向4</title>
+<style>
+  :root {
+    --bg: #0a0e16; --panel: #111826; --panel2: #182236; --border: #24324d;
+    --text: #d6deee; --muted: #7a8aa8; --accent: #22d3ee; --accent2: #f472b6;
+    --crit: #ff4d4f; --high: #fa8c16; --med: #fadb14; --low: #52c41a; --info: #1890ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; font-size: 14px; }
+  header { background: linear-gradient(90deg,#0d1522,#16223a); padding: 14px 22px;
+    border-bottom: 1px solid var(--border); display:flex; align-items:center; gap:14px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 18px; color: var(--accent); }
+  header .tag { background: var(--panel2); padding: 3px 10px; border-radius: 10px; font-size: 12px; color: var(--muted); }
+  nav { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px 22px; background: #0e1522; border-bottom: 1px solid var(--border); }
+  nav button { background: transparent; color: var(--muted); border: 1px solid var(--border);
+    padding: 7px 14px; cursor: pointer; border-radius: 6px; font-size: 13px; }
+  nav button.active { background: var(--accent); color: #001; border-color: var(--accent); font-weight: 600; }
+  nav button:hover { color: var(--text); }
+  main { padding: 18px 22px; max-width: 1440px; margin: 0 auto; }
+  .tab { display: none; } .tab.active { display: block; }
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+  .span-4 { grid-column: span 4; } .span-6 { grid-column: span 6; }
+  .span-8 { grid-column: span 8; } .span-12 { grid-column: span 12; }
+  @media (max-width: 980px) { .span-4,.span-6,.span-8 { grid-column: span 12; } }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .card h3 { margin: 0 0 10px; font-size: 14px; color: var(--accent); }
+  label { display:block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+  input, textarea, select { width: 100%; background: #0c1320; color: var(--text);
+    border: 1px solid var(--border); border-radius: 5px; padding: 7px 9px; font-size: 13px; }
+  textarea { min-height: 70px; font-family: Consolas, monospace; }
+  button.action { background: var(--accent); color: #001; border: none; padding: 8px 16px;
+    border-radius: 5px; cursor: pointer; font-weight: 600; margin-top: 10px; }
+  button.action:hover { opacity: .9; }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .status { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .status.done { color: var(--low); } .status.error { color: var(--crit); }
+  pre { background: #0a101c; border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px; overflow: auto; max-height: 420px; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { border-bottom: 1px solid var(--border); padding: 6px 8px; text-align: left; }
+  th { color: var(--accent); background: #0e1626; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .pill.critical { background: rgba(255,77,79,.18); color: var(--crit); }
+  .pill.high { background: rgba(250,140,22,.18); color: var(--high); }
+  .pill.medium { background: rgba(250,219,20,.18); color: var(--med); }
+  .pill.low { background: rgba(82,196,26,.18); color: var(--low); }
+  .pill.info { background: rgba(24,144,255,.18); color: var(--info); }
+  .kv { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+  .kv div b { color: var(--accent); font-size: 20px; display: block; }
+  .kv div span { font-size: 12px; color: var(--muted); }
+  .bar { height: 8px; background: var(--panel2); border-radius: 4px; overflow: hidden; margin: 4px 0; }
+  .bar > span { display: block; height: 100%; background: linear-gradient(90deg,var(--accent),var(--accent2)); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .gantt-row { display: grid; grid-template-columns: 180px 1fr; gap: 8px; align-items: center; padding: 4px 0; border-bottom: 1px dashed var(--border); }
+  .gantt-bar { position: relative; height: 22px; background: var(--panel2); border-radius: 4px; overflow: hidden; }
+  .gantt-fill { position: absolute; top: 0; bottom: 0; background: linear-gradient(90deg,#1890ff,#22d3ee); border-radius: 4px; }
+  .gantt-label { position: absolute; top: 3px; left: 8px; font-size: 11px; color: #001; font-weight: 600; }
+  .skill-tag { display: inline-block; background: var(--panel2); color: var(--accent);
+    border: 1px solid var(--border); border-radius: 10px; padding: 2px 8px; font-size: 11px; margin: 2px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡️ 安全服务交付平台</h1>
+  <span class="tag">Round 14 · 方向4 · service-delivery</span>
+  <span class="muted" style="margin-left:auto">项目交付全流程 · 合法安全服务边界</span>
+</header>
+
+<nav id="nav">
+  <button data-tab="project" class="active">📁 项目管理</button>
+  <button data-tab="customer">👥 客户门户</button>
+  <button data-tab="billing">⏱️ 工时计费</button>
+  <button data-tab="sla">📊 SLA 管理</button>
+  <button data-tab="deliverable">📦 交付物</button>
+  <button data-tab="team">👷 团队资源</button>
+</nav>
+
+<main>
+<!-- ============ 项目管理 ============ -->
+<section class="tab active" id="tab-project">
+  <div class="grid">
+    <div class="card span-4">
+      <h3>项目仪表盘</h3>
+      <div class="kv" id="proj-kv"></div>
+      <button class="action" onclick="loadProjectDash()">刷新仪表盘</button>
+    </div>
+    <div class="card span-8">
+      <h3>新建项目</h3>
+      <div class="row">
+        <input id="np-name" placeholder="项目名称" style="flex:2">
+        <select id="np-type" style="flex:1">
+          <option value="pentest">渗透测试</option>
+          <option value="compliance_audit">合规审计</option>
+          <option value="incident_response">应急响应</option>
+          <option value="security_training">安全培训</option>
+          <option value="hw_support">护网支撑</option>
+          <option value="risk_assessment">风险评估</option>
+          <option value="code_audit">代码审计</option>
+          <option value="cloud_assessment">云安全评估</option>
+        </select>
+        <input id="np-customer" placeholder="客户名称" style="flex:1">
+      </div>
+      <div class="row">
+        <input id="np-start" placeholder="开始 YYYY-MM-DD" style="flex:1">
+        <input id="np-end" placeholder="结束 YYYY-MM-DD" style="flex:1">
+        <input id="np-budget" type="number" placeholder="预算(元)" style="flex:1" value="150000">
+        <input id="np-manager" placeholder="项目经理" style="flex:1" value="张工">
+      </div>
+      <button class="action" onclick="createProject()">创建项目</button>
+      <div class="status" id="np-status"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>项目列表</h3>
+    <table id="proj-table">
+      <thead><tr><th>ID</th><th>名称</th><th>类型</th><th>客户</th><th>状态</th><th>进度</th><th>预算</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <button class="action ghost" onclick="loadProjects()">加载项目</button>
+  </div>
+  <div class="grid">
+    <div class="card span-6">
+      <h3>甘特图（项目ID）</h3>
+      <div class="row">
+        <input id="gantt-pid" placeholder="PRJ-DEMO-001" style="flex:2">
+        <button class="action" onclick="loadGantt()">加载甘特</button>
+      </div>
+      <div id="gantt-box"></div>
+    </div>
+    <div class="card span-6">
+      <h3>风险登记册</h3>
+      <div id="risk-box"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 客户门户 ============ -->
+<section class="tab" id="tab-customer">
+  <div class="grid">
+    <div class="card span-4">
+      <h3>客户仪表盘</h3>
+      <div class="kv" id="cust-kv"></div>
+      <button class="action" onclick="loadCustDash()">刷新</button>
+    </div>
+    <div class="card span-8">
+      <h3>注册新客户</h3>
+      <div class="row">
+        <input id="nc-name" placeholder="客户名称" style="flex:2">
+        <select id="nc-tier" style="flex:1">
+          <option value="strategic">战略客户</option>
+          <option value="enterprise">企业客户</option>
+          <option value="business" selected>商业客户</option>
+          <option value="starter">入门客户</option>
+        </select>
+        <input id="nc-contact" placeholder="联系人" style="flex:1">
+      </div>
+      <div class="row">
+        <input id="nc-email" placeholder="邮箱" style="flex:1">
+        <input id="nc-phone" placeholder="电话" style="flex:1">
+        <input id="nc-city" placeholder="城市" style="flex:1">
+      </div>
+      <button class="action" onclick="registerCustomer()">注册客户</button>
+      <div class="status" id="nc-status"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>客户列表</h3>
+    <table id="cust-table">
+      <thead><tr><th>ID</th><th>名称</th><th>分层</th><th>联系人</th><th>城市</th><th>状态</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <button class="action ghost" onclick="loadCustomers()">加载客户</button>
+  </div>
+  <div class="grid">
+    <div class="card span-6">
+      <h3>工单列表</h3>
+      <div id="ticket-box"></div>
+    </div>
+    <div class="card span-6">
+      <h3>客户发票</h3>
+      <div id="invoice-box"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 工时计费 ============ -->
+<section class="tab" id="tab-billing">
+  <div class="grid">
+    <div class="card span-4">
+      <h3>计费仪表盘</h3>
+      <div class="kv" id="bill-kv"></div>
+      <button class="action" onclick="loadBillDash()">刷新</button>
+    </div>
+    <div class="card span-8">
+      <h3>记录工时</h3>
+      <div class="row">
+        <input id="ts-pid" placeholder="项目ID" style="flex:1" value="PRJ-DEMO-001">
+        <input id="ts-person" placeholder="人员" style="flex:1" value="李工">
+        <select id="ts-level" style="flex:1">
+          <option value="junior">初级</option>
+          <option value="mid" selected>中级</option>
+          <option value="senior">高级</option>
+          <option value="expert">专家</option>
+          <option value="consultant">顾问</option>
+        </select>
+      </div>
+      <div class="row">
+        <input id="ts-task" placeholder="任务" style="flex:2" value="现场作业">
+        <input id="ts-hours" type="number" placeholder="工时" step="0.5" value="4" style="flex:1">
+        <input id="ts-date" placeholder="日期 YYYY-MM-DD" style="flex:1" value="2026-09-14">
+      </div>
+      <button class="action" onclick="logTime()">提交工时</button>
+      <div class="status" id="ts-status"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>利润率分析</h3>
+    <div id="profit-box"></div>
+    <button class="action ghost" onclick="loadProfit()">加载利润率</button>
+  </div>
+  <div class="card">
+    <h3>工时记录</h3>
+    <table id="ts-table">
+      <thead><tr><th>ID</th><th>项目</th><th>人员</th><th>级别</th><th>任务</th><th>工时</th><th>费率</th><th>成本</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <button class="action ghost" onclick="loadTimesheets()">加载工时</button>
+  </div>
+</section>
+
+<!-- ============ SLA 管理 ============ -->
+<section class="tab" id="tab-sla">
+  <div class="grid">
+    <div class="card span-4">
+      <h3>SLA 仪表盘</h3>
+      <div class="kv" id="sla-kv"></div>
+      <button class="action" onclick="loadSlaDash()">刷新</button>
+    </div>
+    <div class="card span-8">
+      <h3>SLA 模板</h3>
+      <div id="sla-tpl-box"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>SLA 实例监控</h3>
+    <div class="row">
+      <input id="sla-sid" placeholder="SLA ID" style="flex:2">
+      <button class="action" onclick="loadSlaMonitor()">加载监控</button>
+      <button class="action ghost" onclick="loadSlaAlerts()">加载告警</button>
+    </div>
+    <div id="sla-monitor-box"></div>
+  </div>
+</section>
+
+<!-- ============ 交付物 ============ -->
+<section class="tab" id="tab-deliverable">
+  <div class="grid">
+    <div class="card span-4">
+      <h3>交付物统计</h3>
+      <div class="kv" id="del-kv"></div>
+      <button class="action" onclick="loadDelStats()">刷新</button>
+    </div>
+    <div class="card span-8">
+      <h3>新建交付物</h3>
+      <div class="row">
+        <input id="dl-pid" placeholder="项目ID" style="flex:1" value="PRJ-DEMO-001">
+        <input id="dl-title" placeholder="标题" style="flex:2" value="渗透测试报告v2">
+        <input id="dl-owner" placeholder="负责人" style="flex:1" value="张工">
+      </div>
+      <button class="action" onclick="createDeliverable()">创建交付物</button>
+      <div class="status" id="dl-status"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>交付物清单</h3>
+    <table id="dl-table">
+      <thead><tr><th>ID</th><th>项目</th><th>标题</th><th>版本</th><th>状态</th><th>质量分</th><th>负责人</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <button class="action ghost" onclick="loadDeliverables()">加载清单</button>
+  </div>
+</section>
+
+<!-- ============ 团队资源 ============ -->
+<section class="tab" id="tab-team">
+  <div class="grid">
+    <div class="card span-4">
+      <h3>团队仪表盘</h3>
+      <div class="kv" id="team-kv"></div>
+      <button class="action" onclick="loadTeamDash()">刷新</button>
+    </div>
+    <div class="card span-8">
+      <h3>技能矩阵</h3>
+      <div id="skill-box"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>人员列表</h3>
+    <table id="staff-table">
+      <thead><tr><th>工号</th><th>姓名</th><th>角色</th><th>级别</th><th>利用率</th><th>绩效</th><th>技能</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <button class="action ghost" onclick="loadStaff()">加载人员</button>
+  </div>
+  <div class="card">
+    <h3>知识库</h3>
+    <div id="kb-box"></div>
+  </div>
+</section>
+</main>
+
+<script>
+const API = "/api/v1/service-delivery";
+async function api(path, opts) {
+  try {
+    const r = await fetch(API + path, Object.assign({
+      headers: {"Content-Type": "application/json"}
+    }, opts || {}));
+    const j = await r.json();
+    if (!j.success) { return { error: j.error || "未知错误" }; }
+    return j.data;
+  } catch (e) { return { error: String(e) }; }
+}
+function pill(level) {
+  const map = {critical:"critical",high:"high",medium:"medium",low:"low",info:"info",
+               active:"info",done:"low",open:"high",in_progress:"medium",
+               resolved:"low",closed:"low",unpaid:"high",paid:"low",draft:"medium"};
+  return `<span class="pill ${map[level]||'info'}">${level}</span>`;
+}
+function kv(items) {
+  return items.map(([k,v])=>`<div><b>${v}</b><span>${k}</span></div>`).join("");
+}
+function setStatus(id, msg, ok) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.className = "status " + (ok?"done":"error");
+}
+
+// ============ 项目 ============
+async function loadProjectDash() {
+  const d = await api("/project-dashboard");
+  if (d.error) return setStatus("np-status", d.error);
+  document.getElementById("proj-kv").innerHTML = kv([
+    ["项目总数", d.total_projects],
+    ["平均进度", d.avg_progress + "%"],
+    ["总预算", "¥" + (d.total_budget/10000).toFixed(1) + "万"],
+    ["关键风险", d.critical_risks],
+  ]);
+}
+async function loadProjects() {
+  const rows = await api("/projects") || [];
+  const tb = document.querySelector("#proj-table tbody");
+  tb.innerHTML = rows.map(p=>`<tr>
+    <td>${p.project_id}</td><td>${p.name}</td><td>${p.type_name}</td>
+    <td>${p.customer}</td><td>${pill(p.status)}</td>
+    <td><div class="bar"><span style="width:${p.progress}%"></span></div>${p.progress}%</td>
+    <td>¥${(p.budget/10000).toFixed(1)}万</td></tr>`).join("");
+}
+async function createProject() {
+  const body = {
+    name: document.getElementById("np-name").value,
+    type: document.getElementById("np-type").value,
+    customer: document.getElementById("np-customer").value,
+    start_date: document.getElementById("np-start").value,
+    end_date: document.getElementById("np-end").value,
+    budget: parseFloat(document.getElementById("np-budget").value)||0,
+    manager: document.getElementById("np-manager").value,
+  };
+  const r = await api("/projects", {method:"POST", body:JSON.stringify(body)});
+  if (r.error) return setStatus("np-status", r.error);
+  setStatus("np-status", "已创建: " + r.project_id, true);
+  loadProjects();
+}
+async function loadGantt() {
+  const pid = document.getElementById("gantt-pid").value || "PRJ-DEMO-001";
+  const d = await api("/projects/" + pid + "/gantt");
+  if (d.error) return;
+  const box = document.getElementById("gantt-box");
+  box.innerHTML = d.tasks.map((t,i)=>`
+    <div class="gantt-row">
+      <div><b>${t.name}</b><div class="muted">${t.owner} · ${t.start}~${t.end}</div></div>
+      <div class="gantt-bar">
+        <div class="gantt-fill" style="left:${i*5}%;width:${Math.max(15, t.progress)}%"></div>
+        <div class="gantt-label">${t.progress}%</div>
+      </div>
+    </div>`).join("");
+  const risks = await api("/projects/" + pid + "/risks");
+  document.getElementById("risk-box").innerHTML = "<table><thead><tr><th>风险</th><th>等级</th><th>缓解</th></tr></thead><tbody>" +
+    (risks||[]).map(r=>`<tr><td>${r.title}</td><td>${pill(r.level)}</td><td>${r.mitigation}</td></tr>`).join("") + "</tbody></table>";
+}
+
+// ============ 客户 ============
+async function loadCustDash() {
+  const d = await api("/customer-dashboard");
+  if (d.error) return;
+  document.getElementById("cust-kv").innerHTML = kv([
+    ["客户总数", d.total_customers],
+    ["待开工单", d.open_tickets],
+    ["未付发票", "¥" + (d.unpaid_amount/10000).toFixed(1) + "万"],
+    ["满意度", d.avg_satisfaction + "/5"],
+  ]);
+}
+async function loadCustomers() {
+  const rows = await api("/customers") || [];
+  document.querySelector("#cust-table tbody").innerHTML = rows.map(c=>`<tr>
+    <td>${c.customer_id}</td><td>${c.name}</td><td>${c.tier_name}</td>
+    <td>${c.contact}</td><td>${c.city}</td><td>${pill(c.status)}</td></tr>`).join("");
+}
+async function registerCustomer() {
+  const body = {
+    name: document.getElementById("nc-name").value,
+    tier: document.getElementById("nc-tier").value,
+    contact: document.getElementById("nc-contact").value,
+    email: "", phone: "", city: "",
+  };
+  const r = await api("/customers", {method:"POST", body:JSON.stringify(body)});
+  if (r.error) return setStatus("nc-status", r.error);
+  setStatus("nc-status", "已注册: " + r.customer_id, true);
+  loadCustomers();
+}
+async function loadTickets() {
+  const rows = await api("/customers/CUS-001/tickets") || [];
+  document.getElementById("ticket-box").innerHTML = "<table><thead><tr><th>工单号</th><th>主题</th><th>优先级</th><th>状态</th></tr></thead><tbody>" +
+    rows.map(t=>`<tr><td>${t.ticket_id}</td><td>${t.subject}</td><td>${pill(t.priority)}</td><td>${pill(t.status)}</td></tr>`).join("") +
+    "</tbody></table>";
+}
+async function loadInvoices() {
+  const rows = await api("/customers/CUS-001/invoices") || [];
+  document.getElementById("invoice-box").innerHTML = "<table><thead><tr><th>发票号</th><th>标题</th><th>金额</th><th>状态</th></tr></thead><tbody>" +
+    rows.map(i=>`<tr><td>${i.invoice_id}</td><td>${i.title}</td><td>¥${i.amount}</td><td>${pill(i.status)}</td></tr>`).join("") +
+    "</tbody></table>";
+}
+
+// ============ 工时计费 ============
+async function loadBillDash() {
+  const d = await api("/billing-dashboard");
+  if (d.error) return;
+  document.getElementById("bill-kv").innerHTML = kv([
+    ["发票数", d.total_invoices],
+    ["未收金额", "¥" + (d.unpaid_amount/10000).toFixed(1) + "万"],
+    ["总工时", d.total_logged_hours + "h"],
+    ["超支项目", d.over_budget_projects],
+  ]);
+}
+async function logTime() {
+  const body = {
+    project_id: document.getElementById("ts-pid").value,
+    person: document.getElementById("ts-person").value,
+    level: document.getElementById("ts-level").value,
+    task: document.getElementById("ts-task").value,
+    hours: parseFloat(document.getElementById("ts-hours").value),
+    date: document.getElementById("ts-date").value,
+  };
+  const r = await api("/timesheets", {method:"POST", body:JSON.stringify(body)});
+  if (r.error) return setStatus("ts-status", r.error);
+  setStatus("ts-status", "已记录: " + r.ts_id + " 成本¥" + r.cost, true);
+  loadTimesheets();
+}
+async function loadTimesheets() {
+  const rows = await api("/timesheets") || [];
+  document.querySelector("#ts-table tbody").innerHTML = rows.map(t=>`<tr>
+    <td>${t.ts_id}</td><td>${t.project_id}</td><td>${t.person}</td>
+    <td>${t.level}</td><td>${t.task}</td><td>${t.hours}</td>
+    <td>¥${t.rate}</td><td>¥${t.cost}</td></tr>`).join("");
+}
+async function loadProfit() {
+  const d = await api("/profitability");
+  if (d.error) return;
+  document.getElementById("profit-box").innerHTML = kv([
+    ["总成本", "¥" + d.total_cost],
+    ["总收入", "¥" + d.total_revenue],
+    ["毛利", "¥" + d.total_profit],
+    ["整体毛利率", (d.overall_margin*100).toFixed(1) + "%"],
+  ]);
+}
+
+// ============ SLA ============
+async function loadSlaDash() {
+  const d = await api("/sla-dashboard");
+  if (d.error) return;
+  document.getElementById("sla-kv").innerHTML = kv([
+    ["SLA 实例", d.total_sla],
+    ["平均可用性", d.avg_availability + "%"],
+    ["违约实例", d.breaching],
+    ["活跃告警", d.active_alerts],
+  ]);
+  const tpl = await api("/sla/templates");
+  document.getElementById("sla-tpl-box").innerHTML = "<table><thead><tr><th>模板</th><th>响应(分)</th><th>解决(分)</th><th>可用性</th></tr></thead><tbody>" +
+    Object.values(tpl.templates).map(t=>`<tr><td>${t.name}</td><td>${t.response_minutes}</td><td>${t.resolve_minutes}</td><td>${t.availability_pct}%</td></tr>`).join("") +
+    "</tbody></table>";
+}
+async function loadSlaMonitor() {
+  const sid = document.getElementById("sla-sid").value;
+  if (!sid) return;
+  const d = await api("/sla/instances/" + sid + "/monitor");
+  if (d.error) return;
+  document.getElementById("sla-monitor-box").innerHTML = kv([
+    ["响应达成率", (d.response_compliance*100).toFixed(1)+"%"],
+    ["解决达成率", (d.resolve_compliance*100).toFixed(1)+"%"],
+    ["实际可用性", d.availability_pct+"%"],
+    ["违约等级", d.breach_label],
+  ]);
+}
+async function loadSlaAlerts() {
+  const rows = await api("/sla/alerts") || [];
+  document.getElementById("sla-monitor-box").innerHTML = "<table><thead><tr><th>告警ID</th><th>SLA</th><th>级别</th><th>信息</th></tr></thead><tbody>" +
+    rows.map(a=>`<tr><td>${a.alert_id}</td><td>${a.sla_id}</td><td>${pill(a.level)}</td><td>${a.message}</td></tr>`).join("") +
+    "</tbody></table>";
+}
+
+// ============ 交付物 ============
+async function loadDelStats() {
+  const d = await api("/deliverable-stats");
+  if (d.error) return;
+  document.getElementById("del-kv").innerHTML = kv([
+    ["总数", d.total],
+    ["已签收", d.signed_off],
+    ["已归档", d.archived],
+    ["平均质量分", d.avg_quality_score],
+  ]);
+}
+async function loadDeliverables() {
+  const rows = await api("/deliverables") || [];
+  document.querySelector("#dl-table tbody").innerHTML = rows.map(x=>`<tr>
+    <td>${x.deliverable_id}</td><td>${x.project_id}</td><td>${x.title}</td>
+    <td>${x.current_version}</td><td>${pill(x.status)}</td>
+    <td><div class="bar"><span style="width:${x.quality_score}%"></span></div>${x.quality_score}</td>
+    <td>${x.owner}</td></tr>`).join("");
+}
+async function createDeliverable() {
+  const body = {
+    project_id: document.getElementById("dl-pid").value,
+    title: document.getElementById("dl-title").value,
+    owner: document.getElementById("dl-owner").value,
+    template: "pentest_report",
+  };
+  const r = await api("/deliverables", {method:"POST", body:JSON.stringify(body)});
+  if (r.error) return setStatus("dl-status", r.error);
+  setStatus("dl-status", "已创建: " + r.deliverable_id, true);
+  loadDeliverables();
+}
+
+// ============ 团队 ============
+async function loadTeamDash() {
+  const d = await api("/team-dashboard");
+  if (d.error) return;
+  document.getElementById("team-kv").innerHTML = kv([
+    ["总人数", d.total_staff],
+    ["活跃分配", d.active_assignments],
+    ["平均绩效", d.avg_perf_score],
+    ["知识文章", d.kb_articles],
+  ]);
+  const sm = await api("/skill-matrix");
+  document.getElementById("skill-box").innerHTML = "<table><thead><tr><th>姓名</th><th>角色</th><th>技能数</th><th>技能</th></tr></thead><tbody>" +
+    sm.staff.map(s=>`<tr><td>${s.name}</td><td>${s.role}</td><td>${s.skill_count}</td>
+      <td>${s.skills.map(k=>`<span class="skill-tag">${k.name}</span>`).join("")}</td></tr>`).join("") +
+    "</tbody></table>";
+}
+async function loadStaff() {
+  const rows = await api("/staff") || [];
+  document.querySelector("#staff-table tbody").innerHTML = rows.map(s=>`<tr>
+    <td>${s.emp_id}</td><td>${s.name}</td><td>${s.role_name}</td>
+    <td>${s.level}</td>
+    <td><div class="bar"><span style="width:${(s.utilization*100).toFixed(0)}%"></span></div>${(s.utilization*100).toFixed(0)}%</td>
+    <td>${s.perf_score}</td>
+    <td>${s.skills.map(k=>`<span class="skill-tag">${k}</span>`).join("")}</td></tr>`).join("");
+}
+async function loadKb() {
+  const rows = await api("/knowledge") || [];
+  document.getElementById("kb-box").innerHTML = "<table><thead><tr><th>编号</th><th>标题</th><th>作者</th><th>领域</th><th>评分</th></tr></thead><tbody>" +
+    rows.map(k=>`<tr><td>${k.kb_id}</td><td>${k.title}</td><td>${k.author}</td>
+      <td>${k.domain}</td><td>${k.rating}</td></tr>`).join("") + "</tbody></table>";
+}
+
+// ============ Tab 切换 ============
+document.querySelectorAll("#nav button").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll("#nav button").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    // 懒加载
+    const tab = btn.dataset.tab;
+    if (tab==="project") { loadProjectDash(); loadProjects(); }
+    if (tab==="customer") { loadCustDash(); loadCustomers(); loadTickets(); loadInvoices(); }
+    if (tab==="billing") { loadBillDash(); loadTimesheets(); loadProfit(); }
+    if (tab==="sla") { loadSlaDash(); }
+    if (tab==="deliverable") { loadDelStats(); loadDeliverables(); }
+    if (tab==="team") { loadTeamDash(); loadStaff(); loadKb(); }
+  });
+});
+
+// 初始
+loadProjectDash(); loadProjects();
+</script>
+</body>
+</html>

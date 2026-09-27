@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>红蓝对抗演练控制台</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --primary: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+    font-size: 14px; line-height: 1.6; padding: 16px;
+  }
+  h1 { font-size: 20px; color: #fff; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); margin-bottom: 16px; font-size: 13px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .tab-btn {
+    background: transparent; border: none; color: var(--muted);
+    padding: 10px 16px; cursor: pointer; font-size: 14px;
+    border-bottom: 2px solid transparent;
+  }
+  .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .tab-btn:hover { color: var(--text); }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px; margin-bottom: 16px;
+  }
+  .card h3 { color: #fff; font-size: 15px; margin-bottom: 12px; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; }
+  .col { flex: 1; min-width: 220px; }
+  button.btn {
+    background: var(--primary); color: #0d1117; border: none;
+    padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;
+  }
+  button.btn:hover { opacity: 0.9; }
+  button.btn.secondary { background: var(--border); color: var(--text); }
+  input, select, textarea {
+    background: #0d1117; border: 1px solid var(--border); color: var(--text);
+    padding: 8px; border-radius: 6px; width: 100%;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px; border-bottom: 1px solid var(--border); text-align: left; }
+  th { color: var(--muted); font-weight: 600; }
+  .badge { padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+  .badge.green { background: rgba(63,185,80,.15); color: var(--green); }
+  .badge.red { background: rgba(248,81,73,.15); color: var(--red); }
+  .badge.yellow { background: rgba(210,153,34,.15); color: var(--yellow); }
+  .badge.blue { background: rgba(88,166,255,.15); color: var(--primary); }
+  .scenario-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .scenario-card {
+    background: #0d1117; border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px; cursor: pointer; transition: border-color .15s;
+  }
+  .scenario-card:hover, .scenario-card.selected { border-color: var(--primary); }
+  .scenario-card .name { color: #fff; font-weight: 600; margin-bottom: 6px; }
+  .kv { display: flex; justify-content: space-between; margin: 4px 0; }
+  .kv .k { color: var(--muted); }
+  .progress-bar { background: var(--border); border-radius: 6px; height: 8px; overflow: hidden; }
+  .progress-bar > div { height: 100%; background: var(--primary); }
+  .path-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .path-step { background: #0d1117; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 12px; }
+  .path-arrow { color: var(--muted); }
+  .heat-cell { display: inline-block; width: 28px; height: 28px; border-radius: 4px; margin: 2px; }
+  .heat-covered { background: var(--green); }
+  .heat-gap { background: var(--red); }
+  .muted { color: var(--muted); font-size: 12px; }
+  .toast {
+    position: fixed; bottom: 20px; right: 20px; background: var(--card);
+    border: 1px solid var(--primary); padding: 12px 16px; border-radius: 8px;
+    display: none; z-index: 999;
+  }
+  @media (max-width: 720px) {
+    .row { flex-direction: column; }
+    .scenario-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<h1>红蓝对抗演练控制台</h1>
+<div class="subtitle">Purple Team Exercise Console · 仅做模拟与评估，不执行真实攻击</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="exercises">演练管理</button>
+  <button class="tab-btn" data-tab="red">红队模拟</button>
+  <button class="tab-btn" data-tab="blue">蓝队检测</button>
+  <button class="tab-btn" data-tab="purple">紫队复盘</button>
+  <button class="tab-btn" data-tab="matrix">ATT&amp;CK矩阵</button>
+  <button class="tab-btn" data-tab="improve">改进跟踪</button>
+</div>
+
+<!-- 演练管理 -->
+<div class="tab-pane active" id="pane-exercises">
+  <div class="card">
+    <h3>创建演练</h3>
+    <div class="row">
+      <div class="col"><label>演练名称</label><input id="ex-name" placeholder="如:2026Q4红蓝对抗"></div>
+      <div class="col"><label>攻击场景</label><select id="ex-scenario"></select></div>
+      <div class="col" style="flex:0"><button class="btn" onclick="startExercise()">启动演练</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>演练列表</h3>
+    <div id="exercise-list">加载中...</div>
+  </div>
+</div>
+
+<!-- 红队模拟 -->
+<div class="tab-pane" id="pane-red">
+  <div class="card">
+    <h3>攻击场景</h3>
+    <div class="row" style="margin-bottom:12px">
+      <div class="col"><select id="red-filter-cat"><option value="">全部分类</option></select></div>
+      <div class="col" style="flex:0"><button class="btn" onclick="loadScenarios()">刷新</button></div>
+    </div>
+    <div class="scenario-grid" id="scenario-grid">加载中...</div>
+  </div>
+  <div class="card">
+    <h3>攻击路径与结果</h3>
+    <div id="red-result">未选择场景。请在上方选择场景后点击"启动模拟"。</div>
+  </div>
+</div>
+
+<!-- 蓝队检测 -->
+<div class="tab-pane" id="pane-blue">
+  <div class="card">
+    <h3>检测规则</h3>
+    <div id="rule-summary">加载中...</div>
+  </div>
+  <div class="card">
+    <h3>检测结果与告警</h3>
+    <div id="blue-result">需先在演练管理中启动演练，或对红队模拟执行检测。</div>
+  </div>
+</div>
+
+<!-- 紫队复盘 -->
+<div class="tab-pane" id="pane-purple">
+  <div class="card">
+    <h3>对比分析（红队 vs 蓝队）</h3>
+    <div id="purple-comparison">请先在演练管理中选择演练。</div>
+  </div>
+  <div class="card">
+    <h3>检测覆盖率</h3>
+    <div id="purple-coverage">-</div>
+  </div>
+  <div class="card">
+    <h3>时间线</h3>
+    <div id="purple-timeline">-</div>
+  </div>
+</div>
+
+<!-- ATT&CK 矩阵 -->
+<div class="tab-pane" id="pane-matrix">
+  <div class="card">
+    <h3>ATT&CK 技术矩阵与覆盖率热力图</h3>
+    <div class="muted">绿色=已检测覆盖，红色=未覆盖</div>
+    <div id="attack-matrix" style="margin-top:12px">-</div>
+  </div>
+</div>
+
+<!-- 改进跟踪 -->
+<div class="tab-pane" id="pane-improve">
+  <div class="card">
+    <h3>改进措施</h3>
+    <div class="row" style="margin-bottom:12px">
+      <div class="col"><input id="imp-title" placeholder="改进项标题"></div>
+      <div class="col"><input id="imp-desc" placeholder="描述"></div>
+      <div class="col" style="flex:0"><button class="btn" onclick="createImprovement()">添加</button></div>
+    </div>
+    <div id="imp-progress">-</div>
+  </div>
+  <div class="card">
+    <h3>措施列表</h3>
+    <div id="imp-list">请先选择演练。</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "/api/v1/purple-team";
+let selectedScenario = null;
+let currentExerciseId = null;
+let currentSimulationId = null;
+let scenariosCache = [];
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.style.display = "block";
+  setTimeout(() => t.style.display = "none", 2500);
+}
+async function api(path, opts) {
+  try {
+    const res = await fetch(API + path, opts);
+    const json = await res.json();
+    if (json.code !== 0) throw new Error(json.error || "请求失败");
+    return json.data;
+  } catch (e) { toast("请求失败: " + e.message); throw e; }
+}
+
+// Tab 切换
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("pane-" + btn.dataset.tab).classList.add("active");
+  };
+});
+
+// ---------- 红队场景 ----------
+async function loadScenarios() {
+  const cat = document.getElementById("red-filter-cat").value;
+  const data = await api("/red/scenarios" + (cat ? "?category=" + cat : ""));
+  scenariosCache = data;
+  const grid = document.getElementById("scenario-grid");
+  grid.innerHTML = data.map((s, i) => `
+    <div class="scenario-card" data-id="${s.id}">
+      <div class="name">${s.name}</div>
+      <div class="muted">${s.description}</div>
+      <div class="kv"><span class="k">分类</span><span>${s.category}</span></div>
+      <div class="kv"><span class="k">难度</span><span class="badge blue">${s.difficulty}</span></div>
+      <div class="kv"><span class="k">严重性</span><span class="badge red">${s.severity}</span></div>
+      <button class="btn secondary" style="margin-top:8px" onclick="runSim('${s.id}')">启动模拟</button>
+    </div>`).join("");
+  // 填充演练下拉
+  const sel = document.getElementById("ex-scenario");
+  sel.innerHTML = data.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+}
+
+async function runSim(scenarioId) {
+  selectedScenario = scenarioId;
+  const data = await api("/red/simulate", {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({scenario_id: scenarioId, name: "控制台模拟", target_scope: {assets: ["web-01","db-01"]}})
+  });
+  currentSimulationId = data.id;
+  renderRedResult(data);
+  // 自动触发蓝队检测
+  const det = await api("/blue/detect", {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({simulation_id: data.id})
+  });
+  renderBlueResult(det);
+}
+
+function renderRedResult(data) {
+  const steps = data.attack_path_detail || [];
+  const flow = steps.map((s, i) =>
+    `${i > 0 ? '<span class="path-arrow">→</span>' : ''}<span class="path-step">${s.step_name}: ${(s.success_probability*100).toFixed(0)}%</span>`
+  ).join("");
+  document.getElementById("red-result").innerHTML = `
+    <div class="row">
+      <div class="col"><div class="kv"><span class="k">成功概率</span><span class="badge green">${(data.success_probability*100).toFixed(1)}%</span></div></div>
+    </div>
+    <h4 style="margin:12px 0 8px;color:#fff">攻击路径</h4>
+    <div class="path-flow">${flow}</div>
+    <h4 style="margin:12px 0 8px;color:#fff">业务影响</h4>
+    <table><tr><th>维度</th><th>评分</th><th>等级</th></tr>
+    ${Object.entries(data.business_impact||{}).filter(([k,v])=>typeof v==='object').map(([k,v])=>
+      `<tr><td>${k}</td><td>${v.score}</td><td class="badge ${v.level==='高'||v.level==='严重'?'red':'yellow'}">${v.level}</td></tr>`).join("")}
+    </table>
+    <button class="btn" style="margin-top:12px" onclick="genRedReport('${data.id}')">生成红队报告</button>
+    <pre id="red-report" class="muted" style="white-space:pre-wrap;margin-top:8px"></pre>`;
+}
+async function genRedReport(sid) {
+  const r = await api(`/red/${sid}/report`, {method:"POST"});
+  document.getElementById("red-report").textContent = JSON.stringify(r, null, 2);
+}
+
+// ---------- 蓝队 ----------
+async function loadRules() {
+  const data = await api("/blue/rules");
+  const byType = {};
+  data.forEach(r => byType[r.rule_type] = (byType[r.rule_type]||0)+1);
+  document.getElementById("rule-summary").innerHTML = `
+    <div class="kv"><span class="k">规则总数</span><span>${data.length}</span></div>
+    ${Object.entries(byType).map(([k,v])=>`<div class="kv"><span class="k">${k}</span><span>${v}</span></div>`).join("")}`;
+}
+function renderBlueResult(data) {
+  document.getElementById("blue-result").innerHTML = `
+    <div class="row">
+      <div class="col"><div class="kv"><span class="k">检测率</span><span class="badge green">${(data.detection_rate*100).toFixed(0)}%</span></div></div>
+      <div class="col"><div class="kv"><span class="k">阻断率</span><span class="badge blue">${(data.block_rate*100).toFixed(0)}%</span></div></div>
+      <div class="col"><div class="kv"><span class="k">告警数</span><span>${data.alerts_count}</span></div></div>
+    </div>
+    <h4 style="margin:12px 0 8px;color:#fff">告警列表</h4>
+    <table><tr><th>攻击步骤</th><th>技术</th><th>级别</th></tr>
+    ${(data.alerts||[]).map(a=>`<tr><td>${a.attack_step}</td><td>${a.technique}</td><td class="badge red">${a.alert_severity}</td></tr>`).join("")}
+    </table>
+    <button class="btn" style="margin-top:12px" onclick="genBlueReport('${data.id}')">生成蓝队报告</button>
+    <pre id="blue-report" class="muted" style="white-space:pre-wrap;margin-top:8px"></pre>`;
+}
+async function genBlueReport(did) {
+  const r = await api(`/blue/${did}/report`, {method:"POST"});
+  document.getElementById("blue-report").textContent = JSON.stringify(r, null, 2);
+}
+
+// ---------- 紫队演练 ----------
+async function startExercise() {
+  const name = document.getElementById("ex-name").value || "演练-" + Date.now();
+  const scenario_id = document.getElementById("ex-scenario").value;
+  if (!scenario_id) return toast("请选择场景");
+  const data = await api("/exercise/start", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({name, scenario_id, description:"控制台创建", target_scope:{assets:["web-01","db-01"]}})
+  });
+  currentExerciseId = data.id;
+  toast("演练已启动");
+  loadExercises();
+  loadPurple(data.id);
+}
+async function loadExercises() {
+  // 无列表端点，直接通过状态接口展示最近一条（由 start 结果）
+  document.getElementById("exercise-list").innerHTML = currentExerciseId
+    ? `<div class="kv"><span class="k">当前演练</span><span class="badge blue">${currentExerciseId}</span></div>
+       <button class="btn" style="margin-top:8px" onclick="loadPurple('${currentExerciseId}')">查看复盘</button>`
+    : '<span class="muted">暂无演练，请先创建。</span>';
+}
+async function loadPurple(eid) {
+  currentExerciseId = eid;
+  const cmp = await api(`/exercise/${eid}/comparison`);
+  document.getElementById("purple-comparison").innerHTML = `
+    <table><tr><th>攻击步骤</th><th>技术</th><th>红队成功</th><th>蓝队检测</th><th>延迟(秒)</th></tr>
+    ${(cmp.items||[]).map(i=>`<tr>
+      <td>${i.attack_step}</td><td>${i.technique}</td>
+      <td class="badge green">${i.red_success?'是':'否'}</td>
+      <td class="badge ${i.blue_detected?'green':'red'}">${i.blue_detected?'是':'否'}</td>
+      <td>${i.detection_latency_seconds ?? '-'}</td></tr>`).join("")}
+    </table>`;
+  const cov = await api(`/exercise/${eid}/coverage`);
+  document.getElementById("purple-coverage").innerHTML = `
+    <div class="kv"><span class="k">覆盖率</span><span class="badge green">${(cov.coverage_rate*100).toFixed(0)}%</span></div>
+    <div class="kv"><span class="k">已覆盖技术</span><span>${cov.covered_techniques}/${cov.total_techniques}</span></div>`;
+  const tl = await api(`/exercise/${eid}/timeline`);
+  document.getElementById("purple-timeline").innerHTML =
+    `<div class="kv"><span class="k">平均检测延迟</span><span>${tl.avg_detection_latency_seconds} 秒</span></div>`;
+  // ATT&CK 矩阵
+  document.getElementById("attack-matrix").innerHTML = Object.entries(cov.matrix||{}).map(([tact,techs])=>`
+    <h4 style="color:#fff;margin:8px 0">${tact}</h4>
+    ${techs.map(t=>`<span class="heat-cell ${t.detected?'heat-covered':'heat-gap'}" title="${t.technique}"></span>`).join("")}
+  `).join("") || '<span class="muted">无数据</span>';
+  loadImprovements(eid);
+}
+
+// ---------- 改进跟踪 ----------
+async function createImprovement() {
+  if (!currentExerciseId) return toast("请先启动演练");
+  await api(`/exercise/${currentExerciseId}/improvements`, {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({title: document.getElementById("imp-title").value,
+                          description: document.getElementById("imp-desc").value,
+                          priority:"medium"})
+  });
+  loadImprovements(currentExerciseId);
+}
+async function loadImprovements(eid) {
+  const list = await api(`/exercise/${eid}/improvements`);
+  const prog = await api(`/exercise/${eid}/status`);
+  const st = prog.stats || {};
+  document.getElementById("imp-progress").innerHTML = `
+    <div class="kv"><span class="k">总步骤</span><span>${st.total_steps||0}</span></div>
+    <div class="kv"><span class="k">已检测</span><span>${st.detected||0}</span></div>
+    <div class="kv"><span class="k">已阻断</span><span>${st.blocked||0}</span></div>`;
+  document.getElementById("imp-list").innerHTML = list.length ? `
+    <table><tr><th>标题</th><th>优先级</th><th>状态</th><th>操作</th></tr>
+    ${list.map(i=>`<tr><td>${i.title}</td><td class="badge yellow">${i.priority}</td>
+      <td class="badge ${i.status==='completed'?'green':'blue'}">${i.status}</td>
+      <td>${i.status!=='completed'?`<button class="btn secondary" onclick="finishImp('${i.id}')">完成</button>`:'-'}</td></tr>`).join("")}
+    </table>` : '<span class="muted">暂无改进措施</span>';
+}
+async function finishImp(iid) {
+  await api(`/exercise/${currentExerciseId}/improvements/${iid}/complete?verification_result=已验证`, {method:"POST"});
+  loadImprovements(currentExerciseId);
+}
+
+// 初始化
+loadScenarios();
+loadRules();
+loadExercises();
+</script>
+</body>
+</html>

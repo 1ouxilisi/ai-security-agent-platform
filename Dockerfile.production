@@ -1,0 +1,109 @@
+# =============================================================================
+# AI Security Platform - 生产级多阶段构建 Dockerfile
+# 阶段1: builder   → 编译依赖，安装到 /install
+# 阶段2: runtime   → 最小化运行时镜像，非 root 用户运行
+# =============================================================================
+
+# ============================================
+# 阶段 1: Builder (构建环境)
+# ============================================
+FROM python:3.12-slim AS builder
+
+# 设置环境变量，优化 pip
+ENV PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /build
+
+# 安装系统编译依赖 (仅构建阶段需要，不进入最终镜像)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    libpq-dev \
+    libffi-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 先复制 requirements.txt 利用 Docker 层缓存
+COPY requirements.txt .
+
+# 安装 Python 依赖到 /install 目录 (prefix 方式，便于复制到运行时)
+RUN pip install --prefix=/install -r requirements.txt
+
+# 额外安装生产级 WSGI/ASGI 服务器
+RUN pip install --prefix=/install \
+    gunicorn>=21.2.0 \
+    uvicorn[standard]>=0.24.0 \
+    psycopg2-binary>=2.9.9 \
+    redis[hiredis]>=5.0.0
+
+# ============================================
+# 阶段 2: Runtime (运行环境 - 最小化镜像)
+# ============================================
+FROM python:3.12-slim AS runtime
+
+# 镜像元信息
+LABEL maintainer="SecurityAI Platform Team"
+LABEL description="AI驱动的攻防兼备安全评估平台 - 生产版"
+LABEL version="1.0.0"
+
+# 设置生产环境变量
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    APP_ENV=production \
+    PATH="/usr/local/bin:${PATH}"
+
+WORKDIR /app
+
+# 安装运行时系统依赖 (不含编译工具，保持镜像精简)
+# libpq5: PostgreSQL 客户端库
+# curl: 健康检查 + 运行时调试
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# 从 builder 阶段复制已安装的 Python 包到 site-packages
+# --prefix=/install 对应 /install/lib/python3.12/site-packages
+COPY --from=builder /install /usr/local
+
+# 创建非 root 用户 (安全最佳实践: 不以 root 运行应用)
+RUN groupadd --system appuser && \
+    useradd --system --gid appuser --home /app --shell /sbin/nologin appuser
+
+# 复制项目代码到 /app
+COPY --chown=appuser:appuser . /app
+
+# 创建运行时目录并设置权限
+RUN mkdir -p /app/data /app/logs /app/uploads /app/reports /app/temp && \
+    chown -R appuser:appuser /app
+
+# 切换到非 root 用户
+USER appuser
+
+# 暴露应用端口
+EXPOSE 8000
+
+# 健康检查: 每 30 秒检查一次 /health 端点
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# 启动命令: Gunicorn 管理 Uvicorn workers
+# - 4 workers (适合 2 CPU 核心，公式: 2*CPU+1)
+# - timeout 120s (适配长扫描任务)
+# - bind 0.0.0.0:8000
+# - worker_class: uvicorn.workers.UvicornWorker (异步支持)
+CMD ["gunicorn", \
+     "api_server.app:app", \
+     "--workers", "4", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--bind", "0.0.0.0:8000", \
+     "--timeout", "120", \
+     "--graceful-timeout", "30", \
+     "--keep-alive", "5", \
+     "--max-requests", "1000", \
+     "--max-requests-jitter", "100", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-", \
+     "--log-level", "info"]

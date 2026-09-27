@@ -1,0 +1,39 @@
+{
+  "wecom": {
+    "enabled": false,
+    "webhook_url": "",
+    "recipients": [],
+    "message_template": "【安全告警-{severity}】{title}\n{content}\n目标: {target}\n时间: {time}"
+  },
+  "dingtalk": {
+    "enabled": false,
+    "webhook_url": "",
+    "recipients": [],
+    "message_template": "### 安全告警 [{severity}]\n> {title}\n\n{content}\n\n目标: {target}\n\n时间: {time}"
+  },
+  "feishu": {
+    "enabled": false,
+    "webhook_url": "",
+    "recipients": [],
+    "message_template": "【安全告警-{severity}】{title}\n{content}\n目标: {target}\n时间: {time}"
+  },
+  "email": {
+    "enabled": false,
+    "smtp": {
+      "host": "smtp.example.com",
+      "port": 465,
+      "user": "alert@example.com",
+      "password": "",
+      "use_tls": true
+    },
+    "recipients": [],
+    "subject_template": "[{severity}] 安全告警: {title}",
+    "message_template": "<h3>{title}</h3><p>{content}</p><p>目标: {target}</p><p>时间: {time}</p>"
+  },
+  "webhook": {
+    "enabled": false,
+    "webhook_url": "",
+    "recipients": [],
+    "message_template": "{title}"
+  }
+}

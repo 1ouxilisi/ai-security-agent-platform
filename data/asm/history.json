@@ -1,0 +1,52 @@
+[
+  {
+    "report_id": "ASM_1789948396",
+    "target": "127.0.0.1",
+    "scan_time": "2026-09-21 07:53:16",
+    "duration_seconds": 31.21,
+    "total_assets": 0,
+    "total_findings": 10,
+    "risk_level": "medium",
+    "risk_score": 24
+  },
+  {
+    "report_id": "ASM_1789947720",
+    "target": "127.0.0.1",
+    "scan_time": "2026-09-21 07:42:00",
+    "duration_seconds": 31.21,
+    "total_assets": 0,
+    "total_findings": 10,
+    "risk_level": "medium",
+    "risk_score": 24
+  },
+  {
+    "report_id": "ASM_1789947441",
+    "target": "127.0.0.1",
+    "scan_time": "2026-09-21 07:37:21",
+    "duration_seconds": 11.04,
+    "total_assets": 0,
+    "total_findings": 4,
+    "risk_level": "medium",
+    "risk_score": 24
+  },
+  {
+    "report_id": "ASM_1789946418",
+    "target": "127.0.0.1",
+    "scan_time": "2026-09-21 07:20:18",
+    "duration_seconds": 31.27,
+    "total_assets": 0,
+    "total_findings": 10,
+    "risk_level": "medium",
+    "risk_score": 24
+  },
+  {
+    "report_id": "ASM_1789946120",
+    "target": "127.0.0.1",
+    "scan_time": "2026-09-21 07:15:20",
+    "duration_seconds": 162.77,
+    "total_assets": 0,
+    "total_findings": 10,
+    "risk_level": "medium",
+    "risk_score": 24
+  }
+]

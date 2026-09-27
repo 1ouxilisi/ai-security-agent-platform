@@ -1,0 +1,59 @@
+# =============================================================================
+# Kubernetes ConfigMap - SecurityAI Platform (非敏感配置)
+# 所有非敏感的应用配置项集中管理
+# 使用方式: kubectl apply -f configmap.yaml
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: security-platform-config
+  namespace: security-platform
+  labels:
+    app: security-platform
+data:
+  # === 应用基础配置 ===
+  APP_ENV: "production"
+  APP_NAME: "SecurityAI Platform"
+  LOG_LEVEL: "INFO"
+
+  # === 应用运行参数 ===
+  WORKERS: "4"                          # Gunicorn worker 数量
+  FILE_STORAGE_PATH: "/app/data"        # 文件存储路径
+  REPORT_OUTPUT_DIR: "/app/reports"     # 报告输出目录
+
+  # === 扫描参数 ===
+  SCAN_RATE_LIMIT: "10"                 # 扫描速率限制 (请求/秒)
+  MAX_CONCURRENCY: "5"                  # 最大并发扫描数
+  SCAN_TIMEOUT: "300"                   # 单次扫描超时 (秒)
+
+  # === 功能开关 ===
+  FEATURE_MULTI_TENANT: "true"              # 多租户功能开关
+  FEATURE_DEFENSE_MODULES: "true"            # 防御模块开关 (IDS/基线/日志分析)
+  FEATURE_THREAT_HUNTING: "true"            # 威胁狩猎功能开关
+  FEATURE_API_GATEWAY: "true"               # API 网关开关
+  FEATURE_RBAC: "true"                      # 基于角色的访问控制开关
+  FEATURE_AUDIT_LOG: "true"                 # 审计日志开关
+  FEATURE_VULN_LIFECYCLE: "true"            # 漏洞全生命周期管理开关
+
+  # === 数据库连接池配置 ===
+  DB_POOL_SIZE: "20"                    # 数据库连接池大小
+  DB_MAX_OVERFLOW: "10"                 # 连接池溢出连接数
+  DB_POOL_RECYCLE: "3600"               # 连接回收时间 (秒)
+
+  # === Redis 缓存配置 ===
+  REDIS_DB: "0"                         # Redis 数据库编号
+  CACHE_TTL: "3600"                     # 默认缓存 TTL (秒)
+
+  # === JWT 配置 (非敏感部分) ===
+  JWT_ALGORITHM: "HS256"                # JWT 算法
+  JWT_ACCESS_TOKEN_EXPIRE_MINUTES: "60" # Access Token 过期时间
+  JWT_REFRESH_TOKEN_EXPIRE_DAYS: "7"    # Refresh Token 过期时间
+
+  # === 报告配置 ===
+  REPORT_FORMAT: "html"                 # 报告默认格式 (html/pdf/markdown)
+  REPORT_RETENTION_DAYS: "90"           # 报告保留天数
+
+  # === 通知配置 ===
+  NOTIFY_ENABLED: "true"                # 通知总开关
+  NOTIFY_WEBHOOK_ENABLED: "false"       # Webhook 通知开关
+  NOTIFY_DINGTALK_ENABLED: "false"      # 钉钉通知开关

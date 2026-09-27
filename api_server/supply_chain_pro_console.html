@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>供应链安全 Pro 控制台 · 方向2</title>
+<style>
+:root{
+  --bg:#0f1115; --panel:#171a21; --panel2:#1f232c; --border:#2a2f3a;
+  --text:#e6e8ee; --muted:#8a90a0; --accent:#4fc3f7; --ok:#2ecc71;
+  --warn:#f1c40f; --high:#e67e22; --crit:#e74c3c; --info:#95a5a6;
+  --think:#bb86fc;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+header{padding:16px 24px;background:linear-gradient(90deg,#1a1f2a,#171a21);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:8px}
+header h1{margin:0;font-size:18px}
+header .badge{background:var(--accent);color:#000;padding:2px 10px;
+  border-radius:999px;font-size:12px;font-weight:bold}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.col{flex:1;min-width:320px}
+.card{background:var(--panel);border:1px solid var(--border);
+  border-radius:10px;padding:16px;margin-bottom:16px}
+.card h2{margin:0 0 12px;font-size:15px;color:var(--accent);
+  border-bottom:1px solid var(--border);padding-bottom:8px}
+input,select,button,textarea{background:var(--panel2);border:1px solid var(--border);
+  color:var(--text);padding:8px 12px;border-radius:6px;font-size:14px;
+  font-family:inherit}
+input[type=text]{flex:1}
+button{cursor:pointer;background:var(--accent);color:#000;border:none;
+  font-weight:bold}
+button:hover{opacity:.85}
+button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.stages{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.stage{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:10px;text-align:center}
+.stage.active{border-color:var(--accent);box-shadow:0 0 12px rgba(79,195,247,.3)}
+.stage.done{border-color:var(--ok)}
+.stage .num{display:inline-block;width:26px;height:26px;line-height:26px;
+  border-radius:50%;background:var(--border);font-weight:bold;margin-bottom:6px}
+.stage.active .num{background:var(--accent);color:#000}
+.stage.done .num{background:var(--ok);color:#000}
+.stage .label{font-size:13px;font-weight:bold}
+.stage .prog{font-size:11px;color:var(--muted);margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;
+  vertical-align:top}
+th{color:var(--muted);font-weight:normal}
+tr:hover td{background:var(--panel2)}
+.sev{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;
+  font-weight:bold;color:#000}
+.sev.critical{background:var(--crit)}
+.sev.high{background:var(--high)}
+.sev.medium{background:var(--warn);color:#000}
+.sev.low{background:var(--accent)}
+.sev.info{background:var(--info);color:#fff}
+code,pre{background:#0a0c10;padding:2px 6px;border-radius:4px;
+  font-family:Consolas,Monaco,monospace;font-size:12px}
+pre{padding:12px;overflow:auto;max-height:420px;white-space:pre-wrap}
+.muted{color:var(--muted)}
+.stat{display:inline-block;margin-right:16px}
+.stat b{font-size:22px;display:block}
+.log{background:#0a0c10;padding:10px;border-radius:6px;max-height:260px;
+  overflow-y:auto;font-family:Consolas,monospace;font-size:12px;
+  white-space:pre-wrap}
+.log div{margin:1px 0}
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.progress-bar{height:10px;background:var(--border);border-radius:5px;
+  overflow:hidden;margin-top:8px}
+.progress-bar > div{height:100%;background:linear-gradient(90deg,#4fc3f7,#2ecc71);
+  transition:width .4s}
+.tag{display:inline-block;background:var(--panel2);border:1px solid var(--border);
+  padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}
+.tab-row{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.tab{padding:6px 14px;border-radius:6px;cursor:pointer;background:var(--panel2);
+  border:1px solid var(--border)}
+.tab.active{background:var(--accent);color:#000;font-weight:bold}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:4px 12px;font-size:13px}
+.kv dt{color:var(--muted)}.kv dd{margin:0}
+.tree{font-family:Consolas,monospace;font-size:12px;line-height:1.6}
+.tree .node{padding:2px 0}
+.tree .node .self{color:var(--text)}
+.tree .node .meta{color:var(--muted);margin-left:8px}
+.p0{color:var(--crit);font-weight:bold}
+.p1{color:var(--high);font-weight:bold}
+.p2{color:var(--warn)}
+.p3{color:var(--info)}
+.ws-dot{display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:var(--info);margin-right:6px}
+.ws-dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+@media(max-width:768px){
+  .row{flex-direction:column}.stage{min-width:100px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>📦 供应链安全 Pro 控制台 <span class="badge">方向2 · 六阶段</span></h1>
+  <div class="muted"><span class="ws-dot" id="wsDot"></span><span id="clock"></span></div>
+</header>
+
+<div class="container">
+
+  <!-- 六阶段流程 -->
+  <div class="card">
+    <h2>六阶段流程</h2>
+    <div class="stages" id="stages">
+      <div class="stage" data-k="sbom"><span class="num">1</span><div class="label">SBOM 生成</div><div class="prog">syft/内置解析</div></div>
+      <div class="stage" data-k="analysis"><span class="num">2</span><div class="label">组件分析</div><div class="prog">OSV/Snyk/CVE</div></div>
+      <div class="stage" data-k="license"><span class="num">3</span><div class="label">许可证合规</div><div class="prog">GPL/MIT/Apache</div></div>
+      <div class="stage" data-k="dependency"><span class="num">4</span><div class="label">依赖分析</div><div class="prog">直接/传递/冲突</div></div>
+      <div class="stage" data-k="risk"><span class="num">5</span><div class="label">风险评级</div><div class="prog">0-100 分</div></div>
+      <div class="stage" data-k="remediation"><span class="num">6</span><div class="label">整改建议</div><div class="prog">P0-P3 路线图</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="target" placeholder="项目目录路径，例如 E:\\path\\to\\project 或 镜像名 nginx:1.21" value=".">
+      <select id="outFormat">
+        <option value="cyclonedx">CycloneDX</option>
+        <option value="spdx">SPDX</option>
+      </select>
+      <label><input type="checkbox" id="useOsv" checked> OSV API</label>
+      <label><input type="checkbox" id="useSnyk"> Snyk API</label>
+      <button id="btnStart">🚀 开始扫描</button>
+      <button id="btnDemo" class="secondary">演示（用当前目录）</button>
+    </div>
+    <div class="progress-bar"><div id="progBar" style="width:0%"></div></div>
+    <div class="muted" id="progText">就绪</div>
+  </div>
+
+  <!-- 概览统计 -->
+  <div class="card">
+    <h2>概览</h2>
+    <span class="stat">组件数<b id="stComps">0</b></span>
+    <span class="stat">漏洞数<b id="stVulns">0</b></span>
+    <span class="stat">严重<b id="stCrit" style="color:var(--crit)">0</b></span>
+    <span class="stat">高危<b id="stHigh" style="color:var(--high)">0</b></span>
+    <span class="stat">许可证问题<b id="stLic">0</b></span>
+    <span class="stat">依赖冲突<b id="stConf">0</b></span>
+    <span class="stat">风险分<b id="stRisk">0</b></span>
+  </div>
+
+  <!-- Tab 区 -->
+  <div class="card">
+    <div class="tab-row" id="tabs">
+      <div class="tab active" data-t="log">实时日志</div>
+      <div class="tab" data-t="sbom">SBOM 清单</div>
+      <div class="tab" data-t="vulns">漏洞详情</div>
+      <div class="tab" data-t="license">许可证</div>
+      <div class="tab" data-t="dep">依赖树</div>
+      <div class="tab" data-t="risk">风险评级</div>
+      <div class="tab" data-t="fix">整改建议</div>
+      <div class="tab" data-t="ai">AI 分析</div>
+      <div class="tab" data-t="report">报告</div>
+    </div>
+
+    <div class="tab-pane active" id="pane-log">
+      <div class="log" id="logBox"></div>
+    </div>
+
+    <div class="tab-pane" id="pane-sbom">
+      <table><thead><tr><th>组件</th><th>版本</th><th>语言</th><th>许可证</th><th>来源</th></tr></thead>
+      <tbody id="sbomBody"></tbody></table>
+    </div>
+
+    <div class="tab-pane" id="pane-vulns">
+      <table><thead><tr><th>CVE</th><th>组件</th><th>严重度</th><th>CVSS</th><th>修复版本</th><th>建议</th></tr></thead>
+      <tbody id="vulnBody"></tbody></table>
+    </div>
+
+    <div class="tab-pane" id="pane-license">
+      <div id="licSummary" class="muted"></div>
+      <table><thead><tr><th>组件</th><th>许可证</th><th>风险</th><th>建议</th></tr></thead>
+      <tbody id="licBody"></tbody></table>
+    </div>
+
+    <div class="tab-pane" id="pane-dep">
+      <div id="depSummary" class="muted"></div>
+      <div class="tree" id="depTree"></div>
+    </div>
+
+    <div class="tab-pane" id="pane-risk">
+      <div id="riskHead"></div>
+      <table><thead><tr><th>组件</th><th>得分</th><th>等级</th><th>漏洞数</th><th>原因</th></tr></thead>
+      <tbody id="riskBody"></tbody></table>
+    </div>
+
+    <div class="tab-pane" id="pane-fix">
+      <div id="fixSummary" class="muted"></div>
+      <table><thead><tr><th>优先级</th><th>动作</th><th>原因</th><th>工作量</th></tr></thead>
+      <tbody id="fixBody"></tbody></table>
+      <h3 style="margin-top:16px">整改路线图</h3>
+      <div id="roadmap"></div>
+    </div>
+
+    <div class="tab-pane" id="pane-ai">
+      <div id="aiSummary"></div>
+      <h3>攻击路径</h3>
+      <div id="aiPaths"></div>
+      <h3>成本优化建议</h3>
+      <ul id="aiCost"></ul>
+    </div>
+
+    <div class="tab-pane" id="pane-report">
+      <div class="toolbar">
+        <button id="btnMd">查看 Markdown</button>
+        <button id="btnHtml" class="secondary">在新窗口打开 HTML</button>
+        <a id="reportLink" target="_blank" style="display:none"></a>
+      </div>
+      <pre id="mdView"></pre>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = '/api/v1/supply-chain-pro';
+let ws = null, currentTask = null;
+
+function $(id){return document.getElementById(id);}
+function sevBadge(s){return `<span class="sev ${s||'info'}">${s||'info'}</span>`;}
+function pClass(p){return 'p'+p.toLowerCase().replace('p','');}
+
+// 时钟
+setInterval(()=>{$('clock').textContent = new Date().toLocaleString('zh-CN');},1000);
+$('clock').textContent = new Date().toLocaleString('zh-CN');
+
+// Tabs
+document.querySelectorAll('#tabs .tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    $('pane-'+t.dataset.t).classList.add('active');
+  };
+});
+
+// 阶段高亮
+function setStage(key){
+  document.querySelectorAll('.stage').forEach(s=>{
+    s.classList.remove('active','done');
+    if(s.dataset.k===key) s.classList.add('active');
+  });
+}
+function markDone(){
+  document.querySelectorAll('.stage').forEach(s=>s.classList.add('done'));
+}
+
+// 日志
+function pushLog(msg, color){
+  const d=document.createElement('div');
+  d.style.color = color || '#e6e8ee';
+  d.textContent = msg;
+  $('logBox').appendChild(d);
+  $('logBox').scrollTop = $('logBox').scrollHeight;
+}
+
+// WebSocket
+function connectWS(taskId){
+  if(ws){try{ws.close();}catch(e){}}
+  const proto = location.protocol==='https:'?'wss':'ws';
+  ws = new WebSocket(`${proto}://${location.host}${API}/ws/${taskId}`);
+  ws.onopen=()=>{$('wsDot').classList.add('on'); pushLog('[WS] 已连接','#2ecc71');};
+  ws.onclose=()=>{$('wsDot').classList.remove('on');};
+  ws.onmessage=(ev)=>{
+    try{
+      const m = JSON.parse(ev.data);
+      if(m.type==='log' || m.type==='stage' || m.type==='think'){
+        pushLog(m.data.msg || m.data.label || JSON.stringify(m.data), m.color);
+      }
+      if(m.type==='stage'){
+        $('progBar').style.width = m.data.progress+'%';
+        $('progText').textContent = `阶段 ${m.data.label} (${m.data.progress}%)`;
+        setStage(m.data.stage);
+      }
+      if(m.type==='done'){markDone(); $('progBar').style.width='100%';
+        $('progText').textContent='完成'; refreshTask(currentTask);}
+      if(m.type==='error'){ $('progText').textContent='错误: '+m.data.error; }
+    }catch(e){}
+  };
+}
+
+async function api(path, opts){
+  const r = await fetch(API+path, Object.assign({headers:{'Content-Type':'application/json'}},opts||{}));
+  return r.json();
+}
+
+async function startScan(){
+  const target=$('target').value.trim()||'.';
+  $('btnStart').disabled=true; $('btnDemo').disabled=true;
+  pushLog(`[*] 提交扫描任务: ${target}`, '#4fc3f7');
+  const res = await api('/start',{method:'POST',body:JSON.stringify({
+    target, out_format:$('outFormat').value,
+    use_osv:$('useOsv').checked, use_snyk:$('useSnyk').checked,
+  })});
+  if(!res.success){pushLog('[!] '+res.error,'#e74c3c');return;}
+  currentTask = res.data.task_id;
+  pushLog(`[+] 任务已创建: ${currentTask}`, '#2ecc71');
+  connectWS(currentTask);
+  pollStatus(currentTask);
+}
+
+async function pollStatus(tid){
+  const iv = setInterval(async()=>{
+    const r = await api('/task/'+tid+'/status');
+    if(!r.success){clearInterval(iv);return;}
+    $('progBar').style.width = r.data.progress+'%';
+    $('progText').textContent = `${r.data.stage} ${r.data.progress}%`;
+    if(r.data.status==='done' || r.data.status==='error'){
+      clearInterval(iv);
+      if(r.data.status==='done') markDone();
+      refreshTask(tid);
+      $('btnStart').disabled=false; $('btnDemo').disabled=false;
+    }
+  },1500);
+}
+
+async function refreshTask(tid){
+  const r = await api('/task/'+tid);
+  if(!r.success) return;
+  const d = r.data;
+  // 概览
+  $('stComps').textContent = (d.sbom&&d.sbom.component_count)||0;
+  const va = d.component_analysis&&d.component_analysis.by_severity||{};
+  $('stVulns').textContent = (d.component_analysis&&d.component_analysis.vuln_count)||0;
+  $('stCrit').textContent = va.critical||0;
+  $('stHigh').textContent = va.high||0;
+  $('stLic').textContent = (d.license_report&&d.license_report.issue_count)||0;
+  $('stConf').textContent = (d.dep_report&&d.dep_report.conflict_count)||0;
+  $('stRisk').textContent = (d.risk_report&&d.risk_report.overall_score)||0;
+
+  // SBOM
+  const sb = (d.sbom&&d.sbom.components)||[];
+  $('sbomBody').innerHTML = sb.slice(0,100).map(c=>
+    `<tr><td>${c.name}</td><td>${c.version||''}</td><td>${c.language||''}</td>
+     <td>${c.license||''}</td><td class="muted">${(c.source||'').split(/[\\/]/).pop()}</td></tr>`
+  ).join('');
+
+  // 漏洞
+  const vs = (d.component_analysis&&d.component_analysis.vulns)||[];
+  $('vulnBody').innerHTML = vs.map(v=>
+    `<tr><td><code>${v.cve_id}</code><br><span class="muted">${v.title||''}</span></td>
+     <td>${v.component} ${v.version}</td>
+     <td>${sevBadge(v.severity)}</td><td>${v.cvss}</td>
+     <td>${v.fixed||'-'}</td><td>${v.remediation||''}</td></tr>`
+  ).join('');
+
+  // 许可证
+  const lr = d.license_report||{};
+  $('licSummary').textContent = `项目: ${lr.project_license||'-'}  |  按许可证: ${JSON.stringify(lr.by_license||{})}  |  按风险: ${JSON.stringify(lr.by_risk||{})}`;
+  $('licBody').innerHTML = (lr.issues||[]).map(i=>
+    `<tr><td>${i.component} ${i.version}</td><td>${i.license}</td>
+     <td>${sevBadge(i.risk)}</td><td>${i.suggestion||''}</td></tr>`
+  ).join('');
+
+  // 依赖
+  const dr = d.dep_report||{};
+  $('depSummary').textContent = `总依赖 ${dr.total}（直接 ${dr.direct_count} / 传递 ${dr.transitive_count}），最大深度 ${dr.max_depth}，冲突 ${dr.conflict_count}，过期 ${dr.outdated_count}`;
+  const tree = (dr.tree||[]).slice(0,30);
+  $('depTree').innerHTML = tree.map(n=>
+    `<div class="node">├─ <span class="self">${n.name}</span> <span class="meta">${n.version} · ${n.source||''}</span></div>`
+  ).join('');
+
+  // 风险
+  $('riskHead').innerHTML = `整体得分 <b style="font-size:24px;color:var(--accent)">${(d.risk_report&&d.risk_report.overall_score)||0}</b> /100 等级 ${sevBadge((d.risk_report&&d.risk_report.overall_band)||'low')}`;
+  $('riskBody').innerHTML = ((d.risk_report&&d.risk_report.top_components)||[]).slice(0,20).map(c=>
+    `<tr><td>${c.name} ${c.version}</td><td>${c.total}</td>
+     <td>${sevBadge(c.band)}</td><td>${c.vuln_count}</td>
+     <td class="muted">${(c.reasons||[]).slice(0,3).join('; ')}</td></tr>`
+  ).join('');
+
+  // 整改
+  const rm = d.remediation||{};
+  const s = rm.summary||{};
+  $('fixSummary').textContent = `P0=${s.P0||0} P1=${s.P1||0} P2=${s.P2||0} P3=${s.P3||0} 共 ${s.total||0} 条`;
+  $('fixBody').innerHTML = (rm.items||[]).slice(0,40).map(i=>
+    `<tr><td class="${pClass(i.priority)}">${i.priority}</td>
+     <td>${i.action}</td><td class="muted">${i.reason||''}</td><td>${i.effort}</td></tr>`
+  ).join('');
+  $('roadmap').innerHTML = (rm.roadmap||[]).map(r=>
+    `<div class="card" style="margin:8px 0"><b>${r.title}</b><ul>${(r.items||[]).map(x=>`<li>${x}</li>`).join('')}</ul></div>`
+  ).join('');
+
+  // AI
+  const ai = d.ai||{};
+  $('aiSummary').innerHTML = `<p>${ai.summary||''}</p>`;
+  $('aiPaths').innerHTML = (ai.attack_paths||[]).map(p=>
+    `<div class="card" style="margin:8px 0"><b>${p.name}</b> ${sevBadge(p.severity)}<ol>${(p.steps||[]).map(s=>`<li>${s}</li>`).join('')}</ol></div>`
+  ).join('');
+  $('aiCost').innerHTML = (ai.cost_tips||[]).map(t=>`<li>${t}</li>`).join('');
+
+  // 报告
+  $('mdView').textContent = d.report_markdown||'';
+  if(d.report_path){
+    $('reportLink').href = '/api/v1/supply-chain-pro/report/'+tid+'?fmt=html';
+  }
+}
+
+$('btnStart').onclick=startScan;
+$('btnDemo').onclick=()=>{ $('target').value='.'; startScan(); };
+$('btnMd').onclick=async()=>{
+  if(!currentTask) return;
+  const r = await api('/report/'+currentTask+'?fmt=md');
+  if(r.success) $('mdView').textContent = r.data.markdown;
+};
+$('btnHtml').onclick=()=>{
+  if(!currentTask) return;
+  window.open('/api/v1/supply-chain-pro/report/'+currentTask+'?fmt=html','_blank');
+};
+
+// 初始拉一次概览
+api('/dashboard/overview').then(r=>{
+  if(r.success) pushLog('[i] 仪表盘已加载: '+JSON.stringify(r.data.stages.length)+' 阶段','#8a90a0');
+});
+</script>
+</body>
+</html>

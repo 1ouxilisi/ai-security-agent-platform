@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>供应链安全深化控制台 · Round 15</title>
+<style>
+  :root {
+    --bg: #0b0f17; --panel: #131a26; --panel2: #1a2333; --border: #233049;
+    --text: #d6deee; --muted: #7a8aa8; --accent: #39c5bb; --accent2: #ff6b6b;
+    --crit: #ff4d4f; --high: #fa8c16; --med: #fadb14; --low: #52c41a; --info: #1890ff;
+    --purple: #722ed1;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; font-size: 14px; }
+  header { background: linear-gradient(90deg,#0d1522,#16223a); padding: 14px 22px;
+    border-bottom: 1px solid var(--border); display:flex; align-items:center; gap:14px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 18px; color: var(--accent); }
+  header .tag { background: var(--panel2); padding: 3px 10px; border-radius: 10px; font-size: 12px; color: var(--muted); }
+  nav { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px 22px; background: #0e1522; border-bottom: 1px solid var(--border); }
+  nav button { background: transparent; color: var(--muted); border: 1px solid var(--border);
+    padding: 7px 14px; cursor: pointer; border-radius: 6px; font-size: 13px; }
+  nav button.active { background: var(--accent); color: #001; border-color: var(--accent); font-weight: 600; }
+  nav button:hover { color: var(--text); }
+  main { padding: 18px 22px; max-width: 1400px; margin: 0 auto; }
+  .tab { display: none; } .tab.active { display: block; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .card h3 { margin: 0 0 10px; font-size: 14px; color: var(--accent); }
+  label { display:block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+  input, textarea, select { width: 100%; background: #0c1320; color: var(--text);
+    border: 1px solid var(--border); border-radius: 5px; padding: 7px 9px; font-size: 13px; }
+  textarea { min-height: 80px; font-family: Consolas, monospace; }
+  button.action { background: var(--accent); color: #001; border: none; padding: 9px 18px;
+    border-radius: 5px; cursor: pointer; font-weight: 600; margin-top: 10px; }
+  button.action:hover { opacity: .9; }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .status { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .status.running { color: var(--med); } .status.done { color: var(--low); } .status.error { color: var(--crit); }
+  pre { background: #0a101c; border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px; overflow: auto; max-height: 420px; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { border-bottom: 1px solid var(--border); padding: 6px 8px; text-align: left; }
+  th { color: var(--accent); background: #0e1626; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .pill.critical { background: rgba(255,77,79,.18); color: var(--crit); }
+  .pill.high { background: rgba(250,140,22,.18); color: var(--high); }
+  .pill.medium { background: rgba(250,219,20,.18); color: var(--med); }
+  .pill.low { background: rgba(82,196,26,.18); color: var(--low); }
+  .pill.info { background: rgba(24,144,255,.18); color: var(--info); }
+  .pill.permissive { background: rgba(82,196,26,.18); color: var(--low); }
+  .pill.weak_copyleft { background: rgba(250,219,20,.18); color: var(--med); }
+  .pill.strong_copyleft { background: rgba(250,140,22,.18); color: var(--high); }
+  .pill.network_copyleft { background: rgba(255,77,79,.18); color: var(--crit); }
+  .pill.unknown { background: rgba(140,140,140,.18); color: #8c8c8c; }
+  .kv { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+  .kv div { text-align: center; }
+  .kv div b { color: var(--accent); font-size: 22px; display: block; }
+  .kv div span { font-size: 11px; color: var(--muted); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .bar { height: 8px; background: var(--panel2); border-radius: 4px; overflow: hidden; margin: 4px 0; }
+  .bar > span { display: block; height: 100%; transition: width .3s; }
+  .graph-node { fill: var(--panel2); stroke: var(--accent); stroke-width: 1.5; }
+  .graph-label { fill: var(--text); font-size: 10px; }
+  .graph-edge { stroke: var(--border); stroke-width: 1; }
+  .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center; }
+  .stat-card b { font-size: 24px; display: block; margin-bottom: 4px; }
+  .stat-card span { font-size: 11px; color: var(--muted); }
+  .stat-card.crit b { color: var(--crit); } .stat-card.high b { color: var(--high); }
+  .stat-card.med b { color: var(--med); } .stat-card.ok b { color: var(--low); }
+  .stat-card.info b { color: var(--info); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🔗 供应链安全深化控制台</h1>
+  <span class="tag">Round 15 · supply-chain</span>
+  <span class="muted" style="margin-left:auto">仅用于授权供应链安全治理 · SBOM/组件/漏洞/许可证/供应商视角</span>
+</header>
+
+<nav id="nav">
+  <button data-tab="sbom" class="active">📋 SBOM 管理</button>
+  <button data-tab="component">🔍 组件分析</button>
+  <button data-tab="vulnerability">🐛 漏洞检测</button>
+  <button data-tab="license">📜 许可证合规</button>
+  <button data-tab="supplier">🏢 供应商风险</button>
+  <button data-tab="assessment">🚀 综合评估</button>
+</nav>
+
+<main>
+
+<!-- ==================== Tab 1: SBOM 管理 ==================== -->
+<div class="tab active" id="tab-sbom">
+  <div class="stat-cards" id="sbom-stats"></div>
+  <div class="grid">
+    <div class="card">
+      <h3>生成 SBOM</h3>
+      <label>项目名称</label>
+      <input id="sbom-name" value="前端 Web 应用">
+      <label>SBOM 格式</label>
+      <select id="sbom-format">
+        <option value="spdx">SPDX 2.3</option>
+        <option value="cyclonedx">CycloneDX 1.5</option>
+      </select>
+      <button class="action" onclick="sbomGenerate()">生成 SBOM</button>
+      <div class="status" id="sbom-gen-status"></div>
+    </div>
+    <div class="card">
+      <h3>SBOM 列表</h3>
+      <div id="sbom-list"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>SBOM 详情与依赖树</h3>
+    <div class="row" style="margin-bottom:10px">
+      <input id="sbom-detail-id" placeholder="输入 SBOM ID" style="max-width:200px">
+      <button class="action ghost" onclick="sbomDetail()">查看详情</button>
+      <button class="action ghost" onclick="sbomTree()">依赖树</button>
+    </div>
+    <pre id="sbom-detail-output">点击查看详情...</pre>
+  </div>
+  <div class="card">
+    <h3>SBOM 对比</h3>
+    <div class="row">
+      <input id="sbom-cmp-a" placeholder="SBOM A ID" style="max-width:150px">
+      <span>vs</span>
+      <input id="sbom-cmp-b" placeholder="SBOM B ID" style="max-width:150px">
+      <button class="action ghost" onclick="sbomCompare()">对比</button>
+    </div>
+    <pre id="sbom-cmp-output"></pre>
+  </div>
+</div>
+
+<!-- ==================== Tab 2: 组件分析 ==================== -->
+<div class="tab" id="tab-component">
+  <div class="stat-cards" id="comp-stats"></div>
+  <div class="grid">
+    <div class="card">
+      <h3>组件分析</h3>
+      <label>组件列表 (JSON)</label>
+      <textarea id="comp-input">[{"name":"lodash","version":"4.17.21","ecosystem":"npm","is_direct":true},
+{"name":"log4j-core","version":"2.14.1","ecosystem":"maven","is_direct":true},
+{"name":"openssl","version":"1.1.1k","ecosystem":"system","is_direct":true},
+{"name":"left-pad","version":"1.3.0","ecosystem":"npm","is_direct":false}]</textarea>
+      <button class="action" onclick="compAnalyze()">执行分析</button>
+      <div class="status" id="comp-status"></div>
+    </div>
+    <div class="card">
+      <h3>组件指纹识别</h3>
+      <label>组件名</label>
+      <input id="fp-name" value="lodash">
+      <label>版本</label>
+      <input id="fp-version" value="4.17.21">
+      <label>生态系统</label>
+      <select id="fp-eco">
+        <option value="npm">npm</option>
+        <option value="pypi">pypi</option>
+        <option value="maven">maven</option>
+        <option value="system">system</option>
+      </select>
+      <button class="action ghost" onclick="compFingerprint()">识别指纹</button>
+      <div id="fp-output" style="margin-top:10px"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>分析结果</h3>
+    <div id="comp-results"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 3: 漏洞检测 ==================== -->
+<div class="tab" id="tab-vulnerability">
+  <div class="stat-cards" id="vuln-stats"></div>
+  <div class="grid">
+    <div class="card">
+      <h3>漏洞扫描</h3>
+      <label>组件列表 (JSON)</label>
+      <textarea id="vuln-input">[{"name":"log4j-core","version":"2.14.1","ecosystem":"maven"},
+{"name":"openssl","version":"1.1.1k","ecosystem":"system"},
+{"name":"axios","version":"1.6.0","ecosystem":"npm"},
+{"name":"spring-core","version":"5.3.20","ecosystem":"maven"},
+{"name":"jackson-databind","version":"2.13.0","ecosystem":"maven"}]</textarea>
+      <button class="action" onclick="vulnScan()">开始扫描</button>
+      <div class="status" id="vuln-status"></div>
+    </div>
+    <div class="card">
+      <h3>CVE 查询</h3>
+      <label>CVE ID</label>
+      <input id="cve-id" value="CVE-2021-44228">
+      <button class="action ghost" onclick="vulnLookup()">查询 CVE</button>
+      <div id="cve-output" style="margin-top:10px"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>扫描结果</h3>
+    <div id="vuln-results"></div>
+  </div>
+  <div class="card">
+    <h3>0day 监控面板</h3>
+    <div id="zero-day-panel"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 4: 许可证合规 ==================== -->
+<div class="tab" id="tab-license">
+  <div class="stat-cards" id="lic-stats"></div>
+  <div class="grid">
+    <div class="card">
+      <h3>许可证合规检查</h3>
+      <label>组件列表 (含许可证)</label>
+      <textarea id="lic-input">[{"name":"lodash","version":"4.17.21","license":"MIT"},
+{"name":"django","version":"4.2.7","license":"BSD-3-Clause"},
+{"name":"mysql","version":"8.0.33","license":"GPL-2.0"},
+{"name":"redis-server","version":"7.0","license":"SSPL-1.0"},
+{"name":"unknown-lib","version":"1.0","license":""}]</textarea>
+      <button class="action" onclick="licCheck()">开始检查</button>
+      <div class="status" id="lic-status"></div>
+    </div>
+    <div class="card">
+      <h3>许可证识别</h3>
+      <label>许可证名称/SPDX ID</label>
+      <input id="lic-identify-input" value="Apache-2.0">
+      <button class="action ghost" onclick="licIdentify()">识别</button>
+      <div id="lic-identify-output" style="margin-top:10px"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>合规检查结果</h3>
+    <div id="lic-results"></div>
+  </div>
+  <div class="card">
+    <h3>合规策略</h3>
+    <div id="lic-policies"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 5: 供应商风险 ==================== -->
+<div class="tab" id="tab-supplier">
+  <div class="stat-cards" id="sup-stats"></div>
+  <div class="grid">
+    <div class="card">
+      <h3>供应商列表</h3>
+      <div id="sup-list"></div>
+    </div>
+    <div class="card">
+      <h3>供应商评分卡</h3>
+      <label>供应商 ID</label>
+      <input id="sup-id" value="SUP-001">
+      <button class="action ghost" onclick="supScorecard()">查看评分卡</button>
+      <div id="sup-scorecard" style="margin-top:10px"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>地缘政治风险概览</h3>
+    <div id="sup-geo"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 6: 综合评估 ==================== -->
+<div class="tab" id="tab-assessment">
+  <div class="stat-cards" id="asm-stats"></div>
+  <div class="card">
+    <h3>供应链安全综合评估</h3>
+    <p class="muted">全流程：资产发现 → SBOM生成 → 组件分析 → 漏洞检测 → 许可证合规 → 供应商风险 → 综合报告 → 修复优先级</p>
+    <button class="action" onclick="asmRun()">启动综合评估</button>
+    <div class="status" id="asm-status"></div>
+  </div>
+  <div class="card">
+    <h3>评估结果</h3>
+    <div id="asm-results"></div>
+  </div>
+  <div class="card">
+    <h3>修复优先级</h3>
+    <div id="asm-priorities"></div>
+  </div>
+</div>
+
+</main>
+
+<script>
+const API = '/api/v1/supply-chain';
+
+// ---- Tab 切换 ----
+document.querySelectorAll('#nav button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('#nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  };
+});
+
+async function api(path, opts = {}) {
+  try {
+    const r = await fetch(API + path, {
+      method: opts.method || 'GET',
+      headers: {'Content-Type': 'application/json'},
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+    });
+    return await r.json();
+  } catch (e) {
+    return {success: false, error: String(e)};
+  }
+}
+
+function pill(sev) {
+  return `<span class="pill ${sev}">${sev}</span>`;
+}
+
+function esc(s) {
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+
+// ---- Tab 1: SBOM ----
+async function sbomGenerate() {
+  const fmt = document.getElementById('sbom-format').value;
+  const name = document.getElementById('sbom-name').value;
+  const st = document.getElementById('sbom-gen-status');
+  st.textContent = '生成中...'; st.className = 'status running';
+  const r = await api('/sbom/generate', {method:'POST', body:{name, format: fmt}});
+  if (r.success) {
+    st.textContent = '生成成功: ' + r.data.result.sbom_id;
+    st.className = 'status done';
+    sbomList();
+  } else { st.textContent = '失败: ' + r.error; st.className = 'status error'; }
+}
+
+async function sbomList() {
+  const r = await api('/sbom/list');
+  const el = document.getElementById('sbom-list');
+  if (r.success) {
+    el.innerHTML = '<table><tr><th>ID</th><th>名称</th><th>格式</th><th>组件数</th><th>创建时间</th></tr>' +
+      r.data.sboms.map(s => `<tr><td>${esc(s.sbom_id)}</td><td>${esc(s.name)}</td><td>${esc(s.format)}</td><td>${s.component_count}</td><td>${esc(s.created_at)}</td></tr>`).join('') + '</table>';
+    document.getElementById('sbom-stats').innerHTML = `
+      <div class="stat-card info"><b>${r.data.total}</b><span>SBOM 总数</span></div>`;
+  }
+}
+
+async function sbomDetail() {
+  const id = document.getElementById('sbom-detail-id').value;
+  const r = await api('/sbom/' + id);
+  document.getElementById('sbom-detail-output').textContent = JSON.stringify(r.data || r.error, null, 2);
+}
+
+async function sbomTree() {
+  const id = document.getElementById('sbom-detail-id').value;
+  const r = await api('/sbom/' + id + '/dependency-tree');
+  document.getElementById('sbom-detail-output').textContent = JSON.stringify(r.data || r.error, null, 2);
+}
+
+async function sbomCompare() {
+  const a = document.getElementById('sbom-cmp-a').value;
+  const b = document.getElementById('sbom-cmp-b').value;
+  const r = await api('/sbom/compare', {method:'POST', body:{sbom_a:a, sbom_b:b}});
+  document.getElementById('sbom-cmp-output').textContent = JSON.stringify(r.data || r.error, null, 2);
+}
+
+// ---- Tab 2: 组件分析 ----
+async function compAnalyze() {
+  const st = document.getElementById('comp-status');
+  st.textContent = '分析中...'; st.className = 'status running';
+  let comps = [];
+  try { comps = JSON.parse(document.getElementById('comp-input').value); } catch(e) {}
+  const r = await api('/component/analyze', {method:'POST', body:{components: comps}});
+  if (r.success) {
+    st.textContent = '分析完成'; st.className = 'status done';
+    const d = r.data.result;
+    document.getElementById('comp-results').innerHTML = `<pre>${esc(JSON.stringify(d, null, 2))}</pre>`;
+    const ha = d.health_assessment || {};
+    document.getElementById('comp-stats').innerHTML = `
+      <div class="stat-card info"><b>${d.total_components}</b><span>组件总数</span></div>
+      <div class="stat-card ${ha.average_health_score>=75?'ok':'high'}"><b>${ha.average_health_score||'-'}</b><span>平均健康分</span></div>
+      <div class="stat-card high"><b>${(d.deprecated_components||{}).total_flagged||0}</b><span>废弃/未维护</span></div>`;
+  } else { st.textContent = '失败: ' + r.error; st.className = 'status error'; }
+}
+
+async function compFingerprint() {
+  const name = document.getElementById('fp-name').value;
+  const ver = document.getElementById('fp-version').value;
+  const eco = document.getElementById('fp-eco').value;
+  const r = await api(`/component/fingerprint?name=${encodeURIComponent(name)}&version=${encodeURIComponent(ver)}&ecosystem=${eco}`);
+  if (r.success) {
+    document.getElementById('fp-output').innerHTML = `<pre>${esc(JSON.stringify(r.data, null, 2))}</pre>`;
+  }
+}
+
+// ---- Tab 3: 漏洞检测 ----
+async function vulnScan() {
+  const st = document.getElementById('vuln-status');
+  st.textContent = '扫描中...'; st.className = 'status running';
+  let comps = [];
+  try { comps = JSON.parse(document.getElementById('vuln-input').value); } catch(e) {}
+  const r = await api('/vulnerability/scan', {method:'POST', body:{components: comps}});
+  if (r.success) {
+    st.textContent = '扫描完成'; st.className = 'status done';
+    const d = r.data.result;
+    const bs = d.by_severity || {};
+    document.getElementById('vuln-stats').innerHTML = `
+      <div class="stat-card crit"><b>${bs.critical||0}</b><span>严重</span></div>
+      <div class="stat-card high"><b>${bs.high||0}</b><span>高危</span></div>
+      <div class="stat-card med"><b>${bs.medium||0}</b><span>中危</span></div>
+      <div class="stat-card info"><b>${d.total_vulnerabilities}</b><span>漏洞总数</span></div>`;
+    document.getElementById('vuln-results').innerHTML = `
+      <h4>漏洞列表</h4>
+      <table><tr><th>CVE</th><th>组件</th><th>版本</th><th>严重度</th><th>修复版本</th></tr>` +
+      (d.vulnerabilities||[]).map(v => `<tr><td>${esc(v.cve_id)}</td><td>${esc(v.detected_component_name||v.component)}</td><td>${esc(v.detected_component_version||'')}</td><td>${pill(v.severity)}</td><td>${esc(v.fixed_version||'')}</td></tr>`).join('') + '</table>';
+    zeroDayPanel();
+  } else { st.textContent = '失败: ' + r.error; st.className = 'status error'; }
+}
+
+async function vulnLookup() {
+  const cve = document.getElementById('cve-id').value;
+  const r = await api('/vulnerability/lookup?cve_id=' + encodeURIComponent(cve));
+  document.getElementById('cve-output').innerHTML = `<pre>${esc(JSON.stringify(r.data||r.error, null, 2))}</pre>`;
+}
+
+async function zeroDayPanel() {
+  const r = await api('/vulnerability/zero-day-monitor');
+  if (r.success) {
+    document.getElementById('zero-day-panel').innerHTML =
+      '<p class="muted">监控组件数: ' + r.data.monitored_components +
+      ' | 活跃告警: ' + (r.data.active_alerts||[]).length + '</p>';
+  }
+}
+
+// ---- Tab 4: 许可证合规 ----
+async function licCheck() {
+  const st = document.getElementById('lic-status');
+  st.textContent = '检查中...'; st.className = 'status running';
+  let comps = [];
+  try { comps = JSON.parse(document.getElementById('lic-input').value); } catch(e) {}
+  const r = await api('/license/check', {method:'POST', body:{components: comps}});
+  if (r.success) {
+    st.textContent = '检查完成'; st.className = 'status done';
+    const d = r.data.result;
+    const pe = d.policy_evaluation || {};
+    document.getElementById('lic-stats').innerHTML = `
+      <div class="stat-card ${d.overall_risk==='critical'?'crit':d.overall_risk==='high'?'high':'ok'}"><b>${d.overall_risk||'-'}</b><span>整体风险</span></div>
+      <div class="stat-card info"><b>${d.commercial_friendly_score||'-'}</b><span>商业友好度</span></div>
+      <div class="stat-card high"><b>${pe.violation_count||0}</b><span>违规</span></div>
+      <div class="stat-card med"><b>${pe.warning_count||0}</b><span>告警</span></div>`;
+    document.getElementById('lic-results').innerHTML = `<pre>${esc(JSON.stringify(d, null, 2))}</pre>`;
+  } else { st.textContent = '失败: ' + r.error; st.className = 'status error'; }
+}
+
+async function licIdentify() {
+  const name = document.getElementById('lic-identify-input').value;
+  const r = await api('/license/identify?name=' + encodeURIComponent(name));
+  if (r.success) {
+    document.getElementById('lic-identify-output').innerHTML = `<pre>${esc(JSON.stringify(r.data, null, 2))}</pre>`;
+  }
+}
+
+async function licPolicies() {
+  const r = await api('/license/policies');
+  if (r.success) {
+    document.getElementById('lic-policies').innerHTML =
+      '<table><tr><th>ID</th><th>名称</th><th>规则</th><th>严重度</th></tr>' +
+      r.data.policies.map(p => `<tr><td>${p.policy_id}</td><td>${esc(p.name)}</td><td>${p.rule}</td><td>${pill(p.severity)}</td></tr>`).join('') + '</table>';
+  }
+}
+
+// ---- Tab 5: 供应商风险 ----
+async function supList() {
+  const r = await api('/supplier/list');
+  if (r.success) {
+    document.getElementById('sup-list').innerHTML =
+      '<table><tr><th>ID</th><th>名称</th><th>国家</th><th>评级</th><th>风险分</th></tr>' +
+      r.data.suppliers.map(s => `<tr><td>${s.supplier_id}</td><td>${esc(s.name)}</td><td>${esc(s.country)}</td><td>${s.risk_grade}</td><td>${s.risk_score}</td></tr>`).join('') + '</table>';
+    document.getElementById('sup-stats').innerHTML = `
+      <div class="stat-card info"><b>${r.data.total}</b><span>供应商总数</span></div>`;
+  }
+}
+
+async function supScorecard() {
+  const id = document.getElementById('sup-id').value;
+  const r = await api('/supplier/' + id + '/scorecard');
+  if (r.success) {
+    document.getElementById('sup-scorecard').innerHTML = `<pre>${esc(JSON.stringify(r.data, null, 2))}</pre>`;
+  }
+}
+
+async function supGeo() {
+  const r = await api('/supplier/geopolitical-risks');
+  if (r.success) {
+    let html = '';
+    for (const [level, info] of Object.entries(r.data)) {
+      html += `<div style="margin-bottom:8px"><b>${info.name}</b>: ${esc((info.countries||[]).join(', '))}</div>`;
+    }
+    document.getElementById('sup-geo').innerHTML = html;
+  }
+}
+
+// ---- Tab 6: 综合评估 ----
+async function asmRun() {
+  const st = document.getElementById('asm-status');
+  st.textContent = '评估中...'; st.className = 'status running';
+  const r = await api('/assessment/run', {method:'POST', body:{components: []}});
+  if (r.success) {
+    st.textContent = '评估完成'; st.className = 'status done';
+    const d = r.data.result;
+    document.getElementById('asm-stats').innerHTML = `
+      <div class="stat-card ${d.overall_risk==='critical'?'crit':d.overall_risk==='high'?'high':'ok'}"><b>${d.overall_risk||'-'}</b><span>综合风险</span></div>
+      <div class="stat-card info"><b>${d.overall_score||'-'}</b><span>风险评分</span></div>`;
+    document.getElementById('asm-results').innerHTML = `<pre>${esc(JSON.stringify(d.summary||d, null, 2))}</pre>`;
+    document.getElementById('asm-priorities').innerHTML =
+      '<table><tr><th>优先级</th><th>类别</th><th>问题</th><th>建议操作</th></tr>' +
+      (d.top_priorities||[]).map(p => `<tr><td>${p.priority_score}</td><td>${pill(p.severity)}</td><td>${esc(p.title)}</td><td>${esc(p.action)}</td></tr>`).join('') + '</table>';
+  } else { st.textContent = '失败: ' + r.error; st.className = 'status error'; }
+}
+
+// ---- 初始化 ----
+sbomList();
+supList();
+supGeo();
+licPolicies();
+</script>
+</body>
+</html>

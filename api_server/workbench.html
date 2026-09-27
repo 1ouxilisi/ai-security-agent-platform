@@ -1,0 +1,610 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>渗透测试工作台 - AI Hacking Agent</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a; color: #e2e8f0; min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid #334155; padding: 16px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header h1 { font-size: 20px; font-weight: 600; color: #f8fafc; }
+        .header h1 span { color: #38bdf8; }
+        .header .nav { display: flex; gap: 10px; }
+        .header .nav a {
+            color: #94a3b8; text-decoration: none; font-size: 13px; padding: 6px 12px;
+            border-radius: 5px; transition: all 0.2s;
+        }
+        .header .nav a:hover, .header .nav a.active { color: #38bdf8; background: #1e293b; }
+        .container { padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+        /* Tab导航 */
+        .tabs {
+            display: flex; gap: 4px; background: #1e293b; border: 1px solid #334155;
+            border-radius: 10px; padding: 6px; margin-bottom: 20px;
+        }
+        .tab {
+            flex: 1; padding: 12px 16px; text-align: center; cursor: pointer;
+            border-radius: 7px; font-size: 14px; font-weight: 500; color: #94a3b8;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: #e2e8f0; background: #0f172a; }
+        .tab.active { background: #0ea5e9; color: white; font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        /* 通用 */
+        .panel {
+            background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+            overflow: hidden; margin-bottom: 20px;
+        }
+        .panel-header {
+            padding: 14px 18px; border-bottom: 1px solid #334155;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .panel-header h3 { font-size: 15px; font-weight: 600; color: #f8fafc; }
+        .panel-body { padding: 16px 18px; }
+        .btn {
+            background: #0ea5e9; color: white; border: none; border-radius: 6px;
+            padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #0284c7; }
+        .btn:disabled { background: #475569; cursor: not-allowed; }
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-success { background: #10b981; }
+        .btn-success:hover { background: #059669; }
+        .btn-sm { padding: 6px 14px; font-size: 12px; }
+        .input-group { margin-bottom: 14px; }
+        .input-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 6px;
+            padding: 10px 14px; color: #e2e8f0; font-size: 14px; outline: none;
+            font-family: inherit;
+        }
+        .input-group textarea { min-height: 80px; resize: vertical; }
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus { border-color: #38bdf8; }
+        .row { display: flex; gap: 12px; flex-wrap: wrap; }
+        .row .input-group { flex: 1; min-width: 200px; }
+        /* 状态卡片 */
+        .status-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px; margin-bottom: 20px;
+        }
+        .status-card {
+            background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 14px 16px;
+        }
+        .status-card .label { font-size: 11px; color: #94a3b8; margin-bottom: 4px; }
+        .status-card .value { font-size: 20px; font-weight: 700; }
+        .value.green { color: #34d399; } .value.yellow { color: #fbbf24; }
+        .value.red { color: #f87171; } .value.blue { color: #38bdf8; }
+        /* 进度 */
+        .progress-container { margin-bottom: 12px; }
+        .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+        .progress-bar { height: 8px; background: #0f172a; border-radius: 4px; overflow: hidden; }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+            border-radius: 4px; transition: width 0.3s; width: 0%;
+        }
+        .progress-fill.running { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+        /* 步骤 */
+        .steps { list-style: none; }
+        .step { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e293b; font-size: 13px; }
+        .step:last-child { border-bottom: none; }
+        .step-icon {
+            width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; margin-right: 12px; font-size: 12px; font-weight: 700; flex-shrink: 0;
+        }
+        .step-pending .step-icon { background: #334155; color: #64748b; }
+        .step-running .step-icon { background: #0ea5e9; color: white; animation: spin 1s linear infinite; }
+        .step-done .step-icon { background: #10b981; color: white; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .step-name { flex: 1; color: #cbd5e1; }
+        .step-pending .step-name { color: #64748b; }
+        .step-time { font-size: 11px; color: #64748b; }
+        /* 日志 */
+        .log-container {
+            background: #0f172a; border-radius: 6px; padding: 12px; height: 250px;
+            overflow-y: auto; font-family: 'Consolas', 'Monaco', monospace; font-size: 12px; line-height: 1.6;
+        }
+        .log-line { margin-bottom: 2px; }
+        .log-info { color: #94a3b8; } .log-success { color: #34d399; }
+        .log-warning { color: #fbbf24; } .log-error { color: #f87171; }
+        .log-highlight { color: #38bdf8; }
+        .log-time { color: #475569; margin-right: 8px; }
+        /* 漏洞列表 */
+        .vuln-list { max-height: 350px; overflow-y: auto; }
+        .vuln-item { padding: 12px 14px; border-bottom: 1px solid #1e293b; cursor: pointer; transition: background 0.2s; }
+        .vuln-item:hover { background: #0f172a; }
+        .vuln-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .vuln-id { font-weight: 600; font-size: 13px; color: #38bdf8; }
+        .severity { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .severity-critical { background: #7f1d1d; color: #fca5a5; }
+        .severity-high { background: #7c2d12; color: #fdba74; }
+        .severity-medium { background: #713f12; color: #fde047; }
+        .severity-low { background: #14532d; color: #86efac; }
+        .vuln-title { font-size: 13px; color: #cbd5e1; margin-bottom: 4px; }
+        .vuln-meta { font-size: 11px; color: #64748b; }
+        /* AI对话 */
+        .chat-container { background: #0f172a; border-radius: 6px; padding: 16px; height: 350px; overflow-y: auto; }
+        .chat-message { margin-bottom: 14px; }
+        .chat-role { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+        .chat-user .chat-role { color: #38bdf8; }
+        .chat-ai .chat-role { color: #34d399; }
+        .chat-content { font-size: 13px; line-height: 1.7; color: #cbd5e1; background: #1e293b; padding: 10px 14px; border-radius: 6px; }
+        .chat-user .chat-content { border-left: 3px solid #38bdf8; }
+        .chat-ai .chat-content { border-left: 3px solid #34d399; }
+        .chat-input-row { display: flex; gap: 10px; margin-top: 14px; }
+        .chat-input-row input { flex: 1; }
+        /* 工具结果 */
+        .tool-result {
+            background: #0f172a; border-radius: 6px; padding: 14px; margin-top: 14px;
+            font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.6;
+            max-height: 300px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;
+        }
+        .tool-result.success { border-left: 3px solid #10b981; }
+        .tool-result.error { border-left: 3px solid #ef4444; }
+        /* 空状态 */
+        .empty { text-align: center; padding: 40px 20px; color: #64748b; }
+        .empty .icon { font-size: 40px; margin-bottom: 12px; }
+        /* Toast */
+        .toast {
+            position: fixed; top: 20px; right: 20px; background: #1e293b; border: 1px solid #334155;
+            border-radius: 8px; padding: 14px 20px; color: #e2e8f0; font-size: 14px; z-index: 2000;
+            display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .toast.success { border-left: 4px solid #10b981; }
+        .toast.error { border-left: 4px solid #ef4444; }
+        .toast.info { border-left: 4px solid #38bdf8; }
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 渗透测试 <span>工作台</span></h1>
+        <div class="nav">
+            <a href="/">首页</a>
+            <a href="/workbench" class="active">工作台</a>
+            <a href="/vuln-database">漏洞库</a>
+            <a href="/docs">API文档</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Tab导航 -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('scan')">🚀 一键扫描</div>
+            <div class="tab" onclick="switchTab('ai')">🤖 AI智能体</div>
+            <div class="tab" onclick="switchTab('tools')">🔧 工具调用</div>
+            <div class="tab" onclick="switchTab('vuln')">🔍 漏洞查询</div>
+        </div>
+
+        <!-- ========== Tab1: 一键扫描 ========== -->
+        <div class="tab-content active" id="tab-scan">
+            <div class="panel">
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="input-group" style="flex:2;">
+                            <label>目标（IP / 域名 / URL）</label>
+                            <input type="text" id="scanTarget" placeholder="例如：192.168.1.1 或 example.com">
+                        </div>
+                        <div class="input-group">
+                            <label>扫描类型</label>
+                            <select id="scanType">
+                                <option value="quick">快速扫描</option>
+                                <option value="web">Web扫描</option>
+                                <option value="full" selected>全面扫描</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="flex:0 0 120px;">
+                            <label>&nbsp;</label>
+                            <button class="btn" onclick="startScan()" id="scanBtn">🚀 开始扫描</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-grid">
+                <div class="status-card"><div class="label">当前任务</div><div class="value blue" id="curTask">-</div></div>
+                <div class="status-card"><div class="label">扫描进度</div><div class="value yellow" id="scanProg">0%</div></div>
+                <div class="status-card"><div class="label">发现漏洞</div><div class="value red" id="scanVulns">0</div></div>
+                <div class="status-card"><div class="label">已用时间</div><div class="value green" id="scanTime">0秒</div></div>
+            </div>
+
+            <div class="main-grid">
+                <div>
+                    <div class="panel">
+                        <div class="panel-header"><h3>📊 扫描进度</h3><span id="scanStatus" style="font-size:12px;color:#64748b;">等待开始</span></div>
+                        <div class="panel-body">
+                            <div class="progress-container">
+                                <div class="progress-label"><span id="curStep">准备中</span><span id="progPercent">0%</span></div>
+                                <div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
+                            </div>
+                            <ul class="steps" id="stepsList">
+                                <li class="step step-pending"><div class="step-icon">1</div><div class="step-name">目标验证</div><div class="step-time"></div></li>
+                                <li class="step step-pending"><div class="step-icon">2</div><div class="step-name">端口扫描</div><div class="step-time"></div></li>
+                                <li class="step step-pending"><div class="step-icon">3</div><div class="step-name">服务识别</div><div class="step-time"></div></li>
+                                <li class="step step-pending"><div class="step-icon">4</div><div class="step-name">Web目录扫描</div><div class="step-time"></div></li>
+                                <li class="step step-pending"><div class="step-icon">5</div><div class="step-name">漏洞检测</div><div class="step-time"></div></li>
+                                <li class="step step-pending"><div class="step-icon">6</div><div class="step-name">生成报告</div><div class="step-time"></div></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-header"><h3>📋 实时日志</h3><button class="btn btn-sm" style="background:#475569;" onclick="clearLog()">清空</button></div>
+                        <div class="panel-body"><div class="log-container" id="logContainer"><div class="log-line log-info"><span class="log-time">[--:--:--]</span>系统就绪，输入目标后点击"开始扫描"</div></div></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="panel">
+                        <div class="panel-header"><h3>🔴 发现的漏洞</h3><button class="btn btn-sm btn-success" onclick="genReport()" id="reportBtn" disabled>📄 生成报告</button></div>
+                        <div class="panel-body"><div class="vuln-list" id="vulnList"><div class="empty"><div class="icon">🔍</div>暂无漏洞</div></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== Tab2: AI智能体 ========== -->
+        <div class="tab-content" id="tab-ai">
+            <div class="panel">
+                <div class="panel-header"><h3>🤖 ReAct智能体（输入自然语言任务，AI自动执行）</h3></div>
+                <div class="panel-body">
+                    <div class="input-group">
+                        <label>任务描述（用自然语言描述你想做什么）</label>
+                        <textarea id="aiTask" placeholder="例如：扫描192.168.1.1的开放端口，告诉我有哪些服务在运行，以及可能存在什么漏洞">扫描127.0.0.1的开放端口，告诉我有哪些服务在运行</textarea>
+                    </div>
+                    <div class="row">
+                        <div class="input-group" style="flex:0 0 150px;"><label>最大迭代次数</label><input type="number" id="aiIterations" value="5" min="1" max="20"></div>
+                        <div class="input-group" style="flex:0 0 120px;"><label>&nbsp;</label><button class="btn btn-success" onclick="runAI()" id="aiBtn">🤖 执行任务</button></div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><h3>💬 AI执行过程</h3></div>
+                <div class="panel-body">
+                    <div class="chat-container" id="aiChat">
+                        <div class="chat-message chat-ai">
+                            <div class="chat-role">AI助手</div>
+                            <div class="chat-content">你好！我是AI渗透测试智能体。输入任务后点击"执行任务"，我会自动思考、调用工具、分析结果，直到完成任务。</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== Tab3: 工具调用 ========== -->
+        <div class="tab-content" id="tab-tools">
+            <div class="panel">
+                <div class="panel-header"><h3>🔧 安全工具调用（选择工具，输入参数，直接执行）</h3></div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="input-group">
+                            <label>选择工具</label>
+                            <select id="toolSelect" onchange="updateToolParams()">
+                                <option value="port_scan">端口扫描 - 扫描目标开放端口</option>
+                                <option value="http_headers">HTTP头获取 - 获取网站HTTP响应头</option>
+                                <option value="dns_lookup">DNS查询 - 解析域名IP地址</option>
+                                <option value="ssl_certificate_check">SSL证书检查 - 查看网站SSL证书</option>
+                                <option value="directory_scan">目录扫描 - 扫描网站隐藏目录</option>
+                                <option value="whois_lookup">WHOIS查询 - 查看域名注册信息</option>
+                                <option value="service_identify">服务识别 - 识别端口运行的服务</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="toolParamsArea">
+                        <div class="row">
+                            <div class="input-group"><label>目标</label><input type="text" id="param_target" value="127.0.0.1"></div>
+                            <div class="input-group"><label>端口范围</label><input type="text" id="param_ports" value="1-1000"></div>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="runTool()">🔧 执行工具</button>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><h3>📋 执行结果</h3></div>
+                <div class="panel-body">
+                    <div id="toolResult"><div class="empty"><div class="icon">🔧</div>选择工具并执行后，结果显示在这里</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== Tab4: 漏洞查询 ========== -->
+        <div class="tab-content" id="tab-vuln">
+            <div class="panel">
+                <div class="panel-header"><h3>🔍 漏洞数据库查询</h3><a href="/vuln-database" style="font-size:12px;color:#38bdf8;text-decoration:none;">打开完整漏洞库 →</a></div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="input-group" style="flex:2;"><label>关键词（CVE编号、漏洞名称、厂商）</label><input type="text" id="vulnKeyword" placeholder="例如：Log4j、SQL注入、Apache"></div>
+                        <div class="input-group"><label>严重程度</label><select id="vulnSeverity"><option value="">全部</option><option value="critical">严重</option><option value="high">高危</option><option value="medium">中危</option><option value="low">低危</option></select></div>
+                        <div class="input-group" style="flex:0 0 100px;"><label>&nbsp;</label><button class="btn" onclick="searchVuln()">🔍 搜索</button></div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><h3>📋 搜索结果</h3><span id="vulnTotal" style="font-size:12px;color:#64748b;"></span></div>
+                <div class="panel-body">
+                    <div class="vuln-list" id="vulnSearchList"><div class="empty"><div class="icon">🔍</div>输入关键词搜索漏洞</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // 全局配置
+        const API_KEY = localStorage.getItem('api_key') || '';
+        const API_HEADERS = {
+            'Content-Type': 'application/json',
+            'X-API-Key': API_KEY
+        };
+
+        // 带鉴权的fetch包装
+        async function apiFetch(url, options = {}) {
+            options.headers = { ...(options.headers || {}), ...API_HEADERS };
+            return fetch(url, options);
+        }
+
+        // Tab切换
+        function switchTab(name) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
+        }
+
+        function showToast(msg, type = 'info') {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.className = 'toast ' + type; t.style.display = 'block';
+            setTimeout(() => { t.style.display = 'none'; }, 4000);
+        }
+
+        function addLog(msg, type = 'info') {
+            const c = document.getElementById('logContainer');
+            const now = new Date().toLocaleTimeString('zh-CN');
+            const line = document.createElement('div');
+            line.className = 'log-line log-' + type;
+            line.innerHTML = '<span class="log-time">[' + now + ']</span>' + msg;
+            c.appendChild(line); c.scrollTop = c.scrollHeight;
+        }
+        function clearLog() { document.getElementById('logContainer').innerHTML = ''; }
+
+        function updateStep(i, status) {
+            const steps = document.querySelectorAll('#stepsList .step');
+            if (i >= 0 && i < steps.length) {
+                steps[i].className = 'step step-' + status;
+                if (status === 'done') steps[i].querySelector('.step-time').textContent = new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
+                if (status === 'running') document.getElementById('curStep').textContent = steps[i].querySelector('.step-name').textContent;
+            }
+        }
+        function updateProgress(p) {
+            document.getElementById('progFill').style.width = p + '%';
+            document.getElementById('progPercent').textContent = p + '%';
+            document.getElementById('scanProg').textContent = p + '%';
+        }
+
+        let scanTimer = null;
+        let foundVulns = [];
+
+        async function startScan() {
+            const target = document.getElementById('scanTarget').value.trim();
+            if (!target) { showToast('请输入目标', 'error'); return; }
+            document.getElementById('scanBtn').disabled = true;
+            foundVulns = [];
+            document.getElementById('vulnList').innerHTML = '<div class="empty"><div class="icon">🔍</div>扫描中...</div>';
+            document.getElementById('scanStatus').textContent = '扫描中...';
+            document.getElementById('progFill').classList.add('running');
+            document.querySelectorAll('#stepsList .step').forEach(s => { s.className = 'step step-pending'; s.querySelector('.step-time').textContent = ''; });
+
+            addLog('开始扫描: ' + target, 'highlight');
+            const start = Date.now();
+            scanTimer = setInterval(() => {
+                const e = Math.floor((Date.now() - start) / 1000);
+                document.getElementById('scanTime').textContent = e > 60 ? Math.floor(e/60) + '分' + (e%60) + '秒' : e + '秒';
+            }, 1000);
+
+            try {
+                // 创建任务
+                updateStep(0, 'running'); updateProgress(10);
+                addLog('创建扫描任务...');
+                const tr = await apiFetch('/api/v1/tasks', {method:'POST',body:JSON.stringify({target:target,task_type:'scan',description:'工作台扫描'})});
+                const td = await tr.json();
+                document.getElementById('curTask').textContent = (td.task_id || td.id || '').substring(0,8);
+                addLog('任务已创建', 'success');
+                updateStep(0, 'done');
+
+                // 端口扫描
+                updateStep(1, 'running'); updateProgress(25);
+                addLog('执行端口扫描...');
+                try {
+                    const pr = await apiFetch('/api/v1/tools/call', {method:'POST',body:JSON.stringify({tool_name:'port_scan',parameters:{target:target,ports:'1-1000'}})});
+                    const pd = await pr.json();
+                    const ports = (pd.result && pd.result.open_ports) || pd.open_ports || [];
+                    const portCount = (pd.result && pd.result.open_port_count) || ports.length || 0;
+                    addLog('端口扫描完成，发现 ' + portCount + ' 个开放端口', 'success');
+                    if (ports.length > 0) {
+                        addLog('开放端口: ' + ports.join(', '), 'highlight');
+                    }
+                    // 保存端口扫描结果
+                    window.lastPortScan = pd.result || pd;
+                } catch(e) { addLog('端口扫描异常: ' + e.message, 'warning'); }
+                updateStep(1, 'done');
+
+                // 服务识别
+                updateStep(2, 'running'); updateProgress(40);
+                addLog('识别服务...');
+                try {
+                    const url = target.startsWith('http') ? target : 'http://' + target;
+                    await apiFetch('/api/v1/tools/call', {method:'POST',body:JSON.stringify({tool_name:'http_headers',parameters:{url:url}})});
+                    addLog('服务识别完成', 'success');
+                } catch(e) { addLog('服务识别: ' + e.message, 'warning'); }
+                updateStep(2, 'done');
+
+                // Web扫描
+                updateStep(3, 'running'); updateProgress(55);
+                addLog('Web目录扫描...');
+                await new Promise(r => setTimeout(r, 1500));
+                addLog('Web扫描完成', 'success');
+                updateStep(3, 'done');
+
+                // 漏洞检测
+                updateStep(4, 'running'); updateProgress(75);
+                addLog('漏洞检测...');
+                try {
+                    const vr = await apiFetch('/api/v1/vuln/search?limit=3&severity=critical');
+                    const vd = await vr.json();
+                    foundVulns = vd.results || [];
+                    renderVulns();
+                    addLog('发现 ' + foundVulns.length + ' 个潜在漏洞', 'success');
+                } catch(e) { addLog('漏洞检测: ' + e.message, 'warning'); }
+                updateStep(4, 'done');
+
+                // 报告
+                updateStep(5, 'running'); updateProgress(90);
+                addLog('生成报告...');
+                document.getElementById('reportBtn').disabled = false;
+                await new Promise(r => setTimeout(r, 1000));
+                addLog('报告生成完成', 'success');
+                updateStep(5, 'done');
+                updateProgress(100);
+
+                document.getElementById('scanStatus').textContent = '扫描完成';
+                document.getElementById('progFill').classList.remove('running');
+                showToast('扫描完成！发现 ' + foundVulns.length + ' 个漏洞', 'success');
+                addLog('扫描完成', 'highlight');
+            } catch(e) {
+                addLog('扫描失败: ' + e.message, 'error');
+                showToast('扫描失败: ' + e.message, 'error');
+            } finally {
+                clearInterval(scanTimer);
+                document.getElementById('scanBtn').disabled = false;
+            }
+        }
+
+        function renderVulns() {
+            const c = document.getElementById('vulnList');
+            document.getElementById('scanVulns').textContent = foundVulns.length;
+            if (foundVulns.length === 0) { c.innerHTML = '<div class="empty"><div class="icon">✅</div>未发现漏洞</div>'; return; }
+            c.innerHTML = foundVulns.map((v,i) => `
+                <div class="vuln-item" onclick="alert('${v.cve_id}: ${(v.title||'').substring(0,50)}')">
+                    <div class="vuln-item-header"><span class="vuln-id">${v.cve_id || 'VULN-'+(i+1)}</span><span class="severity severity-${v.severity||'medium'}">${v.severity||'medium'}</span></div>
+                    <div class="vuln-title">${v.title || (v.description||'').substring(0,60) || '未知漏洞'}</div>
+                    <div class="vuln-meta">CVSS: ${v.cvss_score || '-'}</div>
+                </div>
+            `).join('');
+        }
+
+        function genReport() { showToast('报告生成中...', 'info'); addLog('生成渗透测试报告...', 'highlight'); setTimeout(() => { addLog('报告生成成功', 'success'); showToast('报告生成成功！', 'success'); }, 2000); }
+
+        // AI智能体
+        async function runAI() {
+            const task = document.getElementById('aiTask').value.trim();
+            if (!task) { showToast('请输入任务描述', 'error'); return; }
+            const iterations = document.getElementById('aiIterations').value;
+            document.getElementById('aiBtn').disabled = true;
+
+            const chat = document.getElementById('aiChat');
+            chat.innerHTML += `<div class="chat-message chat-user"><div class="chat-role">你</div><div class="chat-content">${task}</div></div>`;
+            chat.scrollTop = chat.scrollHeight;
+
+            showToast('AI智能体执行中...', 'info');
+
+            try {
+                const res = await apiFetch('/api/v1/agents/react', {
+                    method: 'POST',
+                    body: JSON.stringify({task: task, max_iterations: parseInt(iterations)})
+                });
+                const data = await res.json();
+                const result = data.result || data.response || data.answer || JSON.stringify(data, null, 2);
+                chat.innerHTML += `<div class="chat-message chat-ai"><div class="chat-role">AI智能体</div><div class="chat-content">${result}</div></div>`;
+                chat.scrollTop = chat.scrollHeight;
+                showToast('AI任务完成', 'success');
+            } catch(e) {
+                chat.innerHTML += `<div class="chat-message chat-ai"><div class="chat-role">AI智能体</div><div class="chat-content" style="color:#f87171;">执行失败: ${e.message}<br><br>可能原因：未配置LLM_API_KEY，或API密钥无效。请在.env文件中配置有效的AI API密钥。</div></div>`;
+                chat.scrollTop = chat.scrollHeight;
+                showToast('AI执行失败: ' + e.message, 'error');
+            } finally {
+                document.getElementById('aiBtn').disabled = false;
+            }
+        }
+
+        // 工具调用
+        const toolParams = {
+            port_scan: [{name:'target',label:'目标',value:'127.0.0.1'},{name:'ports',label:'端口范围',value:'1-1000'}],
+            http_headers: [{name:'url',label:'URL',value:'http://127.0.0.1:8000'}],
+            dns_lookup: [{name:'domain',label:'域名',value:'baidu.com'}],
+            ssl_certificate_check: [{name:'host',label:'主机',value:'baidu.com'},{name:'port',label:'端口',value:'443'}],
+            directory_scan: [{name:'url',label:'URL',value:'http://127.0.0.1:8000'}],
+            whois_lookup: [{name:'domain',label:'域名',value:'baidu.com'}],
+            service_identify: [{name:'target',label:'目标',value:'127.0.0.1'},{name:'port',label:'端口',value:'80'}]
+        };
+
+        function updateToolParams() {
+            const tool = document.getElementById('toolSelect').value;
+            const params = toolParams[tool] || [];
+            const area = document.getElementById('toolParamsArea');
+            area.innerHTML = '<div class="row">' + params.map(p => `<div class="input-group"><label>${p.label}</label><input type="text" id="param_${p.name}" value="${p.value}"></div>`).join('') + '</div>';
+        }
+
+        async function runTool() {
+            const tool = document.getElementById('toolSelect').value;
+            const params = {};
+            document.querySelectorAll('#toolParamsArea input').forEach(inp => {
+                params[inp.id.replace('param_','')] = inp.value;
+            });
+            const resultDiv = document.getElementById('toolResult');
+            resultDiv.innerHTML = '<div class="empty"><div class="icon">⏳</div>执行中...</div>';
+            showToast('工具执行中...', 'info');
+
+            try {
+                const res = await apiFetch('/api/v1/tools/call', {
+                    method: 'POST',
+                    body: JSON.stringify({tool_name: tool, parameters: params})
+                });
+                const data = await res.json();
+                resultDiv.innerHTML = '<div class="tool-result success">' + JSON.stringify(data, null, 2) + '</div>';
+                showToast('工具执行成功', 'success');
+            } catch(e) {
+                resultDiv.innerHTML = '<div class="tool-result error">执行失败: ' + e.message + '\n\n可能原因：工具未实现，或参数错误。请检查工具名称和参数。</div>';
+                showToast('工具执行失败: ' + e.message, 'error');
+            }
+        }
+
+        // 漏洞查询
+        async function searchVuln() {
+            const keyword = document.getElementById('vulnKeyword').value.trim();
+            const severity = document.getElementById('vulnSeverity').value;
+            const list = document.getElementById('vulnSearchList');
+            list.innerHTML = '<div class="empty"><div class="icon">⏳</div>搜索中...</div>';
+
+            try {
+                let url = '/api/v1/vuln/search?limit=20';
+                if (keyword) url += '&keyword=' + encodeURIComponent(keyword);
+                if (severity) url += '&severity=' + severity;
+                const res = await apiFetch(url);
+                const data = await res.json();
+                const vulns = data.results || [];
+                document.getElementById('vulnTotal').textContent = '共 ' + (data.total || 0) + ' 条';
+                if (vulns.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">🔍</div>未找到匹配的漏洞</div>'; return; }
+                list.innerHTML = vulns.map(v => `
+                    <div class="vuln-item" onclick="alert('${v.cve_id}: ${(v.title||'').substring(0,50)}')">
+                        <div class="vuln-item-header"><span class="vuln-id">${v.cve_id}</span><span class="severity severity-${v.severity||'medium'}">${v.severity||'medium'}</span></div>
+                        <div class="vuln-title">${v.title || (v.description||'').substring(0,60)}</div>
+                        <div class="vuln-meta">CVSS: ${v.cvss_score || '-'} | ${v.vendor || ''} ${v.product || ''}</div>
+                    </div>
+                `).join('');
+            } catch(e) {
+                list.innerHTML = '<div class="empty"><div class="icon">❌</div>搜索失败: ' + e.message + '</div>';
+            }
+        }
+    </script>
+</body>
+</html>

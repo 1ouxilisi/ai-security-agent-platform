@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>性能优化与压力测试平台 · Performance Deep</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#21262d; --border:#30363d;
+  --txt:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --accent2:#1f6feb;
+  --ok:#3fb950; --warn:#d29922; --bad:#f85149; --info:#388bfd;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.5}
+header{background:linear-gradient(90deg,#161b22,#21262d);padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+header h1{font-size:20px;color:var(--accent)}
+header .sub{color:var(--muted);font-size:12px;margin-top:4px}
+.badges{display:flex;gap:8px;flex-wrap:wrap}
+.badge{background:var(--panel2);border:1px solid var(--border);padding:4px 10px;border-radius:12px;font-size:12px;color:var(--muted)}
+.badge b{color:var(--accent)}
+nav{display:flex;gap:4px;background:var(--panel);padding:10px 24px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;padding:8px 14px;border-radius:6px;cursor:pointer;white-space:nowrap;font-size:13px}
+nav button:hover{background:var(--panel2);color:var(--txt)}
+nav button.active{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+main{padding:20px 24px;max-width:1400px;margin:0 auto}
+.tab{display:none}
+.tab.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px}
+.card .label{color:var(--muted);font-size:12px;margin-bottom:6px}
+.card .value{font-size:26px;font-weight:600;color:var(--txt)}
+.card .delta{font-size:12px;margin-top:4px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:18px}
+.panel h3{font-size:15px;margin-bottom:12px;color:var(--accent);border-left:3px solid var(--accent);padding-left:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:500;background:var(--panel2)}
+tr:hover td{background:rgba(88,166,255,.05)}
+.tag{padding:2px 8px;border-radius:10px;font-size:11px}
+.tag.ok{background:rgba(63,185,80,.15);color:var(--ok)}
+.tag.warn{background:rgba(210,153,34,.15);color:var(--warn)}
+.tag.bad{background:rgba(248,81,73,.15);color:var(--bad)}
+.bar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.row{display:flex;gap:14px;flex-wrap:wrap}
+.row > *{flex:1;min-width:280px}
+button.act{background:var(--accent2);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px}
+button.act:hover{opacity:.9}
+button.ghost{background:transparent;border:1px solid var(--border);color:var(--txt);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px}
+input,select{background:var(--panel2);border:1px solid var(--border);color:var(--txt);padding:7px 10px;border-radius:6px;font-size:13px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+pre{background:#010409;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:12px;color:#9ecbff;font-family:Consolas,monospace;max-height:420px}
+.muted{color:var(--muted);font-size:12px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+.kv div{background:var(--panel2);padding:8px 10px;border-radius:6px;font-size:12px}
+.kv b{color:var(--accent)}
+.progress{background:var(--panel2);border-radius:6px;height:20px;overflow:hidden;position:relative}
+.progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--ok));line-height:20px;color:#000;font-size:11px;text-align:center;font-weight:600}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:12px;border-top:1px solid var(--border);margin-top:20px}
+@media(max-width:720px){main{padding:12px}header{padding:12px}nav{padding:8px 12px}.row > *{min-width:100%}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>性能优化与压力测试平台</h1>
+    <div class="sub">第28轮升级方向3 · 基准 / 高并发 / 大数据 / 分布式 / 压测 / 监控 一体化</div>
+  </div>
+  <div class="badges">
+    <span class="badge">健康度 <b id="bdHealth">-</b></span>
+    <span class="badge">基准报告 <b id="bdBm">-</b></span>
+    <span class="badge">活跃告警 <b id="bdAlert">-</b></span>
+    <span class="badge">分片 <b id="bdShard">-</b></span>
+  </div>
+</header>
+
+<nav id="nav">
+  <button data-tab="overview" class="active">性能总览</button>
+  <button data-tab="benchmark">基准测试</button>
+  <button data-tab="concurrency">高并发优化</button>
+  <button data-tab="bigdata">大数据优化</button>
+  <button data-tab="distributed">分布式优化</button>
+  <button data-tab="stress">压力测试</button>
+  <button data-tab="monitor">性能监控</button>
+  <button data-tab="settings">系统设置</button>
+</nav>
+
+<main>
+<!-- ============ 1. 性能总览 ============ -->
+<section class="tab active" id="tab-overview">
+  <div class="cards" id="ovCards"></div>
+  <div class="row">
+    <div class="panel"><h3>24小时性能趋势</h3><div id="ovTrend"></div></div>
+    <div class="panel"><h3>Top 慢接口</h3><div id="ovSlow"></div></div>
+  </div>
+  <div class="panel"><h3>说明</h3>
+    <p class="muted">本控制台聚合七大性能域：实时系统指标、API基准压测（P50/P95/P99）、高并发资源池、大数据分片分区、分布式Master-Worker、压力与故障注入、监控告警。所有数据由后端真实采集/计算，REST API 返回，全部内存模拟无副作用。</p>
+  </div>
+</section>
+
+<!-- ============ 2. 基准测试 ============ -->
+<section class="tab" id="tab-benchmark">
+  <div class="toolbar">
+    <input id="bmUrl" placeholder="目标URL" value="http://127.0.0.1:8000/api/v1/health" style="flex:2;min-width:200px">
+    <select id="bmScenario">
+      <option value="single_user">单用户</option>
+      <option value="multi_user" selected>多用户</option>
+      <option value="high_concurrency">高并发</option>
+      <option value="big_data">大数据量</option>
+      <option value="complex_query">复杂查询</option>
+      <option value="batch_op">批量操作</option>
+      <option value="soak">持续运行</option>
+      <option value="peak">峰值</option>
+    </select>
+    <input id="bmConcurrency" type="number" placeholder="并发(空=默认)" style="width:120px">
+    <input id="bmRequests" type="number" placeholder="请求数(空=默认)" style="width:120px">
+    <button class="act" onclick="runBench()">发起压测</button>
+    <button class="ghost" onclick="loadBmReports()">刷新报告</button>
+  </div>
+  <div class="cards" id="bmResult"></div>
+  <div class="panel"><h3>历史报告</h3><div id="bmReports"></div></div>
+  <div class="row">
+    <div class="panel"><h3>测试场景</h3><div id="bmScenarios"></div></div>
+    <div class="panel"><h3>指标定义</h3><div id="bmMetrics"></div></div>
+  </div>
+</section>
+
+<!-- ============ 3. 高并发优化 ============ -->
+<section class="tab" id="tab-concurrency">
+  <div class="cards" id="hcCards"></div>
+  <div class="row">
+    <div class="panel"><h3>连接池状态</h3><div id="hcPools"></div></div>
+    <div class="panel"><h3>缓存统计</h3><div id="hcCache"></div></div>
+  </div>
+  <div class="row">
+    <div class="panel"><h3>限流/熔断</h3><div id="hcResilience"></div></div>
+    <div class="panel"><h3>异步任务队列</h3><div id="hcQueues"></div></div>
+  </div>
+  <div class="panel"><h3>资源调优建议</h3><div id="hcTuning"></div></div>
+</section>
+
+<!-- ============ 4. 大数据优化 ============ -->
+<section class="tab" id="tab-bigdata">
+  <div class="cards" id="bdCards"></div>
+  <div class="panel"><h3>数据分片（16片）</h3><div id="bdShards"></div></div>
+  <div class="row">
+    <div class="panel"><h3>分区列表</h3><div id="bdPartitions"></div></div>
+    <div class="panel"><h3>索引列表</h3><div id="bdIndexes"></div></div>
+  </div>
+  <div class="row">
+    <div class="panel"><h3>批量读写对比</h3><div id="bdBatch"></div></div>
+    <div class="panel"><h3>压缩格式</h3><div id="bdCompression"></div></div>
+  </div>
+</section>
+
+<!-- ============ 5. 分布式优化 ============ -->
+<section class="tab" id="tab-distributed">
+  <div class="toolbar">
+    <input id="dsTarget" placeholder="目标域名" value="example.com">
+    <input id="dsPorts" placeholder="端口范围" value="1-1024" style="width:120px">
+    <button class="act" onclick="submitScan()">提交扫描</button>
+    <button class="ghost" onclick="dispatchTasks()">调度分发</button>
+    <button class="ghost" onclick="dsRefresh()">刷新</button>
+  </div>
+  <div class="cards" id="dsCards"></div>
+  <div class="row">
+    <div class="panel"><h3>Worker 节点</h3><div id="dsWorkers"></div></div>
+    <div class="panel"><h3>代理池</h3><div id="dsProxies"></div></div>
+  </div>
+  <div class="panel"><h3>扫描任务</h3><div id="dsTasks"></div></div>
+  <div class="row">
+    <div class="panel"><h3>速度报告</h3><div id="dsSpeed"></div></div>
+    <div class="panel"><h3>瓶颈分析</h3><div id="dsBottleneck"></div></div>
+  </div>
+</section>
+
+<!-- ============ 6. 压力测试 ============ -->
+<section class="tab" id="tab-stress">
+  <div class="toolbar">
+    <input id="stVusers" type="number" value="50" style="width:100px" title="虚拟用户">
+    <input id="stDuration" type="number" value="5" style="width:100px" title="秒">
+    <button class="act" onclick="runLoadTest()">负载测试</button>
+    <button class="ghost" onclick="soakTest()">浸泡测试</button>
+    <button class="ghost" onclick="faultCPU()">注入CPU故障</button>
+    <button class="ghost" onclick="faultMem()">注入内存故障</button>
+    <button class="ghost" onclick="faultNet()">注入网络故障</button>
+    <button class="ghost" onclick="recoveryTest()">恢复测试</button>
+  </div>
+  <div class="cards" id="stCards"></div>
+  <div class="row">
+    <div class="panel"><h3>容量曲线</h3><div id="stCurve"></div></div>
+    <div class="panel"><h3>容量规划</h3><div id="stCapacity"></div></div>
+  </div>
+  <div class="row">
+    <div class="panel"><h3>活跃故障注入</h3><div id="stFaults"></div></div>
+    <div class="panel"><h3>混沌实验实践</h3><div id="stChaos"></div></div>
+  </div>
+</section>
+
+<!-- ============ 7. 性能监控 ============ -->
+<section class="tab" id="tab-monitor">
+  <div class="cards" id="pmCards"></div>
+  <div class="row">
+    <div class="panel"><h3>API 指标</h3><div id="pmApi"></div></div>
+    <div class="panel"><h3>数据库指标</h3><div id="pmDb"></div></div>
+  </div>
+  <div class="row">
+    <div class="panel"><h3>慢接口 Top</h3><div id="pmSlowEp"></div></div>
+    <div class="panel"><h3>慢查询</h3><div id="pmSlowQ"></div></div>
+  </div>
+  <div class="panel"><h3>告警规则</h3><div id="pmRules"></div></div>
+  <div class="panel"><h3>调用链</h3><div id="pmChain"></div></div>
+</section>
+
+<!-- ============ 8. 系统设置 ============ -->
+<section class="tab" id="tab-settings">
+  <div class="panel"><h3>系统配置</h3><pre id="setBox">-</pre></div>
+  <div class="panel"><h3>模块加载状态</h3><div id="modBox"></div></div>
+  <div class="panel"><h3>健康检查</h3><pre id="healthBox">-</pre></div>
+</section>
+</main>
+
+<footer>Performance Deep v28.3.0 · 第28轮升级方向3 · 全内存模拟 · 真实压测/监控/调度</footer>
+
+<script>
+const BASE = '/api/v1/performance-deep';
+async function api(path, opts){
+  try{
+    const r = await fetch(BASE + path, Object.assign({headers:{'Content-Type':'application/json'}}, opts||{}));
+    const j = await r.json();
+    if(!j.success){ console.warn(path, j.error); }
+    return j;
+  }catch(e){ console.error(path, e); return {success:false, error:String(e)}; }
+}
+function el(id){return document.getElementById(id);}
+function bar(v, max){ const m = Math.max(max||100, v); return `<div class="bar"><i style="width:${Math.max(0,Math.min(100,v))}%"></i></div>`; }
+function tag(s){
+  if(['达标','正常','ok','done','healthy','online'].some(x=>s===x)) return '<span class="tag ok">'+s+'</span>';
+  if(['预警','warn','pending','queued','half-open'].some(x=>s===x)) return '<span class="tag warn">'+s+'</span>';
+  if(['未达标','严重','bad','error','open','dead','unhealthy'].some(x=>s===x)) return '<span class="tag bad">'+s+'</span>';
+  return '<span class="tag">'+s+'</span>';
+}
+function table(heads, rows){
+  return '<table><thead><tr>'+heads.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+
+    rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+}
+
+/* tab switching */
+document.querySelectorAll('#nav button').forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    el('tab-'+b.dataset.tab).classList.add('active');
+  };
+});
+
+/* ---- 1. overview ---- */
+async function loadOverview(){
+  const j = await api('/dashboard/overview');
+  if(!j.success) return;
+  const d = j.data;
+  el('ovCards').innerHTML = [
+    ['健康度', d.health_score+'分', d.health_level],
+    ['CPU', d.snapshot.cpu_percent+'%', d.snapshot.source],
+    ['内存', d.snapshot.memory_percent+'%', d.snapshot.memory_used_mb+'MB'],
+    ['活跃告警', d.active_alerts, ''],
+    ['基准报告', d.benchmarks, ''],
+    ['分片总数', d.shards.shards, d.shards.total_size_gb+'GB'],
+  ].map(c=>`<div class="card"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="delta">${c[2]}</div></div>`).join('');
+  el('ovTrend').innerHTML = table(['时间','CPU%','内存%','RPS'],
+    d.trend.map(t=>[t.ts, t.cpu, t.mem, t.rps]));
+  el('ovSlow').innerHTML = table(['接口','均值ms','P99ms','调用量'],
+    (d.top_bottlenecks||[]).map(s=>[s.endpoint, s.avg_ms, s.p99_ms, s.calls]));
+  el('bdHealth').textContent = d.health_score;
+  el('bdBm').textContent = d.benchmarks;
+  el('bdAlert').textContent = d.active_alerts;
+  el('bdShard').textContent = d.shards.shards;
+}
+
+/* ---- 2. benchmark ---- */
+async function runBench(){
+  const body = {url:el('bmUrl').value, scenario:el('bmScenario').value,
+    concurrency: parseInt(el('bmConcurrency').value)||null,
+    requests: parseInt(el('bmRequests').value)||null};
+  const j = await api('/benchmark/run', {method:'POST', body:JSON.stringify(body)});
+  if(!j.success){ alert('压测失败: '+j.error); return; }
+  const r = j.data, l = r.latency;
+  el('bmResult').innerHTML = [
+    ['场景', r.scenario_name, r.method],
+    ['P50', l.p50+'ms', 'P90 '+l.p90+'ms'],
+    ['P95', l.p95+'ms', 'P99 '+l.p99+'ms'],
+    ['P99.9', l.p999+'ms', '抖动 '+l.jitter_ms+'ms'],
+    ['吞吐量', r.throughput_rps+' RPS', '并发 '+r.concurrency],
+    ['错误率', r.error_rate+'%', r.success+'/'+r.total_requests],
+  ].map(c=>`<div class="card"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="delta">${c[2]}</div></div>`).join('');
+  loadBmReports();
+}
+async function loadBmReports(){
+  const j = await api('/benchmark/reports');
+  if(!j.success) return;
+  el('bmReports').innerHTML = j.data.length ?
+    table(['ID','场景','P95(ms)','RPS','时间'], j.data.map(r=>[r.benchmark_id, r.scenario_name, r.p95, r.rps, r.created_at]))
+    : '<p class="muted">暂无报告，先发起一次压测。</p>';
+}
+async function loadBmMeta(){
+  const s = await api('/benchmark/scenarios');
+  if(s.success) el('bmScenarios').innerHTML = table(['场景','并发','请求数','说明'],
+    Object.values(s.data).map(x=>[x.name, x.concurrency, x.requests, x.desc]));
+  const m = await api('/benchmark/metrics');
+  if(m.success) el('bmMetrics').innerHTML = table(['指标','单位','说明'],
+    m.data.map(x=>[x.name, x.unit||'-', x.desc]));
+}
+
+/* ---- 3. concurrency ---- */
+async function loadConcurrency(){
+  const j = await api('/dashboard/concurrency');
+  if(!j.success) return;
+  const d = j.data;
+  el('hcCards').innerHTML = [
+    ['连接池', d.pools.length+' 个', 'http/db/redis'],
+    ['本地缓存', d.cache.local.size+'/'+d.cache.local.capacity, '命中率 '+d.cache.local.hit_rate+'%'],
+    ['限流器', d.resilience.rate_limiter.rate_per_sec+' rps', '桶容量 '+d.resilience.rate_limiter.capacity],
+    ['熔断器', d.resilience.circuit_breaker.state, '失败 '+d.resilience.circuit_breaker.fail_count],
+  ].map(c=>`<div class="card"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="delta">${c[2]}</div></div>`).join('');
+  el('hcPools').innerHTML = table(['池名','最大','空闲','活跃','已创建','等待'],
+    d.pools.map(p=>[p.name, p.max_size, p.idle, p.active, p.total_created, p.wait_count]));
+  el('hcCache').innerHTML = table(['缓存','大小','命中','未命中','命中率%'],
+    [['本地', d.cache.local.size, d.cache.local.hits, d.cache.local.misses, d.cache.local.hit_rate],
+     ['分布式', d.cache.distributed.size, d.cache.distributed.hits, d.cache.distributed.misses, d.cache.distributed.hit_rate]]);
+  el('hcResilience').innerHTML = '<div class="kv">'+
+    `<div>限流速率<b>${d.resilience.rate_limiter.rate_per_sec}</b> rps</div>`+
+    `<div>可用令牌<b>${d.resilience.rate_limiter.available_tokens}</b></div>`+
+    `<div>熔断状态<b>${d.resilience.circuit_breaker.state}</b></div>`+
+    `<div>降级级别<b>${d.resilience.degradation.level}</b></div></div>`;
+  el('hcQueues').innerHTML = table(['队列','总任务','by_status'],
+    Object.entries(d.queues).map(([k,v])=>[k, v.total, JSON.stringify(v.by_status)]));
+  el('hcTuning').innerHTML = table(['域','建议'],
+    [['CPU',d.tuning.cpu.suggestion],['内存',d.tuning.memory.suggestion],
+     ['磁盘IO',d.tuning.disk_io.suggestion],['网络IO',d.tuning.network_io.suggestion]]);
+}
+
+/* ---- 4. bigdata ---- */
+async function loadBigdata(){
+  const j = await api('/dashboard/bigdata');
+  if(!j.success) return;
+  const d = j.data;
+  el('bdCards').innerHTML = [
+    ['分片', d.overview.shards+' 片', d.overview.total_size_gb+' GB'],
+    ['总行数', (d.overview.total_rows/10000).toFixed(1)+' 万', ''],
+    ['分区', d.overview.partitions+' 个', ''],
+    ['索引', d.overview.indexes+' 个', ''],
+  ].map(c=>`<div class="card"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="delta">${c[2]}</div></div>`).join('');
+  el('bdShards').innerHTML = table(['分片','范围','行数','大小MB','角色','状态'],
+    d.shards.slice(0,16).map(s=>[s.shard_id, s.range, s.rows, s.size_mb, s.role, tag(s.status)]));
+  el('bdPartitions').innerHTML = table(['分区','范围','行数','热/冷'],
+    d.partitions.map(p=>[p.name, p.range, p.rows, p.hot?'热':'冷']));
+  el('bdIndexes').innerHTML = table(['表','列','类型','大小MB'],
+    d.indexes.map(i=>[i.table, i.col, i.type, i.size_mb]));
+  el('bdCompression').innerHTML = table(['格式','压缩比','CPU','适用'],
+    d.compression.formats.map(f=>[f.name, f.ratio, f.cpu_cost, f.suit]));
+  const cmp = await api('/bigdata/batch/compare?total=5000');
+  if(cmp.success){
+    el('bdBatch').innerHTML = table(['方式','总记录','耗时ms','RPS'],
+      [['单条', cmp.data.single.total, cmp.data.single.elapsed_ms, cmp.data.single.throughput_rows_per_sec],
+       ['批量', cmp.data.batch.total, cmp.data.batch.elapsed_ms, cmp.data.batch.throughput_rows_per_sec]]);
+  }
+}
+
+/* ---- 5. distributed ---- */
+async function submitScan(){
+  const j = await api('/distributed/scan', {method:'POST', body:JSON.stringify(
+    {target:el('dsTarget').value, ports:el('dsPorts').value, priority:5})});
+  alert(j.success?('已提交: '+j.data.task_id):('失败: '+j.error));
+  dsRefresh();
+}
+async function dispatchTasks(){
+  const j = await api('/distributed/dispatch', {method:'POST'});
+  if(j.success) alert('分发 '+j.data.dispatched+' 个任务');
+  dsRefresh();
+}
+async function dsRefresh(){
+  const j = await api('/dashboard/distributed');
+  if(!j.success) return;
+  const d = j.data;
+  el('dsCards').innerHTML = [
+    ['Worker', d.cluster.workers_total, '忙碌 '+d.cluster.workers_busy],
+    ['任务总数', d.cluster.tasks_total, JSON.stringify(d.cluster.tasks_by_status)],
+    ['代理池', '健康检查', ''],
+    ['检查点', d.checkpoints.length, ''],
+  ].map(c=>`<div class="card"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="delta">${c[2]}</div></div>`).join('');
+  el('dsWorkers').innerHTML = table(['Worker','状态','当前任务','完成','CPU%','MEM%'],
+    d.workers.map(w=>[w.worker_id, tag(w.status), w.current_task||'-', w.completed, w.cpu_percent, w.mem_percent]));
+  el('dsProxies').innerHTML = table(['代理','协议','延迟ms','成功率','国家','健康'],
+    d.proxies.slice(0,10).map(p=>[p.addr, p.protocol, p.latency_ms, p.success_rate, p.country, tag(p.healthy?'healthy':'unhealthy')]));
+  el('dsTasks').innerHTML = table(['任务','目标','进度%','状态','Worker'],
+    d.tasks.map(t=>[t.task_id, t.target, t.progress_pct, tag(t.status), t.assigned_worker||'-']));
+  el('dsSpeed').innerHTML = '<div class="kv">'+Object.entries(d.speed).map(([k,v])=>`<div>${k}<br><b>${v}</b></div>`).join('')+'</div>';
+  el('dsBottlenecks').innerHTML = table(['瓶颈','级别','证据','建议'],
+    d.bottlenecks.map(b=>[b.bottleneck, tag(b.severity), b.evidence, b.suggestion]));
+}
+
+/* ---- 6. stress ---- */
+async function runLoadTest(){
+  const j = await api('/stress/load', {method:'POST', body:JSON.stringify(
+    {vusers:parseInt(el('stVusers').value)||50, duration_sec:parseInt(el('stDuration').value)||5, ramp_up_sec:1})});
+  if(!j.success){ alert(j.error); return; }
+  const r = j.data;
+  el('stCards').innerHTML = [
+    ['虚拟用户', r.vusers, r.duration_sec+'秒'],
+    ['总请求', r.total_requests, ''],
+    ['RPS', r.throughput_rps, '峰值 '+r.max_rps],
+    ['P50', r.p50+'ms', 'P95 '+r.p95+'ms'],
+    ['P99', r.p99+'ms', tag(r.status)],
+  ].map(c=>`<div class="card"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="delta">${c[2]}</div></div>`).join('');
+}
+async function soakTest(){
+  const j = await api('/stress/soak', {method:'POST', body:JSON.stringify({hours:2})});
+  if(j.success) alert('浸泡测试计划: '+JSON.stringify(j.data));
+}
+async function faultCPU(){
+  const j = await api('/stress/fault/cpu', {method:'POST', body:JSON.stringify({load_pct:50, duration_sec:3})});
+  alert(j.success?('已注入: '+j.data.fault_id):j.error);
+}
+async function faultMem(){
+  const j = await api('/stress/fault/memory', {method:'POST', body:JSON.stringify({alloc_mb:30})});
+  alert(j.success?('已分配 '+j.data.alloc_mb+'MB'):j.error);
+}
+async function faultNet(){
+  const j = await api('/stress/fault/network', {method:'POST', body:JSON.stringify({latency_ms:500, loss_pct:5})});
+  alert(j.success?('已注入网络延迟+丢包'):j.error);
+}
+async function recoveryTest(){
+  const j = await api('/stress/recovery', {method:'POST', body:JSON.stringify({scenario:'db_failover'})});
+  if(j.success) alert('RTO='+j.data.rto_sec+'s RPO='+j.data.rpo_sec+'s');
+}
+async function loadStress(){
+  const c = await api('/stress/capacity-curve');
+  if(c.success) el('stCurve').innerHTML = table(['用户数','P95ms','RPS','错误率%'],
+    c.data.map(r=>[r.vusers, r.p95_ms, r.rps, r.error_rate]));
+  const cp = await api('/stress/capacity');
+  if(cp.success) el('stCapacity').innerHTML = '<div class="kv">'+
+    Object.entries({当前QPS:cp.data.current_qps, 峰值QPS:cp.data.peak_qps,
+      '3月后峰值':cp.data.projected_peak_3m, '建议副本':cp.data.recommended_replicas,
+      '预算':cp.data.budget_estimate}).map(([k,v])=>`<div>${k}<br><b>${v}</b></div>`).join('')+'</div>';
+  const f = await api('/stress/faults');
+  if(f.success) el('stFaults').innerHTML = f.data.length ? table(['ID','类型','参数','状态'],
+    f.data.map(x=>[x.fault_id, x.type, JSON.stringify({k:x.latency_ms||x.alloc_mb||x.load_pct||x.service}), tag('open')]))
+    : '<p class="muted">当前无活跃故障注入。</p>';
+  const p = await api('/stress/chaos/practices');
+  if(p.success) el('stChaos').innerHTML = '<ul style="padding-left:18px">'+p.data.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
+}
+
+/* ---- 7. monitor ---- */
+async function loadMonitor(){
+  const j = await api('/monitor/snapshot');
+  if(j.success){
+    el('pmCards').innerHTML = [
+      ['CPU', j.data.cpu_percent+'%', j.data.source],
+      ['内存', j.data.memory_percent+'%', j.data.memory_used_mb+'MB'],
+      ['磁盘', j.data.disk_percent+'%', ''],
+      ['负载', j.data.load_avg, ''],
+    ].map(c=>`<div class="card"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="delta">${c[2]}</div></div>`).join('');
+  }
+  const a = await api('/monitor/api-metrics');
+  if(a.success) el('pmApi').innerHTML = table(['接口','QPS','P95ms','错误率%','调用/分'],
+    a.data.map(x=>[x.endpoint, x.qps, x.p95_ms, x.error_rate, x.calls_per_min]));
+  const d = await api('/monitor/db-metrics');
+  if(d.success) el('pmDb').innerHTML = '<div class="kv">'+
+    Object.entries(d.data).map(([k,v])=>`<div>${k}<br><b>${v}</b></div>`).join('')+'</div>';
+  const s = await api('/monitor/slow-endpoints');
+  if(s.success) el('pmSlowEp').innerHTML = table(['接口','均值ms','P99ms','调用量'],
+    s.data.map(x=>[x.endpoint, x.avg_ms, x.p99_ms, x.calls]));
+  const q = await api('/monitor/slow-queries');
+  if(q.success) el('pmSlowQ').innerHTML = table(['SQL','耗时ms','行数','计划'],
+    q.data.map(x=>[x.query, x.exec_time_ms, x.rows, x.plan]));
+  const r = await api('/monitor/rules');
+  if(r.success) el('pmRules').innerHTML = table(['规则','指标','阈值','级别','启用'],
+    Object.entries(r.data).map(([k,v])=>[k, v.metric, v.op+' '+v.threshold, v.level, tag(v.enabled?'ok':'bad')]));
+  const cc = await api('/monitor/call-chain');
+  if(cc.success) el('pmChain').innerHTML = table(['Span','服务','耗时ms'],
+    cc.data.spans.map(s=>[s.service, s.service, s.ms]));
+}
+
+/* ---- 8. settings ---- */
+async function loadSettings(){
+  const j = await api('/settings');
+  if(j.success) el('setBox').textContent = JSON.stringify(j.data, null, 2);
+  const h = await api('/health');
+  el('healthBox').textContent = JSON.stringify(h.data||h.error, null, 2);
+  el('modBox').innerHTML = '<div class="kv"><div>模块加载<b>'+(_MOD?'OK':'FAIL')+'</b></div></div>';
+}
+
+/* boot */
+let _MOD = true;
+loadOverview(); loadBmMeta(); loadConcurrency(); loadBigdata();
+dsRefresh(); loadStress(); loadMonitor(); loadSettings();
+setInterval(()=>{ loadOverview(); loadMonitor(); }, 30000);
+</script>
+</body>
+</html>

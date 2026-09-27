@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第二轮升级控制台 - AI全栈安全渗透测试平台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px 30px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 22px; background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header .badge { background: #7c3aed; padding: 4px 12px; border-radius: 12px; font-size: 12px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .tabs { display: flex; gap: 4px; background: #1e293b; padding: 6px; border-radius: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab { padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; color: #94a3b8; }
+        .tab:hover { background: #334155; color: #e2e8f0; }
+        .tab.active { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid #334155; }
+        .card h3 { font-size: 16px; margin-bottom: 16px; color: #60a5fa; display: flex; align-items: center; gap: 8px; }
+        .card h3 .icon { width: 24px; height: 24px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 13px; color: #94a3b8; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #3b82f6; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+        .btn-success { background: #10b981; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .stat-card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; }
+        .stat-card .value { font-size: 28px; font-weight: 700; background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-card .label { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+        .result-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-top: 16px; max-height: 400px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all; }
+        .result-box.error { border-color: #ef4444; color: #fca5a5; }
+        .result-box.success { border-color: #10b981; color: #6ee7b7; }
+        .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid #334155; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .table th, .table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #334155; }
+        .table th { background: #0f172a; color: #94a3b8; font-weight: 500; }
+        .table tr:hover { background: #1e293b; }
+        .badge-critical { background: #7f1d1d; color: #fca5a5; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+        .badge-high { background: #7c2d12; color: #fdba74; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+        .badge-medium { background: #78350f; color: #fcd34d; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+        .badge-low { background: #1e3a5f; color: #93c5fd; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+        .badge-success { background: #064e3b; color: #6ee7b7; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+        .api-key-input { display: flex; gap: 8px; margin-bottom: 16px; }
+        .api-key-input input { flex: 1; }
+        .feature-list { list-style: none; }
+        .feature-list li { padding: 8px 0; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .feature-list li::before { content: '✓'; color: #10b981; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 第二轮升级控制台</h1>
+        <span class="badge">7项短板全面升级</span>
+    </div>
+
+    <div class="container">
+        <div class="api-key-input">
+            <input type="password" id="apiKey" placeholder="输入 API Key (X-API-Key)" value="cF_fK3wzzFd3sDU-WykQzDbAKNhn_Jjoyphbmh-adLtwx5ShhU8oLpt94aV_uECT">
+            <button class="btn btn-primary" onclick="saveApiKey()">保存</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card"><div class="value">55</div><div class="label">漏洞扫描模板</div></div>
+            <div class="stat-card"><div class="value">12</div><div class="label">漏洞验证方法</div></div>
+            <div class="stat-card"><div class="value">4</div><div class="label">订阅计划（SaaS）</div></div>
+            <div class="stat-card"><div class="value">20</div><div class="label">漏洞类别覆盖</div></div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('agent')">🤖 增强型AI智能体</div>
+            <div class="tab" onclick="switchTab('report')">📊 报告AI分析</div>
+            <div class="tab" onclick="switchTab('assets')">💾 被动资产积累</div>
+            <div class="tab" onclick="switchTab('verify')">✅ 漏洞验证框架</div>
+            <div class="tab" onclick="switchTab('distributed')">🌐 分布式扫描</div>
+            <div class="tab" onclick="switchTab('saas')">🏢 多租户SaaS</div>
+        </div>
+
+        <!-- 增强型AI智能体 -->
+        <div id="tab-agent" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h3><span class="icon">🤖</span> 运行增强型智能体</h3>
+                    <div class="form-group">
+                        <label>目标/任务描述</label>
+                        <textarea id="agentGoal" rows="3" placeholder="例如：对 192.168.1.1 进行全面渗透测试，包括端口扫描、漏洞扫描和报告生成">对 127.0.0.1:3000 进行端口扫描和漏洞扫描</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>智能体类型</label>
+                        <select id="agentType">
+                            <option value="recon">侦察智能体 (Recon)</option>
+                            <option value="exploit">利用智能体 (Exploit)</option>
+                            <option value="verification">验证智能体 (Verification)</option>
+                            <option value="report">报告智能体 (Report)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="runAgent()">🚀 运行智能体</button>
+                    <button class="btn btn-success" onclick="generatePlan()">📋 仅生成计划</button>
+                </div>
+                <div class="card">
+                    <h3><span class="icon">✨</span> 智能体特性</h3>
+                    <ul class="feature-list">
+                        <li>真正的自主规划（LLM生成+规则引擎兜底）</li>
+                        <li>动态调整策略（根据中间结果修改后续步骤）</li>
+                        <li>多轮ReAct推理循环（思考→行动→观察→反思→调整）</li>
+                        <li>任务自动分解（复杂目标拆分为可执行步骤）</li>
+                        <li>工具自动选择和调用</li>
+                        <li>反思和自我纠正机制</li>
+                        <li>重试机制（最多3次）</li>
+                        <li>多智能体流水线协作（Recon→Exploit→Verification→Report）</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card">
+                <h3><span class="icon">📋</span> 执行结果</h3>
+                <div id="agentResult" class="result-box">等待执行...</div>
+            </div>
+        </div>
+
+        <!-- 报告AI分析 -->
+        <div id="tab-report" class="tab-content">
+            <div class="card">
+                <h3><span class="icon">📊</span> 漏洞AI深度分析</h3>
+                <div class="form-group">
+                    <label>漏洞列表（JSON格式，每行一个漏洞）</label>
+                    <textarea id="vulnData" rows="8" placeholder='[{"id":"V1","name":"SQL注入","severity":"high","category":"SQL注入","url":"http://test.com/login"}]'>[
+  {"id":"V1","name":"SQL注入漏洞","severity":"high","category":"SQL注入","url":"http://test.com/login"},
+  {"id":"V2","name":"XSS跨站脚本","severity":"medium","category":"XSS","url":"http://test.com/search"},
+  {"id":"V3","name":"敏感信息泄露","severity":"low","category":"信息泄露","url":"http://test.com/.env"},
+  {"id":"V4","name":"命令执行漏洞","severity":"critical","category":"命令执行","url":"http://test.com/ping"},
+  {"id":"V5","name":"文件上传漏洞","severity":"high","category":"文件上传","url":"http://test.com/upload"}
+]</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="analyzeVulns()">🔍 完整AI分析</button>
+                <button class="btn btn-success" onclick="analyzeRelations()">🔗 仅漏洞关联</button>
+                <button class="btn btn-warning" onclick="analyzeAttackPaths()">⚔️ 仅攻击链推理</button>
+            </div>
+            <div class="card">
+                <h3><span class="icon">📈</span> 分析结果</h3>
+                <div id="reportResult" class="result-box">等待分析...</div>
+            </div>
+        </div>
+
+        <!-- 被动资产积累 -->
+        <div id="tab-assets" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <h3><span class="icon">💾</span> 记录扫描结果</h3>
+                    <div class="form-group">
+                        <label>目标资产</label>
+                        <input type="text" id="assetTarget" value="192.168.1.100">
+                    </div>
+                    <div class="form-group">
+                        <label>扫描类型</label>
+                        <select id="scanType">
+                            <option value="full_scan">全面扫描</option>
+                            <option value="port_scan">端口扫描</option>
+                            <option value="vuln_scan">漏洞扫描</option>
+                            <option value="dir_scan">目录扫描</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>扫描结果（JSON）</label>
+                        <textarea id="scanResult" rows="4">{"ip":"192.168.1.100","open_ports":[80,443,22],"services":{"80":"nginx","443":"nginx","22":"openssh"},"tech_stack":["nginx","php"],"vulnerabilities":[{"name":"测试漏洞","severity":"high","category":"SQL注入"}]}</textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="recordScan()">📝 记录扫描</button>
+                </div>
+                <div class="card">
+                    <h3><span class="icon">📊</span> 资产查询</h3>
+                    <div class="form-group">
+                        <label>查询目标</label>
+                        <input type="text" id="queryTarget" value="192.168.1.100">
+                    </div>
+                    <button class="btn btn-success" onclick="getAssetProfile()">👤 资产画像</button>
+                    <button class="btn btn-warning" onclick="getTrend()">📈 趋势分析</button>
+                    <button class="btn btn-primary" onclick="getAllAssets()">📋 所有资产</button>
+                    <button class="btn btn-danger" onclick="getChanges()">🔔 最近变更</button>
+                    <button class="btn btn-primary" onclick="getAssetStats()">📊 全局统计</button>
+                </div>
+            </div>
+            <div class="card">
+                <h3><span class="icon">📋</span> 查询结果</h3>
+                <div id="assetResult" class="result-box">等待查询...</div>
+            </div>
+        </div>
+
+        <!-- 漏洞验证框架 -->
+        <div id="tab-verify" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <h3><span class="icon">✅</span> 漏洞验证</h3>
+                    <div class="form-group">
+                        <label>目标URL（仅授权范围内可验证）</label>
+                        <input type="text" id="verifyTarget" value="http://127.0.0.1:3000">
+                    </div>
+                    <div class="form-group">
+                        <label>漏洞ID</label>
+                        <input type="text" id="vulnId" value="V-001">
+                    </div>
+                    <div class="form-group">
+                        <label>漏洞名称</label>
+                        <input type="text" id="vulnName" value="SQL注入漏洞">
+                    </div>
+                    <div class="form-group">
+                        <label>漏洞类别</label>
+                        <select id="vulnCategory">
+                            <option>SQL注入</option><option>XSS</option><option>命令执行</option>
+                            <option>路径遍历</option><option>CORS</option><option>安全头</option>
+                            <option>SSRF</option><option>XXE</option><option>文件上传</option>
+                            <option>文件包含</option><option>信息泄露</option><option>点击劫持</option>
+                            <option>开放重定向</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="verifyVuln()">🔍 验证漏洞</button>
+                    <button class="btn btn-success" onclick="checkAuth()">✅ 检查授权</button>
+                    <button class="btn btn-warning" onclick="listMethods()">📋 验证方法列表</button>
+                </div>
+                <div class="card">
+                    <h3><span class="icon">🛡️</span> 安全设计</h3>
+                    <ul class="feature-list">
+                        <li>授权范围检查（目标不在范围内直接拒绝）</li>
+                        <li>12种内置验证方法（SQL注入/XSS/命令执行等）</li>
+                        <li>4种验证状态（confirmed/not_vulnerable/error/unauthorized）</li>
+                        <li>批量验证支持</li>
+                        <li>速率限制（防止过度请求）</li>
+                        <li>验证证据记录</li>
+                        <li>仅验证漏洞存在性，不执行利用</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card">
+                <h3><span class="icon">📋</span> 验证结果</h3>
+                <div id="verifyResult" class="result-box">等待验证...</div>
+            </div>
+        </div>
+
+        <!-- 分布式扫描 -->
+        <div id="tab-distributed" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <h3><span class="icon">🌐</span> 节点管理</h3>
+                    <div class="form-group">
+                        <label>节点ID</label>
+                        <input type="text" id="nodeId" value="node-local-01">
+                    </div>
+                    <div class="form-group">
+                        <label>节点名称</label>
+                        <input type="text" id="nodeName" value="本地扫描节点">
+                    </div>
+                    <div class="form-group">
+                        <label>节点地址</label>
+                        <input type="text" id="nodeEndpoint" value="http://127.0.0.1:8001">
+                    </div>
+                    <div class="form-group">
+                        <label>容量（并发任务数）</label>
+                        <input type="number" id="nodeCapacity" value="10">
+                    </div>
+                    <button class="btn btn-primary" onclick="registerNode()">➕ 注册节点</button>
+                    <button class="btn btn-success" onclick="listNodes()">📋 节点列表</button>
+                    <button class="btn btn-danger" onclick="unregisterNode()">❌ 注销节点</button>
+                </div>
+                <div class="card">
+                    <h3><span class="icon">⚡</span> 扫描作业</h3>
+                    <div class="form-group">
+                        <label>作业名称</label>
+                        <input type="text" id="jobName" value="测试分布式扫描">
+                    </div>
+                    <div class="form-group">
+                        <label>目标列表（逗号分隔）</label>
+                        <input type="text" id="jobTargets" value="192.168.1.1,192.168.1.2">
+                    </div>
+                    <div class="form-group">
+                        <label>扫描类型（逗号分隔）</label>
+                        <input type="text" id="jobScanTypes" value="port_scan,vuln_scan">
+                    </div>
+                    <button class="btn btn-primary" onclick="createJob()">📝 创建作业</button>
+                    <button class="btn btn-success" onclick="startScanner()">▶️ 启动扫描器</button>
+                    <button class="btn btn-danger" onclick="stopScanner()">⏹️ 停止扫描器</button>
+                    <button class="btn btn-warning" onclick="getScanStats()">📊 全局统计</button>
+                </div>
+            </div>
+            <div class="card">
+                <h3><span class="icon">📋</span> 操作结果</h3>
+                <div id="distributedResult" class="result-box">等待操作...</div>
+            </div>
+        </div>
+
+        <!-- 多租户SaaS -->
+        <div id="tab-saas" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <h3><span class="icon">🏢</span> 组织管理</h3>
+                    <div class="form-group">
+                        <label>组织名称</label>
+                        <input type="text" id="orgName" value="测试安全公司">
+                    </div>
+                    <div class="form-group">
+                        <label>订阅计划</label>
+                        <select id="orgPlan">
+                            <option value="free">免费版（1用户/1团队/1项目）</option>
+                            <option value="basic">基础版（5用户/3团队/5项目）</option>
+                            <option value="pro" selected>专业版（20用户/10团队/20项目）</option>
+                            <option value="enterprise">企业版（无限）</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="createOrg()">🏢 创建组织</button>
+                    <button class="btn btn-success" onclick="getOrg()">📋 组织信息</button>
+                </div>
+                <div class="card">
+                    <h3><span class="icon">👥</span> 团队与项目</h3>
+                    <div class="form-group">
+                        <label>组织ID</label>
+                        <input type="text" id="saasOrgId" placeholder="创建组织后自动填充">
+                    </div>
+                    <div class="form-group">
+                        <label>团队名称</label>
+                        <input type="text" id="teamName" value="安全研究团队">
+                    </div>
+                    <div class="form-group">
+                        <label>项目名称</label>
+                        <input type="text" id="projectName" value="客户A渗透测试">
+                    </div>
+                    <button class="btn btn-primary" onclick="createTeam()">👥 创建团队</button>
+                    <button class="btn btn-success" onclick="createProject()">📁 创建项目</button>
+                    <button class="btn btn-warning" onclick="getSaaSSummary()">📊 组织统计</button>
+                </div>
+            </div>
+            <div class="card">
+                <h3><span class="icon">👤</span> 用户管理</h3>
+                <div class="grid-2">
+                    <div>
+                        <div class="form-group">
+                            <label>邮箱</label>
+                            <input type="email" id="userEmail" value="test@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>用户名</label>
+                            <input type="text" id="userName" value="测试用户">
+                        </div>
+                        <div class="form-group">
+                            <label>密码</label>
+                            <input type="password" id="userPassword" value="test123456">
+                        </div>
+                        <div class="form-group">
+                            <label>角色</label>
+                            <select id="userRole">
+                                <option value="org_admin">组织管理员</option>
+                                <option value="team_member">团队成员</option>
+                                <option value="viewer">只读用户</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="registerUser()">📝 注册用户</button>
+                        <button class="btn btn-success" onclick="authUser()">🔐 用户认证</button>
+                    </div>
+                    <div>
+                        <h4 style="color:#94a3b8;margin-bottom:12px;">订阅计划对比</h4>
+                        <table class="table">
+                            <thead><tr><th>计划</th><th>用户</th><th>团队</th><th>项目</th></tr></thead>
+                            <tbody>
+                                <tr><td>免费版</td><td>1</td><td>1</td><td>1</td></tr>
+                                <tr><td>基础版</td><td>5</td><td>3</td><td>5</td></tr>
+                                <tr><td>专业版</td><td>20</td><td>10</td><td>20</td></tr>
+                                <tr><td>企业版</td><td>无限</td><td>无限</td><td>无限</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3><span class="icon">📋</span> 操作结果</h3>
+                <div id="saasResult" class="result-box">等待操作...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000';
+        let apiKey = localStorage.getItem('apiKey') || 'cF_fK3wzzFd3sDU-WykQzDbAKNhn_Jjoyphbmh-adLtwx5ShhU8oLpt94aV_uECT';
+        document.getElementById('apiKey').value = apiKey;
+
+        function saveApiKey() {
+            apiKey = document.getElementById('apiKey').value;
+            localStorage.setItem('apiKey', apiKey);
+            alert('API Key 已保存');
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+        }
+
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const headers = { 'X-API-Key': apiKey, 'Content-Type': 'application/json' };
+            const opts = { method, headers };
+            if (data) opts.body = JSON.stringify(data);
+            const res = await fetch(API_BASE + endpoint, opts);
+            return await res.json();
+        }
+
+        function showResult(elementId, data, isError = false) {
+            const el = document.getElementById(elementId);
+            el.className = 'result-box ' + (isError ? 'error' : 'success');
+            el.textContent = JSON.stringify(data, null, 2);
+        }
+
+        // 增强型AI智能体
+        async function runAgent() {
+            const goal = document.getElementById('agentGoal').value;
+            const agentType = document.getElementById('agentType').value;
+            showResult('agentResult', { status: 'running', message: '智能体运行中...' });
+            try {
+                const result = await apiCall('/api/v1/agents-enhanced/run', 'POST', { goal, agent_type: agentType });
+                showResult('agentResult', result);
+            } catch (e) { showResult('agentResult', { error: e.message }, true); }
+        }
+
+        async function generatePlan() {
+            const goal = document.getElementById('agentGoal').value;
+            const agentType = document.getElementById('agentType').value;
+            try {
+                const result = await apiCall('/api/v1/agents-enhanced/plan', 'POST', { goal, agent_type: agentType });
+                showResult('agentResult', result);
+            } catch (e) { showResult('agentResult', { error: e.message }, true); }
+        }
+
+        // 报告AI分析
+        async function analyzeVulns() {
+            try {
+                const vulns = JSON.parse(document.getElementById('vulnData').value);
+                const result = await apiCall('/api/v1/report-ai/analyze', 'POST', { vulnerabilities: vulns });
+                showResult('reportResult', result);
+            } catch (e) { showResult('reportResult', { error: 'JSON解析失败: ' + e.message }, true); }
+        }
+
+        async function analyzeRelations() {
+            try {
+                const vulns = JSON.parse(document.getElementById('vulnData').value);
+                const result = await apiCall('/api/v1/report-ai/relations', 'POST', { vulnerabilities: vulns });
+                showResult('reportResult', result);
+            } catch (e) { showResult('reportResult', { error: e.message }, true); }
+        }
+
+        async function analyzeAttackPaths() {
+            try {
+                const vulns = JSON.parse(document.getElementById('vulnData').value);
+                const result = await apiCall('/api/v1/report-ai/attack-paths', 'POST', { vulnerabilities: vulns });
+                showResult('reportResult', result);
+            } catch (e) { showResult('reportResult', { error: e.message }, true); }
+        }
+
+        // 被动资产积累
+        async function recordScan() {
+            try {
+                const target = document.getElementById('assetTarget').value;
+                const scanType = document.getElementById('scanType').value;
+                const result = JSON.parse(document.getElementById('scanResult').value);
+                const data = await apiCall('/api/v1/passive-assets/record', 'POST', { target, scan_type: scanType, result });
+                showResult('assetResult', data);
+            } catch (e) { showResult('assetResult', { error: e.message }, true); }
+        }
+
+        async function getAssetProfile() {
+            const target = document.getElementById('queryTarget').value;
+            try {
+                const result = await apiCall('/api/v1/passive-assets/profile/' + encodeURIComponent(target));
+                showResult('assetResult', result);
+            } catch (e) { showResult('assetResult', { error: e.message }, true); }
+        }
+
+        async function getTrend() {
+            const target = document.getElementById('queryTarget').value;
+            try {
+                const result = await apiCall('/api/v1/passive-assets/trend/' + encodeURIComponent(target) + '?days=30');
+                showResult('assetResult', result);
+            } catch (e) { showResult('assetResult', { error: e.message }, true); }
+        }
+
+        async function getAllAssets() {
+            try {
+                const result = await apiCall('/api/v1/passive-assets/assets');
+                showResult('assetResult', result);
+            } catch (e) { showResult('assetResult', { error: e.message }, true); }
+        }
+
+        async function getChanges() {
+            try {
+                const result = await apiCall('/api/v1/passive-assets/changes?limit=50');
+                showResult('assetResult', result);
+            } catch (e) { showResult('assetResult', { error: e.message }, true); }
+        }
+
+        async function getAssetStats() {
+            try {
+                const result = await apiCall('/api/v1/passive-assets/statistics');
+                showResult('assetResult', result);
+            } catch (e) { showResult('assetResult', { error: e.message }, true); }
+        }
+
+        // 漏洞验证框架
+        async function verifyVuln() {
+            const vuln = {
+                id: document.getElementById('vulnId').value,
+                name: document.getElementById('vulnName').value,
+                category: document.getElementById('vulnCategory').value,
+                severity: 'high'
+            };
+            const target = document.getElementById('verifyTarget').value;
+            try {
+                const result = await apiCall('/api/v1/vuln-verifier/verify', 'POST', { vulnerability: vuln, target });
+                showResult('verifyResult', result);
+            } catch (e) { showResult('verifyResult', { error: e.message }, true); }
+        }
+
+        async function checkAuth() {
+            const target = document.getElementById('verifyTarget').value;
+            try {
+                const result = await apiCall('/api/v1/vuln-verifier/check-auth', 'POST', { target });
+                showResult('verifyResult', result);
+            } catch (e) { showResult('verifyResult', { error: e.message }, true); }
+        }
+
+        async function listMethods() {
+            try {
+                const result = await apiCall('/api/v1/vuln-verifier/methods');
+                showResult('verifyResult', result);
+            } catch (e) { showResult('verifyResult', { error: e.message }, true); }
+        }
+
+        // 分布式扫描
+        async function registerNode() {
+            const data = {
+                node_id: document.getElementById('nodeId').value,
+                name: document.getElementById('nodeName').value,
+                endpoint: document.getElementById('nodeEndpoint').value,
+                capacity: parseInt(document.getElementById('nodeCapacity').value),
+                capabilities: ['port_scan', 'vuln_scan']
+            };
+            try {
+                const result = await apiCall('/api/v1/distributed-scan/nodes/register', 'POST', data);
+                showResult('distributedResult', result);
+            } catch (e) { showResult('distributedResult', { error: e.message }, true); }
+        }
+
+        async function listNodes() {
+            try {
+                const result = await apiCall('/api/v1/distributed-scan/nodes');
+                showResult('distributedResult', result);
+            } catch (e) { showResult('distributedResult', { error: e.message }, true); }
+        }
+
+        async function unregisterNode() {
+            const nodeId = document.getElementById('nodeId').value;
+            try {
+                const result = await apiCall('/api/v1/distributed-scan/nodes/unregister/' + nodeId, 'POST');
+                showResult('distributedResult', result);
+            } catch (e) { showResult('distributedResult', { error: e.message }, true); }
+        }
+
+        async function createJob() {
+            const data = {
+                name: document.getElementById('jobName').value,
+                targets: document.getElementById('jobTargets').value.split(','),
+                scan_types: document.getElementById('jobScanTypes').value.split(',')
+            };
+            try {
+                const result = await apiCall('/api/v1/distributed-scan/jobs/create', 'POST', data);
+                showResult('distributedResult', result);
+            } catch (e) { showResult('distributedResult', { error: e.message }, true); }
+        }
+
+        async function startScanner() {
+            try {
+                const result = await apiCall('/api/v1/distributed-scan/start', 'POST');
+                showResult('distributedResult', result);
+            } catch (e) { showResult('distributedResult', { error: e.message }, true); }
+        }
+
+        async function stopScanner() {
+            try {
+                const result = await apiCall('/api/v1/distributed-scan/stop', 'POST');
+                showResult('distributedResult', result);
+            } catch (e) { showResult('distributedResult', { error: e.message }, true); }
+        }
+
+        async function getScanStats() {
+            try {
+                const result = await apiCall('/api/v1/distributed-scan/statistics');
+                showResult('distributedResult', result);
+            } catch (e) { showResult('distributedResult', { error: e.message }, true); }
+        }
+
+        // 多租户SaaS
+        async function createOrg() {
+            const data = {
+                name: document.getElementById('orgName').value,
+                plan: document.getElementById('orgPlan').value
+            };
+            try {
+                const result = await apiCall('/api/v1/multi-tenant/organizations', 'POST', data);
+                showResult('saasResult', result);
+                if (result.organization_id) document.getElementById('saasOrgId').value = result.organization_id;
+            } catch (e) { showResult('saasResult', { error: e.message }, true); }
+        }
+
+        async function getOrg() {
+            const orgId = document.getElementById('saasOrgId').value;
+            if (!orgId) { showResult('saasResult', { error: '请先创建组织' }, true); return; }
+            try {
+                const result = await apiCall('/api/v1/multi-tenant/organizations/' + orgId);
+                showResult('saasResult', result);
+            } catch (e) { showResult('saasResult', { error: e.message }, true); }
+        }
+
+        async function createTeam() {
+            const orgId = document.getElementById('saasOrgId').value;
+            if (!orgId) { showResult('saasResult', { error: '请先创建组织' }, true); return; }
+            try {
+                const result = await apiCall('/api/v1/multi-tenant/organizations/' + orgId + '/teams', 'POST', { name: document.getElementById('teamName').value });
+                showResult('saasResult', result);
+            } catch (e) { showResult('saasResult', { error: e.message }, true); }
+        }
+
+        async function createProject() {
+            const orgId = document.getElementById('saasOrgId').value;
+            if (!orgId) { showResult('saasResult', { error: '请先创建组织' }, true); return; }
+            try {
+                const teams = await apiCall('/api/v1/multi-tenant/organizations/' + orgId + '/teams');
+                const teamId = teams.teams && teams.teams[0] ? teams.teams[0].team_id : 'unknown';
+                const result = await apiCall('/api/v1/multi-tenant/organizations/' + orgId + '/teams/' + teamId + '/projects', 'POST', { name: document.getElementById('projectName').value });
+                showResult('saasResult', result);
+            } catch (e) { showResult('saasResult', { error: e.message }, true); }
+        }
+
+        async function registerUser() {
+            const orgId = document.getElementById('saasOrgId').value;
+            const data = {
+                email: document.getElementById('userEmail').value,
+                username: document.getElementById('userName').value,
+                password: document.getElementById('userPassword').value,
+                org_id: orgId || null,
+                role: document.getElementById('userRole').value
+            };
+            try {
+                const result = await apiCall('/api/v1/multi-tenant/users/register', 'POST', data);
+                showResult('saasResult', result);
+            } catch (e) { showResult('saasResult', { error: e.message }, true); }
+        }
+
+        async function authUser() {
+            const data = {
+                email: document.getElementById('userEmail').value,
+                password: document.getElementById('userPassword').value
+            };
+            try {
+                const result = await apiCall('/api/v1/multi-tenant/users/authenticate', 'POST', data);
+                showResult('saasResult', result);
+            } catch (e) { showResult('saasResult', { error: e.message }, true); }
+        }
+
+        async function getSaaSSummary() {
+            const orgId = document.getElementById('saasOrgId').value;
+            if (!orgId) { showResult('saasResult', { error: '请先创建组织' }, true); return; }
+            try {
+                const result = await apiCall('/api/v1/multi-tenant/organizations/' + orgId + '/statistics');
+                showResult('saasResult', result);
+            } catch (e) { showResult('saasResult', { error: e.message }, true); }
+        }
+    </script>
+</body>
+</html>

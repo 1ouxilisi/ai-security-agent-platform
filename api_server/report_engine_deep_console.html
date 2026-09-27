@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>专业报告引擎做深控制台 · Report Engine Deep</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --border:#30363d; --fg:#c9d1d9;
+  --muted:#8b949e; --blue:#1f6feb; --green:#2ea043; --red:#e5534b;
+  --orange:#ed8a3d; --yellow:#e5c07b; --purple:#8957e5;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft YaHei","PingFang SC",Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--fg);font-size:14px;line-height:1.6}
+header{background:linear-gradient(90deg,#0d1117,#161b22);padding:16px 24px;
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+header h1{font-size:18px;color:#58a6ff}
+header .badge{background:var(--blue);color:#fff;padding:2px 10px;border-radius:10px;font-size:12px}
+header .ver{color:var(--muted);font-size:12px}
+.tabs{display:flex;background:var(--panel);border-bottom:1px solid var(--border);overflow-x:auto}
+.tabs button{background:none;border:none;color:var(--muted);padding:14px 20px;cursor:pointer;
+  font-size:14px;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button.active{color:#58a6ff;border-bottom-color:var(--blue)}
+.tabs button:hover{color:var(--fg)}
+main{padding:20px 24px;max-width:1400px;margin:0 auto}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;
+  padding:16px;margin-bottom:16px}
+.card h2{font-size:16px;color:#58a6ff;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:8px}
+.card h3{font-size:14px;color:var(--fg);margin:10px 0 6px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.col{flex:1;min-width:280px}
+button.act{background:var(--blue);color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px}
+button.act:hover{background:#1a5cd7}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--border);padding:6px 12px;border-radius:6px;cursor:pointer}
+button.ghost:hover{border-color:var(--blue);color:#58a6ff}
+input,select,textarea{background:#0d1117;color:var(--fg);border:1px solid var(--border);
+  border-radius:6px;padding:7px 10px;font-size:13px;width:100%}
+textarea{min-height:70px;font-family:Consolas,monospace}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+th,td{border:1px solid var(--border);padding:6px 8px;text-align:left}
+th{background:#0d1117;color:#58a6ff}
+tr:nth-child(even){background:#11161d}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:10px;
+  overflow:auto;font-size:12px;max-height:420px;white-space:pre-wrap;word-break:break-all}
+.stat{display:inline-block;background:#0d1117;border:1px solid var(--border);border-radius:6px;
+  padding:8px 14px;margin:4px;color:var(--fg)}
+.stat b{color:#58a6ff;font-size:18px;display:block}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;margin:2px}
+.tag.crit{background:#3d1414;color:var(--red)}
+.tag.high{background:#3d2414;color:var(--orange)}
+.tag.med{background:#3d3414;color:var(--yellow)}
+.tag.low{background:#14301a;color:var(--green)}
+.tag.info{background:#14223d;color:#5b9bd5}
+.toolbar{margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toolbar label{color:var(--muted);font-size:12px}
+.muted{color:var(--muted);font-size:12px}
+.matrix{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:8px}
+.matrix div{padding:10px;text-align:center;border-radius:4px;font-size:12px;color:#fff}
+.chain{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.chain div{flex:1;min-width:80px;background:#0d1117;border:1px solid var(--border);
+  padding:8px;text-align:center;border-radius:6px;font-size:12px}
+.chain div.on{border-color:var(--red);background:#3d1414}
+.chain div.arrow{align-self:center;color:var(--muted);flex:0 0 auto}
+#toast{position:fixed;top:20px;right:20px;background:var(--panel);border:1px solid var(--blue);
+  padding:10px 16px;border-radius:6px;display:none;z-index:9999;max-width:360px}
+@media(max-width:768px){.row{flex-direction:column}main{padding:12px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡️ 专业报告引擎做深控制台</h1>
+  <span class="badge">第20轮·方向4</span>
+  <span class="ver">Report Engine Deep v20.4.0 · 路由 /api/v1/report-engine-deep</span>
+</header>
+
+<div class="tabs" id="tabs">
+  <button data-tab="tpl" class="active">① 模板体系</button>
+  <button data-tab="content">② 内容生成</button>
+  <button data-tab="chart">③ 图表可视化</button>
+  <button data-tab="quality">④ 质量审核</button>
+  <button data-tab="export">⑤ 导出分发</button>
+  <button data-tab="dashboard">⑥ 报告管理</button>
+</div>
+
+<main>
+<!-- ============ 1. 模板体系 ============ -->
+<section class="tab-pane active" id="tab-tpl">
+  <div class="row">
+    <div class="col card">
+      <h2>报告类型模板（8类）</h2>
+      <div id="tpl-types"></div>
+    </div>
+    <div class="col card">
+      <h2>行业模板（8类）</h2>
+      <div id="tpl-industries"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col card">
+      <h2>标准框架模板（OWASP/CWE/SANS/PTES/NIST/等保/ISO/PCI）</h2>
+      <div id="tpl-frameworks"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col card">
+      <h2>报告结构模板</h2>
+      <div id="tpl-structure"></div>
+    </div>
+    <div class="col card">
+      <h2>多语言模板</h2>
+      <div id="tpl-langs"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>品牌定制 + 组合报告蓝图</h2>
+    <div class="toolbar">
+      <label>报告类型</label><select id="cmp-type">
+        <option value="penetration_test">渗透测试</option><option value="vulnerability_assessment">漏洞评估</option>
+        <option value="security_audit">安全审计</option><option value="compliance_assessment">合规评估</option>
+        <option value="incident_response">应急响应</option><option value="red_blue_teaming">红蓝对抗</option>
+        <option value="hw_protection">护网报告</option><option value="ctf_writeup">CTF解题</option></select>
+      <label>行业</label><select id="cmp-ind">
+        <option value="finance">金融</option><option value="healthcare">医疗</option>
+        <option value="government">政府</option><option value="education">教育</option>
+        <option value="ecommerce">电商</option><option value="internet">互联网</option>
+        <option value="manufacturing">制造</option><option value="energy">能源</option></select>
+      <label>语言</label><select id="cmp-lang">
+        <option value="zh_CN">简体中文</option><option value="en_US">English</option><option value="ja_JP">日本語</option></select>
+      <button class="act" onclick="composeBlueprint()">组合蓝图</button>
+    </div>
+    <pre id="cmp-out">点击"组合蓝图"生成报告蓝图…</pre>
+  </div>
+</section>
+
+<!-- ============ 2. 内容生成 ============ -->
+<section class="tab-pane" id="tab-content">
+  <div class="card">
+    <h2>演示数据（可编辑）</h2>
+    <textarea id="demo-vulns">[]</textarea>
+    <div class="toolbar">
+      <button class="ghost" onclick="loadDemoVulns()">载入示例漏洞数据</button>
+      <button class="act" onclick="genExecSummary()">生成执行摘要</button>
+      <button class="act" onclick="genRiskRating()">风险评级计算</button>
+      <button class="act" onclick="genRemediation()">修复建议</button>
+      <button class="act" onclick="genTrends()">趋势统计</button>
+      <button class="act" onclick="genCompliance()">合规映射</button>
+      <button class="act" onclick="genFull()">一站式生成</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>CVSS v3.1 快速计算</h2>
+    <div class="toolbar">
+      <label>AV<select id="cvss-av"><option value="N">网络</option><option value="A">邻接</option><option value="L">本地</option><option value="P">物理</option></select></label>
+      <label>AC<select id="cvss-ac"><option value="L">低</option><option value="H">高</option></select></label>
+      <label>PR<select id="cvss-pr"><option value="N">无</option><option value="L">低</option><option value="H">高</option></select></label>
+      <label>UI<select id="cvss-ui"><option value="N">无</option><option value="R">需要</option></select></label>
+      <button class="act" onclick="calcCvss()">计算</button>
+    </div>
+    <pre id="cvss-out">CVSS 结果将显示在这里…</pre>
+  </div>
+  <div class="card">
+    <h2>生成结果</h2>
+    <pre id="content-out">调用后在此显示 JSON 结果…</pre>
+  </div>
+</section>
+
+<!-- ============ 3. 图表可视化 ============ -->
+<section class="tab-pane" id="tab-chart">
+  <div class="card">
+    <h2>可视化生成（基于演示漏洞数据）</h2>
+    <div class="toolbar">
+      <button class="act" onclick="chartStats()">漏洞统计图表</button>
+      <button class="act" onclick="chartRiskMatrix()">风险矩阵</button>
+      <button class="act" onclick="chartAttackChain()">攻击链图</button>
+      <button class="act" onclick="chartTopology()">网络拓扑</button>
+      <button class="act" onclick="chartTimeline()">时间线</button>
+      <button class="act" onclick="chartTable()">数据表格</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>5×5 风险矩阵（渲染）</h2>
+    <div class="matrix" id="risk-matrix"></div>
+  </div>
+  <div class="card">
+    <h2>攻击链（渲染）</h2>
+    <div class="chain" id="attack-chain"></div>
+  </div>
+  <div class="card">
+    <h2>原始数据规格</h2>
+    <pre id="chart-out">调用后显示 ECharts 数据规格…</pre>
+  </div>
+</section>
+
+<!-- ============ 4. 质量审核 ============ -->
+<section class="tab-pane" id="tab-quality">
+  <div class="row">
+    <div class="col card">
+      <h2>质量检查项库</h2>
+      <div class="toolbar">
+        <span class="stat" id="qc-total">0 项</span>
+        <button class="ghost" onclick="loadChecklist()">加载清单</button>
+      </div>
+      <div id="qc-cats" style="max-height:200px;overflow:auto"></div>
+    </div>
+    <div class="col card">
+      <h2>审核动作</h2>
+      <div class="toolbar">
+        <button class="act" onclick="runQualityCheck()">运行质量检查</button>
+        <button class="act" onclick="runDedup()">漏洞去重</button>
+        <button class="act" onclick="runFP()">误报检测</button>
+        <button class="act" onclick="runScore()">报告评分</button>
+      </div>
+      <pre id="quality-out">调用后显示结果…</pre>
+    </div>
+  </div>
+  <div class="card">
+    <h2>审核工作流（草稿→初审→技术→安全→客户→最终）</h2>
+    <div class="toolbar">
+      <button class="act" onclick="startReview()">启动审核</button>
+      <button class="ghost" onclick="reviewAction('approve')">批准流转</button>
+      <button class="ghost" onclick="reviewAction('comment')">评论</button>
+    </div>
+    <pre id="review-out">工作流状态…</pre>
+  </div>
+</section>
+
+<!-- ============ 5. 导出分发 ============ -->
+<section class="tab-pane" id="tab-export">
+  <div class="card">
+    <h2>多格式导出</h2>
+    <div class="toolbar">
+      <button class="act" onclick="doExport('pdf')">导出 PDF</button>
+      <button class="act" onclick="doExport('word')">导出 Word</button>
+      <button class="act" onclick="doExport('excel')">导出 Excel</button>
+      <button class="act" onclick="doExport('html')">导出 HTML</button>
+      <button class="act" onclick="doExport('json')">导出 JSON</button>
+      <button class="act" onclick="doExport('xml')">导出 XML</button>
+      <button class="ghost" onclick="listFormats()">支持格式</button>
+    </div>
+    <pre id="export-out">导出结果（文件 key / 大小）…</pre>
+  </div>
+  <div class="card">
+    <h2>报告分发（邮件 / 客户门户 / 下载链接 / 访问控制 / 有效期 / 水印）</h2>
+    <div class="toolbar">
+      <input id="dist-recip" placeholder="收件人，逗号分隔" value="security@example.com">
+      <button class="act" onclick="doDistribute()">生成分发链接</button>
+      <button class="ghost" onclick="loadDistLogs()">分发日志</button>
+    </div>
+    <pre id="dist-out">分发结果…</pre>
+  </div>
+</section>
+
+<!-- ============ 6. 报告管理 ============ -->
+<section class="tab-pane" id="tab-dashboard">
+  <div class="card">
+    <h2>报告指标与统计</h2>
+    <div id="metrics" style="margin-bottom:10px"></div>
+    <button class="ghost" onclick="loadMetrics()">刷新指标</button>
+  </div>
+  <div class="row">
+    <div class="col card">
+      <h2>报告库</h2>
+      <div class="toolbar">
+        <input id="rb-kw" placeholder="搜索标题/客户" onkeydown="if(event.key==='Enter')loadReports()">
+        <button class="ghost" onclick="loadReports()">搜索</button>
+      </div>
+      <div id="report-lib"></div>
+    </div>
+    <div class="col card">
+      <h2>生成向导</h2>
+      <div class="toolbar">
+        <input id="wiz-client" placeholder="客户名称" value="示例金融客户">
+        <button class="act" onclick="wizardStart()">启动向导</button>
+        <button class="ghost" onclick="wizardPreview()">预览</button>
+        <button class="ghost" onclick="wizardGenerate()">生成</button>
+      </div>
+      <pre id="wiz-out">向导状态…</pre>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col card">
+      <h2>模板管理</h2>
+      <button class="ghost" onclick="loadDashTemplates()">刷新模板</button>
+      <div id="dash-templates"></div>
+    </div>
+    <div class="col card">
+      <h2>客户报告门户</h2>
+      <div class="toolbar">
+        <button class="act" onclick="portalLogin()">客户登录</button>
+        <button class="ghost" onclick="portalReports()">我的报告</button>
+        <button class="ghost" onclick="portalFeedback()">提交反馈(5分)</button>
+      </div>
+      <pre id="portal-out">门户状态…</pre>
+    </div>
+  </div>
+  <div class="card">
+    <h2>报告自动化（定时/触发/自动发送）</h2>
+    <div class="toolbar">
+      <input id="auto-name" placeholder="规则名" value="月度漏扫报告">
+      <button class="act" onclick="createAutomation()">创建规则</button>
+      <button class="ghost" onclick="loadAutomation()">列表</button>
+      <button class="ghost" onclick="runAutomation()">立即触发</button>
+    </div>
+    <div id="automation-list"></div>
+  </div>
+</section>
+</main>
+
+<div id="toast"></div>
+<script>
+const BASE = "/api/v1/report-engine-deep";
+let reviewRid = null, wizardRid = null, automationRid = null;
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2500);}
+async function api(path, opts={}){
+  try{
+    const r=await fetch(BASE+path,{headers:{'Content-Type':'application/json'},...opts});
+    const j=await r.json();
+    if(!j.success){toast("错误: "+j.error);}
+    return j;
+  }catch(e){toast("请求失败: "+e.message);return {success:false,error:e.message};}
+}
+function show(elId,obj){document.getElementById(elId).textContent=typeof obj==='string'?obj:JSON.stringify(obj,null,2);}
+
+// Tabs
+document.querySelectorAll('#tabs button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('tab-'+b.dataset.tab).classList.add('active');
+  };
+});
+
+// ---- 模板体系 ----
+function tagChip(name,desc){return `<div style="border:1px solid var(--border);border-radius:6px;padding:8px;margin:4px 0">
+  <b style="color:#58a6ff">${name}</b><div class="muted">${desc||''}</div></div>`;}
+async function loadTpl(){
+  let r=await api('/template/report-types');
+  document.getElementById('tpl-types').innerHTML=(r.data||[]).map(x=>tagChip(x.name,x.description)).join('');
+  r=await api('/template/industries');
+  document.getElementById('tpl-industries').innerHTML=(r.data||[]).map(x=>tagChip(x.name,(x.regulations||[]).join('；'))).join('');
+  r=await api('/template/frameworks');
+  document.getElementById('tpl-frameworks').innerHTML=(r.data||[]).map(x=>tagChip(x.name+' v'+x.version,(x.phases||x.categories||x.control_classes||[]).slice(0,6).join(' / '))).join('');
+  r=await api('/template/structure');
+  document.getElementById('tpl-structure').innerHTML=(r.data||[]).map(x=>tagChip(x.order+'. '+x.name,(x.fields||[]).join('、'))).join('');
+  r=await api('/template/languages');
+  document.getElementById('tpl-langs').innerHTML=(r.data||[]).map(x=>tagChip(x.id,x.label)).join('');
+}
+async function composeBlueprint(){
+  const body={report_type:document.getElementById('cmp-type').value,
+    industry:document.getElementById('cmp-ind').value,
+    language:document.getElementById('cmp-lang').value,frameworks:['owasp_top10_2021','mlps2']};
+  const r=await api('/template/compose',{method:'POST',body:JSON.stringify(body)});
+  show('cmp-out',r.data||r.error);
+}
+
+// ---- 示例数据 ----
+function demoVulns(){
+  return [
+    {id:'VULN-001',title:'SQL注入(登录接口)',type:'sqli',severity:'严重',cvss_score:9.8,
+     asset:'shop.example.com',location:'/api/login',cwe:'CWE-89',owasp:'A03',verified:true,evidence:['截图1'],
+     steps:["POST /api/login username=admin' OR '1'='1"],status:'未修复',kill_chain:'初始访问',module:'应用层'},
+    {id:'VULN-002',title:'存储型XSS(评论区)',type:'xss',severity:'高危',cvss_score:7.4,
+     asset:'shop.example.com',location:'/comment',cwe:'CWE-79',owasp:'A03',verified:true,evidence:['截图2'],
+     steps:["提交评论 <script>alert(1)</script>"],status:'修复中',kill_chain:'执行',module:'应用层'},
+    {id:'VULN-003',title:'未授权访问 /admin',type:'auth',severity:'高危',cvss_score:7.5,
+     asset:'ops.example.com',location:'/admin',cwe:'CWE-287',owasp:'A01',verified:true,evidence:['截图3'],
+     steps:["直接访问 /admin 无需登录"],status:'未修复',kill_chain:'发现',module:'管理层'},
+    {id:'VULN-004',title:'敏感信息泄露(Git泄露)',type:'info',severity:'中危',cvss_score:5.3,
+     asset:'git.example.com',location:'/.git',cwe:'CWE-200',owasp:'A01',verified:false,evidence:[],
+     steps:["访问 /.git/config"],status:'未修复',kill_chain:'收集',module:'数据层'},
+    {id:'VULN-005',title:'过时组件 Log4j',type:'component',severity:'严重',cvss_score:10.0,
+     asset:'api.example.com',location:'lib/log4j',cwe:'CWE-502',owasp:'A06',verified:true,evidence:['日志'],
+     steps:["JNDI注入触发"],status:'已修复',kill_chain:'初始访问',module:'应用层'}
+  ];
+}
+function loadDemoVulns(){document.getElementById('demo-vulns').value=JSON.stringify(demoVulns(),null,2);}
+function getVulns(){try{return JSON.parse(document.getElementById('demo-vulns').value);}catch(e){toast('JSON 解析失败');return [];}}
+function payload(vulns){return {project_meta:{client:'示例金融客户',overview:'年度渗透测试',start_date:'2026-09-01',end_date:'2026-09-10',sections:['exec_summary','vuln_details']},vulns:vulns,assets:[{name:'shop.example.com',ip:'10.0.0.1',zone:'DMZ'},{name:'api.example.com',ip:'10.0.0.2',zone:'核心区'}],frameworks:['owasp_top10_2021','mlps2']};}
+
+async function genExecSummary(){const r=await api('/content/exec-summary',{method:'POST',body:JSON.stringify(payload(getVulns()))});show('content-out',r.data);}
+async function genRiskRating(){const r=await api('/content/risk-rating',{method:'POST',body:JSON.stringify({vuln:getVulns()[0]||{}})});show('content-out',r.data);}
+async function genRemediation(){const r=await api('/content/remediation',{method:'POST',body:JSON.stringify({vuln:getVulns()[0]||{}})});show('content-out',r.data);}
+async function genTrends(){const r=await api('/content/trends',{method:'POST',body:JSON.stringify(payload(getVulns()))});show('content-out',r.data);}
+async function genCompliance(){const r=await api('/content/compliance',{method:'POST',body:JSON.stringify(payload(getVulns()))});show('content-out',r.data);}
+async function genFull(){const r=await api('/content/full',{method:'POST',body:JSON.stringify(payload(getVulns()))});show('content-out',r.data);}
+async function calcCvss(){
+  const body={av:g('cvss-av'),ac:g('cvss-ac'),pr:g('cvss-pr'),ui:g('cvss-ui')};
+  const r=await api('/content/cvss',{method:'POST',body:JSON.stringify(body)});
+  show('cvss-out',r.data);
+}
+function g(id){return document.getElementById(id).value;}
+
+// ---- 图表 ----
+async function chartStats(){const r=await api('/chart/stats',{method:'POST',body:JSON.stringify(payload(getVulns()))});show('chart-out',r.data);}
+async function chartRiskMatrix(){
+  const r=await api('/chart/risk-matrix',{method:'POST',body:JSON.stringify(payload(getVulns()))});
+  show('chart-out',r.data);
+  const m=document.getElementById('risk-matrix');m.innerHTML='';
+  (r.data.grid||[]).forEach(c=>{
+    const d=document.createElement('div');
+    d.style.background=c.zone==='高'?'#e5534b':c.zone==='中'?'#e5c07b':'#5cb85c';
+    d.textContent=c.score;m.appendChild(d);
+  });
+}
+async function chartAttackChain(){
+  const r=await api('/chart/attack-chain',{method:'POST',body:JSON.stringify(payload(getVulns()))});
+  show('chart-out',r.data);
+  const c=document.getElementById('attack-chain');c.innerHTML='';
+  (r.data.nodes||[]).forEach((n,i)=>{
+    const d=document.createElement('div');
+    d.className=(r.data.completed||[]).includes(n.stage)?'on':'';
+    d.textContent=(i+1)+'. '+n.name;c.appendChild(d);
+  });
+}
+async function chartTopology(){const r=await api('/chart/topology',{method:'POST',body:JSON.stringify(payload(getVulns()))});show('chart-out',r.data);}
+async function chartTimeline(){const r=await api('/chart/timeline',{method:'POST',body:JSON.stringify(payload(getVulns()))});show('chart-out',r.data);}
+async function chartTable(){const r=await api('/chart/table',{method:'POST',body:JSON.stringify(payload(getVulns()))});show('chart-out',r.data);}
+
+// ---- 质量 ----
+async function loadChecklist(){
+  const r=await api('/quality/checklist');
+  document.getElementById('qc-total').innerHTML='<b>'+(r.data.total||0)+'</b>检查项';
+  const cats={};(r.data.items||[]).forEach(i=>{cats[i.category]=(cats[i.category]||0)+1;});
+  document.getElementById('qc-cats').innerHTML=Object.entries(cats).map(([k,v])=>`<div class="stat"><b>${v}</b>${k}</div>`).join('');
+}
+async function runQualityCheck(){const r=await api('/quality/check',{method:'POST',body:JSON.stringify(payload(getVulns()))});show('quality-out',r.data);}
+async function runDedup(){const r=await api('/quality/dedup',{method:'POST',body:JSON.stringify(payload(getVulns()))});show('quality-out',r.data);}
+async function runFP(){const r=await api('/quality/false-positive',{method:'POST',body:JSON.stringify(payload(getVulns()))});show('quality-out',r.data);}
+async function runScore(){const r=await api('/quality/score',{method:'POST',body:JSON.stringify(payload(getVulns()))});show('quality-out',r.data);}
+async function startReview(){
+  const r=await api('/quality/review/start',{method:'POST',body:JSON.stringify(payload(getVulns()))});
+  reviewRid=r.data.report_id;show('review-out',r.data);
+}
+async function reviewAction(action){
+  if(!reviewRid){toast('请先启动审核');return;}
+  const r=await api('/quality/review/'+reviewRid,{method:'POST',body:JSON.stringify({action,user:'analyst',note:'自动评审'})});
+  show('review-out',r.data);
+}
+
+// ---- 导出 ----
+async function doExport(fmt){
+  const r=await api('/export/'+fmt,{method:'POST',body:JSON.stringify({payload:payload(getVulns()),watermark:'机密'})});
+  show('export-out',r.data);
+}
+async function listFormats(){const r=await api('/export/formats');show('export-out',r.data);}
+async function doDistribute(){
+  const r=await api('/export/distribute',{method:'POST',body:JSON.stringify({report_id:reviewRid||'RPT-1001',channels:['email','portal'],recipients:[g('dist-recip')]})});
+  show('dist-out',r.data);
+}
+async function loadDistLogs(){const r=await api('/export/logs');show('dist-out',r.data);}
+
+// ---- 控制台 ----
+async function loadMetrics(){
+  const r=await api('/dashboard/metrics');
+  const d=r.data||{};
+  document.getElementById('metrics').innerHTML=`
+    <span class="stat"><b>${d.total_reports||0}</b>报告总数</span>
+    <span class="stat"><b>${d.avg_quality_score||0}</b>平均质量分</span>
+    <span class="stat"><b>${(d.delivery_on_time_rate*100||0).toFixed(0)}%</b>交付及时率</span>
+    <span class="stat"><b>${d.customer_satisfaction||0}</b>客户满意度</span>
+    <span class="stat"><b>${d.avg_generation_seconds||0}s</b>平均生成时长</span>`;
+}
+async function loadReports(){
+  const kw=document.getElementById('rb-kw').value;
+  const r=await api('/dashboard/reports?keyword='+encodeURIComponent(kw));
+  const rows=(r.data.reports||[]).map(x=>`<tr><td>${x.report_id}</td><td>${x.title}</td><td>${x.client}</td><td><span class="tag ${x.status==='final'?'low':x.status==='reviewing'?'med':'info'}">${x.status}</span></td><td>${x.vuln_count}</td></tr>`).join('');
+  document.getElementById('report-lib').innerHTML=`<table><tr><th>编号</th><th>标题</th><th>客户</th><th>状态</th><th>漏洞数</th></tr>${rows}</table>`;
+}
+async function wizardStart(){
+  const r=await api('/dashboard/wizard/start',{method:'POST',body:JSON.stringify({report_type:'penetration_test',industry:'finance',template_id:'TPL-PENTEST-V2',client:g('wiz-client')})});
+  wizardRid=r.data.report_id;show('wiz-out',r.data);
+}
+async function wizardPreview(){if(!wizardRid){toast('先启动向导');return;}const r=await api('/dashboard/wizard/'+wizardRid+'/preview');show('wiz-out',r.data);}
+async function wizardGenerate(){if(!wizardRid){toast('先启动向导');return;}const r=await api('/dashboard/wizard/'+wizardRid+'/generate',{method:'POST'});show('wiz-out',r.data);}
+async function loadDashTemplates(){
+  const r=await api('/dashboard/templates');
+  document.getElementById('dash-templates').innerHTML=(r.data||[]).map(t=>`<div class="stat"><b>${t.uses}</b>${t.name}<br><span class="muted">${t.id} · ${t.version} · ${t.approved?'已审批':'待审批'}</span></div>`).join('');
+}
+async function portalLogin(){const r=await api('/dashboard/portal/login?customer_id=CUST-001',{method:'POST'});show('portal-out',r.data);}
+async function portalReports(){const r=await api('/dashboard/portal/CUST-001/reports');show('portal-out',r.data);}
+async function portalFeedback(){const r=await api('/dashboard/portal/CUST-001/feedback',{method:'POST',body:JSON.stringify({rating:5,comment:'报告专业清晰'})});show('portal-out',r.data);}
+async function loadAutomation(){
+  const r=await api('/dashboard/automation');
+  automationRid=(r.data[0]||{}).id;
+  document.getElementById('automation-list').innerHTML=(r.data||[]).map(a=>`<div class="stat"><b>${a.run_count}</b>${a.name}<br><span class="muted">${a.id} · ${a.schedule} · ${a.enabled?'启用':'停用'}</span></div>`).join('')||'<span class="muted">暂无规则</span>';
+}
+async function createAutomation(){
+  const r=await api('/dashboard/automation',{method:'POST',body:JSON.stringify({name:g('auto-name'),trigger:'schedule',template_id:'TPL-PENTEST-V2',schedule:'0 8 * * 1',recipients:['sec@example.com']})});
+  automationRid=r.data.id;toast('规则已创建');loadAutomation();
+}
+async function runAutomation(){if(!automationRid){toast('先加载或创建规则');return;}const r=await api('/dashboard/automation/'+automationRid+'/run',{method:'POST'});toast('已触发');loadAutomation();}
+
+// init
+loadTpl();loadDemoVulns();loadMetrics();loadReports();loadDashTemplates();loadAutomation();
+</script>
+</body>
+</html>

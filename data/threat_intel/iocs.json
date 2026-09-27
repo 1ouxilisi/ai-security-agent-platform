@@ -1,0 +1,223 @@
+{
+  "ioc-9151c1ce": {
+    "ioc_id": "ioc-9151c1ce",
+    "type": "hash",
+    "value": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "threat_level": "critical",
+    "confidence": 95,
+    "source": "VirusTotal",
+    "source_count": 1,
+    "first_seen": 1788085929.3213923,
+    "last_seen": 1788085929.3213923,
+    "description": "已知勒索软件SHA256哈希",
+    "tags": [
+      "ransomware",
+      "encryption"
+    ],
+    "related_malware": [
+      "Conti"
+    ],
+    "related_actors": [],
+    "attack_patterns": [
+      "T1486"
+    ],
+    "references": [],
+    "false_positive_rate": 0.0,
+    "status": "active",
+    "metadata": {},
+    "created_at": 1788085929.3213937,
+    "updated_at": 1788085929.321394
+  },
+  "ioc-84a6826e": {
+    "ioc_id": "ioc-84a6826e",
+    "type": "email",
+    "value": "attacker@malicious-example.com",
+    "threat_level": "high",
+    "confidence": 75,
+    "source": "内部威胁情报",
+    "source_count": 1,
+    "first_seen": 1788085929.321385,
+    "last_seen": 1788085929.3213851,
+    "description": "已知恶意发件人邮箱",
+    "tags": [
+      "phishing",
+      "spam"
+    ],
+    "related_malware": [],
+    "related_actors": [],
+    "attack_patterns": [
+      "T1566"
+    ],
+    "references": [],
+    "false_positive_rate": 0.0,
+    "status": "active",
+    "metadata": {},
+    "created_at": 1788085929.3213866,
+    "updated_at": 1788085929.3213866
+  },
+  "ioc-1316dd3e": {
+    "ioc_id": "ioc-1316dd3e",
+    "type": "domain",
+    "value": "phishing-example-login.com",
+    "threat_level": "high",
+    "confidence": 85,
+    "source": "内部威胁情报",
+    "source_count": 1,
+    "first_seen": 1788085929.3213782,
+    "last_seen": 1788085929.3213782,
+    "description": "钓鱼网站域名，仿冒银行登录",
+    "tags": [
+      "phishing",
+      "credential_theft"
+    ],
+    "related_malware": [],
+    "related_actors": [],
+    "attack_patterns": [
+      "T1566"
+    ],
+    "references": [],
+    "false_positive_rate": 0.0,
+    "status": "active",
+    "metadata": {},
+    "created_at": 1788085929.3213794,
+    "updated_at": 1788085929.3213794
+  },
+  "ioc-5f5b9288": {
+    "ioc_id": "ioc-5f5b9288",
+    "type": "ip",
+    "value": "10.0.0.50",
+    "threat_level": "medium",
+    "confidence": 60,
+    "source": "AbuseIPDB",
+    "source_count": 1,
+    "first_seen": 1788085929.3213696,
+    "last_seen": 1788085929.32137,
+    "description": "可疑扫描IP",
+    "tags": [
+      "scanner",
+      "reconnaissance"
+    ],
+    "related_malware": [],
+    "related_actors": [],
+    "attack_patterns": [
+      "T1595"
+    ],
+    "references": [],
+    "false_positive_rate": 0.0,
+    "status": "active",
+    "metadata": {},
+    "created_at": 1788085929.321371,
+    "updated_at": 1788085929.321371
+  },
+  "ioc-1464307b": {
+    "ioc_id": "ioc-1464307b",
+    "type": "hash",
+    "value": "d41d8cd98f00b204e9800998ecf8427e",
+    "threat_level": "medium",
+    "confidence": 70,
+    "source": "MalwareBazaar",
+    "source_count": 1,
+    "first_seen": 1788085929.3213398,
+    "last_seen": 1788085929.3213398,
+    "description": "已知恶意软件MD5哈希",
+    "tags": [
+      "trojan"
+    ],
+    "related_malware": [
+      "Emotet"
+    ],
+    "related_actors": [],
+    "attack_patterns": [
+      "T1059"
+    ],
+    "references": [],
+    "false_positive_rate": 0.0,
+    "status": "active",
+    "metadata": {},
+    "created_at": 1788085929.3213413,
+    "updated_at": 1788085929.3213415
+  },
+  "ioc-1865ac18": {
+    "ioc_id": "ioc-1865ac18",
+    "type": "url",
+    "value": "http://malicious-example.com/payload.exe",
+    "threat_level": "high",
+    "confidence": 85,
+    "source": "URLhaus",
+    "source_count": 1,
+    "first_seen": 1788085929.321331,
+    "last_seen": 1788085929.3213313,
+    "description": "恶意下载URL",
+    "tags": [
+      "malware",
+      "download"
+    ],
+    "related_malware": [],
+    "related_actors": [],
+    "attack_patterns": [
+      "T1105"
+    ],
+    "references": [],
+    "false_positive_rate": 0.0,
+    "status": "active",
+    "metadata": {},
+    "created_at": 1788085929.321333,
+    "updated_at": 1788085929.3213332
+  },
+  "ioc-3e66b4a5": {
+    "ioc_id": "ioc-3e66b4a5",
+    "type": "domain",
+    "value": "malicious-example.com",
+    "threat_level": "critical",
+    "confidence": 90,
+    "source": "URLhaus",
+    "source_count": 1,
+    "first_seen": 1788085929.3213186,
+    "last_seen": 1788085929.3213189,
+    "description": "已知恶意域名，分发勒索软件",
+    "tags": [
+      "ransomware",
+      "distribution"
+    ],
+    "related_malware": [
+      "LockBit"
+    ],
+    "related_actors": [],
+    "attack_patterns": [
+      "T1189"
+    ],
+    "references": [],
+    "false_positive_rate": 0.0,
+    "status": "active",
+    "metadata": {},
+    "created_at": 1788085929.3213215,
+    "updated_at": 1788085929.3213217
+  },
+  "ioc-60d653d5": {
+    "ioc_id": "ioc-60d653d5",
+    "type": "ip",
+    "value": "192.168.1.100",
+    "threat_level": "high",
+    "confidence": 80,
+    "source": "内部威胁情报",
+    "source_count": 1,
+    "first_seen": 1788085929.3212874,
+    "last_seen": 1788085929.321289,
+    "description": "已知C2服务器IP",
+    "tags": [
+      "c2",
+      "malware"
+    ],
+    "related_malware": [],
+    "related_actors": [],
+    "attack_patterns": [
+      "T1071"
+    ],
+    "references": [],
+    "false_positive_rate": 0.0,
+    "status": "active",
+    "metadata": {},
+    "created_at": 1788085929.3212981,
+    "updated_at": 1788085929.3212993
+  }
+}

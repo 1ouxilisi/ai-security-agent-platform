@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>开发者生态 · 控制台</title>
+<style>
+:root{
+  --bg:#0d1117; --bg2:#161b22; --bg3:#1f2630; --border:#2d333b;
+  --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950;
+  --red:#f85149; --orange:#d29922; --purple:#bc8cff; --cyan:#39d2c0;
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:230px;background:var(--bg2);border-right:1px solid var(--border);padding:18px 0;position:fixed;top:0;bottom:0;left:0;overflow-y:auto;z-index:100}
+.sidebar .brand{padding:0 20px 16px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.sidebar .brand h1{font-size:16px;color:var(--accent)}
+.sidebar .brand small{color:var(--muted);font-size:11px}
+.nav-btn{display:block;width:100%;text-align:left;padding:10px 20px;background:none;border:none;color:var(--text);cursor:pointer;font-size:13px;border-left:3px solid transparent;transition:all .15s}
+.nav-btn:hover{background:var(--bg3)}
+.nav-btn.active{background:var(--bg3);border-left-color:var(--accent);color:var(--accent)}
+.nav-group{padding:8px 20px 4px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.main{flex:1;margin-left:230px;padding:22px;min-width:0}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.topbar h2{font-size:20px}
+.badge{background:var(--bg3);border:1px solid var(--border);padding:3px 10px;border-radius:20px;font-size:12px;color:var(--muted)}
+.page{display:none}.page.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:18px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.card h3{font-size:13px;color:var(--muted);font-weight:normal;margin-bottom:6px}
+.card .num{font-size:26px;font-weight:bold;color:var(--accent)}
+.card.green .num{color:var(--green)}.card.red .num{color:var(--red)}.card.orange .num{color:var(--orange)}.card.purple .num{color:var(--purple)}.card.cyan .num{color:var(--cyan)}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.panel h3{margin-bottom:12px;font-size:15px;color:var(--accent)}
+label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;font-size:13px;font-family:inherit}
+textarea{min-height:80px;resize:vertical}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+button.btn{background:var(--accent);color:#fff;border:none;padding:9px 18px;border-radius:6px;cursor:pointer;font-size:13px;margin-top:12px;transition:opacity .15s}
+button.btn:hover{opacity:.88}
+button.btn.ghost{background:var(--bg3);color:var(--text)}
+button.btn.green{background:var(--green)}
+button.btn.red{background:var(--red)}
+pre.out{background:#0a0d12;border:1px solid var(--border);border-radius:6px;padding:12px;overflow:auto;max-height:340px;font-size:12px;color:#a5d6ff;margin-top:10px;white-space:pre-wrap;word-break:break-all}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+th,td{border:1px solid var(--border);padding:7px 10px;text-align:left}
+th{background:var(--bg3);color:var(--muted);font-weight:normal}
+tr:hover td{background:var(--bg3)}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;margin-right:4px}
+.tag.crit{background:#3d1418;color:var(--red)}.tag.high{background:#3d2414;color:var(--orange)}
+.tag.med{background:#3d3a14;color:#e3b341}.tag.low{background:#143d24;color:var(--green)}
+.tag.info{background:#14243d;color:var(--accent)}
+.tag.purple{background:#2d1f3d;color:var(--purple)}
+/* tabs */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px;flex-wrap:wrap}
+.tab-btn{padding:8px 16px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;border-bottom:2px solid transparent}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-content{display:none}.tab-content.active{display:block}
+/* toast */
+.toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);z-index:999;display:none;max-width:360px}
+.toast.show{display:block}
+.toast.ok{border-left:3px solid var(--green)}
+.toast.err{border-left:3px solid var(--red)}
+/* progress bar */
+.pbar{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;margin-top:6px}
+.pbar .fill{height:100%;background:var(--accent);transition:width .3s}
+/* responsive */
+@media(max-width:768px){
+  .sidebar{width:60px;overflow:hidden}
+  .sidebar .brand h1,.sidebar .brand small,.nav-btn,.nav-group{display:none}
+  .main{margin-left:60px;padding:12px}
+  .row{grid-template-columns:1fr}
+}
+/* code block */
+.code-block{background:#0a0d12;border:1px solid var(--border);border-radius:6px;padding:12px;font-family:"Cascadia Code",Consolas,monospace;font-size:12px;color:#a5d6ff;overflow-x:auto;margin-top:8px;white-space:pre}
+.plugin-card{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;background:var(--bg)}
+.plugin-card:hover{border-color:var(--accent)}
+.plugin-card .info{flex:1}
+.plugin-card .actions button{margin-left:8px}
+.stat-row{display:flex;gap:20px;flex-wrap:wrap}
+.stat-item{text-align:center}
+.stat-item .val{font-size:22px;font-weight:bold;color:var(--accent)}
+.stat-item .lbl{font-size:11px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="layout">
+<!-- ======== 侧边栏 ======== -->
+<aside class="sidebar">
+  <div class="brand">
+    <h1>&#9881; 开发者生态</h1>
+    <small>Round 24.4 · 跨平台客户端与开发者生态</small>
+  </div>
+  <div class="nav-group">总览</div>
+  <button class="nav-btn active" onclick="showPage('overview',this)">&#128200; 生态总览</button>
+  <div class="nav-group">客户端</div>
+  <button class="nav-btn" onclick="showPage('cli',this)">&#9000; CLI 命令行</button>
+  <button class="nav-btn" onclick="showPage('desktop',this)">&#128421; 桌面客户端</button>
+  <button class="nav-btn" onclick="showPage('ide',this)">&#128736; IDE 插件</button>
+  <div class="nav-group">开发者</div>
+  <button class="nav-btn" onclick="showPage('sdk',this)">&#128218; Python SDK</button>
+  <button class="nav-btn" onclick="showPage('portal',this)">&#127968; 开发者门户</button>
+  <button class="nav-btn" onclick="showPage('marketplace',this)">&#128717; 插件市场</button>
+  <div class="nav-group">开放平台</div>
+  <button class="nav-btn" onclick="showPage('apigw',this)">&#127760; API 网关</button>
+  <button class="nav-btn" onclick="showPage('webhook',this)">&#128276; Webhook</button>
+  <button class="nav-btn" onclick="showPage('community',this)">&#128172; 开发者社区</button>
+</aside>
+
+<!-- ======== 主区 ======== -->
+<main class="main">
+  <div class="topbar">
+    <h2 id="pageTitle">生态总览</h2>
+    <div>
+      <span class="badge" id="verBadge">v24.4.0</span>
+      <span class="badge" id="healthBadge">检查中...</span>
+    </div>
+  </div>
+
+  <!-- ============ 页面：总览 ============ -->
+  <div class="page active" id="page-overview">
+    <div class="grid">
+      <div class="card"><h3>CLI 命令数</h3><div class="num" id="ovCliCmd">-</div></div>
+      <div class="card green"><h3>插件市场</h3><div class="num" id="ovPlugins">-</div></div>
+      <div class="card purple"><h3>Webhooks</h3><div class="num" id="ovWebhooks">-</div></div>
+      <div class="card orange"><h3>API 网关路由</h3><div class="num" id="ovRoutes">-</div></div>
+    </div>
+    <div class="panel">
+      <h3>六大核心模块状态</h3>
+      <table>
+        <thead><tr><th>模块</th><th>说明</th><th>状态</th></tr></thead>
+        <tbody id="ovModuleTable"></tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <h3>快速操作</h3>
+      <div class="row">
+        <button class="btn" onclick="loadOverview()">刷新总览</button>
+        <button class="btn ghost" onclick="showPage('cli',document.querySelectorAll('.nav-btn')[1])">打开 CLI 工具</button>
+        <button class="btn ghost" onclick="showPage('marketplace',document.querySelectorAll('.nav-btn')[6])">浏览插件市场</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 页面：CLI ============ -->
+  <div class="page" id="page-cli">
+    <div class="panel">
+      <h3>CLI 命令执行器</h3>
+      <div class="row">
+        <div>
+          <label>命令</label>
+          <select id="cliCmd">
+            <option value="version">version — 显示版本</option>
+            <option value="help">help — 显示帮助</option>
+            <option value="scan">scan — 扫描命令组</option>
+            <option value="report">report — 报告命令组</option>
+            <option value="asset">asset — 资产管理</option>
+            <option value="task">task — 任务管理</option>
+            <option value="config">config — 配置管理</option>
+          </select>
+        </div>
+        <div>
+          <label>参数（空格分隔）</label>
+          <input id="cliArgs" placeholder="例如: port 192.168.1.1">
+        </div>
+      </div>
+      <button class="btn" onclick="execCli()">执行命令</button>
+      <pre class="out" id="cliOut">等待执行...</pre>
+    </div>
+    <div class="panel">
+      <h3>CLI 配置</h3>
+      <pre class="out" id="cliConfig">加载中...</pre>
+      <button class="btn ghost" onclick="loadCliConfig()">刷新配置</button>
+    </div>
+  </div>
+
+  <!-- ============ 页面：桌面客户端 ============ -->
+  <div class="page" id="page-desktop">
+    <div class="grid">
+      <div class="card"><h3>平台</h3><div class="num" id="dtPlatform" style="font-size:18px">-</div></div>
+      <div class="card green"><h3>CPU 使用率</h3><div class="num" id="dtCpu">-</div></div>
+      <div class="card purple"><h3>内存使用率</h3><div class="num" id="dtMem">-</div></div>
+      <div class="card orange"><h3>磁盘使用率</h3><div class="num" id="dtDisk">-</div></div>
+    </div>
+    <div class="panel">
+      <h3>桌面端概览</h3>
+      <pre class="out" id="dtOverview">加载中...</pre>
+      <button class="btn ghost" onclick="loadDesktop()">刷新</button>
+    </div>
+    <div class="panel">
+      <h3>检查应用更新</h3>
+      <pre class="out" id="dtUpdate">点击下方按钮检查...</pre>
+      <button class="btn" onclick="checkUpdate()">检查更新</button>
+    </div>
+  </div>
+
+  <!-- ============ 页面：IDE 插件 ============ -->
+  <div class="page" id="page-ide">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'ide-scan')">代码扫描</button>
+      <button class="tab-btn" onclick="switchTab(this,'ide-tools')">渗透工具</button>
+      <button class="tab-btn" onclick="switchTab(this,'ide-kb')">知识库</button>
+      <button class="tab-btn" onclick="switchTab(this,'ide-mkt')">插件市场</button>
+    </div>
+
+    <div class="tab-content active" id="tab-ide-scan">
+      <div class="panel">
+        <h3>实时代码安全扫描</h3>
+        <label>粘贴代码进行扫描</label>
+        <textarea id="scanCode" rows="6" placeholder="粘贴 Python/JS 代码...&#10;例如:&#10;password = 'supersecret123'&#10;eval(user_input)"></textarea>
+        <button class="btn" onclick="scanCode()">扫描代码</button>
+        <pre class="out" id="scanOut">等待扫描...</pre>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-ide-tools">
+      <div class="panel">
+        <h3>Payload 生成</h3>
+        <div class="row">
+          <div>
+            <label>类型</label>
+            <select id="payloadCat">
+              <option value="xss">XSS</option>
+              <option value="sqli">SQL 注入</option>
+              <option value="rce">命令执行</option>
+              <option value="ssrf">SSRF</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn" onclick="genPayload()">生成 Payload</button>
+        <pre class="out" id="payloadOut"></pre>
+      </div>
+      <div class="panel">
+        <h3>编码 / 解码</h3>
+        <div class="row">
+          <div><label>数据</label><input id="encData" value="hello world"></div>
+          <div><label>编码</label>
+            <select id="encType">
+              <option value="base64">Base64</option>
+              <option value="url">URL</option>
+              <option value="hex">Hex</option>
+              <option value="html">HTML</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn" onclick="encodeData()">编码</button>
+          <button class="btn ghost" onclick="decodeData()">解码</button>
+        </div>
+        <pre class="out" id="encOut"></pre>
+      </div>
+      <div class="panel">
+        <h3>Hash 计算</h3>
+        <div class="row">
+          <div><label>文本</label><input id="hashData" value="test123"></div>
+          <div><label>算法</label>
+            <select id="hashAlgo">
+              <option value="sha256">SHA-256</option>
+              <option value="md5">MD5</option>
+              <option value="sha1">SHA-1</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn" onclick="calcHash()">计算 Hash</button>
+        <pre class="out" id="hashOut"></pre>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-ide-kb">
+      <div class="panel">
+        <h3>CVE 查询</h3>
+        <div class="row">
+          <div><label>CVE 编号</label><input id="cveId" value="CVE-2024-23334"></div>
+        </div>
+        <button class="btn" onclick="queryCVE()">查询</button>
+        <pre class="out" id="cveOut"></pre>
+      </div>
+      <div class="panel">
+        <h3>OWASP Top 10</h3>
+        <pre class="out" id="owaspOut">加载中...</pre>
+        <button class="btn ghost" onclick="loadOWASP()">刷新</button>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-ide-mkt">
+      <div class="panel">
+        <h3>IDE 插件市场</h3>
+        <div id="ideMktList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 页面：SDK ============ -->
+  <div class="page" id="page-sdk">
+    <div class="panel">
+      <h3>SDK 概览</h3>
+      <pre class="out" id="sdkOverview">加载中...</pre>
+      <button class="btn ghost" onclick="loadSdkOverview()">刷新</button>
+    </div>
+    <div class="panel">
+      <h3>快速开始示例</h3>
+      <div class="code-block" id="sdkQuickstart">加载中...</div>
+    </div>
+    <div class="panel">
+      <h3>API 文档统计</h3>
+      <table>
+        <thead><tr><th>指标</th><th>值</th></tr></thead>
+        <tbody id="sdkDocsTable"></tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <h3>SDK 版本历史</h3>
+      <div id="sdkVersions"></div>
+    </div>
+  </div>
+
+  <!-- ============ 页面：开发者门户 ============ -->
+  <div class="page" id="page-portal">
+    <div class="panel">
+      <h3>门户首页数据</h3>
+      <div class="stat-row" id="portalStats"></div>
+    </div>
+    <div class="panel">
+      <h3>文档中心</h3>
+      <div id="portalDocs"></div>
+    </div>
+    <div class="panel">
+      <h3>SDK 下载</h3>
+      <div id="portalSdks"></div>
+    </div>
+    <div class="panel">
+      <h3>开发者注册</h3>
+      <div class="row">
+        <div><label>邮箱</label><input id="devEmail" placeholder="dev@example.com"></div>
+        <div><label>姓名</label><input id="devName" placeholder="张三"></div>
+        <div><label>公司（选填）</label><input id="devCompany" placeholder="公司名"></div>
+      </div>
+      <button class="btn" onclick="registerDev()">注册开发者</button>
+      <pre class="out" id="regOut"></pre>
+    </div>
+  </div>
+
+  <!-- ============ 页面：插件市场 ============ -->
+  <div class="page" id="page-marketplace">
+    <div class="panel">
+      <h3>插件市场</h3>
+      <div class="row" style="margin-bottom:10px">
+        <div><label>分类筛选</label>
+          <select id="mktCat"><option value="">全部分类</option></select>
+        </div>
+        <div><label>搜索</label><input id="mktSearch" placeholder="搜索插件..."></div>
+      </div>
+      <button class="btn" onclick="loadMarketplace()">搜索</button>
+      <div id="mktList" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <!-- ============ 页面：API 网关 ============ -->
+  <div class="page" id="page-apigw">
+    <div class="grid">
+      <div class="card"><h3>总请求数</h3><div class="num" id="gwTotal">-</div></div>
+      <div class="card green"><h3>缓存命中</h3><div class="num" id="gwCache">-</div></div>
+      <div class="card red"><h3>错误数</h3><div class="num" id="gwErr">-</div></div>
+      <div class="card purple"><h3>平均延迟</h3><div class="num" id="gwLat">-</div></div>
+    </div>
+    <div class="panel">
+      <h3>模拟请求</h3>
+      <div class="row">
+        <div><label>路径</label><input id="gwPath" value="/api/v1/assets"></div>
+        <div><label>方法</label>
+          <select id="gwMethod"><option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option></select>
+        </div>
+      </div>
+      <button class="btn" onclick="simRequest()">发送请求</button>
+      <pre class="out" id="gwOut"></pre>
+    </div>
+    <div class="panel">
+      <h3>API 版本管理</h3>
+      <div id="apiVersions"></div>
+    </div>
+    <div class="panel">
+      <h3>安全输入验证</h3>
+      <label>输入测试数据</label>
+      <input id="secInput" value="admin' OR '1'='1">
+      <button class="btn" onclick="validateInput()">检测安全威胁</button>
+      <pre class="out" id="secOut"></pre>
+    </div>
+  </div>
+
+  <!-- ============ 页面：Webhook ============ -->
+  <div class="page" id="page-webhook">
+    <div class="panel">
+      <h3>注册 Webhook</h3>
+      <div class="row">
+        <div><label>名称</label><input id="whName" value="我的Webhook"></div>
+        <div><label>URL</label><input id="whUrl" value="https://example.com/hook"></div>
+      </div>
+      <div class="row">
+        <div><label>事件（逗号分隔）</label><input id="whEvents" value="scan.completed,vuln.created"></div>
+      </div>
+      <button class="btn" onclick="registerWebhook()">注册</button>
+      <pre class="out" id="whRegOut"></pre>
+    </div>
+    <div class="panel">
+      <h3>已注册 Webhooks</h3>
+      <div id="whList"></div>
+    </div>
+    <div class="panel">
+      <h3>可用事件类型</h3>
+      <pre class="out" id="whEvents"></pre>
+    </div>
+  </div>
+
+  <!-- ============ 页面：社区 ============ -->
+  <div class="page" id="page-community">
+    <div class="panel">
+      <h3>社区帖子</h3>
+      <div id="cmPosts"></div>
+    </div>
+    <div class="panel">
+      <h3>发布提问</h3>
+      <div class="row">
+        <div><label>标题</label><input id="cmTitle" placeholder="问题标题"></div>
+      </div>
+      <label>内容</label>
+      <textarea id="cmContent" rows="3" placeholder="详细描述你的问题..."></textarea>
+      <button class="btn" onclick="askCommunity()">发布</button>
+      <pre class="out" id="cmOut"></pre>
+    </div>
+    <div class="panel">
+      <h3>贡献者排行榜</h3>
+      <div id="cmLeaderboard"></div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = '/api/v1/developer-ecosystem';
+
+// ---------- 工具 ----------
+async function api(path, opts={}) {
+  try {
+    const r = await fetch(BASE + path, {
+      headers: {'Content-Type':'application/json'},
+      ...opts,
+    });
+    return await r.json();
+  } catch(e) {
+    return {success:false, error:String(e)};
+  }
+}
+function showToast(msg, ok=true) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (ok?'ok':'err');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const titles = {overview:'生态总览',cli:'CLI 命令行工具',desktop:'桌面客户端',ide:'IDE 插件',sdk:'Python SDK',portal:'开发者门户',marketplace:'插件市场',apigw:'API 网关',webhook:'Webhook',community:'开发者社区'};
+  document.getElementById('pageTitle').textContent = titles[name] || name;
+  // 按需加载
+  if(name==='overview') loadOverview();
+  if(name==='cli') loadCliConfig();
+  if(name==='desktop') loadDesktop();
+  if(name==='sdk') loadSdkOverview();
+  if(name==='portal') loadPortal();
+  if(name==='marketplace') loadMarketplace();
+  if(name==='apigw') loadGateway();
+  if(name==='webhook') loadWebhooks();
+  if(name==='community') loadCommunity();
+}
+function switchTab(btn, tabId) {
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const parent = btn.closest('.panel') || btn.closest('.page');
+  parent.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+}
+function fmt(obj) { return JSON.stringify(obj, null, 2); }
+
+// ---------- 总览 ----------
+async function loadOverview() {
+  const d = await api('/overview');
+  if(d.success) {
+    document.getElementById('ovCliCmd').textContent = d.data.cli_commands || 0;
+    document.getElementById('ovPlugins').textContent = d.data.plugins_marketplace || 0;
+    document.getElementById('ovWebhooks').textContent = d.data.webhooks || 0;
+    document.getElementById('ovRoutes').textContent = d.data.api_routes || 0;
+    const mods = d.data.modules || {};
+    document.getElementById('ovModuleTable').innerHTML = Object.entries(mods).map(([k,v])=>
+      `<tr><td>${k}</td><td>${v}</td><td><span class="tag low">已加载</span></td></tr>`
+    ).join('');
+    document.getElementById('healthBadge').textContent = '运行正常';
+    document.getElementById('healthBadge').style.color = 'var(--green)';
+  } else {
+    showToast(d.error, false);
+  }
+}
+
+// ---------- CLI ----------
+async function execCli() {
+  const cmd = document.getElementById('cliCmd').value;
+  const args = document.getElementById('cliArgs').value.trim();
+  const body = JSON.stringify({command: cmd, args: args ? args.split(/\s+/) : []});
+  const d = await api('/cli/execute', {method:'POST', body});
+  document.getElementById('cliOut').textContent = fmt(d);
+}
+async function loadCliConfig() {
+  const d = await api('/cli/config');
+  document.getElementById('cliConfig').textContent = d.success ? fmt(d.data) : d.error;
+}
+
+// ---------- 桌面客户端 ----------
+async function loadDesktop() {
+  const d = await api('/desktop/system-status');
+  if(d.success) {
+    const s = d.data;
+    document.getElementById('dtPlatform').textContent = '当前平台';
+    document.getElementById('dtCpu').textContent = s.cpu_percent + '%';
+    document.getElementById('dtMem').textContent = s.memory.percent + '%';
+    document.getElementById('dtDisk').textContent = s.disk.percent + '%';
+  }
+  const o = await api('/desktop/overview');
+  document.getElementById('dtOverview').textContent = o.success ? fmt(o.data) : o.error;
+}
+async function checkUpdate() {
+  const d = await api('/desktop/updates');
+  document.getElementById('dtUpdate').textContent = d.success ? fmt(d.data) : d.error;
+}
+
+// ---------- IDE ----------
+async function scanCode() {
+  const code = document.getElementById('scanCode').value;
+  const d = await api('/ide/scan/code', {method:'POST', body: JSON.stringify({code, filename:'user_input.py'})});
+  document.getElementById('scanOut').textContent = fmt(d.data || d);
+}
+async function genPayload() {
+  const cat = document.getElementById('payloadCat').value;
+  const d = await api('/ide/payload/generate', {method:'POST', body: JSON.stringify({category:cat, count:4})});
+  document.getElementById('payloadOut').textContent = fmt(d.data || d);
+}
+async function encodeData() {
+  const data = document.getElementById('encData').value;
+  const enc = document.getElementById('encType').value;
+  const d = await api('/ide/encode', {method:'POST', body: JSON.stringify({data, encoding:enc})});
+  document.getElementById('encOut').textContent = fmt(d.data || d);
+}
+async function decodeData() {
+  const data = document.getElementById('encData').value;
+  const enc = document.getElementById('encType').value;
+  const d = await api('/ide/decode', {method:'POST', body: JSON.stringify({data, encoding:enc})});
+  document.getElementById('encOut').textContent = fmt(d.data || d);
+}
+async function calcHash() {
+  const data = document.getElementById('hashData').value;
+  const algo = document.getElementById('hashAlgo').value;
+  const d = await api('/ide/hash', {method:'POST', body: JSON.stringify({data, algorithm:algo})});
+  document.getElementById('hashOut').textContent = fmt(d.data || d);
+}
+async function queryCVE() {
+  const cve = document.getElementById('cveId').value;
+  const d = await api('/ide/knowledge/cve/' + cve);
+  document.getElementById('cveOut').textContent = fmt(d.data || d);
+}
+async function loadOWASP() {
+  const d = await api('/ide/knowledge/owasp');
+  document.getElementById('owaspOut').textContent = fmt(d.data || d);
+}
+
+// ---------- SDK ----------
+async function loadSdkOverview() {
+  const d = await api('/sdk/overview');
+  document.getElementById('sdkOverview').textContent = d.success ? fmt(d.data) : d.error;
+  const ex = await api('/sdk/examples');
+  if(ex.success) document.getElementById('sdkQuickstart').textContent = ex.data.quickstart;
+  const doc = await api('/sdk/docs');
+  if(doc.success) {
+    document.getElementById('sdkDocsTable').innerHTML = [
+      ['文档端点数', doc.data.openapi.paths ? Object.keys(doc.data.openapi.paths).length : 0],
+      ['错误码数', Object.keys(doc.data.error_codes).length],
+      ['Markdown 文档长度', doc.data.markdown.length + ' 字符'],
+    ].map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
+  }
+  const ver = await api('/sdk/versions');
+  if(ver.success) {
+    document.getElementById('sdkVersions').innerHTML = ver.data.versions.map(v=>
+      `<div style="padding:8px;border-bottom:1px solid var(--border)">
+        <strong>${v.version}</strong> <span class="tag ${v.status==='stable'?'low':v.status==='deprecated'?'med':'info'}">${v.status}</span>
+        <small style="color:var(--muted)"> ${v.released}</small>
+        <div style="margin-top:4px;color:var(--muted);font-size:12px">${(v.changes||[]).join('; ')}</div>
+      </div>`
+    ).join('');
+  }
+}
+
+// ---------- 门户 ----------
+async function loadPortal() {
+  const h = await api('/portal/home');
+  if(h.success) {
+    const s = h.data.stats;
+    document.getElementById('portalStats').innerHTML = Object.entries(s).map(([k,v])=>
+      `<div class="stat-item"><div class="val">${v}</div><div class="lbl">${k}</div></div>`
+    ).join('');
+  }
+  const docs = await api('/portal/docs');
+  if(docs.success) {
+    document.getElementById('portalDocs').innerHTML = docs.data.docs.map(d=>
+      `<div style="padding:8px;border-bottom:1px solid var(--border)">
+        <strong>${d.title}</strong> <span class="tag info">${d.category}</span>
+        <small style="color:var(--muted);float:right">${d.updated}</small>
+      </div>`
+    ).join('');
+  }
+  const sdks = await api('/portal/sdks');
+  if(sdks.success) {
+    document.getElementById('portalSdks').innerHTML = sdks.data.sdks.map(s=>
+      `<div class="plugin-card"><div class="info">
+        <strong>${s.language}</strong> <span class="tag purple">${s.package}</span>
+        <div style="font-size:12px;color:var(--muted)">${s.install}</div>
+      </div><span class="tag low">${s.version}</span></div>`
+    ).join('');
+  }
+}
+async function registerDev() {
+  const body = JSON.stringify({
+    email: document.getElementById('devEmail').value,
+    name: document.getElementById('devName').value,
+    company: document.getElementById('devCompany').value,
+  });
+  const d = await api('/portal/register', {method:'POST', body});
+  document.getElementById('regOut').textContent = fmt(d.data || d);
+  if(d.success) showToast('开发者注册成功');
+}
+
+// ---------- 插件市场 ----------
+async function loadMarketplace() {
+  const cat = document.getElementById('mktCat').value;
+  const search = document.getElementById('mktSearch').value;
+  const d = await api('/marketplace/list?category=' + encodeURIComponent(cat) + '&search=' + encodeURIComponent(search));
+  if(d.success) {
+    document.getElementById('mktList').innerHTML = d.data.plugins.map(p=>
+      `<div class="plugin-card">
+        <div class="info">
+          <strong>${p.name}</strong> <span class="tag info">${p.category}</span>
+          <div style="font-size:12px;color:var(--muted);margin:4px 0">${p.description}</div>
+          <div style="font-size:12px">
+            <span class="tag low">★ ${p.rating}</span>
+            <span class="tag info">${p.downloads} 下载</span>
+            ${p.verified ? '<span class="tag low">✓ 已验证</span>' : ''}
+          </div>
+        </div>
+        <div>
+          <span class="tag purple">v${p.version}</span>
+          <button class="btn green" style="margin-top:0" onclick="installPlugin('${p.id}')">安装</button>
+        </div>
+      </div>`
+    ).join('');
+  }
+}
+async function installPlugin(pid) {
+  const d = await api('/marketplace/' + pid + '/install', {method:'POST'});
+  showToast(d.success ? '插件安装成功' : d.error, d.success);
+}
+
+// ---------- API 网关 ----------
+async function loadGateway() {
+  const m = await api('/gateway/metrics');
+  if(m.success) {
+    document.getElementById('gwTotal').textContent = m.data.total_requests;
+    document.getElementById('gwCache').textContent = m.data.cache_hits;
+    document.getElementById('gwErr').textContent = m.data.errors;
+    document.getElementById('gwLat').textContent = m.data.avg_latency_ms + 'ms';
+  }
+  const v = await api('/versions');
+  if(v.success) {
+    document.getElementById('apiVersions').innerHTML = Object.entries(v.data.versions).map(([k,val])=>
+      `<div style="padding:8px;border-bottom:1px solid var(--border)">
+        <strong>${k}</strong> <span class="tag ${val.status==='stable'?'low':'info'}">${val.status}</span>
+        <small style="color:var(--muted)"> 发布于 ${val.released} · ${val.endpoints} 端点</small>
+      </div>`
+    ).join('');
+  }
+}
+async function simRequest() {
+  const path = document.getElementById('gwPath').value;
+  const method = document.getElementById('gwMethod').value;
+  const d = await api('/gateway/simulate?path=' + encodeURIComponent(path) + '&method=' + method);
+  document.getElementById('gwOut').textContent = fmt(d.data || d);
+}
+async function validateInput() {
+  const data = document.getElementById('secInput').value;
+  const d = await api('/security/validate?data=' + encodeURIComponent(data));
+  document.getElementById('secOut').textContent = fmt(d.data || d);
+}
+
+// ---------- Webhook ----------
+async function loadWebhooks() {
+  const d = await api('/webhooks');
+  if(d.success) {
+    document.getElementById('whList').innerHTML = d.data.webhooks.map(w=>
+      `<div class="plugin-card"><div class="info">
+        <strong>${w.name}</strong> <small style="color:var(--muted)"> ${w.url}</small>
+        <div style="font-size:12px;margin-top:4px">${w.events.map(e=>`<span class="tag info">${e}</span>`).join('')}</div>
+      </div><span class="tag ${w.active?'low':'med'}">${w.active?'活跃':'停用'}</span></div>`
+    ).join('');
+    document.getElementById('whEvents').textContent = d.data.events.join('\n');
+  }
+}
+async function registerWebhook() {
+  const body = JSON.stringify({
+    name: document.getElementById('whName').value,
+    url: document.getElementById('whUrl').value,
+    events: document.getElementById('whEvents').value.split(',').map(s=>s.trim()),
+  });
+  const d = await api('/webhooks', {method:'POST', body});
+  document.getElementById('whRegOut').textContent = fmt(d.data || d);
+  if(d.success) { showToast('Webhook 注册成功'); loadWebhooks(); }
+}
+
+// ---------- 社区 ----------
+async function loadCommunity() {
+  const posts = await api('/community/posts');
+  if(posts.success) {
+    document.getElementById('cmPosts').innerHTML = posts.data.posts.map(p=>
+      `<div style="padding:10px;border-bottom:1px solid var(--border)">
+        <strong>${p.title}</strong> <span class="tag ${p.category==='qa'?'info':'purple'}">${p.category}</span>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">
+          ${p.author} · ${p.replies} 回复 · ${p.views} 浏览 · ${p.created_at}
+        </div>
+      </div>`
+    ).join('');
+  }
+  const lb = await api('/community/leaderboard');
+  if(lb.success) {
+    document.getElementById('cmLeaderboard').innerHTML = lb.data.rankings.map(r=>
+      `<div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid var(--border)">
+        <span>#${r.rank} ${r.name}</span>
+        <span style="color:var(--accent)">${r.contributions} 贡献</span>
+      </div>`
+    ).join('');
+  }
+}
+async function askCommunity() {
+  const body = JSON.stringify({
+    title: document.getElementById('cmTitle').value,
+    content: document.getElementById('cmContent').value,
+  });
+  const d = await api('/community/ask', {method:'POST', body});
+  document.getElementById('cmOut').textContent = fmt(d.data || d);
+  if(d.success) { showToast('提问发布成功'); loadCommunity(); }
+}
+
+// ---------- 初始化 ----------
+loadOverview();
+loadOWASP();
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "admin-001": {
+    "user_id": "admin-001",
+    "username": "admin",
+    "email": "admin@aihacking.local",
+    "role": "admin",
+    "created_at": 1788079076.869053,
+    "last_login": 1788079077.8352814,
+    "active": true,
+    "client_id": null,
+    "password_hash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+    "api_token": "0fbd8b0327db6b10f050012ca8cc7d24f2c2b2c4ed6ca776c96e69dd0a8519c6"
+  }
+}

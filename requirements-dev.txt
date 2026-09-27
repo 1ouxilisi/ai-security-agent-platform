@@ -1,0 +1,173 @@
+# AI Hacking Agent 开发依赖
+# 安装: pip install -r requirements-dev.txt
+
+# ===== 代码质量工具 =====
+black==24.2.0              # 代码格式化
+isort==5.13.2              # 导入排序
+flake8==7.0.0               # 代码检查
+flake8-bugbear==24.2.6      # Bug检测
+flake8-comprehensions==3.14.0  # 推导式检查
+flake8-docstrings==1.7.0    # 文档字符串检查
+flake8-isort==6.1.1         # isort集成
+flake8-quotes==3.3.2         # 引号检查
+flake8-return==1.2.0         # 返回值检查
+flake8-debugger==4.1.2       # 调试语句检查
+flake8-bandit==4.1.1         # 安全检查
+pep8-naming==0.13.3          # 命名规范
+mccabe==0.7.0                 # 复杂度检查
+
+# ===== 类型检查 =====
+mypy==1.8.0                   # 静态类型检查
+types-requests==2.31.0.20240125  # requests类型存根
+types-PyYAML==6.0.12.12      # PyYAML类型存根
+types-setuptools==69.0.0.20240125  # setuptools类型存根
+
+# ===== 测试框架 =====
+pytest==8.0.0                 # 测试框架
+pytest-cov==4.1.0             # 覆盖率
+pytest-asyncio==0.23.5        # 异步测试
+pytest-xdist==3.5.0            # 并行测试
+pytest-rerunfailures==13.0    # 失败重跑
+pytest-mock==3.12.0            # Mock支持
+pytest-factoryboy==2.6.1       # 工厂模式
+pytest-html==4.1.1              # HTML报告
+pytest-allure==2.13.2           # Allure报告
+pytest-watch==4.2.0              # 监听测试
+pytest-benchmark==4.0.0          # 性能基准测试
+pytest-sugar==0.9.7               # 美化输出
+pytest-instafail==0.5.0           # 即时失败
+pytest-timeout==2.2.0              # 超时控制
+pytest-ordering==0.6               # 测试排序
+pytest-datadir==1.5.0              # 测试数据目录
+pytest-env==1.1.3                   # 环境变量
+pytest-profiling==1.7.0             # 性能分析
+pytest-mypy==0.10.3                  # mypy集成
+pytest-flake8==1.1.1                 # flake8集成
+pytest-black==0.3.12                  # black集成
+pytest-isort==3.1.0                   # isort集成
+
+# ===== 安全测试 =====
+bandit==1.7.7                 # 安全扫描
+safety==3.0.1                  # 依赖安全
+pip-audit==2.6.2               # pip审计
+detect-secrets==1.4.0           # 密钥检测
+semgrep==1.57.0                 # 语义搜索
+
+# ===== 预提交 =====
+pre-commit==3.6.2              # 预提交钩子
+
+# ===== 文档生成 =====
+pdoc==14.3.0                    # API文档
+mkdocs==1.5.3                   # 项目文档
+mkdocs-material==9.5.6          # Material主题
+mkdocs-autorefs==1.0.1           # 自动引用
+mkdocstrings==0.24.1              # 文档字符串
+mkdocstrings-python==1.8.0         # Python处理器
+
+# ===== 构建和发布 =====
+build==1.0.3                     # 构建工具
+twine==5.0.0                      # 发布工具
+wheel==0.42.0                     # Wheel包
+setuptools==69.0.3                # 打包工具
+check-manifest==0.49              # 清单检查
+
+# ===== 性能分析 =====
+line-profiler==4.1.2              # 行级分析
+memory-profiler==0.61.0            # 内存分析
+py-spy==0.3.14                      # 采样分析
+snakeviz==2.2.0                     # 可视化分析
+
+# ===== 调试工具 =====
+debugpy==1.8.0                     # 调试器
+ipython==8.21.0                    # 交互式Python
+ipdb==0.13.13                       # 交互式调试
+ptpython==3.0.23                    # Python REPL
+
+# ===== 其他开发工具 =====
+rich==13.7.0                       # 富文本输出
+tqdm==4.66.1                        # 进度条
+click==8.1.7                        # CLI框架
+typer==0.9.0                         # 现代CLI
+pydantic==2.6.1                      # 数据验证
+python-dotenv==1.0.1                 # 环境变量
+pyyaml==6.0.1                         # YAML解析
+requests==2.31.0                      # HTTP客户端
+aiohttp==3.9.3                        # 异步HTTP
+httpx==0.26.0                         # 现代HTTP
+fastapi==0.109.2                      # Web框架
+uvicorn==0.27.1                        # ASGI服务器
+pytest-asyncio==0.23.5                 # 异步测试
+
+# ===== 数据处理 =====
+pandas==2.2.0                         # 数据分析
+numpy==1.26.4                          # 数值计算
+openpyxl==3.1.2                        # Excel处理
+
+# ===== 可视化 =====
+matplotlib==3.8.2                      # 绘图
+plotly==5.19.0                          # 交互式绘图
+
+# ===== 版本控制 =====
+gitpython==3.1.41                       # Git操作
+
+# ===== 代码审查 =====
+radon==6.0.1                            # 代码度量
+xenon==0.9.1                             # 复杂度门控
+vulture==2.11                             # 死代码检测
+pylint==3.0.3                             # 代码分析
+pyroma==4.2                               # 打包质量
+mypy-extensions==1.0.0                    # mypy扩展
+
+# ===== 依赖管理 =====
+pip-tools==7.4.1                          # 依赖锁定
+pipdeptree==2.16.0                         # 依赖树
+pip-check==2.8                              # 依赖检查
+pur==7.3.1                                   # 依赖更新
+safety==3.0.1                                # 安全检查
+liccheck==0.9.2                               # 许可证检查
+dparse==0.6.4                                  # 依赖解析
+pip-audit==2.6.2                                # 审计工具
+
+# ===== 数据库测试 =====
+pytest-postgresql==5.0.0                       # PostgreSQL测试
+pytest-mysql==2.4.2                              # MySQL测试
+pytest-redis==3.0.2                               # Redis测试
+pytest-mongodb==2.4.0                              # MongoDB测试
+
+# ===== API测试 =====
+pytest-httpx==0.30.0                                # httpx测试
+pytest-httpserver==1.0.10                             # HTTP服务器测试
+responses==0.24.5                                       # requests mock
+respx==0.20.2                                            # httpx mock
+
+# ===== 覆盖率 =====
+coverage==7.4.1                                            # 覆盖率
+coverage-badge==1.1.0                                       # 覆盖率徽章
+pytest-cov==4.1.0                                             # pytest集成
+diff-cover==8.0.2                                               # 差异覆盖率
+
+# ===== 代码格式化 =====
+autopep8==2.0.4                                                  # 自动PEP8
+yapf==0.40.2                                                       # 另一个格式化器
+docformatter==1.7.5                                                 # 文档格式化
+pyupgrade==3.15.1                                                    # Python升级
+
+# ===== 其他 =====
+freezegun==1.4.0                                                     # 时间冻结
+faker==22.4.0                                                          # 假数据
+factory-boy==3.3.0                                                      # 测试工厂
+hypothesis==6.98.3                                                       # 基于属性测试
+pytest-randomly==3.15.0                                                    # 随机测试顺序
+pytest-repeat==0.9.2                                                        # 重复测试
+pytest-flask==1.3.0                                                          # Flask测试
+pytest-django==4.8.0                                                           # Django测试
+pytest-tornado==0.8.1                                                            # Tornado测试
+pytest-aiohttp==1.0.5                                                              # aiohttp测试
+pytest-trio==0.8.0                                                                   # Trio测试
+pytest-bdd==7.1.1                                                                      # BDD测试
+pytest-csv==3.0.0                                                                        # CSV报告
+pytest-json-report==1.5.0                                                                 # JSON报告
+pytest-metadata==3.0.0                                                                      # 元数据
+pytest-base-url==2.1.0                                                                       # 基础URL
+pytest-selenium==4.1.0                                                                          # Selenium测试
+pytest-playwright==0.4.4                                                                          # Playwright测试

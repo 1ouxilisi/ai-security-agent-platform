@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>取证 Pro · 数字取证分析平台</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#121821; --panel2:#18212d; --border:#243040;
+  --fg:#e6edf3; --muted:#8b98a8; --accent:#26c6da; --ok:#2ecc71;
+  --warn:#f1c40f; --high:#ff7043; --crit:#ff1744; --ai:#ce93d8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  font-size:13px;line-height:1.5;}
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 18px;background:linear-gradient(90deg,#0d151a,#13222a);
+  border-bottom:1px solid var(--border);}
+header h1{font-size:16px;margin:0;color:var(--accent)}
+header .sub{color:var(--muted);font-size:12px;margin-left:10px}
+button{background:#1c2733;color:var(--fg);border:1px solid var(--border);
+  padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px}
+button:hover{background:#243240}
+button.primary{background:#006978;border-color:#00838f}
+button.danger{background:#b71c1c;border-color:#c62828}
+.tabbar{display:flex;gap:2px;padding:8px 18px;background:#0e141b;
+  border-bottom:1px solid var(--border);overflow-x:auto}
+.tabbar .tab{padding:6px 14px;cursor:pointer;border-radius:4px;
+  color:var(--muted);white-space:nowrap}
+.tabbar .tab.active{background:#1c2733;color:var(--accent)}
+main{padding:14px 18px}
+.panel{background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;padding:12px;margin-bottom:12px}
+.panel h3{margin:0 0 8px;font-size:13px;color:var(--accent)}
+.grid{display:grid;gap:12px}
+.grid.c2{grid-template-columns:1fr 1fr}
+.grid.c3{grid-template-columns:1fr 1fr 1fr}
+.grid.c4{grid-template-columns:repeat(4,1fr)}
+.grid.c5{grid-template-columns:repeat(5,1fr)}
+@media(max-width:1100px){.grid.c3,.grid.c4,.grid.c5{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.grid.c2,.grid.c3,.grid.c4,.grid.c5{grid-template-columns:1fr}}
+.kpi{background:var(--panel2);border:1px solid var(--border);
+  border-radius:6px;padding:10px 12px}
+.kpi .v{font-size:22px;font-weight:600}
+.kpi .l{color:var(--muted);font-size:11px}
+.kpi.crit .v{color:var(--crit)} .kpi.high .v{color:var(--high)}
+.kpi.ok .v{color:var(--ok)} .kpi.ai .v{color:var(--ai)}
+.kpi.acc .v{color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:5px 8px;border-bottom:1px solid var(--border);
+  text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+.badge{display:inline-block;padding:1px 7px;border-radius:10px;
+  font-size:11px}
+.badge.critical{background:#5b1320;color:#ff8a80}
+.badge.high{background:#4e2a1a;color:#ffab91}
+.badge.medium{background:#4a3d16;color:#ffd54f}
+.badge.low{background:#1f3a4a;color:#81d4fa}
+.bar{height:8px;background:#1c2733;border-radius:4px;overflow:hidden}
+.bar > i{display:block;height:100%;background:var(--accent)}
+.stage{display:flex;align-items:center;gap:8px;padding:6px 0;
+  border-bottom:1px dashed var(--border)}
+.stage .dot{width:10px;height:10px;border-radius:50%;
+  background:#2a3441;flex:none}
+.stage.done .dot{background:var(--ok)}
+.stage.active .dot{background:var(--accent);
+  box-shadow:0 0 8px var(--accent)}
+.log{background:#0a0e13;border:1px solid var(--border);
+  border-radius:4px;padding:8px;height:260px;overflow:auto;
+  font-family:Consolas,monospace;font-size:11px;white-space:pre-wrap}
+.log .info{color:#4fc3f7}.log .ok{color:#2ecc71}
+.log .warn{color:#f1c40f}.log .error{color:#ff5252}
+.log .ai{color:#ce93d8}.log .think{color:#b39ddb}
+.log .alert{color:#ff5252}.log .find{color:#26c6da}
+.thought{background:#1a1425;border-left:3px solid var(--ai);
+  padding:6px 10px;margin:4px 0;border-radius:3px;color:var(--ai);
+  font-style:italic;font-size:12px}
+.alertitem{padding:6px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;gap:8px}
+.muted{color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input,select,textarea{background:#0e141b;color:var(--fg);
+  border:1px solid var(--border);padding:5px 8px;border-radius:4px;
+  font-size:12px}
+canvas{background:#0a0e13;border-radius:4px}
+.hidden{display:none}
+footer{padding:8px 18px;color:var(--muted);font-size:11px;
+  border-top:1px solid var(--border)}
+.chip{display:inline-block;background:#1c2733;padding:2px 8px;
+  border-radius:10px;font-size:11px;margin:2px}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🔍 取证 Pro <span class="sub">数字取证分析平台 · 八阶段闭环</span></h1></div>
+  <div class="row">
+    <button class="primary" onclick="startRun()">▶ 启动八阶段取证</button>
+    <button onclick="refreshAll()">🔄 刷新大屏</button>
+    <span id="taskBadge" class="muted">未启动任务</span>
+  </div>
+</header>
+
+<div class="tabbar">
+  <div class="tab active" data-tab="screen">📊 取证大屏</div>
+  <div class="tab" data-tab="flow">🔄 八阶段流程</div>
+  <div class="tab" data-tab="evidence">📦 证据管理</div>
+  <div class="tab" data-tab="disk">💽 磁盘取证</div>
+  <div class="tab" data-tab="memory">🧠 内存取证</div>
+  <div class="tab" data-tab="network">🌐 网络取证</div>
+  <div class="tab" data-tab="log">📋 日志取证</div>
+  <div class="tab" data-tab="malware">🦠 恶意软件</div>
+  <div class="tab" data-tab="report">📄 取证报告</div>
+</div>
+
+<main>
+<!-- ====================== 取证大屏 ====================== -->
+<section id="tab-screen">
+  <div class="grid c5">
+    <div class="kpi acc"><div class="l">证据总数</div><div class="v" id="kpiEvidence">-</div></div>
+    <div class="kpi ok"><div class="l">已分析</div><div class="v" id="kpiAnalyzed">-</div></div>
+    <div class="kpi high"><div class="l">发现数</div><div class="v" id="kpiFindings">-</div></div>
+    <div class="kpi crit"><div class="l">告警数</div><div class="v" id="kpiAlerts">-</div></div>
+    <div class="kpi ai"><div class="l">完成率</div><div class="v" id="kpiRate">-</div></div>
+  </div>
+  <div class="grid c2" style="margin-top:12px">
+    <div class="panel">
+      <h3>八阶段进度</h3>
+      <div id="stageProg"></div>
+    </div>
+    <div class="panel">
+      <h3>证据类型分布</h3>
+      <canvas id="typeCanvas" width="520" height="200"></canvas>
+    </div>
+  </div>
+  <div class="grid c2">
+    <div class="panel">
+      <h3>Top 发现项</h3>
+      <div id="topFindings"></div>
+    </div>
+    <div class="panel">
+      <h3>实时告警滚动</h3>
+      <div id="alertFeed" style="max-height:260px;overflow:auto"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>攻击时间线</h3>
+    <div id="attackTimeline"></div>
+  </div>
+</section>
+
+<!-- ====================== 八阶段流程 ====================== -->
+<section id="tab-flow" class="hidden">
+  <div class="panel">
+    <h3>整体进度</h3>
+    <div class="bar" style="margin:6px 0"><i id="overallBar" style="width:0%"></i></div>
+    <div class="row muted"><span id="overallText">等待启动</span></div>
+  </div>
+  <div class="grid c2">
+    <div class="panel"><h3>八阶段状态</h3><div id="stageList"></div></div>
+    <div class="panel"><h3>思考过程</h3><div id="thoughtBox" style="max-height:320px;overflow:auto"></div></div>
+  </div>
+  <div class="panel"><h3>实时日志流</h3><div id="logBox" class="log"></div></div>
+</section>
+
+<!-- ====================== 证据管理 ====================== -->
+<section id="tab-evidence" class="hidden">
+  <div class="panel">
+    <div class="row">
+      <button class="primary" onclick="loadEvidence()">刷新证据</button>
+      <button onclick="loadChains()">证据链</button>
+      <button onclick="loadPresStats()">保全统计</button>
+    </div>
+  </div>
+  <div class="panel"><h3>证据清单</h3>
+    <table id="evTable"><thead><tr>
+      <th>编号</th><th>类型</th><th>名称</th><th>采集人</th>
+      <th>时间</th><th>工具</th><th>状态</th></tr></thead>
+      <tbody></tbody></table>
+  </div>
+  <div class="panel"><h3>证据链 / 保管链</h3>
+    <div id="chainList"></div>
+  </div>
+</section>
+
+<!-- ====================== 磁盘取证 ====================== -->
+<section id="tab-disk" class="hidden">
+  <div class="grid c2">
+    <div class="panel"><h3>文件系统分析</h3>
+      <button onclick="loadDiskFs()">分析 NTFS</button>
+      <div id="diskFsOut" style="margin-top:8px"></div>
+    </div>
+    <div class="panel"><h3>注册表分析</h3>
+      <button onclick="loadDiskReg()">分析注册表</button>
+      <div id="diskRegOut" style="margin-top:8px"></div>
+    </div>
+  </div>
+  <div class="grid c2">
+    <div class="panel"><h3>浏览器历史</h3>
+      <button onclick="loadDiskBrowser()">Chrome 历史</button>
+      <div id="diskBrOut" style="margin-top:8px"></div>
+    </div>
+    <div class="panel"><h3>Prefetch / 回收 / 加密</h3>
+      <button onclick="loadDiskPrefetch()">Prefetch</button>
+      <button onclick="loadDiskRecycle()">回收站</button>
+      <button onclick="loadDiskEnc()">加密容器</button>
+      <div id="diskMiscOut" style="margin-top:8px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== 内存取证 ====================== -->
+<section id="tab-memory" class="hidden">
+  <div class="panel">
+    <h3>Volatility3 插件</h3>
+    <div class="row">
+      <button class="primary" onclick="runMemAll()">运行全部插件</button>
+      <button onclick="loadMemTools()">工具探测</button>
+    </div>
+    <div id="memToolsOut" style="margin-top:8px"></div>
+  </div>
+  <div class="panel"><h3>插件结果</h3>
+    <div id="memOut" style="white-space:pre-wrap;max-height:400px;overflow:auto"
+         class="muted">点击"运行全部插件"</div>
+  </div>
+</section>
+
+<!-- ====================== 网络取证 ====================== -->
+<section id="tab-network" class="hidden">
+  <div class="grid c2">
+    <div class="panel"><h3>异常检测</h3>
+      <button class="primary" onclick="loadNetAnomaly()">检测异常</button>
+      <div id="netAnomOut" style="margin-top:8px"></div>
+    </div>
+    <div class="panel"><h3>入侵痕迹</h3>
+      <button onclick="loadNetIntrusion()">检测入侵</button>
+      <div id="netIntrOut" style="margin-top:8px"></div>
+    </div>
+  </div>
+  <div class="grid c2">
+    <div class="panel"><h3>数据外泄</h3>
+      <button onclick="loadNetExfil()">外泄分析</button>
+      <div id="netExfilOut" style="margin-top:8px"></div>
+    </div>
+    <div class="panel"><h3>IOC 匹配</h3>
+      <input id="iocValue" placeholder="IP/域名/哈希" value="185.220.101.45">
+      <button onclick="netIocMatch()">匹配</button>
+      <div id="netIocOut" style="margin-top:8px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== 日志取证 ====================== -->
+<section id="tab-log" class="hidden">
+  <div class="panel"><h3>攻击路径重建</h3>
+    <button class="primary" onclick="loadAttackPath()">重建攻击路径</button>
+    <div id="attackPathOut" style="margin-top:8px"></div>
+  </div>
+  <div class="grid c2">
+    <div class="panel"><h3>登录分析</h3>
+      <button onclick="loadLogins()">登录分析</button>
+      <div id="loginOut" style="margin-top:8px"></div>
+    </div>
+    <div class="panel"><h3>用户行为</h3>
+      <button onclick="loadBehavior()">行为分析</button>
+      <div id="behaviorOut" style="margin-top:8px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== 恶意软件 ====================== -->
+<section id="tab-malware" class="hidden">
+  <div class="panel"><h3>静态分析</h3>
+    <button class="primary" onclick="mwStatic()">分析 sample.exe</button>
+    <div id="mwStaticOut" style="margin-top:8px;white-space:pre-wrap"
+         class="muted">点击运行静态分析</div>
+  </div>
+  <div class="grid c2">
+    <div class="panel"><h3>动态行为</h3>
+      <button onclick="mwDynamic()">动态分析</button>
+      <div id="mwDynOut" style="margin-top:8px"></div>
+    </div>
+    <div class="panel"><h3>分类 / IOC</h3>
+      <button onclick="mwClassify()">分类</button>
+      <button onclick="mwIoc()">提取 IOC</button>
+      <div id="mwClassOut" style="margin-top:8px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== 报告 ====================== -->
+<section id="tab-report" class="hidden">
+  <div class="panel"><h3>生成取证报告</h3>
+    <button class="primary" onclick="genReport()">生成 MD+HTML 报告</button>
+    <div id="reportOut" style="margin-top:10px;white-space:pre-wrap"
+         class="muted"></div>
+  </div>
+</section>
+</main>
+
+<footer>取证 Pro · 方向2 取证分析做深 · 内存字典存储 · 真实工具未安装时明确提示不 mock</footer>
+
+<script>
+const API='/api/v1/forensics-pro';
+let ws=null, curTask='';
+
+async function api(p,opt){
+  const r=await fetch(API+p,Object.assign({headers:{'Content-Type':'application/json'}},opt||{}));
+  return r.json();
+}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function sevBadge(s){return `<span class="badge ${s}">${s}</span>`;}
+
+// ---- tabs ----
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));
+    document.getElementById('tab-'+t.dataset.tab).classList.remove('hidden');
+  };
+});
+
+// ---- 大屏 ----
+async function refreshAll(){
+  const d=await api('/dashboard/full'); if(!d.success)return;
+  const o=d.data.overview;
+  document.getElementById('kpiEvidence').textContent=o.evidence_total;
+  document.getElementById('kpiAnalyzed').textContent=o.analyzing;
+  document.getElementById('kpiFindings').textContent=o.findings_total;
+  document.getElementById('kpiAlerts').textContent=o.alerts_active;
+  document.getElementById('kpiRate').textContent=o.completion_rate+'%';
+  // stage progress
+  document.getElementById('stageProg').innerHTML=(d.data.stage_progress||[]).map(s=>
+    `<div class="stage"><span class="dot"></span>
+     <span style="flex:1">${esc(s.label)}</span>
+     <span class="muted">${s.progress}%</span></div>`).join('');
+  // type distribution canvas
+  drawTypes(d.data.evidence_types||{});
+  // top findings
+  document.getElementById('topFindings').innerHTML=(d.data.top_findings||[]).map(f=>
+    `<div class="alertitem">${sevBadge(f.severity)}
+     <span style="flex:1">${esc(f.detail)}</span>
+     <span class="muted">${esc(f.src)}</span></div>`).join('')||
+    '<span class="muted">暂无</span>';
+  // alert feed
+  document.getElementById('alertFeed').innerHTML=(d.data.recent_alerts||[]).map(a=>
+    `<div class="alertitem">${sevBadge(a.severity)}
+     <span style="flex:1">${esc(a.detail)}</span>
+     <span class="muted">${esc(a.src)}</span></div>`).join('')||
+    '<span class="muted">暂无告警，点击"启动八阶段取证"</span>';
+  // attack timeline
+  document.getElementById('attackTimeline').innerHTML=(d.data.attack_timeline||[]).map(s=>
+    `<div class="alertitem"><span class="chip">${s.order}</span>
+     <span class="muted">${s.time}</span>
+     <span style="flex:1">${esc(s.step)}</span>
+     <span class="muted">${esc(s.evidence)}</span></div>`).join('');
+}
+function drawTypes(obj){
+  const c=document.getElementById('typeCanvas'),x=c.getContext('2d');
+  const W=c.width,H=c.height;x.clearRect(0,0,W,H);
+  const keys=Object.keys(obj); if(!keys.length)return;
+  const total=keys.reduce((a,k)=>a+obj[k],0);
+  let cx=W/2, cy=H/2, r=70, start=-Math.PI/2;
+  const colors=['#26c6da','#ff7043','#ffd54f','#2ecc71','#ce93d8'];
+  keys.forEach((k,i)=>{
+    const ang=obj[k]/total*Math.PI*2;
+    x.beginPath();x.moveTo(cx,cy);
+    x.arc(cx,cy,r,start,start+ang);x.closePath();
+    x.fillStyle=colors[i%colors.length];x.fill();
+    start+=ang;
+  });
+  x.fillStyle='#8b98a8';x.font='10px sans-serif';
+  keys.forEach((k,i)=>{x.fillText(k+':'+obj[k],10,15+i*14);});
+}
+
+// ---- 八阶段 ----
+function renderStages(list){
+  const el=document.getElementById('stageList');
+  el.innerHTML=(list||[]).map(s=>
+    `<div class="stage" data-key="${s.key}">
+      <span class="dot"></span>
+      <span style="flex:1">${esc(s.label)}</span>
+      <span class="muted">${s.progress}%</span></div>`).join('');
+}
+async function loadStages(){
+  const d=await api('/stages'); if(d.success)renderStages(d.data.stages);
+}
+function markStage(key,state){
+  document.querySelectorAll('#stageList .stage').forEach(n=>{
+    n.classList.remove('active','done');
+    if(n.dataset.key===key)n.classList.add(state);
+  });
+}
+function appendLog(ev){
+  const box=document.getElementById('logBox');
+  const cls=(ev.level||'INFO').toLowerCase();
+  const div=document.createElement('div');
+  div.className=cls;
+  div.textContent=`[${ev.timestamp||''}] ${ev.level||''} ${ev.message||''}`;
+  box.appendChild(div);box.scrollTop=box.scrollHeight;
+}
+function appendThought(t){
+  const box=document.getElementById('thoughtBox');
+  const div=document.createElement('div');
+  div.className='thought';div.textContent='💭 '+t;
+  box.appendChild(div);box.scrollTop=box.scrollHeight;
+}
+
+async function startRun(){
+  const r=await api('/start',{method:'POST',body:JSON.stringify({name:'数字取证全流程'})});
+  if(!r.success){alert(r.error);return;}
+  curTask=r.data.task_id;
+  document.getElementById('taskBadge').textContent='任务: '+curTask;
+  document.getElementById('logBox').innerHTML='';
+  document.getElementById('thoughtBox').innerHTML='';
+  connectWS(curTask);
+}
+function connectWS(tid){
+  if(ws)try{ws.close();}catch(e){}
+  const proto=location.protocol==='https:'?'wss':'ws';
+  ws=new WebSocket(`${proto}://${location.host}${API}/ws/${tid}`);
+  ws.onmessage=e=>{
+    const ev=JSON.parse(e.data);
+    if(ev.type==='progress'){
+      document.getElementById('overallBar').style.width=ev.overall+'%';
+      document.getElementById('overallText').textContent=
+        `${ev.stage_label} · 整体 ${ev.overall}%`;
+      markStage(ev.stage,ev.overall>=100?'done':'active');
+    }else if(ev.type==='log'){appendLog(ev);}
+    else if(ev.type==='thought'){appendThought(ev.thought);}
+    else if(ev.type==='alert'||ev.type==='find'){refreshAll();}
+    else if(ev.type==='result'){refreshAll();}
+  };
+}
+
+// ---- 证据管理 ----
+async function loadEvidence(){
+  const d=await api('/acquisition/evidence');
+  document.querySelector('#evTable tbody').innerHTML=
+    (d.data.evidence||[]).map(e=>
+      `<tr><td>${e.evidence_id}</td><td>${e.evidence_type}</td>
+       <td>${esc(e.name)}</td><td>${esc(e.collector)}</td>
+       <td>${e.collected_at}</td><td>${esc(e.tool)}</td>
+       <td>${e.status}</td></tr>`).join('');
+}
+async function loadChains(){
+  const d=await api('/preservation/chains');
+  document.getElementById('chainList').innerHTML=(d.data.chains||[]).map(c=>
+    `<div class="alertitem"><span>${c.chain_id}</span>
+     <span class="muted">${c.status}</span>
+     <span class="muted">${c.custodian}</span></div>`).join('')||
+    '<span class="muted">暂无证据链</span>';
+}
+async function loadPresStats(){
+  const d=await api('/preservation/stats');
+  alert('保全统计: '+JSON.stringify(d.data));
+}
+
+// ---- 磁盘取证 ----
+async function loadDiskFs(){
+  const d=await api('/disk/filesystem');
+  document.getElementById('diskFsOut').innerHTML=
+    `<div class="alertitem"><span>文件系统</span><span class="muted">${d.data.filesystem}</span></div>
+     <div class="alertitem"><span>总文件</span><span class="muted">${d.data.total_files}</span></div>
+     <div class="alertitem"><span>已删除</span><span class="muted">${d.data.deleted_files}</span></div>`;
+}
+async function loadDiskReg(){
+  const d=await api('/disk/registry');
+  document.getElementById('diskRegOut').innerHTML=(d.data.records||[]).map(r=>
+    `<div class="alertitem"><span>${esc(r.value_name)}</span>
+     <span class="muted">${esc(r.value)}</span></div>`).join('');
+}
+async function loadDiskBrowser(){
+  const d=await api('/disk/browser');
+  document.getElementById('diskBrOut').innerHTML=(d.data.top_visited||[]).map(v=>
+    `<div class="alertitem"><span>${esc(v.url)}</span>
+     <span class="muted">${v.visits}次</span></div>`).join('');
+}
+async function loadDiskPrefetch(){
+  const d=await api('/disk/prefetch');
+  document.getElementById('diskMiscOut').innerHTML=(d.data.executables||[]).map(e=>
+    `<div class="alertitem"><span>${esc(e.name)}</span>
+     <span class="muted">${e.run_count}次</span></div>`).join('');
+}
+async function loadDiskRecycle(){
+  const d=await api('/disk/recycle-bin');
+  document.getElementById('diskMiscOut').innerHTML=(d.data.items||[]).map(i=>
+    `<div class="alertitem"><span>${esc(i.original_path)}</span>
+     <span class="muted">${i.deleted_time}</span></div>`).join('');
+}
+async function loadDiskEnc(){
+  const d=await api('/disk/encrypted');
+  document.getElementById('diskMiscOut').innerHTML=(d.data.containers||[]).map(c=>
+    `<div class="alertitem"><span>${c.type}</span>
+     <span class="muted">${esc(c.path)}</span></div>`).join('');
+}
+
+// ---- 内存取证 ----
+async function loadMemTools(){
+  const d=await api('/memory/tools');
+  document.getElementById('memToolsOut').innerHTML=
+    `<div class="alertitem"><span>Volatility3</span>
+     <span class="muted">${d.data.volatility3.available?'已安装':'未安装'}</span></div>`;
+}
+async function runMemAll(){
+  const d=await api('/memory/run-all',{method:'POST',body:JSON.stringify({image_path:''})});
+  document.getElementById('memOut').textContent=JSON.stringify(d.data,null,2).slice(0,3000);
+}
+
+// ---- 网络取证 ----
+async function loadNetAnomaly(){
+  const d=await api('/network/anomalies');
+  document.getElementById('netAnomOut').innerHTML=(d.data.alerts||[]).map(a=>
+    `<div class="alertitem">${sevBadge(a.severity)}
+     <span style="flex:1">${esc(a.detail)}</span>
+     <span class="muted">${esc(a.src)}</span></div>`).join('');
+}
+async function loadNetIntrusion(){
+  const d=await api('/network/intrusions');
+  document.getElementById('netIntrOut').innerHTML=(d.data.attacks||[]).map(a=>
+    `<div class="alertitem">${sevBadge(a.severity)}
+     <span style="flex:1">${esc(a.type)}: ${esc(a.detail)}</span></div>`).join('');
+}
+async function loadNetExfil(){
+  const d=await api('/network/exfiltration');
+  document.getElementById('netExfilOut').innerHTML=(d.data.large_transfers||[]).map(t=>
+    `<div class="alertitem"><span>${esc(t.src)} -> ${esc(t.dst)}</span>
+     <span class="muted">${t.bytes_mb}MB ${t.protocol}</span></div>`).join('');
+}
+async function netIocMatch(){
+  const v=document.getElementById('iocValue').value;
+  const d=await api('/network/ioc-match',{method:'POST',
+    body:JSON.stringify({ioc_type:'ip',value:v})});
+  document.getElementById('netIocOut').innerHTML=
+    `<div class="alertitem"><span>${d.data.value}</span>
+     <span class="muted">${d.data.threat}</span></div>`;
+}
+
+// ---- 日志取证 ----
+async function loadAttackPath(){
+  const d=await api('/logs/attack-path');
+  document.getElementById('attackPathOut').innerHTML=(d.data.steps||[]).map(s=>
+    `<div class="alertitem"><span class="chip">${s.order}</span>
+     <span class="muted">${s.time}</span>
+     <span style="flex:1">${esc(s.step)}</span>
+     <span class="muted">${esc(s.evidence)}</span></div>`).join('');
+}
+async function loadLogins(){
+  const d=await api('/logs/logins');
+  document.getElementById('loginOut').innerHTML=
+    `<div class="alertitem"><span>成功</span><span class="muted">${d.data.success_logins}</span></div>
+     <div class="alertitem"><span>失败</span><span class="muted">${d.data.failed_logins}</span></div>`;
+}
+async function loadBehavior(){
+  const d=await api('/logs/behavior');
+  document.getElementById('behaviorOut').innerHTML=(d.data.anomalies||[]).map(a=>
+    `<div class="alertitem">${sevBadge(a.severity)}
+     <span>${esc(a.type)}: ${esc(a.detail)}</span></div>`).join('');
+}
+
+// ---- 恶意软件 ----
+async function mwStatic(){
+  const d=await api('/malware/static',{method:'POST',
+    body:JSON.stringify({file_path:'suspicious.exe'})});
+  document.getElementById('mwStaticOut').textContent=
+    '样本: '+d.data.sample_id+'\n哈希: '+d.data.hashes.sha256.slice(0,32)+
+    '...\n加壳: '+d.data.packer_detection.detected+
+    '\nYARA: '+(d.data.yara_matches||[]).map(y=>y.rule).join(', ');
+}
+async function mwDynamic(){
+  const d=await api('/malware/dynamic',{method:'POST',body:JSON.stringify({sample_id:''})});
+  document.getElementById('mwDynOut').innerHTML=(d.data.network_behavior||[]).map(n=>
+    `<div class="alertitem"><span>${esc(n.event)}</span>
+     <span class="muted">${esc(n.detail)}</span></div>`).join('');
+}
+async function mwClassify(){
+  const d=await api('/malware/classify',{method:'POST',body:JSON.stringify({sample_id:''})});
+  document.getElementById('mwClassOut').innerHTML=
+    `<div class="alertitem"><span>类型</span><span class="muted">${esc(d.data.type)}</span></div>
+     <div class="alertitem"><span>家族</span><span class="muted">${esc(d.data.family)}</span></div>
+     <div class="alertitem"><span>置信度</span><span class="muted">${d.data.confidence}%</span></div>`;
+}
+async function mwIoc(){
+  const d=await api('/malware/ioc',{method:'POST',body:JSON.stringify({sample_id:''})});
+  document.getElementById('mwClassOut').innerHTML=(d.data.iocs||[]).map(i=>
+    `<div class="alertitem"><span>${i.type}</span>
+     <span class="muted">${i.value}</span></div>`).join('');
+}
+
+// ---- 报告 ----
+async function genReport(){
+  const d=await api('/report/export',{method:'POST',
+    body:JSON.stringify({fmt:'both'})});
+  document.getElementById('reportOut').textContent=
+    '✅ 报告已生成\nMD: '+d.data.md_path+'\nHTML: '+d.data.html_path+
+    '\n\n'+d.data.markdown;
+}
+
+// init
+loadStages();refreshAll();
+setInterval(()=>{if(!curTask)refreshAll();},15000);
+</script>
+</body>
+</html>

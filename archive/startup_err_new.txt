@@ -1,0 +1,33 @@
+[32m2026-09-27 08:11:47[0m | [1mINFO    [0m | [36mutils.database[0m:[36m_init_database[0m:[36m168[0m - [1m✅ 数据库初始化完成: E:\BaiduNetdiskDownload\yuanbao\ai-hacking-agent\data\hacking_agent.db[0m
+[32m2026-09-27 08:11:47[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m649[0m - [1m安全中间件已加载（限流/IP过滤/请求日志/安全头）[0m
+[32m2026-09-27 08:11:48[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m671[0m - [1m新API路由已注册：用户认证/告警通知/数据备份/漏洞数据库/漏洞数据库/漏洞数据库/渗透测试工作流/高级安全模块(9模块40+端点)[0m
+[32m2026-09-27 08:11:48[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m687[0m - [1mv7.0新API路由已注册：内网渗透(25端点)/漏洞利用(20端点)/工具集成(18端点)/分布式扫描(22端点)，共85+新端点[0m
+[32m2026-09-27 08:11:48[0m | [1mINFO    [0m | [36mapi_server.combat_routes[0m:[36m<module>[0m:[36m600[0m - [1m实战能力API路由已加载[0m
+[32m2026-09-27 08:11:49[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m695[0m - [1m实战能力API路由已注册：SQL注入(3端点)/Metasploit(6端点)/AD攻击链(5端点)/Web利用(5端点)/攻击模板(5端点)，共25+新端点[0m
+[32m2026-09-27 08:11:49[0m | [1mINFO    [0m | [36mapi_server.new_domains_routes[0m:[36m<module>[0m:[36m295[0m - [1m新领域安全API路由已加载[0m
+[32m2026-09-27 08:11:49[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m703[0m - [1m新领域安全API路由已注册：移动安全(3端点)/云安全(3端点)/客户端安全(3端点)/AI安全(3端点)/综合状态(1端点)，共13个新端点[0m
+[32m2026-09-27 08:11:49[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m712[0m - [1m扩展安全模块API路由已注册：移动安全/内网渗透/云安全/API安全/客户端安全/代码审计/无线网络，共22个新端点[0m
+[32m2026-09-27 08:11:49[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m731[0m - [1m高级安全模块API路由已注册：AI安全/IoT安全/工控安全/区块链安全/取证分析/威胁情报/社会工程学/漏洞管理，共27个新端点[0m
+[32m2026-09-27 08:11:49[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m749[0m - [1m增强模块API路由已注册：真实工具集成/内网渗透增强/云安全增强/性能监控/多用户管理/分布式扫描，共40+新端点[0m
+[32m2026-09-27 08:11:49[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m758[0m - [1m一键安全评估API路由已注册：目标输入→端口扫描→漏洞扫描→Web检测→风险评级→报告生成，共7个端点[0m
+[32m2026-09-27 08:11:49[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m788[0m - [1m防御中心API路由已注册：IDS入侵检测/日志分析/基线检查/修复验证/威胁狩猎，共10个端点[0m
+[32m2026-09-27 08:11:49[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m808[0m - [1m商业化管理API路由已注册：多租户/计费订阅/API网关/数据安全/用户RBAC，共23个端点[0m
+[32m2026-09-27 08:11:49[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m836[0m - [1mv7.0新API路由已注册：内网渗透(25端点)/漏洞利用(20端点)/工具集成(18端点)/分布式扫描(22端点)，共85+新端点[0m
+[32m2026-09-27 08:11:49[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m1665[0m - [1m全域安全评估统一API路由已注册：评估执行/结果查询/知识库/报告生成，共10个端点[0m
+[32m2026-09-27 08:11:49[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m1685[0m - [1m统一平台控制台API路由已注册：overview/tools-status/stats/recent-activity/nav-config/health，共6个端点[0m
+[32m2026-09-27 08:11:50[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m1716[0m - [1m新手引导 API 路由已注册：/api/v1/onboarding/status|complete|steps[0m
+[32m2026-09-27 08:11:50[0m | [1mINFO    [0m | [36mmonitoring.scheduler[0m:[36m_load[0m:[36m197[0m - [1m加载定时任务 3 个[0m
+[32m2026-09-27 08:11:50[0m | [1mINFO    [0m | [36mmonitoring.scheduler[0m:[36mstart[0m:[36m233[0m - [1m定时任务调度器已启动[0m
+[32m2026-09-27 08:11:50[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m1744[0m - [1m持续监控API路由已注册：定时任务CRUD/节点状态/告警管理/代理池，共14个端点[0m
+[32m2026-09-27 08:11:50[0m | [1mINFO    [0m | [36mmonitoring.scheduler[0m:[36m_do_scan[0m:[36m404[0m - [1m[模拟执行] 任务 b7b5ef00 对 example.com 执行 port_scan[0m
+[32m2026-09-27 08:11:50[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m1753[0m - [1m团队协作API路由已注册：任务管理/评论/通知，共14个端点[0m
+2026-09-27 08:11:51,146 [INFO] db_manager: 数据库初始化完成: E:\BaiduNetdiskDownload\yuanbao\ai-hacking-agent\data\platform.db
+[32m2026-09-27 08:11:51[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m1762[0m - [1m数据分析API路由已注册：趋势/分布/Top/对比/摘要/导出，共9个端点[0m
+[32m2026-09-27 08:11:52[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m1771[0m - [1m报告管理API路由已注册：生成/下载/模板CRUD/格式列表，共7个端点[0m
+[32m2026-09-27 08:11:52[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m1780[0m - [1m集成管理API路由已注册：SIEM/工单/通知/LDAP/漏洞库，共25个端点[0m
+[32m2026-09-27 08:11:52[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m1789[0m - [1m高级安全API路由已注册：漏洞生命周期/资产发现/合规审计/攻击路径，共22个端点[0m
+[32m2026-09-27 08:11:52[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m1798[0m - [1m第5轮AI深度赋能路由已注册：自然语言对话/漏洞验证/修复方案/AI助手/对话历史，共7个端点[0m
+[32m2026-09-27 08:11:53[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m1807[0m - [1m企业级商业产品路由已注册：用户认证/扫描历史/持续监控/审计日志/任务队列/系统统计，共15个端点[0m
+[32m2026-09-27 08:11:53[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m1816[0m - [1m第5轮实战能力深化路由已注册：内网扫描/域审计/横向移动检测/凭据审计/BloodHound，共8个端点[0m
+[32m2026-09-27 08:11:53[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m1832[0m - [1mAI助手前端页面已注册：/ai-assistant[0m
+[32m2026-09-27 08:11:53[0m | [1mINFO    [0m | [36mapi_server.app[0m:[36m<module>[0m:[36m1841[0m - [1m第6轮漏洞真实验证路由已注册：Web验证/服务验证/全量验证/结果/统计/报告/历史，共7个端点[0m

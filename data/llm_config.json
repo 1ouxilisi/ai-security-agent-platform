@@ -1,0 +1,17 @@
+{
+  "providers": {
+    "deepseek": {
+      "api_key_enc": "fernet:gAAAAABqrzk72ue8_3EoETTT_k4_GCeMaLnfSH3k2cPF15gpuMs83oFZQqT92zsynknyDvZkeHm5BcooN2VKmIyHWkqLFyhPww==",
+      "base_url": null,
+      "model": "deepseek-chat",
+      "temperature": 0.7,
+      "max_tokens": 4096,
+      "timeout": 60,
+      "retries": 3,
+      "proxy": null,
+      "updated_at": 1789868347.294256
+    }
+  },
+  "default_provider": null,
+  "updated_at": 1789868347.294591
+}

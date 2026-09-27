@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>误报率优化Pro控制台</title>
+<style>
+:root {
+  --bg: #0f172a; --bg2: #1e293b; --bg3: #334155;
+  --border: #475569; --text: #e2e8f0; --text2: #94a3b8;
+  --green: #10b981; --yellow: #f59e0b; --red: #ef4444;
+  --blue: #3b82f6; --purple: #8b5cf6;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; padding:20px; }
+h1 { font-size:1.6rem; margin-bottom:4px; }
+.subtitle { color:var(--text2); font-size:.85rem; margin-bottom:20px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin-bottom:20px; }
+.card { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:16px; }
+.card h3 { font-size:.9rem; color:var(--text2); margin-bottom:8px; text-transform:uppercase; letter-spacing:.5px; }
+.metric { font-size:2rem; font-weight:700; }
+.metric.green { color:var(--green); } .metric.red { color:var(--red); } .metric.yellow { color:var(--yellow); }
+.badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.75rem; font-weight:600; }
+.badge.green { background:#10b98122; color:var(--green); }
+.badge.red { background:#ef444422; color:var(--red); }
+.badge.yellow { background:#f59e0b22; color:var(--yellow); }
+table { width:100%; border-collapse:collapse; font-size:.82rem; }
+th,td { padding:8px 10px; text-align:left; border-bottom:1px solid var(--border); }
+th { color:var(--text2); font-weight:600; font-size:.75rem; text-transform:uppercase; }
+tr:hover { background:var(--bg3); }
+.bar-bg { background:var(--bg3); border-radius:4px; height:8px; width:100%; }
+.bar-fill { height:100%; border-radius:4px; }
+.tabs { display:flex; gap:4px; margin-bottom:16px; flex-wrap:wrap; }
+.tab { padding:8px 16px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; cursor:pointer; font-size:.85rem; }
+.tab.active { background:var(--blue); border-color:var(--blue); color:#fff; }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+button { padding:8px 16px; background:var(--blue); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:.85rem; }
+button:hover { opacity:.9; }
+button.secondary { background:var(--bg3); }
+.progress-ring { width:120px; height:120px; position:relative; }
+.ring-text { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.ring-text .pct { font-size:1.8rem; font-weight:700; }
+.ring-text .label { font-size:.7rem; color:var(--text2); }
+.flex { display:flex; gap:16px; align-items:center; }
+.hidden { display:none; }
+</style>
+</head>
+<body>
+<h1>误报率优化Pro控制台</h1>
+<p class="subtitle">方向1核心：将误报率从18.75%降至5%以下 — 规则优化 + 二次验证 + 置信度评分 + FP过滤引擎</p>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('overview')">总览</div>
+  <div class="tab" onclick="showTab('compare')">优化前后对比</div>
+  <div class="tab" onclick="showTab('ranges')">10靶场验证</div>
+  <div class="tab" onclick="showTab('rules')">规则管理</div>
+  <div class="tab" onclick="showTab('verifier')">二次验证</div>
+  <div class="tab" onclick="showTab('scorer')">置信度评分</div>
+  <div class="tab" onclick="showTab('filter')">FP过滤引擎</div>
+</div>
+
+<!-- Tab: Overview -->
+<div id="tab-overview" class="tab-content active">
+  <div class="grid">
+    <div class="card">
+      <h3>优化前误报率</h3>
+      <div class="metric red" id="fp-before">--</div>
+      <span class="badge red">超标</span>
+    </div>
+    <div class="card">
+      <h3>优化后误报率</h3>
+      <div class="metric green" id="fp-after">--</div>
+      <span class="badge green" id="fp-target-badge">达标</span>
+    </div>
+    <div class="card">
+      <h3>误报减少</h3>
+      <div class="metric yellow" id="fp-reduction">--</div>
+    </div>
+    <div class="card">
+      <h3>二次验证通过</h3>
+      <div class="metric" style="color:var(--blue)" id="verified-count">--</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>模块状态</h3>
+    <div id="module-status"></div>
+  </div>
+</div>
+
+<!-- Tab: Compare -->
+<div id="tab-compare" class="tab-content">
+  <div class="card">
+    <h3>优化前后详细对比</h3>
+    <div id="compare-detail"></div>
+  </div>
+</div>
+
+<!-- Tab: Ranges -->
+<div id="tab-ranges" class="tab-content">
+  <div class="card">
+    <h3>10靶场验证结果</h3>
+    <table id="range-table">
+      <thead><tr><th>靶场</th><th>发现数</th><th>优化前FP</th><th>优化后FP</th><th>TP</th><th>验证通过</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Tab: Rules -->
+<div id="tab-rules" class="tab-content">
+  <div class="card">
+    <h3>当前规则集</h3>
+    <div id="rules-list"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>误报特征库</h3>
+    <div id="fp-sigs"></div>
+  </div>
+</div>
+
+<!-- Tab: Verifier -->
+<div id="tab-verifier" class="tab-content">
+  <div class="card">
+    <h3>验证Payload库</h3>
+    <div id="payloads-list"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>验证统计</h3>
+    <div id="verifier-stats"></div>
+  </div>
+</div>
+
+<!-- Tab: Scorer -->
+<div id="tab-scorer" class="tab-content">
+  <div class="card">
+    <h3>置信度等级</h3>
+    <div id="levels-info"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>当前分布</h3>
+    <div id="scorer-dist"></div>
+  </div>
+</div>
+
+<!-- Tab: Filter -->
+<div id="tab-filter" class="tab-content">
+  <div class="card">
+    <h3>过滤规则库</h3>
+    <div id="filter-rules"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>过滤统计</h3>
+    <div id="filter-stats"></div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1/fp-optimizer-pro';
+
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+async function fetchJSON(url, opts={}) {
+  const r = await fetch(url, opts);
+  return r.json();
+}
+
+function pct(n) { return (n * 100).toFixed(2) + '%'; }
+
+async function loadOverview() {
+  const [ov, comp] = await Promise.all([
+    fetchJSON(API + '/dashboard/overview'),
+    fetchJSON(API + '/dashboard/before-after'),
+  ]);
+  if (ov.success) {
+    const d = ov.data.optimization_result;
+    document.getElementById('fp-before').textContent = pct(ov.data.baseline.fp_rate);
+    document.getElementById('fp-after').textContent = pct(d.fp_rate_after);
+    document.getElementById('fp-reduction').textContent = d.fp_reduction + '%';
+    document.getElementById('verified-count').textContent = d.verified_count + '/' + (d.tp_after + d.fp_after);
+    document.getElementById('fp-target-badge').textContent = d.target_achieved ? '达标 <5%' : '未达标';
+    document.getElementById('fp-target-badge').className = 'badge ' + (d.target_achieved ? 'green' : 'red');
+
+    const ms = ov.data.modules;
+    document.getElementById('module-status').innerHTML = `
+      <table><tr><th>模块</th><th>统计</th></tr>
+      <tr><td>规则优化器</td><td>规则数: ${Object.keys(ms.rule_optimizer || {}).length}</td></tr>
+      <tr><td>二次验证</td><td>已验证: ${ms.secondary_verifier?.total_verified || 0}, 确认: ${ms.secondary_verifier?.confirmed || 0}</td></tr>
+      <tr><td>置信度评分</td><td>已评分: ${ms.confidence_scorer?.scored_count || 0}</td></tr>
+      <tr><td>FP过滤引擎</td><td>过滤: ${ms.fp_filter_engine?.rule_filtered || 0}</td></tr>
+      </table>`;
+  }
+}
+
+async function loadCompare() {
+  const r = await fetchJSON(API + '/dashboard/before-after');
+  if (!r.success) return;
+  const d = r.data;
+  document.getElementById('compare-detail').innerHTML = `
+    <table>
+      <tr><th>维度</th><th>优化前</th><th>优化后</th></tr>
+      <tr><td>误报率</td><td>${pct(d.before.fp_rate)}</td><td><b style="color:var(--green)">${pct(d.after.fp_rate)}</b></td></tr>
+      <tr><td>误报数量</td><td>${d.before.fp_count}</td><td><b>${d.after.fp_count}</b></td></tr>
+      <tr><td>总发现数</td><td>${d.before.total_findings}</td><td>${d.after.total_findings}</td></tr>
+      <tr><td>真阳性</td><td>${d.before.tp_count}</td><td>${d.after.tp_count}</td></tr>
+      <tr><td>验证机制</td><td>${d.before.verification_method}</td><td>${d.after.verification_method}</td></tr>
+      <tr><td>置信度模型</td><td>${d.before.confidence_model}</td><td>${d.after.confidence_model}</td></tr>
+      <tr><td>过滤规则</td><td>${d.before.filter_rules}</td><td>${d.after.filter_rules}</td></tr>
+    </table>
+    <h4 style="margin-top:16px">新增能力</h4>
+    <ul>${d.improvements.new_capabilities.map(c => `<li>${c}</li>`).join('')}</ul>`;
+}
+
+async function loadRanges() {
+  const r = await fetchJSON(API + '/dashboard/range-results');
+  if (!r.success) return;
+  const tbody = document.querySelector('#range-table tbody');
+  tbody.innerHTML = r.data.map(rg => `
+    <tr><td>${rg.name}</td><td>${rg.findings}</td>
+    <td style="color:var(--red)">${rg.fp_before}</td>
+    <td style="color:var(--green)">${rg.fp_after}</td>
+    <td>${rg.tp}</td><td>${rg.verification_pass}</td></tr>`).join('');
+}
+
+async function loadRules() {
+  const [rules, sigs] = await Promise.all([
+    fetchJSON(API + '/rules'),
+    fetchJSON(API + '/rules/fp-signatures'),
+  ]);
+  if (rules.success) {
+    const r = rules.data;
+    document.getElementById('rules-list').innerHTML = `
+      <p>规则版本: ${r.version} | 规则数: ${r.total_rules} | FP特征: ${r.fp_signatures_count} | 白名单: ${r.whitelist_count}</p>
+      <table><tr><th>类型</th><th>严重级</th><th>最低证据</th><th>需验证</th></tr>
+      ${Object.entries(r.rules).map(([k,v]) => `<tr><td>${k}</td><td>${v.severity}</td><td>${v.min_evidence}</td><td>${v.requires_verification ? '是' : '否'}</td></tr>`).join('')}
+      </table>`;
+  }
+  if (sigs.success) {
+    document.getElementById('fp-sigs').innerHTML = `
+      <table><tr><th>ID</th><th>名称</th><th>描述</th></tr>
+      ${sigs.data.signatures.map(s => `<tr><td>${s.id}</td><td>${s.name}</td><td>${s.description}</td></tr>`).join('')}
+      </table>`;
+  }
+}
+
+async function loadVerifier() {
+  const [pl, st] = await Promise.all([
+    fetchJSON(API + '/verifier/payloads'),
+    fetchJSON(API + '/verifier/stats'),
+  ]);
+  if (pl.success) {
+    document.getElementById('payloads-list').innerHTML = `
+      ${Object.entries(pl.data.payloads).map(([k,vs]) => `
+        <h4>${k} (${vs.length}个payload)</h4>
+        <table><tr><th>名称</th><th>方法</th><th>描述</th></tr>
+        ${vs.map(v => `<tr><td>${v.name}</td><td>${v.verify_method}</td><td>${v.description}</td></tr>`).join('')}
+        </table>`).join('')}`;
+  }
+  if (st.success) {
+    document.getElementById('verifier-stats').innerHTML = `<pre>${JSON.stringify(st.data, null, 2)}</pre>`;
+  }
+}
+
+async function loadScorer() {
+  const [lv, dist] = await Promise.all([
+    fetchJSON(API + '/scorer/levels'),
+    fetchJSON(API + '/scorer/distribution'),
+  ]);
+  if (lv.success) {
+    document.getElementById('levels-info').innerHTML = `
+      ${Object.entries(lv.data).map(([k,v]) => `
+        <div style="margin-bottom:8px">
+          <span class="badge" style="background:${v.color}22;color:${v.color}">${v.label}</span>
+          <span style="color:var(--text2);font-size:.8rem;margin-left:8px">${v.criteria}</span>
+        </div>`).join('')}`;
+  }
+  if (dist.success) {
+    document.getElementById('scorer-dist').innerHTML = `<pre>${JSON.stringify(dist.data, null, 2)}</pre>`;
+  }
+}
+
+async function loadFilter() {
+  const [rules, st] = await Promise.all([
+    fetchJSON(API + '/filter/rules'),
+    fetchJSON(API + '/filter/stats'),
+  ]);
+  if (rules.success) {
+    const r = rules.data;
+    document.getElementById('filter-rules').innerHTML = `
+      <p>总规则: ${r.total_rules} | 白名单: ${r.whitelist_count}</p>
+      <p>分类: ${Object.entries(r.categories).map(([k,v]) => `${k}(${v})`).join(', ')}</p>`;
+  }
+  if (st.success) {
+    document.getElementById('filter-stats').innerHTML = `<pre>${JSON.stringify(st.data, null, 2)}</pre>`;
+  }
+}
+
+// Load all
+loadOverview();
+loadCompare();
+loadRanges();
+loadRules();
+loadVerifier();
+loadScorer();
+loadFilter();
+</script>
+</body>
+</html>

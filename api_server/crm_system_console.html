@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>客户管理 CRM 控制台</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#2d3646;
+  --txt:#e6edf3; --muted:#8b98a9; --accent:#2ea043; --accent2:#1f6feb;
+  --warn:#d29922; --danger:#f85149; --purple:#a371f7; --cyan:#39d2c0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:13px;line-height:1.5}
+header{background:linear-gradient(90deg,#0d1117,#161b22);border-bottom:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:18px;font-weight:600}
+header h1 .dot{color:var(--accent)}
+header .sub{color:var(--muted);font-size:12px;margin-top:2px}
+.status-pill{background:#1f6feb22;border:1px solid var(--accent2);color:var(--accent2);padding:4px 12px;border-radius:12px;font-size:12px}
+nav{display:flex;gap:4px;background:var(--panel);padding:0 14px;border-bottom:1px solid var(--border);overflow-x:auto}
+nav button{background:transparent;border:none;color:var(--muted);padding:12px 18px;cursor:pointer;font-size:13px;border-bottom:2px solid transparent;white-space:nowrap}
+nav button:hover{color:var(--txt)}
+nav button.active{color:var(--accent);border-bottom-color:var(--accent)}
+main{padding:18px 22px;max-width:1600px;margin:0 auto}
+.tabpane{display:none}
+.tabpane.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px}
+.card .k{color:var(--muted);font-size:12px}
+.card .v{font-size:24px;font-weight:600;margin-top:4px}
+.card .v.g{color:var(--accent)} .card .v.b{color:var(--accent2)}
+.card .v.y{color:var(--warn)} .card .v.r{color:var(--danger)} .card .v.p{color:var(--purple)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+input,select,textarea{background:var(--panel2);border:1px solid var(--border);color:var(--txt);padding:6px 10px;border-radius:5px;font-size:12px;outline:none}
+input:focus,select:focus{border-color:var(--accent2)}
+button.btn{background:var(--accent2);color:#fff;border:none;padding:7px 14px;border-radius:5px;cursor:pointer;font-size:12px}
+button.btn:hover{filter:brightness(1.15)}
+button.btn.sm{padding:4px 10px;font-size:11px}
+button.btn.ok{background:var(--accent)} button.btn.warn{background:var(--warn);color:#000} button.btn.danger{background:var(--danger)}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:12px}
+th{background:var(--panel2);color:var(--muted);font-weight:600}
+tr:hover td{background:#1f2733}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;background:#1f6feb22;color:var(--accent2);margin-right:4px}
+.tag.g{background:#2ea04322;color:var(--accent)} .tag.y{background:#d2992222;color:var(--warn)}
+.tag.r{background:#f8514922;color:var(--danger)} .tag.p{background:#a371f722;color:var(--purple)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px}
+.panel h3{font-size:14px;margin-bottom:10px;color:var(--cyan);border-bottom:1px solid var(--border);padding-bottom:6px}
+.funnel{display:flex;flex-direction:column;gap:6px}
+.fstage{display:grid;grid-template-columns:90px 1fr 90px;align-items:center;gap:10px}
+.fbar{height:22px;background:linear-gradient(90deg,var(--accent2),var(--purple));border-radius:4px;display:flex;align-items:center;padding:0 8px;font-size:11px;color:#fff;min-width:40px}
+.muted{color:var(--muted)}
+.bar-h{height:14px;background:var(--panel2);border-radius:7px;overflow:hidden}
+.bar-h>i{display:block;height:100%;background:var(--accent)}
+.detail-box{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:12px;margin-top:8px}
+.detail-box .row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--border)}
+.detail-box .row:last-child{border:none}
+.log{font-family:Consolas,monospace;font-size:11px;color:var(--muted);max-height:180px;overflow:auto}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--panel);border:1px solid var(--accent);padding:10px 16px;border-radius:6px;z-index:99;display:none}
+@media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}.fstage{grid-template-columns:70px 1fr 70px}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1><span class="dot">●</span> 客户管理 CRM 控制台</h1>
+    <div class="sub">Customer Relationship Management · 客户/漏斗/沟通/产品/服务/仪表盘</div>
+  </div>
+  <div class="status-pill" id="svcStatus">连接中…</div>
+</header>
+
+<nav id="nav">
+  <button data-tab="customers" class="active">客户管理</button>
+  <button data-tab="pipeline">销售漏斗</button>
+  <button data-tab="comm">沟通活动</button>
+  <button data-tab="pricing">产品定价</button>
+  <button data-tab="service">客户服务</button>
+  <button data-tab="dashboard">运营仪表盘</button>
+</nav>
+
+<main>
+<!-- ===================== 客户管理 ===================== -->
+<div class="tabpane active" id="tab-customers">
+  <div class="cards" id="custKpis"></div>
+  <div class="toolbar">
+    <input id="custKw" placeholder="搜索客户名/行业" style="width:180px">
+    <select id="custStage"><option value="">全部阶段</option><option>线索</option><option>潜在</option><option>意向</option><option>试用</option><option>付费</option><option>续费</option><option>增购</option><option>流失</option></select>
+    <select id="custLevel"><option value="">全部等级</option><option>A</option><option>B</option><option>C</option><option>D</option></select>
+    <button class="btn sm" onclick="loadCustomers()">查询</button>
+    <button class="btn sm ok" onclick="alert('新建客户：调用 POST /customers')">+ 新建客户</button>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>客户列表</h3><div id="custTable"></div></div>
+    <div class="panel"><h3>客户 360 视图</h3><div id="custDetail" class="muted">点击左侧客户查看档案</div></div>
+  </div>
+</div>
+
+<!-- ===================== 销售漏斗 ===================== -->
+<div class="tabpane" id="tab-pipeline">
+  <div class="cards" id="funnelKpis"></div>
+  <div class="grid2">
+    <div class="panel"><h3>销售漏斗</h3><div id="funnelChart" class="funnel"></div></div>
+    <div class="panel"><h3>商机列表</h3><div id="oppTable"></div></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>报价管理</h3><div id="quoteTable"></div></div>
+    <div class="panel"><h3>合同 / 订单</h3><div id="contractOrder"></div></div>
+  </div>
+</div>
+
+<!-- ===================== 沟通活动 ===================== -->
+<div class="tabpane" id="tab-comm">
+  <div class="cards" id="commKpis"></div>
+  <div class="grid2">
+    <div class="panel"><h3>沟通记录</h3><div id="commTable"></div></div>
+    <div class="panel"><h3>任务与提醒</h3>
+      <div id="taskList"></div>
+      <h3 style="margin-top:12px">到期提醒扫描</h3>
+      <div id="remindScan" class="log"></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>市场活动 ROI</h3><div id="actTable"></div></div>
+    <div class="panel"><h3>邮件 / 电话统计</h3><div id="commChannel"></div></div>
+  </div>
+</div>
+
+<!-- ===================== 产品定价 ===================== -->
+<div class="tabpane" id="tab-pricing">
+  <div class="cards" id="prodKpis"></div>
+  <div class="grid2">
+    <div class="panel"><h3>产品目录</h3><div id="prodTable"></div></div>
+    <div class="panel"><h3>定价策略</h3><div id="pricingList"></div></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>报价 / 合同模板</h3><div id="tplList"></div></div>
+    <div class="panel"><h3>发票与收入确认</h3><div id="invoiceList"></div></div>
+  </div>
+</div>
+
+<!-- ===================== 客户服务 ===================== -->
+<div class="tabpane" id="tab-service">
+  <div class="cards" id="svcKpis"></div>
+  <div class="grid2">
+    <div class="panel"><h3>服务工单</h3><div id="ticketTable"></div></div>
+    <div class="panel"><h3>客户健康度 / 客户成功</h3><div id="csList"></div></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>知识库热门文章</h3><div id="kbList"></div></div>
+    <div class="panel"><h3>客户社区</h3><div id="communityList"></div></div>
+  </div>
+</div>
+
+<!-- ===================== 运营仪表盘 ===================== -->
+<div class="tabpane" id="tab-dashboard">
+  <div class="panel"><h3>销售仪表盘</h3><div id="dashSales"></div></div>
+  <div class="grid2">
+    <div class="panel"><h3>客户仪表盘</h3><div id="dashCust"></div></div>
+    <div class="panel"><h3>收入仪表盘</h3><div id="dashRev"></div></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>服务仪表盘</h3><div id="dashSvc"></div></div>
+    <div class="panel"><h3>营销仪表盘</h3><div id="dashMkt"></div></div>
+  </div>
+  <div class="panel"><h3>系统设置 / 审计日志</h3><div id="dashSettings"></div></div>
+</div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/v1/crm-system';
+async function api(path, opts){
+  try{
+    const r = await fetch(API+path, Object.assign({headers:{'Content-Type':'application/json'}}, opts||{}));
+    const j = await r.json();
+    if(!j.success){ toast('错误: '+(j.error||'未知')); }
+    return j;
+  }catch(e){ toast('网络错误: '+e.message); return {success:false,error:e.message,data:null}; }
+}
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2200); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function money(n){ return '¥'+(Number(n)||0).toLocaleString('zh-CN',{maximumFractionDigits:0}); }
+function pct(n){ return (Number(n)*100).toFixed(1)+'%'; }
+function tagStage(s){ const m={'流失':'r','付费':'g','试用':'y','意向':'p'}; return '<span class="tag '+(m[s]||'')+'">'+esc(s)+'</span>'; }
+function bar(pctVal,color){ const p=Math.max(2,Math.min(100,pctVal)); return '<div class="bar-h"><i style="width:'+p+'%;background:'+(color||'var(--accent)')+'"></i></div>'; }
+
+// Tabs
+document.querySelectorAll('#nav button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tabpane').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('tab-'+b.dataset.tab).classList.add('active');
+    loadTab(b.dataset.tab);
+  };
+});
+
+async function loadTab(name){
+  if(name==='customers'){ loadCustomers(); loadSegs(); }
+  else if(name==='pipeline'){ loadFunnel(); loadOpp(); loadQuotes(); }
+  else if(name==='comm'){ loadComm(); loadTasks(); loadReminders(); loadActs(); loadChannels(); }
+  else if(name==='pricing'){ loadProducts(); loadPricing(); loadTpls(); loadInvoices(); }
+  else if(name==='service'){ loadTickets(); loadCS(); loadKB(); loadCommunity(); }
+  else if(name==='dashboard'){ loadDash(); }
+}
+
+// ---------- 客户 ----------
+async function loadSegs(){
+  const j = await api('/segments'); if(!j.data) return;
+  const d=j.data;
+  document.getElementById('custKpis').innerHTML = `
+    <div class="card"><div class="k">客户总数</div><div class="v b">${d.total}</div></div>
+    <div class="card"><div class="k">付费客户</div><div class="v g">${d.by_stage['付费']||0}</div></div>
+    <div class="card"><div class="k">流失客户</div><div class="v r">${d.by_stage['流失']||0}</div></div>
+    <div class="card"><div class="k">A类VIP</div><div class="v p">${d.by_level['A']||0}</div></div>
+    <div class="card"><div class="k">覆盖行业</div><div class="v">${Object.keys(d.by_industry).length}</div></div>`;
+}
+async function loadCustomers(){
+  const kw=document.getElementById('custKw').value;
+  const st=document.getElementById('custStage').value;
+  const lv=document.getElementById('custLevel').value;
+  const j=await api('/customers?keyword='+encodeURIComponent(kw)+'&stage='+st+'&level='+lv);
+  if(!j.data) return;
+  document.getElementById('custTable').innerHTML = '<table><tr><th>客户</th><th>阶段</th><th>等级</th><th>行业</th><th>地区</th><th>健康</th></tr>'+
+    j.data.map(c=>`<tr style="cursor:pointer" onclick="show360('${c.id}')">
+      <td>${esc(c.name)}</td><td>${tagStage(c.stage)}</td><td>${esc(c.level)}</td>
+      <td>${esc(c.industry)}</td><td>${esc(c.region)}</td>
+      <td><span class="tag ${c.health_score>=80?'g':c.health_score>=60?'y':'r'}">${c.health_score}</span></td></tr>`).join('')+'</table>';
+}
+async function show360(cid){
+  const j=await api('/customers/'+cid); if(!j.data) return;
+  const d=j.data, p=d.profile;
+  document.getElementById('custDetail').innerHTML = `
+    <div class="detail-box">
+      <div class="row"><span>名称</span><b>${esc(p.name)}</b></div>
+      <div class="row"><span>阶段</span>${tagStage(p.stage)}</div>
+      <div class="row"><span>行业/规模</span>${esc(p.industry)} / ${esc(p.size)}</div>
+      <div class="row"><span>地区</span>${esc(p.region)}</div>
+      <div class="row"><span>健康度</span><b style="color:var(--accent)">${d.health.score} · ${d.health.status}</b></div>
+      <div class="row"><span>NPS</span>${p.nps}</div>
+      <div class="row"><span>30日登录</span>${p.login_count_30d} 次</div>
+      <div class="row"><span>联系人</span>${(d.contacts||[]).length} 人</div>
+      <div class="row"><span>机会</span>${(d.opportunities||[]).length} 个</div>
+      <div class="row"><span>订单</span>${(d.orders||[]).length} 笔</div>
+      <div class="row"><span>工单</span>${(d.tickets||[]).length} 个</div>
+    </div>
+    <div class="muted" style="margin-top:8px">风险: ${(d.health.risk_flags||[]).join('、')||'无'}</div>
+    <div class="muted">建议: ${(d.health.recommend||[]).join('；')}</div>`;
+}
+
+// ---------- 漏斗 ----------
+async function loadFunnel(){
+  const j=await api('/pipeline/funnel'); if(!j.data) return;
+  const d=j.data;
+  document.getElementById('funnelKpis').innerHTML=`
+    <div class="card"><div class="k">进行中商机</div><div class="v b">${d.total_open}</div></div>
+    <div class="card"><div class="k">商机金额</div><div class="v">${money(d.total_open_amount)}</div></div>
+    <div class="card"><div class="k">加权预测</div><div class="v p">${money(d.weighted_forecast)}</div></div>
+    <div class="card"><div class="k">赢单金额</div><div class="v g">${money(d.won_amount)}</div></div>
+    <div class="card"><div class="k">整体赢率</div><div class="v g">${pct(d.overall_win_rate)}</div></div>`;
+  const max=Math.max(1,...d.stages.map(s=>s.count));
+  document.getElementById('funnelChart').innerHTML = d.stages.map(s=>`
+    <div class="fstage">
+      <span>${esc(s.stage)}</span>
+      <div class="fbar" style="width:${Math.max(8,s.count/max*100)}%">${s.count} 个 · ${money(s.amount)}</div>
+      <span class="muted">${pct(s.conversion_from_prev)}</span>
+    </div>`).join('');
+}
+async function loadOpp(){
+  const j=await api('/opportunities'); if(!j.data) return;
+  document.getElementById('oppTable').innerHTML='<table><tr><th>商机</th><th>金额</th><th>阶段</th><th>概率</th><th>负责人</th></tr>'+
+    j.data.map(o=>`<tr><td>${esc(o.name)}</td><td>${money(o.amount)}</td><td>${tagStage(o.stage)}</td><td>${pct(o.probability)}</td><td>${esc(o.owner)}</td></tr>`).join('')+'</table>';
+}
+async function loadQuotes(){
+  const j=await api('/quotes'); if(!j.data) return;
+  document.getElementById('quoteTable').innerHTML='<table><tr><th>报价单</th><th>总额</th><th>折扣</th><th>状态</th></tr>'+
+    j.data.map(q=>`<tr><td>${esc(q.name)}</td><td>${money(q.total)}</td><td>${pct(q.discount)}</td><td><span class="tag y">${esc(q.status)}</span></td></tr>`).join('')+'</table>';
+  const j2=await api('/contracts'); const j3=await api('/orders');
+  let html='<h4 class="muted" style="margin:6px 0">合同</h4><table><tr><th>合同</th><th>金额</th><th>状态</th></tr>';
+  html+=(j2.data||[]).map(c=>`<tr><td>${esc(c.name)}</td><td>${money(c.amount)}</td><td><span class="tag p">${esc(c.sign_status)}</span></td></tr>`).join('');
+  html+='</table><h4 class="muted" style="margin:10px 0 6px">订单</h4><table><tr><th>订单</th><th>金额</th><th>支付</th></tr>';
+  html+=(j3.data||[]).map(o=>`<tr><td>${esc(o.id)}</td><td>${money(o.amount)}</td><td><span class="tag y">${esc(o.pay_status)}</span></td></tr>`).join('')+'</table>';
+  document.getElementById('contractOrder').innerHTML=html;
+}
+
+// ---------- 沟通 ----------
+async function loadComm(){
+  const j=await api('/communications'); if(!j.data) return;
+  document.getElementById('commTable').innerHTML='<table><tr><th>类型</th><th>内容</th><th>结果</th><th>时间</th></tr>'+
+    j.data.map(c=>`<tr><td><span class="tag">${esc(c.type)}</span></td><td>${esc(c.content)}</td><td>${esc(c.result)}</td><td class="muted">${esc(c.time)}</td></tr>`).join('')+'</table>';
+}
+async function loadTasks(){
+  const j=await api('/tasks'); if(!j.data) return;
+  document.getElementById('taskList').innerHTML='<table><tr><th>任务</th><th>负责人</th><th>优先级</th><th>状态</th></tr>'+
+    j.data.map(t=>`<tr><td>${esc(t.title)}</td><td>${esc(t.owner)}</td><td>${esc(t.priority)}</td><td><span class="tag ${t.status==='已完成'?'g':'y'}">${esc(t.status)}</span></td></tr>`).join('')+'</table>';
+}
+async function loadReminders(){
+  const j=await api('/reminders/check'); if(!j.data) return;
+  document.getElementById('remindScan').innerHTML = JSON.stringify(j.data,null,2);
+}
+async function loadActs(){
+  const j=await api('/marketing-activities'); if(!j.data) return;
+  document.getElementById('actTable').innerHTML='<table><tr><th>活动</th><th>类型</th><th>成本</th><th>产出</th><th>ROI</th></tr>'+
+    j.data.map(a=>`<tr><td>${esc(a.name)}</td><td>${esc(a.type)}</td><td>${money(a.cost)}</td><td>${money(a.revenue_generated)}</td><td><b style="color:var(--accent)">${a.roi}</b></td></tr>`).join('')+'</table><div class="muted" style="margin-top:6px">无活动数据时可在后端 POST /marketing-activities 创建</div>';
+}
+async function loadChannels(){
+  const e=await api('/email-stats'); const c=await api('/call-stats');
+  document.getElementById('commChannel').innerHTML = `
+    <div class="detail-box">
+      <div class="row"><span>邮件发送</span>${e.data.total_sent} 封</div>
+      <div class="row"><span>打开率</span>${pct(e.data.open_rate)}</div>
+      <div class="row"><span>电话总数</span>${c.data.total_calls} 通</div>
+      <div class="row"><span>平均通话</span>${c.data.avg_duration_sec} 秒</div>
+      <div class="row"><span>外呼占比</span>${c.data.outgoing} / ${c.data.total_calls}</div>
+    </div>`;
+}
+
+// ---------- 产品定价 ----------
+async function loadProducts(){
+  const j=await api('/products'); if(!j.data) return;
+  document.getElementById('prodKpis').innerHTML=`
+    <div class="card"><div class="k">在售产品</div><div class="v b">${j.data.length}</div></div>
+    <div class="card"><div class="k">产品分类</div><div class="v p">${new Set(j.data.map(p=>p.category)).size}</div></div>
+    <div class="card"><div class="k">平均定价</div><div class="v g">${money(j.data.reduce((s,p)=>s+p.price,0)/Math.max(1,j.data.length))}</div></div>`;
+  document.getElementById('prodTable').innerHTML='<table><tr><th>产品</th><th>分类</th><th>价格</th><th>策略</th></tr>'+
+    j.data.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.category)}</td><td>${money(p.price)}</td><td><span class="tag">${esc(p.pricing_strategy)}</span></td></tr>`).join('')+'</table>';
+}
+async function loadPricing(){
+  const j=await api('/pricing/strategies'); if(!j.data) return;
+  document.getElementById('pricingList').innerHTML='<table><tr><th>策略</th><th>规则</th><th>最大折扣</th></tr>'+
+    j.data.map(s=>`<tr><td>${esc(s.name)}</td><td>${esc(s.rule)}</td><td>${pct(s.discount_max)}</td></tr>`).join('')+'</table>';
+}
+async function loadTpls(){
+  const q=await api('/templates/quotes'); const c=await api('/templates/contracts');
+  document.getElementById('tplList').innerHTML =
+    '<h4 class="muted">报价模板</h4>'+ (q.data||[]).map(t=>`<div class="detail-box"><b>${esc(t.name)}</b> <span class="tag">v${esc(t.version)}</span><div class="muted">变量: ${(t.variables||[]).join(' / ')}</div></div>`).join('')+
+    '<h4 class="muted" style="margin-top:8px">合同模板</h4>'+ (c.data||[]).map(t=>`<div class="detail-box"><b>${esc(t.name)}</b> <span class="tag g">电子签</span><div class="muted">条款: ${(t.clauses||[]).join(' / ')}</div></div>`).join('');
+}
+async function loadInvoices(){
+  const j=await api('/invoices'); const r=await api('/revenue/summary');
+  let html='<table><tr><th>发票号</th><th>金额</th><th>状态</th></tr>';
+  html+=(j.data||[]).map(i=>`<tr><td>${esc(i.number)}</td><td>${money(i.amount)}</td><td><span class="tag y">${esc(i.status)}</span></td></tr>`).join('');
+  html+='</table>';
+  if(r.data){ html+=`<div class="detail-box" style="margin-top:8px">
+    <div class="row"><span>总收入</span><b style="color:var(--accent)">${money(r.data.total_revenue)}</b></div>
+    <div class="row"><span>新购/续费/增购</span>${money(r.data.new_sales)} / ${money(r.data.renewal)} / ${money(r.data.expansion)}</div>
+    <div class="row"><span>毛利率</span>${pct(r.data.gross_margin)}</div></div>`; }
+  document.getElementById('invoiceList').innerHTML=html;
+}
+
+// ---------- 客户服务 ----------
+async function loadTickets(){
+  const j=await api('/tickets'); if(!j.data) return;
+  document.getElementById('svcKpis').innerHTML=`
+    <div class="card"><div class="k">工单总数</div><div class="v b">${j.data.length}</div></div>
+    <div class="card"><div class="k">处理中</div><div class="v y">${j.data.filter(t=>t.status!=='已解决').length}</div></div>
+    <div class="card"><div class="k">已解决</div><div class="v g">${j.data.filter(t=>t.status==='已解决').length}</div></div>
+    <div class="card"><div class="k">SLA达标率</div><div class="v p">92%</div></div>`;
+  document.getElementById('ticketTable').innerHTML='<table><tr><th>标题</th><th>分类</th><th>优先级</th><th>状态</th></tr>'+
+    j.data.map(t=>`<tr><td>${esc(t.title)}</td><td>${esc(t.category)}</td><td><span class="tag ${t.priority=='高'?'r':t.priority=='中'?'y':'g'}">${esc(t.priority)}</span></td><td>${esc(t.status)}</td></tr>`).join('')+'</table>';
+}
+async function loadCS(){
+  const j=await api('/customer-success'); if(!j.data) return;
+  document.getElementById('csList').innerHTML='<table><tr><th>客户</th><th>健康分</th><th>风险</th><th>策略</th></tr>'+
+    j.data.map(c=>`<tr><td>${esc(c.name)}</td><td><b style="color:var(--accent)">${c.health.score}</b></td><td class="muted">${(c.risk_flags||[]).length}</td><td class="muted">${esc(c.retention_strategy)}</td></tr>`).join('')+'</table>';
+}
+async function loadKB(){
+  const j=await api('/kb/articles'); if(!j.data) return;
+  document.getElementById('kbList').innerHTML = j.data.map(a=>`<div class="detail-box"><b>${esc(a.title)}</b> ${a.is_hot?'<span class="tag r">热门</span>':''}<div class="muted">${esc(a.content)}</div><div class="muted">${a.views} 阅读 · 评分 ${a.rating}</div></div>`).join('');
+}
+async function loadCommunity(){
+  const j=await api('/community/posts'); if(!j.data) return;
+  document.getElementById('communityList').innerHTML='<table><tr><th>帖子</th><th>版块</th><th>回复</th><th>赞</th></tr>'+
+    j.data.map(p=>`<tr><td>${esc(p.title)} ${p.is_top?'<span class="tag r">置顶</span>':''} ${p.is_essence?'<span class="tag p">精</span>':''}</td><td>${esc(p.section)}</td><td>${p.replies}</td><td>${p.likes}</td></tr>`).join('')+'</table>';
+}
+
+// ---------- 仪表盘 ----------
+async function loadDash(){
+  const s=await api('/dashboard/sales');
+  const cu=await api('/dashboard/customers');
+  const r=await api('/dashboard/revenue');
+  const sv=await api('/dashboard/service');
+  const m=await api('/dashboard/marketing');
+  const st=await api('/settings');
+  if(s.data){
+    document.getElementById('dashSales').innerHTML=`
+      <div class="cards">
+        <div class="card"><div class="k">销售目标达成</div><div class="v g">${pct(s.data.completion_rate)}</div></div>
+        <div class="card"><div class="k">赢单金额</div><div class="v g">${money(s.data.achieved)}</div></div>
+        <div class="card"><div class="k">加权预测</div><div class="v p">${money(s.data.weighted_forecast)}</div></div>
+        <div class="card"><div class="k">平均成交周期</div><div class="v">${s.data.avg_cycle_days} 天</div></div>
+      </div>
+      <div class="muted">销售排行: </div>`+
+      (s.data.owner_ranking||[]).map(o=>`<div class="row" style="display:flex;gap:10px;padding:3px 0"><span style="width:80px">${esc(o.owner)}</span>${bar(o.amount/1000000*100,'var(--purple)')}<span>${money(o.amount)}</span></div>`).join('');
+  }
+  if(cu.data){
+    document.getElementById('dashCust').innerHTML=`
+      <div class="detail-box">
+      <div class="row"><span>客户总数</span><b>${cu.data.total}</b></div>
+      <div class="row"><span>本月新增</span>${cu.data.new_this_month}</div>
+      <div class="row"><span>流失</span><span style="color:var(--danger)">${cu.data.churned}</span></div>
+      <div class="row"><span>VIP</span><span style="color:var(--purple)">${cu.data.vip_count}</span></div>
+      <div class="row"><span>健康</span><span style="color:var(--accent)">${cu.data.healthy_count}</span></div>
+      </div>
+      <h4 class="muted" style="margin:8px 0 4px">行业分布</h4>
+      ${Object.entries(cu.data.by_industry||{}).map(([k,v])=>`<div style="display:flex;gap:8px;align-items:center;padding:2px 0"><span style="width:70px">${esc(k)}</span>${bar(v/Math.max(1,...Object.values(cu.data.by_industry))*100)}</div>`).join('')}`;
+  }
+  if(r.data){
+    document.getElementById('dashRev').innerHTML=`
+      <div class="detail-box">
+      <div class="row"><span>总收入</span><b style="color:var(--accent)">${money(r.data.total_revenue)}</b></div>
+      <div class="row"><span>新购</span>${money(r.data.new_sales)}</div>
+      <div class="row"><span>续费</span>${money(r.data.renewal)}</div>
+      <div class="row"><span>增购</span>${money(r.data.expansion)}</div>
+      <div class="row"><span>客单价 ARPU</span>${money(r.data.arpu)}</div>
+      <div class="row"><span>LTV</span><b style="color:var(--cyan)">${money(r.data.ltv)}</b></div>
+      <div class="row"><span>下季预测</span>${money(r.data.forecast_next_quarter)}</div>
+      </div>`;
+  }
+  if(sv.data){
+    document.getElementById('dashSvc').innerHTML=`
+      <div class="detail-box">
+      <div class="row"><span>工单总数</span>${sv.data.tickets.total}</div>
+      <div class="row"><span>平均响应</span>${sv.data.avg_response_time_min} 分钟</div>
+      <div class="row"><span>平均解决</span>${sv.data.avg_resolution_time_hours} 小时</div>
+      <div class="row"><span>SLA达标</span><b style="color:var(--accent)">${pct(sv.data.sla_compliance)}</b></div>
+      <div class="row"><span>首次解决率</span>${pct(sv.data.first_contact_resolution)}</div>
+      <div class="row"><span>满意度</span>${sv.data.satisfaction_avg} / 5</div>
+      </div>`;
+  }
+  if(m.data){
+    document.getElementById('dashMkt').innerHTML=`
+      <div class="detail-box">
+      <div class="row"><span>线索总量</span>${m.data.leads_total}</div>
+      <div class="row"><span>活动ROI</span><b style="color:var(--accent)">${m.data.activity_roi}</b></div>
+      <div class="row"><span>邮件打开率</span>${pct(m.data.email.open_rate)}</div>
+      <div class="row"><span>营销成本</span>${money(m.data.marketing_cost_total)}</div>
+      <div class="row"><span>线索转化率</span>${pct(m.data.conversion_to_paid)}</div>
+      </div>`;
+  }
+  if(st.data){
+    document.getElementById('dashSettings').innerHTML=`
+      <div class="grid2">
+        <div><h4 class="muted">用户/角色</h4>
+          ${(st.data.users||[]).map(u=>`<div class="detail-box"><b>${esc(u.name)}</b> <span class="tag">${esc(u.role)}</span><div class="muted">${esc(u.dept)} · ${esc(u.data_scope)}</div></div>`).join('')}
+        </div>
+        <div><h4 class="muted">审计日志</h4><div class="log">${(st.data.audit_log||[]).map(l=>esc(l.time)+' ['+esc(l.action)+'] '+esc(l.detail)).join('<br>')||'暂无'}</div></div>
+      </div>`;
+  }
+}
+
+// ---------- 初始化 ----------
+async function init(){
+  const j=await api('/health');
+  const el=document.getElementById('svcStatus');
+  if(j.data && j.data.module_available){
+    el.textContent='● 服务正常 · 客户 '+j.data.customers+' · 商机 '+j.data.opportunities;
+    el.style.borderColor='var(--accent)'; el.style.color='var(--accent)';
+  }else{
+    el.textContent='● 模块异常'; el.style.borderColor='var(--danger)'; el.style.color='var(--danger)';
+  }
+  loadTab('customers');
+}
+init();
+</script>
+</body>
+</html>

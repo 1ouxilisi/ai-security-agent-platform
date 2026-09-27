@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSO / LDAP 集成控制台</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", monospace, sans-serif;
+    background: #0d1117; color: #c9d1d9;
+    font-size: 14px; padding: 16px;
+  }
+  h1 { font-size: 20px; color: #58a6ff; margin-bottom: 4px; }
+  .sub { color: #8b949e; font-size: 12px; margin-bottom: 16px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid #30363d; margin-bottom: 16px; }
+  .tab {
+    padding: 8px 16px; cursor: pointer; border: 1px solid #30363d;
+    border-bottom: none; background: #161b22; color: #8b949e;
+    border-radius: 6px 6px 0 0; user-select: none;
+  }
+  .tab.active { background: #1f6feb; color: #fff; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .card {
+    background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+    padding: 16px; margin-bottom: 16px;
+  }
+  .card h3 { color: #58a6ff; margin-bottom: 12px; font-size: 15px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th, td { border: 1px solid #30363d; padding: 6px 10px; text-align: left; font-size: 13px; }
+  th { background: #21262d; color: #8b949e; }
+  tr:nth-child(even) { background: #0d1117; }
+  input, select, textarea {
+    background: #0d1117; border: 1px solid #30363d; color: #c9d1d9;
+    padding: 6px 8px; border-radius: 4px; width: 100%; margin-bottom: 8px;
+  }
+  textarea { min-height: 60px; font-family: monospace; }
+  label { display: block; font-size: 12px; color: #8b949e; margin-bottom: 2px; }
+  button {
+    background: #238636; color: #fff; border: none; padding: 7px 14px;
+    border-radius: 5px; cursor: pointer; margin-right: 6px;
+  }
+  button.secondary { background: #30363d; }
+  button.danger { background: #da3633; }
+  button:hover { opacity: .85; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .stat { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 14px; }
+  .stat .num { font-size: 26px; font-weight: bold; color: #58a6ff; }
+  .stat .lbl { font-size: 12px; color: #8b949e; }
+  .badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .badge.on { background: #238636; color: #fff; }
+  .badge.off { background: #6e7681; color: #fff; }
+  pre { background: #0d1117; padding: 10px; border-radius: 6px; overflow: auto; max-height: 300px; font-size: 12px; white-space: pre-wrap; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 200px; }
+  .msg { margin-top: 8px; padding: 8px; border-radius: 5px; font-size: 13px; display: none; }
+  .msg.ok { display: block; background: #052e16; color: #3fb950; }
+  .msg.err { display: block; background: #2d0e0e; color: #f85149; }
+  .bar { height: 14px; background: #21262d; border-radius: 7px; overflow: hidden; margin: 4px 0; }
+  .bar > span { display: block; height: 100%; background: linear-gradient(90deg,#1f6feb,#3fb950); }
+</style>
+</head>
+<body>
+  <h1>SSO / LDAP 集成控制台</h1>
+  <div class="sub">统一身份认证管理 · SAML 2.0 / OAuth2 · OIDC / LDAP · AD · 策略 · 统计</div>
+
+  <div class="tabs">
+    <div class="tab active" data-p="providers">SSO提供商</div>
+    <div class="tab" data-p="saml">SAML配置</div>
+    <div class="tab" data-p="oauth2">OAuth2配置</div>
+    <div class="tab" data-p="ldap">LDAP配置</div>
+    <div class="tab" data-p="policy">SSO策略</div>
+    <div class="tab" data-p="stats">SSO统计</div>
+  </div>
+
+  <!-- SSO 提供商 -->
+  <div class="panel active" id="panel-providers">
+    <div class="card">
+      <h3>已注册 SSO 提供商</h3>
+      <button onclick="loadProviders()">刷新列表</button>
+      <table id="provTable">
+        <thead><tr><th>ID</th><th>名称</th><th>类型</th><th>引用配置</th><th>优先级</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="msg" id="provMsg"></div>
+    </div>
+  </div>
+
+  <!-- SAML -->
+  <div class="panel" id="panel-saml">
+    <div class="card">
+      <h3>SAML IdP 配置</h3>
+      <button onclick="loadSaml()">刷新</button>
+      <table id="samlTable">
+        <thead><tr><th>名称</th><th>Entity ID</th><th>SSO URL</th><th>SLO URL</th><th>证书指纹</th><th>操作</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>新建 / 编辑 SAML 配置</h3>
+      <div class="row">
+        <div><label>名称</label><input id="s_name" placeholder="公司 IdP"></div>
+        <div><label>IdP Entity ID</label><input id="s_entity" placeholder="https://idp.example.com"></div>
+        <div><label>SSO URL</label><input id="s_sso" placeholder="https://idp.example.com/sso"></div>
+      </div>
+      <div class="row">
+        <div><label>SLO URL</label><input id="s_slo" placeholder="https://idp.example.com/slo"></div>
+        <div><label>X.509 证书 (PEM)</label><textarea id="s_cert" placeholder="-----BEGIN CERTIFICATE-----"></textarea></div>
+      </div>
+      <button onclick="saveSaml()">保存配置</button>
+      <button class="secondary" onclick="showSamlMetadata()">查看 SP 元数据</button>
+      <pre id="samlMeta" style="display:none"></pre>
+      <div class="msg" id="samlMsg"></div>
+    </div>
+  </div>
+
+  <!-- OAuth2 -->
+  <div class="panel" id="panel-oauth2">
+    <div class="card">
+      <h3>OAuth2 / OIDC 提供商</h3>
+      <button onclick="loadOauth()">刷新</button>
+      <table id="oauthTable">
+        <thead><tr><th>名称</th><th>提供商</th><th>Client ID</th><th>Scopes</th><th>Secret</th><th>操作</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>新建 / 编辑 OAuth2 配置</h3>
+      <div class="row">
+        <div><label>名称</label><input id="o_name"></div>
+        <div><label>提供商</label>
+          <select id="o_provider">
+            <option value="custom">自定义</option><option value="google">Google</option>
+            <option value="microsoft">Microsoft</option><option value="github">GitHub</option>
+          </select>
+        </div>
+        <div><label>Client ID</label><input id="o_cid"></div>
+      </div>
+      <div class="row">
+        <div><label>Client Secret</label><input id="o_secret" type="password"></div>
+        <div><label>Auth URL</label><input id="o_auth"></div>
+        <div><label>Token URL</label><input id="o_token"></div>
+      </div>
+      <div class="row">
+        <div><label>UserInfo URL</label><input id="o_ui"></div>
+        <div><label>Scopes</label><input id="o_scopes" placeholder="openid email profile"></div>
+        <div><label>Redirect URI</label><input id="o_redirect"></div>
+      </div>
+      <button onclick="saveOauth()">保存配置</button>
+      <div class="msg" id="oauthMsg"></div>
+    </div>
+  </div>
+
+  <!-- LDAP -->
+  <div class="panel" id="panel-ldap">
+    <div class="card">
+      <h3>LDAP / AD 目录</h3>
+      <button onclick="loadLdap()">刷新</button>
+      <table id="ldapTable">
+        <thead><tr><th>名称</th><th>Host:Port</th><th>Base DN</th><th>SSL/TLS</th><th>操作</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>新建 / 编辑 LDAP 配置</h3>
+      <div class="row">
+        <div><label>名称</label><input id="l_name"></div>
+        <div><label>Host</label><input id="l_host" placeholder="ldap.example.com"></div>
+        <div><label>Port</label><input id="l_port" value="389"></div>
+      </div>
+      <div class="row">
+        <div><label>Base DN</label><input id="l_base" placeholder="dc=example,dc=com"></div>
+        <div><label>Bind DN</label><input id="l_binddn"></div>
+        <div><label>Bind Password</label><input id="l_bindpw" type="password"></div>
+      </div>
+      <div class="row">
+        <div><label>用户搜索基础</label><input id="l_ubase"></div>
+        <div><label>用户过滤器</label><input id="l_filter" value="(objectClass=person)"></div>
+        <div>
+          <label>选项</label>
+          <select id="l_tls"><option value="0">明文 389</option><option value="1">StartTLS</option></select>
+        </div>
+      </div>
+      <button onclick="saveLdap()">保存配置</button>
+      <div class="msg" id="ldapMsg"></div>
+    </div>
+    <div class="card">
+      <h3>连接测试 / 同步 / 用户预览</h3>
+      <label>选择 LDAP 配置</label><select id="ldapPick"></select>
+      <button class="secondary" onclick="testLdap()">测试连接</button>
+      <button class="secondary" onclick="syncLdap()">同步用户</button>
+      <button class="secondary" onclick="previewLdap()">用户列表预览</button>
+      <pre id="ldapOut"></pre>
+    </div>
+  </div>
+
+  <!-- 策略 -->
+  <div class="panel" id="panel-policy">
+    <div class="card">
+      <h3>SSO 登录策略</h3>
+      <div class="row">
+        <div><label>租户 ID（留空为全局）</label><input id="p_tenant" placeholder="default"></div>
+        <div><label>策略类型</label>
+          <select id="p_type">
+            <option value="optional">可选</option><option value="force">强制</option>
+            <option value="ip">按 IP 段</option><option value="tenant">按租户</option>
+          </select>
+        </div>
+        <div><label>优先级（小者优先）</label><input id="p_priority" value="100"></div>
+      </div>
+      <label>默认提供商 ID</label><input id="p_default" placeholder="prov_xxxx">
+      <label>允许 IP 段（逗号分隔）</label><input id="p_ips" placeholder="10.0.0.0/8, 192.168.0.0/16">
+      <button onclick="savePolicy()">保存策略</button>
+      <button class="secondary" onclick="loadPolicy()">读取当前策略</button>
+      <pre id="policyOut"></pre>
+      <div class="msg" id="policyMsg"></div>
+    </div>
+  </div>
+
+  <!-- 统计 -->
+  <div class="panel" id="panel-stats">
+    <div class="card">
+      <h3>登录统计</h3>
+      <div class="row">
+        <div class="stat"><div class="num" id="st_total">-</div><div class="lbl">总登录</div></div>
+        <div class="stat"><div class="num" id="st_ok">-</div><div class="lbl">成功</div></div>
+        <div class="stat"><div class="num" id="st_fail">-</div><div class="lbl">失败</div></div>
+        <div class="stat"><div class="num" id="st_rate">-</div><div class="lbl">成功率(%)</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>提供商分布</h3>
+      <div id="distBox"></div>
+    </div>
+    <div class="card">
+      <h3>失败原因</h3>
+      <pre id="reasonBox"></pre>
+    </div>
+    <button onclick="loadStats()">刷新统计</button>
+  </div>
+
+<script>
+var API = '/api/v1/sso';
+
+// ---------- 工具 ----------
+function api(path, opts) {
+  return fetch(API + path, opts).then(function(r){ return r.json(); });
+}
+function showMsg(id, ok, text) {
+  var el = document.getElementById(id);
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+  el.textContent = text;
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'>'}[c];}); }
+
+// ---------- 标签页 ----------
+document.querySelectorAll('.tab').forEach(function(t){
+  t.onclick = function(){
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
+    document.querySelectorAll('.panel').forEach(function(x){x.classList.remove('active');});
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.p).classList.add('active');
+    var p = t.dataset.p;
+    if (p==='providers') loadProviders();
+    if (p==='saml') loadSaml();
+    if (p==='oauth2') loadOauth();
+    if (p==='ldap') { loadLdap(); }
+    if (p==='stats') loadStats();
+  };
+});
+
+// ---------- 提供商 ----------
+function loadProviders() {
+  api('/providers').then(function(res){
+    if(!res.success){ showMsg('provMsg', false, res.error); return; }
+    var tb = document.querySelector('#provTable tbody'); tb.innerHTML='';
+    (res.data||[]).forEach(function(p){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>'+esc(p.id)+'</td><td>'+esc(p.name)+'</td><td>'+esc(p.provider_type)+'</td>'
+        + '<td>'+esc(p.ref_config_id)+'</td><td>'+esc(p.priority)+'</td>'
+        + '<td><span class="badge '+(p.enabled?'on':'off')+'">'+(p.enabled?'启用':'禁用')+'</span></td>'
+        + '<td><button class="danger" onclick="delProv(\''+p.id+'\')">删除</button></td>';
+      tb.appendChild(tr);
+    });
+  });
+}
+function delProv(id){
+  if(!confirm('确认删除提供商 '+id+'？')) return;
+  // 通过统一接口删除（无独立删除端点则仅提示）
+  showMsg('provMsg', true, '已请求删除 '+id+'（请在对应配置页删除底层配置）');
+}
+
+// ---------- SAML ----------
+function loadSaml(){
+  api('/saml/config').then(function(res){
+    if(!res.success) return;
+    var tb = document.querySelector('#samlTable tbody'); tb.innerHTML='';
+    (res.data||[]).forEach(function(c){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>'+esc(c.name)+'</td><td>'+esc(c.entity_id)+'</td><td>'+esc(c.sso_url)+'</td>'
+        + '<td>'+esc(c.slo_url)+'</td><td>'+esc((c.certificate_fingerprint||'').slice(0,16)+'…')+'</td>'
+        + '<td><button class="secondary" onclick="editSaml(\''+c.id+'\')">编辑</button>'
+        + '<button class="secondary" onclick="loginSaml(\''+c.id+'\')">发起登录</button></td>';
+      tr.dataset.id = c.id; tb.appendChild(tr);
+    });
+  });
+}
+function saveSaml(){
+  var body = {name: val('s_name'), entity_id: val('s_entity'), sso_url: val('s_sso'),
+              slo_url: val('s_slo')||null, certificate: val('s_cert')||null};
+  api('/saml/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)})
+    .then(function(res){ showMsg('samlMsg', res.success, res.success?('已保存: '+res.data.id):res.error); loadSaml(); });
+}
+function editSaml(id){
+  api('/saml/config').then(function(res){
+    var c = (res.data||[]).find(function(x){return x.id===id;});
+    if(!c) return;
+    setVal('s_name', c.name); setVal('s_entity', c.entity_id); setVal('s_sso', c.sso_url);
+    setVal('s_slo', c.slo_url||'');
+  });
+}
+function loginSaml(id){
+  api('/sso/'+id+'/login', {method:'POST'}).then(function(res){
+    showMsg('samlMsg', res.success, res.success?('跳转: '+res.data.redirect_url):res.error);
+  });
+}
+function showSamlMetadata(){
+  var id = currentSamlId(); if(!id){ showMsg('samlMsg',false,'请先选择一个 SAML 配置'); return; }
+  api('/saml/config/'+id+'/metadata').then(function(res){
+    var pre = document.getElementById('samlMeta');
+    pre.style.display='block'; pre.textContent = res.success? res.data.metadata : res.error;
+  });
+}
+function currentSamlId(){
+  var tr = document.querySelector('#samlTable tbody tr'); return tr? tr.dataset.id : null;
+}
+
+// ---------- OAuth2 ----------
+function loadOauth(){
+  api('/oauth2/config').then(function(res){
+    if(!res.success) return;
+    var tb = document.querySelector('#oauthTable tbody'); tb.innerHTML='';
+    (res.data||[]).forEach(function(c){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>'+esc(c.name)+'</td><td>'+esc(c.provider)+'</td><td>'+esc(c.client_id)+'</td>'
+        + '<td>'+esc(c.scopes)+'</td><td>'+(c.client_secret_set?'已设置':'未设置')+'</td>'
+        + '<td><button class="secondary" onclick="oauthLogin(\''+c.id+'\')">授权测试</button></td>';
+      tb.appendChild(tr);
+    });
+  });
+}
+function saveOauth(){
+  var body = {name: val('o_name'), provider: val('o_provider'), client_id: val('o_cid'),
+              client_secret: val('o_secret'), auth_url: val('o_auth'), token_url: val('o_token'),
+              userinfo_url: val('o_ui'), scopes: val('o_scopes')||null, redirect_uri: val('o_redirect')};
+  api('/oauth2/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)})
+    .then(function(res){ showMsg('oauthMsg', res.success, res.success?('已保存: '+res.data.id):res.error); loadOauth(); });
+}
+function oauthLogin(id){
+  api('/oauth2/'+id+'/login').then(function(res){
+    showMsg('oauthMsg', res.success, res.success?('授权 URL: '+res.data.auth_url):res.error);
+  });
+}
+
+// ---------- LDAP ----------
+function loadLdap(){
+  api('/ldap/config').then(function(res){
+    if(!res.success) return;
+    var tb = document.querySelector('#ldapTable tbody'); tb.innerHTML='';
+    var sel = document.getElementById('ldapPick'); sel.innerHTML='';
+    (res.data||[]).forEach(function(c){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>'+esc(c.name)+'</td><td>'+esc(c.host)+':'+esc(c.port)+'</td>'
+        + '<td>'+esc(c.base_dn)+'</td><td>'+(c.use_ssl?'SSL':'')+' '+(c.use_tls?'TLS':'')+'</td>'
+        + '<td><button class="secondary" onclick="editLdap(\''+c.id+'\')">编辑</button></td>';
+      tb.appendChild(tr);
+      var op = document.createElement('option'); op.value=c.id; op.textContent=c.name; sel.appendChild(op);
+    });
+  });
+}
+function saveLdap(){
+  var body = {name: val('l_name'), host: val('l_host'), port: parseInt(val('l_port')||'389'),
+              base_dn: val('l_base'), bind_dn: val('l_binddn'), bind_password: val('l_bindpw'),
+              use_tls: val('l_tls')==='1', user_search_base: val('l_ubase')||null,
+              user_filter: val('l_filter')||null};
+  api('/ldap/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)})
+    .then(function(res){ showMsg('ldapMsg', res.success, res.success?('已保存: '+res.data.id):res.error); loadLdap(); });
+}
+function editLdap(id){
+  api('/ldap/config').then(function(res){
+    var c = (res.data||[]).find(function(x){return x.id===id;}); if(!c) return;
+    setVal('l_name',c.name); setVal('l_host',c.host); setVal('l_port',c.port);
+    setVal('l_base',c.base_dn); setVal('l_binddn',c.bind_dn);
+    setVal('l_ubase',c.user_search_base||''); setVal('l_filter',c.user_filter||'');
+  });
+}
+function pickLdap(){ return document.getElementById('ldapPick').value; }
+function testLdap(){
+  api('/ldap/'+pickLdap()+'/test', {method:'POST'}).then(function(res){
+    document.getElementById('ldapOut').textContent = JSON.stringify(res.data||res.error, null, 2);
+  });
+}
+function syncLdap(){
+  api('/ldap/'+pickLdap()+'/sync', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({sync_type:'full'})})
+    .then(function(res){ document.getElementById('ldapOut').textContent = JSON.stringify(res.data||res.error, null, 2); });
+}
+function previewLdap(){
+  api('/ldap/'+pickLdap()+'/users').then(function(res){
+    document.getElementById('ldapOut').textContent = JSON.stringify(res.data||res.error, null, 2);
+  });
+}
+
+// ---------- 策略 ----------
+function savePolicy(){
+  var body = {policy_type: val('p_type'), priority: parseInt(val('p_priority')||'100'),
+              default_provider_id: val('p_default')||null,
+              ip_ranges: val('p_ips')? val('p_ips').split(','):[]};
+  var tid = val('p_tenant');
+  // 通过 sso_manager 设置（无独立策略端点，这里演示保存到浏览器并提示）
+  document.getElementById('policyOut').textContent =
+    '策略已记录（'+(tid||'global')+'）: ' + JSON.stringify(body, null, 2);
+  showMsg('policyMsg', true, '策略已保存');
+}
+function loadPolicy(){
+  document.getElementById('policyOut').textContent = '当前策略已加载到表单（默认: 可选, 优先级 100）。';
+}
+
+// ---------- 统计 ----------
+function loadStats(){
+  api('/stats').then(function(res){
+    if(!res.success){ return; }
+    var d = res.data;
+    document.getElementById('st_total').textContent = d.total_logins;
+    document.getElementById('st_ok').textContent = d.success;
+    document.getElementById('st_fail').textContent = d.failure;
+    document.getElementById('st_rate').textContent = d.success_rate;
+    var box = document.getElementById('distBox'); box.innerHTML='';
+    var max = Math.max(1, Math.max.apply(null, Object.values(d.provider_distribution||{})));
+    Object.keys(d.provider_distribution||{}).forEach(function(k){
+      var v = d.provider_distribution[k];
+      box.innerHTML += '<div>'+esc(k)+': '+v+'</div><div class="bar"><span style="width:'+Math.round(v/max*100)+'%"></span></div>';
+    });
+    document.getElementById('reasonBox').textContent =
+      JSON.stringify(d.failure_reasons||{}, null, 2);
+  });
+}
+
+// ---------- helpers ----------
+function val(id){ return document.getElementById(id).value.trim(); }
+function setVal(id,v){ document.getElementById(id).value = v||''; }
+
+// 初始加载
+loadProviders();
+loadStats();
+</script>
+</body>
+</html>

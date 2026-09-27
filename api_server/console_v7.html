@@ -1,0 +1,746 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Hacking Agent v7.0 - 统一安全控制台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',-apple-system,sans-serif;background:#0a0a14;color:#e0e0e0;min-height:100vh}
+.sidebar{position:fixed;left:0;top:0;width:220px;height:100vh;background:linear-gradient(180deg,#0f0f23,#15152e);border-right:1px solid #2a2a4a;overflow-y:auto;z-index:100}
+.sidebar .logo{padding:20px;border-bottom:1px solid #2a2a4a;text-align:center}
+.sidebar .logo h2{font-size:16px;color:#fff;margin-bottom:4px}
+.sidebar .logo span{font-size:11px;color:#6677aa}
+.sidebar .nav-group{padding:12px 0}
+.sidebar .nav-group-title{padding:8px 20px;font-size:10px;color:#556688;text-transform:uppercase;letter-spacing:1px}
+.sidebar .nav-item{padding:10px 20px;cursor:pointer;font-size:13px;color:#aabbdd;transition:all 0.2s;display:flex;align-items:center;gap:8px;border-left:3px solid transparent}
+.sidebar .nav-item:hover{background:rgba(90,90,255,0.1);color:#fff}
+.sidebar .nav-item.active{background:rgba(90,90,255,0.15);color:#7a7aff;border-left-color:#5a5aff}
+.main{margin-left:220px;padding:20px 30px;min-height:100vh}
+.header{background:linear-gradient(135deg,#0f0f23,#1a1a3e);padding:18px 25px;border-radius:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;border:1px solid #2a2a5a}
+.header h1{font-size:20px;color:#fff}
+.header .status{display:flex;gap:15px;align-items:center}
+.header .status-item{font-size:12px;color:#8899bb;display:flex;align-items:center;gap:6px}
+.header .status-dot{width:8px;height:8px;border-radius:50%;background:#66bb6a}
+.page{display:none}
+.page.active{display:block}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px}
+.stat-card{background:linear-gradient(135deg,#12122a,#1a1a35);border:1px solid #2a2a4a;border-radius:10px;padding:18px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--color,#5a5aff)}
+.stat-card .label{font-size:11px;color:#7788aa;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.stat-card .value{font-size:28px;font-weight:700;color:var(--color,#fff)}
+.stat-card .sub{font-size:11px;color:#667788;margin-top:6px}
+.card{background:#0d0d1a;border:1px solid #1f1f3a;border-radius:10px;padding:20px;margin-bottom:20px}
+.card h3{font-size:14px;color:#aabbdd;margin-bottom:15px;display:flex;align-items:center;gap:8px}
+.card h3::before{content:'';width:4px;height:16px;background:#5a5aff;border-radius:2px}
+.form-group{margin-bottom:15px}
+.form-group label{display:block;font-size:12px;color:#8899bb;margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;background:#151530;border:1px solid #2a2a4a;border-radius:6px;color:#e0e0e0;font-size:13px;outline:none;transition:border-color 0.2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#5a5aff}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.btn{padding:10px 20px;border:none;border-radius:6px;font-size:13px;cursor:pointer;transition:all 0.2s;font-weight:600}
+.btn-primary{background:linear-gradient(135deg,#5a5aff,#7a7aff);color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(90,90,255,0.4)}
+.btn-success{background:linear-gradient(135deg,#43a047,#66bb6a);color:#fff}
+.btn-warning{background:linear-gradient(135deg,#fb8c00,#ffa726);color:#fff}
+.btn-danger{background:linear-gradient(135deg,#e53935,#ef5350);color:#fff}
+.btn-sm{padding:6px 12px;font-size:11px}
+.btn-group{display:flex;gap:10px;flex-wrap:wrap}
+.result-box{background:#0a0a14;border:1px solid #1f1f3a;border-radius:8px;padding:15px;margin-top:15px;max-height:400px;overflow-y:auto;font-family:'Consolas','Monaco',monospace;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#151530;padding:10px;text-align:left;color:#8899bb;font-weight:600;border-bottom:1px solid #2a2a4a}
+td{padding:10px;border-bottom:1px solid #1a1a30;color:#c0c0d0}
+tr:hover{background:rgba(90,90,255,0.05)}
+.badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600}
+.badge-critical{background:#e53935;color:#fff}
+.badge-high{background:#fb8c00;color:#fff}
+.badge-medium{background:#fdd835;color:#000}
+.badge-low{background:#43a047;color:#fff}
+.badge-info{background:#5a5aff;color:#fff}
+.badge-success{background:#66bb6a;color:#fff}
+.badge-warning{background:#ffa726;color:#fff}
+.empty-state{text-align:center;padding:40px;color:#556688}
+.loading{display:inline-block;width:16px;height:16px;border:2px solid #2a2a4a;border-top-color:#5a5aff;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress-bar{height:6px;background:#1a1a30;border-radius:3px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:linear-gradient(90deg,#5a5aff,#7a7aff);border-radius:3px;transition:width 0.3s}
+.tabs{display:flex;gap:5px;margin-bottom:20px;border-bottom:1px solid #2a2a4a}
+.tab{padding:10px 20px;cursor:pointer;font-size:13px;color:#8899bb;border-bottom:2px solid transparent;transition:all 0.2s}
+.tab:hover{color:#fff}
+.tab.active{color:#5a5aff;border-bottom-color:#5a5aff}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px}
+.mini-card{background:#12122a;border:1px solid #1f1f3a;border-radius:8px;padding:15px}
+.mini-card .title{font-size:11px;color:#7788aa;margin-bottom:6px}
+.mini-card .val{font-size:20px;font-weight:700;color:#fff}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo">
+    <h2>AI Hacking Agent</h2>
+    <span>v7.0 统一安全控制台</span>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">总览</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">📊 仪表盘</div>
+    <div class="nav-item" onclick="showPage('health')">💚 系统健康</div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">扫描工具</div>
+    <div class="nav-item" onclick="showPage('portscan')">🔌 端口扫描</div>
+    <div class="nav-item" onclick="showPage('dirscan')">📁 目录扫描</div>
+    <div class="nav-item" onclick="showPage('vulnscan')">🔍 漏洞扫描</div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">知识库</div>
+    <div class="nav-item" onclick="showPage('vulndb')">📚 漏洞数据库</div>
+    <div class="nav-item" onclick="showPage('poclib')">💥 PoC库</div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">高级功能</div>
+    <div class="nav-item" onclick="showPage('distributed')">🌐 分布式扫描</div>
+    <div class="nav-item" onclick="showPage('tools')">🛠️ 工具管理</div>
+    <div class="nav-item" onclick="showPage('reports')">📄 报告中心</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="header">
+    <h1 id="pageTitle">仪表盘</h1>
+    <div class="status">
+      <div class="status-item"><span class="status-dot" id="apiStatus"></span> API状态</div>
+      <div class="status-item" id="currentTime"></div>
+    </div>
+  </div>
+
+  <!-- 仪表盘 -->
+  <div id="page-dashboard" class="page active">
+    <div class="stats-row">
+      <div class="stat-card" style="--color:#5a5aff">
+        <div class="label">API端点</div>
+        <div class="value" id="statEndpoints">246+</div>
+        <div class="sub">RESTful API</div>
+      </div>
+      <div class="stat-card" style="--color:#66bb6a">
+        <div class="label">工具模块</div>
+        <div class="value" id="statTools">47</div>
+        <div class="sub">安全工具集成</div>
+      </div>
+      <div class="stat-card" style="--color:#ffa726">
+        <div class="label">核心系统</div>
+        <div class="value" id="statCore">14</div>
+        <div class="sub">企业级架构</div>
+      </div>
+      <div class="stat-card" style="--color:#ef5350">
+        <div class="label">安全领域</div>
+        <div class="value" id="statDomains">6</div>
+        <div class="sub">Web/内网/移动/云/客户端/AI</div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>系统状态</h3>
+        <div id="dashboardStatus">
+          <div class="empty-state">点击"刷新状态"查看系统状态</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="loadDashboardStatus()" style="margin-top:15px">刷新状态</button>
+      </div>
+      <div class="card">
+        <h3>快速操作</h3>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="showPage('portscan')">端口扫描</button>
+          <button class="btn btn-success" onclick="showPage('dirscan')">目录扫描</button>
+          <button class="btn btn-warning" onclick="showPage('vulnscan')">漏洞扫描</button>
+          <button class="btn btn-danger" onclick="showPage('health')">健康检查</button>
+        </div>
+        <div style="margin-top:20px">
+          <h3 style="margin-bottom:10px">最近活动</h3>
+          <div id="recentActivity" class="empty-state">暂无活动记录</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 系统健康 -->
+  <div id="page-health" class="page">
+    <div class="card">
+      <h3>系统健康检查</h3>
+      <p style="color:#8899bb;font-size:12px;margin-bottom:15px">检查所有核心模块、API端点、工具依赖的运行状态</p>
+      <button class="btn btn-primary" onclick="runHealthCheck()">开始健康检查</button>
+      <div id="healthResult" style="margin-top:20px"></div>
+    </div>
+  </div>
+
+  <!-- 端口扫描 -->
+  <div id="page-portscan" class="page">
+    <div class="card">
+      <h3>端口扫描</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>目标IP/域名</label>
+          <input type="text" id="portTarget" placeholder="例如: 127.0.0.1 或 example.com">
+        </div>
+        <div class="form-group">
+          <label>端口范围</label>
+          <input type="text" id="portRange" placeholder="例如: 1-1000 或 80,443,8080" value="1-1000">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>扫描类型</label>
+          <select id="portScanType">
+            <option value="tcp">TCP连接扫描</option>
+            <option value="syn">SYN半开扫描</option>
+            <option value="udp">UDP扫描</option>
+            <option value="fast">快速扫描</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>超时(秒)</label>
+          <input type="number" id="portTimeout" value="5" min="1" max="60">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="startPortScan()">开始扫描</button>
+      <div id="portScanResult" class="result-box" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- 目录扫描 -->
+  <div id="page-dirscan" class="page">
+    <div class="card">
+      <h3>目录扫描</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>目标URL</label>
+          <input type="text" id="dirTarget" placeholder="例如: http://example.com">
+        </div>
+        <div class="form-group">
+          <label>字典文件</label>
+          <select id="dirWordlist">
+            <option value="common">常用字典(2000+)</option>
+            <option value="small">小字典(500)</option>
+            <option value="large">大字典(10000+)</option>
+            <option value="custom">自定义</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>线程数</label>
+          <input type="number" id="dirThreads" value="20" min="1" max="100">
+        </div>
+        <div class="form-group">
+          <label>超时(秒)</label>
+          <input type="number" id="dirTimeout" value="10" min="1" max="60">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="startDirScan()">开始扫描</button>
+      <div id="dirScanResult" class="result-box" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- 漏洞扫描 -->
+  <div id="page-vulnscan" class="page">
+    <div class="card">
+      <h3>漏洞扫描</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>目标URL/IP</label>
+          <input type="text" id="vulnTarget" placeholder="例如: http://example.com 或 192.168.1.1">
+        </div>
+        <div class="form-group">
+          <label>扫描类型</label>
+          <select id="vulnScanType">
+            <option value="web">Web应用扫描</option>
+            <option value="network">网络设备扫描</option>
+            <option value="full">全面扫描</option>
+            <option value="nuclei">Nuclei模板扫描</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>扫描模板(逗号分隔)</label>
+        <input type="text" id="vulnTemplates" placeholder="例如: cve,sqli,xss,ssrf">
+      </div>
+      <button class="btn btn-primary" onclick="startVulnScan()">开始扫描</button>
+      <div id="vulnScanResult" class="result-box" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- 漏洞数据库 -->
+  <div id="page-vulndb" class="page">
+    <div class="card">
+      <h3>漏洞数据库</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>关键词搜索</label>
+          <input type="text" id="vulnSearch" placeholder="搜索CVE编号或漏洞名称">
+        </div>
+        <div class="form-group">
+          <label>严重程度</label>
+          <select id="vulnSeverity">
+            <option value="">全部</option>
+            <option value="critical">严重</option>
+            <option value="high">高危</option>
+            <option value="medium">中危</option>
+            <option value="low">低危</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="searchVuln()">搜索</button>
+      <div style="margin-top:20px;overflow-x:auto">
+        <table id="vulnTable">
+          <thead>
+            <tr><th>CVE编号</th><th>漏洞名称</th><th>严重程度</th><th>CVSS</th><th>发布日期</th><th>状态</th></tr>
+          </thead>
+          <tbody><tr><td colspan="6" class="empty-state">点击搜索查看漏洞列表</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PoC库 -->
+  <div id="page-poclib" class="page">
+    <div class="card">
+      <h3>PoC利用库</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>关键词搜索</label>
+          <input type="text" id="pocSearch" placeholder="搜索PoC名称或CVE编号">
+        </div>
+        <div class="form-group">
+          <label>分类</label>
+          <select id="pocCategory">
+            <option value="">全部</option>
+            <option value="web">Web漏洞</option>
+            <option value="network">网络漏洞</option>
+            <option value="local">本地提权</option>
+            <option value="dos">拒绝服务</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="searchPoc()">搜索PoC</button>
+        <button class="btn btn-success" onclick="loadPocList()">列出全部</button>
+        <button class="btn btn-warning" onclick="loadPocStats()">统计信息</button>
+      </div>
+      <div id="pocResult" class="result-box" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- 分布式扫描 -->
+  <div id="page-distributed" class="page">
+    <div class="grid-2">
+      <div class="card">
+        <h3>工作节点</h3>
+        <button class="btn btn-primary btn-sm" onclick="loadWorkers()" style="margin-bottom:15px">刷新节点</button>
+        <div id="workerList" class="empty-state">暂无节点数据</div>
+      </div>
+      <div class="card">
+        <h3>分布式任务</h3>
+        <button class="btn btn-primary btn-sm" onclick="loadDistTasks()" style="margin-bottom:15px">刷新任务</button>
+        <div id="distTaskList" class="empty-state">暂无任务数据</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>代理池</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>代理主机</label>
+          <input type="text" id="proxyHost" placeholder="例如: 192.168.1.100">
+        </div>
+        <div class="form-group">
+          <label>代理端口</label>
+          <input type="number" id="proxyPort" placeholder="例如: 8080">
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary btn-sm" onclick="addProxy()">添加代理</button>
+        <button class="btn btn-success btn-sm" onclick="loadProxies()">刷新代理</button>
+        <button class="btn btn-warning btn-sm" onclick="getProxy()">获取代理</button>
+      </div>
+      <div id="proxyResult" class="result-box" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- 工具管理 -->
+  <div id="page-tools" class="page">
+    <div class="card">
+      <h3>工具管理</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>关键词搜索</label>
+          <input type="text" id="toolSearch" placeholder="搜索工具名称">
+        </div>
+        <div class="form-group">
+          <label>分类</label>
+          <select id="toolCategory">
+            <option value="">全部</option>
+            <option value="recon">信息收集</option>
+            <option value="scan">扫描工具</option>
+            <option value="exploit">漏洞利用</option>
+            <option value="crack">密码破解</option>
+            <option value="forensics">取证分析</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="searchTools()">搜索</button>
+        <button class="btn btn-success" onclick="loadToolList()">列出全部</button>
+        <button class="btn btn-warning" onclick="checkAllTools()">检查全部</button>
+      </div>
+      <div style="margin-top:15px">
+        <span style="font-size:12px;color:#8899bb">工具总数: <span id="toolTotal">0</span> | 已安装: <span id="toolInstalled">0</span> | 未安装: <span id="toolMissing">0</span></span>
+      </div>
+      <div style="margin-top:20px;overflow-x:auto">
+        <table id="toolTable">
+          <thead>
+            <tr><th>工具名称</th><th>分类</th><th>描述</th><th>状态</th><th>操作</th></tr>
+          </thead>
+          <tbody><tr><td colspan="5" class="empty-state">点击搜索查看工具列表</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 报告中心 -->
+  <div id="page-reports" class="page">
+    <div class="card">
+      <h3>报告中心</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>报告类型</label>
+          <select id="reportType">
+            <option value="penetration_test">渗透测试报告</option>
+            <option value="vulnerability_scan">漏洞扫描报告</option>
+            <option value="security_assessment">安全评估报告</option>
+            <option value="compliance">合规检查报告</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>输出格式</label>
+          <select id="reportFormat">
+            <option value="html">HTML</option>
+            <option value="pdf">PDF</option>
+            <option value="markdown">Markdown</option>
+            <option value="json">JSON</option>
+            <option value="docx">Word</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>报告标题</label>
+        <input type="text" id="reportTitle" placeholder="例如: 某某公司安全评估报告">
+      </div>
+      <div class="form-group">
+        <label>目标系统</label>
+        <input type="text" id="reportTarget" placeholder="例如: http://example.com">
+      </div>
+      <button class="btn btn-primary" onclick="generateReport()">生成报告</button>
+      <div id="reportResult" class="result-box" style="display:none"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API_BASE = '';
+const API_KEY = localStorage.getItem('api_key') || '';
+
+// 页面切换
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  event.target.classList.add('active');
+  const titles = {
+    dashboard: '仪表盘', health: '系统健康', portscan: '端口扫描',
+    dirscan: '目录扫描', vulnscan: '漏洞扫描', vulndb: '漏洞数据库',
+    poclib: 'PoC库', distributed: '分布式扫描', tools: '工具管理', reports: '报告中心'
+  };
+  document.getElementById('pageTitle').textContent = titles[pageId] || pageId;
+}
+
+// API调用（带API密钥）
+async function apiCall(url, method = 'GET', data = null) {
+  try {
+    const options = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+      }
+    };
+    if (data) options.body = JSON.stringify(data);
+    const res = await fetch(API_BASE + url, options);
+    if (res.status === 401) {
+      return { error: 'API密钥无效，请检查X-API-Key配置', success: false };
+    }
+    return await res.json();
+  } catch(e) {
+    return { error: e.message, success: false };
+  }
+}
+
+// 显示结果
+function showResult(elementId, data, error = null) {
+  const el = document.getElementById(elementId);
+  el.style.display = 'block';
+  if (error) {
+    el.innerHTML = '<span style="color:#ef5350">错误: ' + error + '</span>';
+  } else {
+    el.textContent = JSON.stringify(data, null, 2);
+  }
+}
+
+// 仪表盘状态
+async function loadDashboardStatus() {
+  const el = document.getElementById('dashboardStatus');
+  el.innerHTML = '<div class="loading"></div> 正在检查...';
+  try {
+    const health = await apiCall('/health');
+    const stats = await apiCall('/api/v1/system/stats');
+    let html = '<div class="grid-3">';
+    html += '<div class="mini-card"><div class="title">API状态</div><div class="val" style="color:' + (health.status === 'healthy' ? '#66bb6a' : '#ef5350') + '">' + (health.status || '未知') + '</div></div>';
+    html += '<div class="mini-card"><div class="title">运行时间</div><div class="val">' + (stats.uptime || 'N/A') + '</div></div>';
+    html += '<div class="mini-card"><div class="title">工具数量</div><div class="val">' + (stats.total_tools || '47') + '</div></div>';
+    html += '</div>';
+    if (stats.modules) {
+      html += '<div style="margin-top:15px"><table><thead><tr><th>模块</th><th>状态</th></tr></thead><tbody>';
+      for (const [mod, status] of Object.entries(stats.modules)) {
+        html += '<tr><td>' + mod + '</td><td><span class="badge badge-' + (status === 'ok' ? 'success' : 'warning') + '">' + status + '</span></td></tr>';
+      }
+      html += '</tbody></table></div>';
+    }
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state" style="color:#ef5350">检查失败: ' + e.message + '</div>';
+  }
+}
+
+// 健康检查
+async function runHealthCheck() {
+  const el = document.getElementById('healthResult');
+  el.innerHTML = '<div class="loading"></div> 正在进行全面健康检查...';
+  try {
+    const health = await apiCall('/health');
+    let html = '<div class="stats-row">';
+    html += '<div class="stat-card" style="--color:#66bb6a"><div class="label">总体状态</div><div class="value">' + (health.status || 'unknown') + '</div></div>';
+    html += '<div class="stat-card" style="--color:#5a5aff"><div class="label">API版本</div><div class="value">' + (health.version || 'v7.0') + '</div></div>';
+    html += '</div>';
+    html += '<div class="card"><h3>详细检查结果</h3><div class="result-box">' + JSON.stringify(health, null, 2) + '</div></div>';
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state" style="color:#ef5350">健康检查失败: ' + e.message + '<br>请确保API服务已启动 (python main.py api-server)</div>';
+  }
+}
+
+// 端口扫描
+async function startPortScan() {
+  const target = document.getElementById('portTarget').value;
+  if (!target) { alert('请输入目标IP或域名'); return; }
+  const el = document.getElementById('portScanResult');
+  el.style.display = 'block';
+  el.innerHTML = '<div class="loading"></div> 正在扫描 ' + target + '...';
+  try {
+    const data = await apiCall('/api/v1/scan/port', 'POST', {
+      target: target,
+      ports: document.getElementById('portRange').value,
+      scan_type: document.getElementById('portScanType').value,
+      timeout: parseInt(document.getElementById('portTimeout').value)
+    });
+    showResult('portScanResult', data, data.error);
+  } catch(e) {
+    showResult('portScanResult', null, e.message);
+  }
+}
+
+// 目录扫描
+async function startDirScan() {
+  const target = document.getElementById('dirTarget').value;
+  if (!target) { alert('请输入目标URL'); return; }
+  const el = document.getElementById('dirScanResult');
+  el.style.display = 'block';
+  el.innerHTML = '<div class="loading"></div> 正在扫描 ' + target + '...';
+  try {
+    const data = await apiCall('/api/v1/scan/directory', 'POST', {
+      target: target,
+      wordlist: document.getElementById('dirWordlist').value,
+      threads: parseInt(document.getElementById('dirThreads').value),
+      timeout: parseInt(document.getElementById('dirTimeout').value)
+    });
+    showResult('dirScanResult', data, data.error);
+  } catch(e) {
+    showResult('dirScanResult', null, e.message);
+  }
+}
+
+// 漏洞扫描
+async function startVulnScan() {
+  const target = document.getElementById('vulnTarget').value;
+  if (!target) { alert('请输入目标URL或IP'); return; }
+  const el = document.getElementById('vulnScanResult');
+  el.style.display = 'block';
+  el.innerHTML = '<div class="loading"></div> 正在扫描 ' + target + '...';
+  try {
+    const data = await apiCall('/api/v1/scan/vulnerability', 'POST', {
+      target: target,
+      scan_type: document.getElementById('vulnScanType').value,
+      templates: document.getElementById('vulnTemplates').value
+    });
+    showResult('vulnScanResult', data, data.error);
+  } catch(e) {
+    showResult('vulnScanResult', null, e.message);
+  }
+}
+
+// 漏洞搜索
+async function searchVuln() {
+  const keyword = document.getElementById('vulnSearch').value;
+  const severity = document.getElementById('vulnSeverity').value;
+  let url = '/api/v1/knowledge/cve?limit=50';
+  if (severity) url += '&severity=' + severity;
+  const data = await apiCall(url);
+  const tbody = document.querySelector('#vulnTable tbody');
+  const list = data.vulnerabilities || data.cves || data.results || [];
+  if (list.length > 0) {
+    tbody.innerHTML = list.slice(0, 50).map(v => '<tr><td><strong>' + (v.cve_id || v.id || '-') + '</strong></td><td>' + (v.title || v.description || '-') + '</td><td><span class="badge badge-' + (v.severity || 'medium') + '">' + (v.severity || '-') + '</span></td><td>' + (v.cvss_score || v.cvss || '-') + '</td><td>' + (v.published_date || '-') + '</td><td><span class="badge badge-info">' + (v.status || '已知') + '</span></td></tr>').join('');
+  } else {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">' + JSON.stringify(data) + '</td></tr>';
+  }
+}
+
+// PoC搜索
+async function searchPoc() {
+  const keyword = document.getElementById('pocSearch').value;
+  const data = await apiCall('/api/v1/exploit/poc/search?keyword=' + encodeURIComponent(keyword));
+  showResult('pocResult', data, data.error);
+}
+async function loadPocList() {
+  const data = await apiCall('/api/v1/exploit/poc/list');
+  showResult('pocResult', data, data.error);
+}
+async function loadPocStats() {
+  const data = await apiCall('/api/v1/exploit/poc/stats');
+  showResult('pocResult', data, data.error);
+}
+
+// 分布式扫描
+async function loadWorkers() {
+  const data = await apiCall('/api/v1/distributed/workers');
+  const el = document.getElementById('workerList');
+  if (data.workers && data.workers.length > 0) {
+    el.innerHTML = '<table><thead><tr><th>节点名称</th><th>类型</th><th>状态</th><th>当前任务</th></tr></thead><tbody>' +
+      data.workers.map(w => '<tr><td>' + w.name + '</td><td>' + w.node_type + '</td><td><span class="badge badge-' + (w.status === 'online' ? 'success' : 'warning') + '">' + w.status + '</span></td><td>' + (w.current_tasks || 0) + '</td></tr>').join('') +
+      '</tbody></table>';
+  } else {
+    el.innerHTML = '<div class="empty-state">' + JSON.stringify(data) + '</div>';
+  }
+}
+async function loadDistTasks() {
+  const data = await apiCall('/api/v1/distributed/tasks');
+  const el = document.getElementById('distTaskList');
+  if (data.tasks && data.tasks.length > 0) {
+    el.innerHTML = '<table><thead><tr><th>任务名称</th><th>目标</th><th>状态</th><th>进度</th></tr></thead><tbody>' +
+      data.tasks.map(t => '<tr><td>' + t.name + '</td><td>' + t.target + '</td><td><span class="badge badge-info">' + t.status + '</span></td><td>' + (t.progress || 0) + '%</td></tr>').join('') +
+      '</tbody></table>';
+  } else {
+    el.innerHTML = '<div class="empty-state">' + JSON.stringify(data) + '</div>';
+  }
+}
+async function addProxy() {
+  const host = document.getElementById('proxyHost').value;
+  const port = document.getElementById('proxyPort').value;
+  if (!host || !port) { alert('请输入代理主机和端口'); return; }
+  await apiCall('/api/v1/distributed/proxies', 'POST', {host, port: parseInt(port)});
+  loadProxies();
+}
+async function loadProxies() {
+  const data = await apiCall('/api/v1/distributed/proxies');
+  showResult('proxyResult', data, data.error);
+}
+async function getProxy() {
+  const data = await apiCall('/api/v1/distributed/proxies/get');
+  showResult('proxyResult', data, data.error);
+}
+
+// 工具管理
+async function searchTools() {
+  const category = document.getElementById('toolCategory').value;
+  let url = '/api/v1/tools/manager/list';
+  if (category) url += '?category=' + category;
+  const data = await apiCall(url);
+  renderTools(data);
+}
+async function loadToolList() {
+  const data = await apiCall('/api/v1/tools/manager/list');
+  renderTools(data);
+}
+function renderTools(data) {
+  const tbody = document.querySelector('#toolTable tbody');
+  if (data.tools && data.tools.length > 0) {
+    tbody.innerHTML = data.tools.map(t => '<tr><td><strong>' + t.name + '</strong></td><td>' + (t.category || '-') + '</td><td>' + (t.description || '-') + '</td><td><span class="badge badge-' + (t.installed ? 'success' : 'warning') + '">' + (t.installed ? '已安装' : '未安装') + '</span></td><td><button class="btn btn-primary btn-sm" onclick="checkTool(\'' + t.name + '\')">检查</button></td></tr>').join('');
+    document.getElementById('toolTotal').textContent = data.total || data.tools.length;
+  } else {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">' + JSON.stringify(data) + '</td></tr>';
+  }
+}
+async function checkTool(name) {
+  const data = await apiCall('/api/v1/tools/manager/check?name=' + name, 'POST');
+  alert(name + ': ' + (data.installed ? '已安装' : '未安装'));
+}
+async function checkAllTools() {
+  const data = await apiCall('/api/v1/tools/manager/check-all', 'POST');
+  document.getElementById('toolInstalled').textContent = data.installed || 0;
+  document.getElementById('toolMissing').textContent = data.not_installed || 0;
+  alert('检查完成! 已安装: ' + (data.installed || 0) + ', 未安装: ' + (data.not_installed || 0));
+}
+
+// 报告生成
+async function generateReport() {
+  const el = document.getElementById('reportResult');
+  el.style.display = 'block';
+  el.innerHTML = '<div class="loading"></div> 正在生成报告...';
+  try {
+    const data = await apiCall('/api/v1/reports/generate', 'POST', {
+      report_type: document.getElementById('reportType').value,
+      format: document.getElementById('reportFormat').value,
+      title: document.getElementById('reportTitle').value,
+      target: document.getElementById('reportTarget').value
+    });
+    showResult('reportResult', data, data.error);
+  } catch(e) {
+    showResult('reportResult', null, e.message);
+  }
+}
+
+// 初始化
+function updateTime() {
+  document.getElementById('currentTime').textContent = new Date().toLocaleString('zh-CN');
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// 检查API状态
+async function checkApiStatus() {
+  try {
+    const res = await fetch('/health');
+    if (res.ok) {
+      document.getElementById('apiStatus').style.background = '#66bb6a';
+    } else {
+      document.getElementById('apiStatus').style.background = '#ef5350';
+    }
+  } catch(e) {
+    document.getElementById('apiStatus').style.background = '#ef5350';
+  }
+}
+checkApiStatus();
+setInterval(checkApiStatus, 30000);
+
+// 页面加载完成提示
+console.log('AI Hacking Agent v7.0 控制台已加载');
+</script>
+</body>
+</html>

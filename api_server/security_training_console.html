@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全培训与意识平台控制台 · Round 14</title>
+<style>
+  :root{
+    --bg:#0b0f17; --panel:#131a26; --panel2:#1a2333; --border:#233049;
+    --text:#d6deee; --muted:#7a8aa8; --accent:#39c5bb; --accent2:#ff6b6b;
+    --crit:#ff4d4f; --high:#fa8c16; --med:#fadb14; --low:#52c41a; --info:#1890ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:14px}
+  header{background:linear-gradient(90deg,#0d1522,#16223a);padding:14px 22px;
+    border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  header h1{margin:0;font-size:18px;color:var(--accent)}
+  header .tag{background:var(--panel2);padding:3px 10px;border-radius:10px;font-size:12px;color:var(--muted)}
+  nav{display:flex;flex-wrap:wrap;gap:4px;padding:10px 22px;background:#0e1522;border-bottom:1px solid var(--border)}
+  nav button{background:transparent;color:var(--muted);border:1px solid var(--border);
+    padding:7px 14px;cursor:pointer;border-radius:6px;font-size:13px}
+  nav button.active{background:var(--accent);color:#001;border-color:var(--accent);font-weight:600}
+  nav button:hover{color:var(--text)}
+  main{padding:18px 22px;max-width:1400px;margin:0 auto}
+  .tab{display:none}.tab.active{display:block}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px}
+  .card h3{margin:0 0 10px;font-size:14px;color:var(--accent)}
+  label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
+  input,textarea,select{width:100%;background:#0c1320;color:var(--text);
+    border:1px solid var(--border);border-radius:5px;padding:7px 9px;font-size:13px}
+  textarea{min-height:70px;font-family:Consolas,monospace}
+  button.action{background:var(--accent);color:#001;border:none;padding:9px 18px;
+    border-radius:5px;cursor:pointer;font-weight:600;margin-top:10px}
+  button.action:hover{opacity:.9}
+  button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent);margin-left:8px}
+  .status{font-size:12px;color:var(--muted);margin-top:8px}
+  .status.done{color:var(--low)}.status.error{color:var(--crit)}.status.run{color:var(--med)}
+  pre{background:#0a101c;border:1px solid var(--border);border-radius:6px;
+    padding:10px;overflow:auto;max-height:420px;font-size:12px;white-space:pre-wrap;word-break:break-all}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{border-bottom:1px solid var(--border);padding:6px 8px;text-align:left}
+  th{color:var(--accent);background:#0e1626}
+  .pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+  .pill.entry{background:rgba(57,197,187,.18);color:var(--accent)}
+  .pill.basic{background:rgba(24,144,255,.18);color:var(--info)}
+  .pill.advanced{background:rgba(250,140,22,.18);color:var(--high)}
+  .pill.expert{background:rgba(255,77,79,.18);color:var(--crit)}
+  .pill.ok{background:rgba(82,196,26,.18);color:var(--low)}
+  .pill.warn{background:rgba(250,219,20,.18);color:var(--med)}
+  .kv{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:10px}
+  .kv div b{color:var(--accent);font-size:18px;display:block}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .muted{color:var(--muted);font-size:12px}
+  .bar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;margin:4px 0}
+  .bar>span{display:block;height:100%;background:var(--accent)}
+  .full{grid-column:1/-1}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎓 安全培训与意识平台</h1>
+  <span class="tag">Round 14 · security-training</span>
+  <span class="muted" style="margin-left:auto">企业内训 / 认证 / 钓鱼演练（纯模拟，不真实发信）</span>
+</header>
+
+<nav id="nav">
+  <button data-tab="courses" class="active">📚 课程管理</button>
+  <button data-tab="labs">🧪 实验环境</button>
+  <button data-tab="exam">📝 考试认证</button>
+  <button data-tab="phishing">🎣 钓鱼演练</button>
+  <button data-tab="awareness">🧠 意识评估</button>
+  <button data-tab="ops">📊 运营管理</button>
+</nav>
+
+<main>
+<!-- ============ 课程管理 ============ -->
+<section class="tab active" id="tab-courses">
+  <div class="grid">
+    <div class="card">
+      <h3>课程库</h3>
+      <div class="row">
+        <select id="cs-cat" style="width:auto">
+          <option value="">全部分类</option>
+          <option value="network_security">网络安全</option>
+          <option value="data_security">数据安全</option>
+          <option value="cloud_security">云安全</option>
+          <option value="social_engineering">社会工程</option>
+          <option value="compliance">合规</option>
+          <option value="dev_security">开发安全</option>
+        </select>
+        <button class="action" onclick="loadCourses()">查询课程</button>
+        <button class="action ghost" onclick="loadPaths()">学习路径</button>
+        <button class="action ghost" onclick="loadCats()">分类统计</button>
+      </div>
+      <div class="kv" id="cs-stats"></div>
+      <pre id="cs-out">点击按钮加载课程…</pre>
+    </div>
+    <div class="card">
+      <h3>个性化推荐 & 进度</h3>
+      <label>岗位角色</label>
+      <select id="cs-role">
+        <option value="dev">开发</option><option value="devops">运维</option>
+        <option value="cloud">云架构</option><option value="finance">财务</option>
+        <option value="hr">人事</option><option value="manager">管理</option>
+      </select>
+      <div class="row">
+        <button class="action" onclick="loadRecommend()">推荐课程</button>
+        <button class="action ghost" onclick="loadProgress()">我的进度</button>
+      </div>
+      <label>模拟章节完成度（章节序号）</label>
+      <div class="row">
+        <input id="cs-courseid" placeholder="CRS001" style="width:120px">
+        <input id="cs-chap" type="number" value="3" style="width:90px">
+        <button class="action" onclick="updateProgress()">上报进度</button>
+      </div>
+      <pre id="cs-rec">推荐/进度结果…</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 实验环境 ============ -->
+<section class="tab" id="tab-labs">
+  <div class="grid">
+    <div class="card">
+      <h3>靶场与在线实验</h3>
+      <div class="row">
+        <button class="action" onclick="loadLabs()">实验列表</button>
+        <button class="action ghost" onclick="loadRanges()">靶场库</button>
+        <button class="action ghost" onclick="loadHealth()">沙箱健康</button>
+        <button class="action ghost" onclick="loadLabReports()">实验报告</button>
+      </div>
+      <div class="kv" id="lab-stats"></div>
+      <pre id="lab-out">点击加载…</pre>
+    </div>
+    <div class="card">
+      <h3>启动实验 & 自动评分</h3>
+      <label>实验编号</label>
+      <input id="lab-id" value="LAB001">
+      <div class="row">
+        <button class="action" onclick="startLab()">启动实验</button>
+      </div>
+      <label>会话ID（启动后自动填入）</label>
+      <input id="lab-sid" placeholder="会话ID">
+      <label>检查点 / 证据</label>
+      <div class="row">
+        <input id="lab-cp" value="low" style="width:120px">
+        <input id="lab-ev" placeholder="证据描述" style="flex:1">
+        <button class="action" onclick="submitCp()">提交检查点</button>
+        <button class="action ghost" onclick="gradeLab()">自动评分</button>
+      </div>
+      <pre id="lab-run">运行结果…</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 考试认证 ============ -->
+<section class="tab" id="tab-exam">
+  <div class="grid">
+    <div class="card">
+      <h3>题库与组卷</h3>
+      <div class="row">
+        <button class="action" onclick="loadBank()">题库统计</button>
+        <select id="ex-paper" style="width:auto">
+          <option value="PAPER-BASIC">CSTA 新员工认证</option>
+          <option value="PAPER-PRO">CSE 工程师认证</option>
+          <option value="PAPER-COMPLIANCE">CCP 合规认证</option>
+        </select>
+        <select id="ex-strategy" style="width:auto">
+          <option value="random">随机组卷</option>
+          <option value="fixed">固定卷</option>
+          <option value="adaptive">难度自适应</option>
+        </select>
+        <button class="action" onclick="buildPaper()">组卷并考试</button>
+      </div>
+      <div class="kv" id="ex-stats"></div>
+      <pre id="ex-bank">题库/试卷结果…</pre>
+    </div>
+    <div class="card">
+      <h3>成绩分析 & 证书验证</h3>
+      <div class="row">
+        <button class="action" onclick="loadAnalytics()">成绩分析</button>
+      </div>
+      <label>证书编号</label>
+      <input id="cert-serial" placeholder="CERT-XXXX">
+      <label>校验码</label>
+      <input id="cert-check" placeholder="可选">
+      <div class="row">
+        <button class="action" onclick="verifyCert()">验证证书</button>
+      </div>
+      <pre id="ex-analytics">分析/验证结果…</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 钓鱼演练 ============ -->
+<section class="tab" id="tab-phishing">
+  <div class="grid">
+    <div class="card">
+      <h3>钓鱼模板 & 目标分组</h3>
+      <div class="row">
+        <select id="ph-channel" style="width:auto">
+          <option value="">全部渠道</option>
+          <option value="email">邮件</option>
+          <option value="sms">短信</option>
+          <option value="im">即时通讯</option>
+        </select>
+        <button class="action" onclick="loadTemplates()">模板库</button>
+        <button class="action ghost" onclick="loadGroups()">分组列表</button>
+        <button class="action ghost" onclick="loadDrills()">历史演练</button>
+      </div>
+      <div class="kv" id="ph-stats"></div>
+      <pre id="ph-out">模板/分组结果…</pre>
+    </div>
+    <div class="card">
+      <h3>发起演练（纯模拟，不真实发送）</h3>
+      <label>演练名称</label>
+      <input id="ph-name" value="Q3 季度钓鱼意识演练">
+      <label>渠道</label>
+      <select id="ph-run-channel"><option>email</option><option>sms</option><option>im</option></select>
+      <div class="row">
+        <button class="action" onclick="runDrill()">模拟投递并追踪</button>
+      </div>
+      <label>演练ID（发起后自动填入，查看报告）</label>
+      <input id="ph-did" placeholder="DR...">
+      <div class="row">
+        <button class="action ghost" onclick="drillReport()">生成报告</button>
+      </div>
+      <pre id="ph-run">演练结果…</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 意识评估 ============ -->
+<section class="tab" id="tab-awareness">
+  <div class="grid">
+    <div class="card">
+      <h3>意识测评（100+ 题）</h3>
+      <div class="row">
+        <button class="action" onclick="loadQuestionnaire()">查看问卷结构</button>
+        <button class="action ghost" onclick="runAssess()">快速模拟测评</button>
+      </div>
+      <div class="kv" id="aw-kv"></div>
+      <pre id="aw-out">问卷/测评结果…</pre>
+    </div>
+    <div class="card">
+      <h3>部门对比 / 趋势 / 合规报告</h3>
+      <div class="row">
+        <button class="action" onclick="loadDepts()">部门对比</button>
+        <button class="action ghost" onclick="loadTrend()">趋势</button>
+        <select id="aw-fw" style="width:auto">
+          <option value="等保2.0三级">等保2.0三级</option>
+          <option value="ISO27001 A.7.2">ISO27001 A.7.2</option>
+        </select>
+        <button class="action ghost" onclick="loadCompliance()">合规报告</button>
+      </div>
+      <pre id="aw-chart">图表/报告…</pre>
+      <div class="bar" id="aw-bar-wrap" style="display:none"><span id="aw-bar" style="width:0"></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 运营管理 ============ -->
+<section class="tab" id="tab-ops">
+  <div class="grid">
+    <div class="card">
+      <h3>学员 / 讲师 / 班级</h3>
+      <div class="row">
+        <button class="action" onclick="loadStudents()">学员</button>
+        <button class="action ghost" onclick="loadInstructors()">讲师</button>
+        <button class="action ghost" onclick="loadClasses()">班级</button>
+        <button class="action ghost" onclick="loadPlans()">培训计划</button>
+      </div>
+      <pre id="ops-out">运营数据…</pre>
+    </div>
+    <div class="card">
+      <h3>柯氏四级评估 / ROI / 仪表盘</h3>
+      <div class="kv" id="ops-dash"></div>
+      <div class="row">
+        <button class="action" onclick="loadDashboard()">综合仪表盘</button>
+        <button class="action ghost" onclick="loadEval()">柯氏四级评估</button>
+        <button class="action ghost" onclick="loadRoi()">ROI 分析</button>
+      </div>
+      <pre id="ops-eval">评估/ROI 结果…</pre>
+    </div>
+  </div>
+</section>
+</main>
+
+<script>
+const BASE = "/api/v1/security-training";
+const $ = id => document.getElementById(id);
+
+async function api(path, opts={}){
+  const r = await fetch(BASE + path, {
+    method: opts.method || "POST",
+    headers: {"Content-Type":"application/json"},
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  return r.json();
+}
+function show(id, obj){ $(id).textContent = typeof obj==="string"?obj:JSON.stringify(obj,null,2); }
+function kv(id, pairs){
+  $(id).innerHTML = pairs.map(p=>`<div><b>${p[1]}</b><span class="muted">${p[0]}</span></div>`).join("");
+}
+
+/* ---------- 课程 ---------- */
+async function loadCourses(){
+  const cat = $("cs-cat").value;
+  const q = cat?("?category="+encodeURIComponent(cat)):"";
+  const r = await api("/courses"+q, {method:"GET"});
+  if(r.success){ kv("cs-stats", [["课程总数", r.data.total]]); show("cs-out", r.data.courses.slice(0,20)); }
+  else show("cs-out", r.error);
+}
+async function loadPaths(){
+  const r = await api("/learning-paths", {method:"GET"});
+  show("cs-out", r.success? r.data : r.error);
+}
+async function loadCats(){
+  const r = await api("/categories", {method:"GET"});
+  if(r.success){ kv("cs-stats", [["内置课程", r.data.course_total]]); show("cs-out", r.data.categories); }
+}
+async function loadRecommend(){
+  const r = await api("/recommend", {body:{role:$("cs-role").value, dept:"tech", limit:8}});
+  show("cs-rec", r.success? r.data : r.error);
+}
+async function updateProgress(){
+  const r = await api("/progress", {body:{student:"demo_user",
+    course_id:$("cs-courseid").value||"CRS001", chapter_done:parseInt($("cs-chap").value)||1}});
+  show("cs-rec", r.success? r.data.progress : r.error);
+}
+async function loadProgress(){
+  const r = await api("/progress/demo_user", {method:"GET"});
+  show("cs-rec", r.success? r.data : r.error);
+}
+
+/* ---------- 实验 ---------- */
+async function loadLabs(){
+  const r = await api("/labs", {method:"GET"});
+  if(r.success){ kv("lab-stats", [["实验数", r.data.total]]); show("lab-out", r.data.labs.slice(0,12)); }
+  else show("lab-out", r.error);
+}
+async function loadRanges(){
+  const r = await api("/ranges", {method:"GET"});
+  show("lab-out", r.success? r.data : r.error);
+}
+async function loadHealth(){
+  const r = await api("/labs/sandbox/health", {method:"GET"});
+  if(r.success) kv("lab-stats", [["运行中", r.data.running],["可用", r.data.available],["状态", r.data.status]]);
+  show("lab-out", r.success? r.data : r.error);
+}
+async function loadLabReports(){
+  const r = await api("/labs/reports", {method:"GET"});
+  show("lab-out", r.success? r.data : r.error);
+}
+async function startLab(){
+  const r = await api("/labs/start", {body:{student:"demo_user", lab_id:$("lab-id").value}});
+  if(r.success && r.data.ok){ $("lab-sid").value = r.data.session.session_id; }
+  show("lab-run", r.success? r.data : r.error);
+}
+async function submitCp(){
+  const r = await api("/labs/checkpoint", {body:{session_id:$("lab-sid").value,
+    checkpoint:$("lab-cp").value, evidence:$("lab-ev").value}});
+  show("lab-run", r.success? r.data : r.error);
+}
+async function gradeLab(){
+  const r = await api("/labs/"+encodeURIComponent($("lab-sid").value)+"/grade", {body:{}});
+  show("lab-run", r.success? r.data : r.error);
+}
+
+/* ---------- 考试 ---------- */
+async function loadBank(){
+  const r = await api("/exam/bank-stats", {method:"GET"});
+  if(r.success){ kv("ex-stats", [["题目总数", r.data.total],["试卷模板", Object.keys(r.data.papers).length]]);
+    show("ex-bank", {by_type:r.data.by_type, by_topic:r.data.by_topic}); }
+}
+async function buildPaper(){
+  const r = await api("/exam/build", {body:{paper_code:$("ex-paper").value, strategy:$("ex-strategy").value}});
+  show("ex-bank", r.success? {paper_id:r.data.paper_id, count:r.data.question_count, q:r.data.questions.slice(0,5)} : r.error);
+}
+async function loadAnalytics(){
+  const r = await api("/exam/analytics", {method:"GET"});
+  show("ex-analytics", r.success? r.data : r.error);
+}
+async function verifyCert(){
+  const p = new URLSearchParams();
+  p.set("serial", $("cert-serial").value); if($("cert-check").value) p.set("checksum", $("cert-check").value);
+  const r = await api("/certificate/verify?"+p, {method:"GET"});
+  show("ex-analytics", r.success? r.data : r.error);
+}
+
+/* ---------- 钓鱼 ---------- */
+async function loadTemplates(){
+  const ch = $("ph-channel").value;
+  const q = ch?("?channel="+encodeURIComponent(ch)):"";
+  const r = await api("/phishing/templates"+q, {method:"GET"});
+  if(r.success){ kv("ph-stats", [["模板数", r.data.total]]); show("ph-out", r.data.templates.slice(0,12)); }
+}
+async function loadGroups(){
+  const r = await api("/phishing/groups", {method:"GET"});
+  show("ph-out", r.success? r.data : r.error);
+}
+async function loadDrills(){
+  const r = await api("/phishing/drills", {method:"GET"});
+  show("ph-out", r.success? r.data : r.error);
+}
+async function runDrill(){
+  const r = await api("/phishing/drill", {body:{plan_name:$("ph-name").value,
+    tpl_ids:["TPL-M01","TPL-S01","TPL-I01"], group_ids:[], channel:$("ph-run-channel").value}});
+  if(r.success){ $("ph-did").value = r.data.result.drill_id; show("ph-run", r.data.result); }
+  else show("ph-run", r.error);
+}
+async function drillReport(){
+  const r = await api("/phishing/drills/"+encodeURIComponent($("ph-did").value)+"/report", {method:"GET"});
+  show("ph-run", r.success? r.data : r.error);
+}
+
+/* ---------- 意识 ---------- */
+async function loadQuestionnaire(){
+  const r = await api("/awareness/questionnaire", {method:"GET"});
+  if(r.success){ kv("aw-kv", [["题目数", r.data.total],["领域", r.data.domains.length]]); show("aw-out", r.data); }
+}
+async function runAssess(){
+  const r = await api("/awareness/assess", {body:{student:"demo_user", department:"研发部", answers:{}}});
+  if(r.success){
+    const s = r.data.score; kv("aw-kv", [["意识分", s],["等级", r.data.level],["薄弱点", r.data.weak_count]]);
+    $("aw-bar-wrap").style.display="block"; $("aw-bar").style.width=s+"%";
+    show("aw-out", {score:s, level:r.data.level, per_domain:r.data.per_domain, suggestions:r.data.suggestions});
+  }
+}
+async function loadDepts(){
+  const r = await api("/awareness/departments", {method:"GET"});
+  show("aw-chart", r.success? r.data : r.error);
+}
+async function loadTrend(){
+  const r = await api("/awareness/trend?months=6", {method:"GET"});
+  show("aw-chart", r.success? r.data : r.error);
+}
+async function loadCompliance(){
+  const r = await api("/awareness/compliance-report?framework="+encodeURIComponent($("aw-fw").value), {method:"GET"});
+  show("aw-chart", r.success? r.data : r.error);
+}
+
+/* ---------- 运营 ---------- */
+async function loadStudents(){
+  const r = await api("/ops/students", {method:"GET"});
+  show("ops-out", r.success? {total:r.data.total, rows:r.data.students.slice(0,10)} : r.error);
+}
+async function loadInstructors(){
+  const r = await api("/ops/instructors", {method:"GET"});
+  show("ops-out", r.success? r.data : r.error);
+}
+async function loadClasses(){
+  const r = await api("/ops/classes", {method:"GET"});
+  show("ops-out", r.success? r.data : r.error);
+}
+async function loadPlans(){
+  const r = await api("/ops/plans", {method:"GET"});
+  show("ops-out", r.success? r.data : r.error);
+}
+async function loadDashboard(){
+  const r = await api("/ops/dashboard", {method:"GET"});
+  if(r.success){ kv("ops-dash", [["学员", r.data.students],["讲师", r.data.instructors],
+    ["开课", r.data.open_classes],["计划", r.data.plans],["记录", r.data.learning_records]]);
+    show("ops-eval", r.data); }
+}
+async function loadEval(){
+  const r = await api("/ops/classes/CLS-demo/evaluation", {method:"GET"});
+  show("ops-eval", r.success? r.data : r.error);
+}
+async function loadRoi(){
+  const r = await api("/ops/roi", {method:"GET"});
+  show("ops-eval", r.success? r.data : r.error);
+}
+
+/* tab 切换 */
+document.querySelectorAll("#nav button").forEach(b=>{
+  b.addEventListener("click", ()=>{
+    document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    $("tab-"+b.dataset.tab).classList.add("active");
+  });
+});
+/* 首屏默认加载 */
+loadCourses(); loadDashboard();
+</script>
+</body>
+</html>

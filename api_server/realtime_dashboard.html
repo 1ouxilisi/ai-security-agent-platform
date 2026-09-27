@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实时安全监控大屏</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; height:100%; background:#0a0e17; color:#e6f1ff;
+    font-family:"Microsoft YaHei",sans-serif; overflow:hidden; }
+  #screen { width:100vw; height:100vh; display:flex; flex-direction:column; padding:8px; gap:8px; }
+  /* 顶部标题栏 */
+  #header { height:56px; display:flex; align-items:center; justify-content:space-between;
+    background:linear-gradient(90deg,#0d1b3a,#0a0e17,#0d1b3a);
+    border:1px solid #1e3a5f; border-radius:6px; padding:0 20px; }
+  #header h1 { font-size:26px; color:#00e5ff; letter-spacing:4px;
+    text-shadow:0 0 12px #00e5ff; }
+  #header .right { display:flex; gap:24px; font-size:14px; color:#7a8ba6; }
+  #clock { color:#e6f1ff; font-size:18px; font-family:Consolas,monospace; }
+  #status-dot { display:inline-block; width:10px; height:10px; border-radius:50%;
+    background:#39ff88; box-shadow:0 0 8px #39ff88; margin-right:6px; }
+  /* 主体三栏 */
+  #main { flex:1; display:grid; grid-template-columns: 300px 1fr 340px; gap:8px; min-height:0; }
+  .col { display:flex; flex-direction:column; gap:8px; min-height:0; }
+  .panel { background:#111827; border:1px solid #1e3a5f; border-radius:6px;
+    padding:8px 10px; display:flex; flex-direction:column; min-height:0; }
+  .panel h3 { font-size:14px; color:#00e5ff; border-left:3px solid #00e5ff;
+    padding-left:8px; margin-bottom:6px; }
+  /* 左侧指标卡片 2x4 */
+  #metrics { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(4,1fr); gap:6px; flex:1; }
+  .metric { background:#0d1b3a; border:1px solid #1e3a5f; border-radius:5px;
+    display:flex; flex-direction:column; justify-content:center; align-items:center; }
+  .metric .v { font-size:26px; color:#00e5ff; text-shadow:0 0 8px #00e5ff; }
+  .metric .l { font-size:12px; color:#7a8ba6; margin-top:2px; }
+  /* 中间 */
+  #map-wrap { flex:1.3; position:relative; }
+  #map-svg { width:100%; height:100%; }
+  #chart-wrap { flex:1; }
+  #trend-canvas { width:100%; height:calc(100% - 24px); }
+  /* 右侧 */
+  #alert-panel { flex:1.2; overflow:hidden; }
+  #alert-list { flex:1; overflow:hidden; position:relative; }
+  #alert-scroll { position:absolute; width:100%; }
+  .alert-item { padding:5px 8px; margin-bottom:4px; border-radius:4px;
+    background:#0d1b3a; font-size:12px; border-left:3px solid #888; }
+  .alert-item .sev { font-weight:bold; margin-right:6px; }
+  .alert-item .src { color:#7a8ba6; font-size:11px; }
+  #top-type { flex:1; }
+  .bar-row { display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:12px; }
+  .bar-row .name { width:90px; color:#cfd8e6; }
+  .bar-row .track { flex:1; height:10px; background:#0d1b3a; border-radius:5px; overflow:hidden; }
+  .bar-row .fill { height:100%; background:linear-gradient(90deg,#00e5ff,#3b9dff); }
+  .bar-row .num { width:40px; text-align:right; color:#7a8ba6; }
+  /* 底部流量条 */
+  #footer { height:44px; background:#111827; border:1px solid #1e3a5f; border-radius:6px;
+    display:flex; align-items:center; justify-content:space-around; font-size:13px; }
+  #footer .fi { color:#7a8ba6; }
+  #footer .fi b { color:#00e5ff; margin-left:4px; }
+  /* 地图攻击点闪烁 */
+  @keyframes pulse { 0%{opacity:.9; r:4;} 100%{opacity:.1; r:12;} }
+  .attack-dot { animation:pulse 1.6s infinite; }
+</style>
+</head>
+<body>
+<div id="screen">
+  <div id="header">
+    <h1>AI 安全运营中心 · 实时监控大屏</h1>
+    <div class="right">
+      <span><span id="status-dot"></span>系统运行正常</span>
+      <span id="clock">--:--:--</span>
+    </div>
+  </div>
+
+  <div id="main">
+    <!-- 左侧：指标卡片 -->
+    <div class="col">
+      <div class="panel">
+        <h3>关键指标</h3>
+        <div id="metrics">
+          <div class="metric"><div class="v" id="m-events">0</div><div class="l">今日事件</div></div>
+          <div class="metric"><div class="v" id="m-alerts">0</div><div class="l">今日告警</div></div>
+          <div class="metric"><div class="v" id="m-vulns">0</div><div class="l">漏洞总数</div></div>
+          <div class="metric"><div class="v" id="m-hivuln">0</div><div class="l">高危漏洞</div></div>
+          <div class="metric"><div class="v" id="m-mttd">0</div><div class="l">MTTD(秒)</div></div>
+          <div class="metric"><div class="v" id="m-mttr">0</div><div class="l">MTTR(分)</div></div>
+          <div class="metric"><div class="v" id="m-sla">0%</div><div class="l">SLA合规率</div></div>
+          <div class="metric"><div class="v" id="m-fix">0%</div><div class="l">修复率</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中间：地图 + 趋势 -->
+    <div class="col">
+      <div class="panel" id="map-wrap">
+        <h3>全球攻击态势地图</h3>
+        <svg id="map-svg" viewBox="-180 -90 360 180">
+          <!-- 简化世界大陆轮廓（示意） -->
+          <g id="land" fill="#16233d" stroke="#1e3a5f" stroke-width="0.4">
+            <path d="M -160 60 Q -120 70 -80 50 Q -60 30 -90 10 Q -130 20 -160 40 Z"/>
+            <path d="M -80 -10 Q -60 -30 -70 -55 Q -90 -60 -95 -30 Q -95 0 -80 -10 Z"/>
+            <path d="M -10 60 Q 30 65 60 55 Q 80 40 50 35 Q 20 30 -10 45 Z"/>
+            <path d="M 60 60 Q 100 70 140 55 Q 160 40 120 35 Q 80 35 60 45 Z"/>
+            <path d="M 70 20 Q 90 10 80 -10 Q 70 -20 60 0 Z"/>
+            <path d="M -10 5 Q 20 0 15 -25 Q -5 -30 -15 -10 Z"/>
+            <path d="M 110 -15 Q 140 -20 150 -35 Q 130 -45 110 -30 Z"/>
+          </g>
+          <g id="paths"></g>
+          <g id="dots"></g>
+          <circle id="target-dot" cx="116.4" cy="-39.9" r="4" fill="#39ff88"/>
+          <text x="118" y="-42" fill="#39ff88" font-size="3">核心机房</text>
+        </svg>
+      </div>
+      <div class="panel" id="chart-wrap">
+        <h3>事件 / 告警趋势（24h）</h3>
+        <canvas id="trend-canvas"></canvas>
+      </div>
+    </div>
+
+    <!-- 右侧：告警 + TOP10 -->
+    <div class="col">
+      <div class="panel" id="alert-panel">
+        <h3>最新告警</h3>
+        <div id="alert-list"><div id="alert-scroll"></div></div>
+      </div>
+      <div class="panel" id="top-type">
+        <h3>攻击类型 TOP10</h3>
+        <div id="type-bars"></div>
+      </div>
+      <div class="panel">
+        <h3>攻击来源 TOP10</h3>
+        <div id="src-list" style="font-size:12px;overflow:auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="footer">
+    <span class="fi">资产<b id="f-asset">-</b></span>
+    <span class="fi">在线率<b id="f-online">-</b></span>
+    <span class="fi">今日新增事件<b id="f-new">-</b></span>
+    <span class="fi">总事件<b id="f-events">-</b></span>
+    <span class="fi">总告警<b id="f-alerts">-</b></span>
+    <span class="fi">刷新间隔<b>5s</b></span>
+  </div>
+</div>
+
+<script>
+const API = "/api/v1/visualization-v2";
+const SEVCOLOR = {critical:"#ff3b3b",high:"#ff9f2e",medium:"#ffd93b",low:"#3b9dff",info:"#9aa4b2"};
+
+function clock(){
+  const d = new Date();
+  document.getElementById('clock').textContent = d.toLocaleString('zh-CN',{hour12:false});
+}
+setInterval(clock,1000); clock();
+
+async function jget(path){
+  try{ const r = await fetch(API+path); const j = await r.json(); return j.data; }
+  catch(e){ return null; }
+}
+
+// 指标
+function renderMetrics(m){
+  if(!m) return;
+  document.getElementById('m-events').textContent = m.today_events||0;
+  document.getElementById('m-alerts').textContent = m.today_alerts||0;
+  document.getElementById('m-vulns').textContent = m.total_vulns||0;
+  document.getElementById('m-hivuln').textContent = m.critical_vulns||0;
+  document.getElementById('m-mttd').textContent = m.mttd_seconds||0;
+  document.getElementById('m-mttr').textContent = m.mttr_minutes||0;
+  document.getElementById('m-sla').textContent = (m.sla_compliance||0)+'%';
+  document.getElementById('m-fix').textContent = (m.fix_rate||0)+'%';
+}
+
+// 地图
+function renderMap(map){
+  if(!map) return;
+  const paths = document.getElementById('paths');
+  const dots = document.getElementById('dots');
+  paths.innerHTML=''; dots.innerHTML='';
+  (map.paths||[]).forEach(p=>{
+    const mid = p.midpoint||{lng:(p.source.lng+p.target.lng)/2+15, lat:(p.source.lat+p.target.lat)/2};
+    const ns='http://www.w3.org/2000/svg';
+    const path=document.createElementNS(ns,'path');
+    path.setAttribute('d',`M ${p.source.lng} ${-p.source.lat} Q ${mid.lng} ${-mid.lat} ${p.target.lng} ${-p.target.lat}`);
+    path.setAttribute('stroke',p.color); path.setAttribute('stroke-width',p.width||1);
+    path.setAttribute('fill','none'); path.setAttribute('opacity','0.6');
+    paths.appendChild(path);
+  });
+  (map.points||[]).forEach(pt=>{
+    const ns='http://www.w3.org/2000/svg';
+    const c=document.createElementNS(ns,'circle');
+    c.setAttribute('cx',pt.lng); c.setAttribute('cy',-pt.lat);
+    c.setAttribute('r',Math.max(2,pt.count/120));
+    c.setAttribute('fill',pt.color||'#ff3b3b');
+    c.setAttribute('class','attack-dot');
+    dots.appendChild(c);
+  });
+}
+
+// 趋势折线
+function drawTrend(ev, al){
+  const cv = document.getElementById('trend-canvas');
+  const dpr = window.devicePixelRatio||1;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  cv.width = w*dpr; cv.height = h*dpr;
+  const ctx = cv.getContext('2d'); ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  // 网格
+  ctx.strokeStyle='#1e3a5f'; ctx.lineWidth=1;
+  for(let i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(0,h*i/4); ctx.lineTo(w,h*i/4); ctx.stroke(); }
+  function line(data,color){
+    if(!data||!data.length) return;
+    const max = Math.max(...data.map(d=>d.value),1);
+    ctx.strokeStyle=color; ctx.lineWidth=2; ctx.beginPath();
+    data.forEach((d,i)=>{
+      const x = i/(data.length-1)*w;
+      const y = h - (d.value/max)*(h-10) - 5;
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    });
+    ctx.stroke();
+  }
+  line(ev,'#00e5ff'); line(al,'#ff9f2e');
+}
+
+// 告警滚动
+let alertOffset = 0;
+function renderAlerts(list){
+  if(!list||!list.length) return;
+  const box = document.getElementById('alert-scroll');
+  box.innerHTML = list.slice(0,20).map(a=>`
+    <div class="alert-item" style="border-left-color:${SEVCOLOR[a.severity]||'#888'}">
+      <span class="sev" style="color:${SEVCOLOR[a.severity]}">${(a.severity||'').toUpperCase()}</span>
+      ${a.type} <span class="src">${a.source_location||a.source_ip||''}</span>
+      <div class="src">${a.timestamp}</div>
+    </div>`).join('');
+}
+
+// TOP10 柱状
+function renderTopTypes(types){
+  const box = document.getElementById('type-bars');
+  if(!types||!types.length){ box.innerHTML=''; return; }
+  const max = Math.max(...types.map(t=>t.count));
+  box.innerHTML = types.map(t=>`
+    <div class="bar-row">
+      <span class="name">${t.type}</span>
+      <span class="track"><span class="fill" style="width:${(t.count/max*100).toFixed(0)}%"></span></span>
+      <span class="num">${t.count}</span>
+    </div>`).join('');
+}
+function renderTopSources(srcs){
+  const box = document.getElementById('src-list');
+  box.innerHTML = (srcs||[]).map(s=>
+    `<div style="display:flex;justify-content:space-between;padding:2px 0">
+      <span>${s.rank}. ${s.country} ${s.city||''}</span><span style="color:#ff9f2e">${s.count}</span></div>`
+  ).join('');
+}
+
+// 底部
+function renderFooter(status){
+  if(!status) return;
+  document.getElementById('f-asset').textContent = status.asset_total;
+  document.getElementById('f-online').textContent = status.online_rate+'%';
+  document.getElementById('f-new').textContent = status.today_new_events;
+  document.getElementById('f-events').textContent = status.event_count;
+  document.getElementById('f-alerts').textContent = status.alert_count;
+}
+
+async function refresh(){
+  const rt = await jget('/realtime/data');
+  if(rt){
+    renderMap(rt.attack_map);
+    renderTopSources(rt.top_sources);
+    renderFooter(rt.status);
+  }
+  const m = await jget('/realtime/metrics'); renderMetrics(m);
+  const a = await jget('/realtime/alerts?limit=20'); if(a) renderAlerts(a.alerts);
+  const t = await jget('/realtime/trends?hours=24');
+  if(t){ drawTrend(t.event_trend,t.alert_trend); renderTopTypes(await jget('/realtime/data').then(d=>d&&d.top_types)); }
+}
+refresh(); setInterval(refresh,5000);
+window.addEventListener('resize',()=>{ jget('/realtime/trends?hours=24').then(t=>t&&drawTrend(t.event_trend,t.alert_trend)); });
+</script>
+</body>
+</html>

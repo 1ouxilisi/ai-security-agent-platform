@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自动化红蓝对抗与攻击模拟平台 · 第24轮升级</title>
+<style>
+:root {
+  --bg-primary: #0b0f14;
+  --bg-secondary: #131a22;
+  --bg-tertiary: #1c2630;
+  --border-color: #2b3947;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b98a5;
+  --red: #f85149;
+  --blue: #58a6ff;
+  --green: #3fb950;
+  --yellow: #d29922;
+  --purple: #bc8cff;
+  --orange: #f0883e;
+  --radius: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; min-height: 100vh;
+}
+.header {
+  background: linear-gradient(135deg, #1a0a0a 0%, #0b0f14 100%);
+  border-bottom: 1px solid var(--border-color);
+  padding: 18px 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+}
+.header h1 { font-size: 21px; color: var(--red); }
+.header .badge {
+  background: var(--bg-tertiary); border: 1px solid var(--border-color);
+  padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--text-secondary);
+}
+.tabs {
+  background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);
+  display: flex; overflow-x: auto; padding: 0 18px;
+}
+.tab-btn {
+  background: none; border: none; color: var(--text-secondary);
+  padding: 13px 18px; cursor: pointer; font-size: 14px;
+  border-bottom: 2px solid transparent; white-space: nowrap; transition: all .2s;
+}
+.tab-btn:hover { color: var(--text-primary); }
+.tab-btn.active { color: var(--red); border-bottom-color: var(--red); }
+.tab-content { display: none; padding: 22px; max-width: 1400px; margin: 0 auto; }
+.tab-content.active { display: block; }
+.card {
+  background: var(--bg-secondary); border: 1px solid var(--border-color);
+  border-radius: var(--radius); padding: 18px; margin-bottom: 14px;
+}
+.card h3 { font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.form-group { flex: 1; min-width: 180px; }
+.form-group label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; background: var(--bg-tertiary); border: 1px solid var(--border-color);
+  color: var(--text-primary); padding: 8px 12px; border-radius: 6px; font-size: 14px;
+}
+.btn {
+  background: var(--red); color: #fff; border: none; padding: 9px 18px;
+  border-radius: 6px; cursor: pointer; font-size: 14px; transition: filter .2s;
+}
+.btn:hover { filter: brightness(1.1); }
+.btn-secondary { background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary); }
+.btn-blue { background: var(--blue); }
+.btn-green { background: var(--green); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 10px 0; }
+.stat-card {
+  background: var(--bg-tertiary); border: 1px solid var(--border-color);
+  border-radius: 6px; padding: 14px; text-align: center;
+}
+.stat-card .value { font-size: 26px; font-weight: 700; color: var(--red); }
+.stat-card .value.blue { color: var(--blue); }
+.stat-card .value.green { color: var(--green); }
+.stat-card .value.orange { color: var(--orange); }
+.stat-card .label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+.status-pill { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin: 6px 0; }
+.status-running { background: #1f3a52; color: var(--blue); }
+.status-success { background: #12331f; color: var(--green); }
+.status-failed { background: #3d1414; color: var(--red); }
+pre {
+  background: #0a0d11; border: 1px solid var(--border-color); border-radius: 6px;
+  padding: 12px; overflow-x: auto; font-size: 12px; color: #c9d1d9; max-height: 420px; overflow-y: auto;
+}
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border-color); }
+th { color: var(--text-secondary); font-weight: 600; }
+tr:hover td { background: var(--bg-tertiary); }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin: 2px; }
+.tag-red { background: #3d1414; color: var(--red); }
+.tag-blue { background: #1f3a52; color: var(--blue); }
+.tag-green { background: #12331f; color: var(--green); }
+.tag-yellow { background: #3d2e14; color: var(--yellow); }
+.tag-purple { background: #2d1f4a; color: var(--purple); }
+.empty-state { color: var(--text-secondary); font-size: 13px; padding: 14px; text-align: center; }
+.footer {
+  text-align: center; color: var(--text-secondary); font-size: 12px;
+  padding: 20px; border-top: 1px solid var(--border-color); margin-top: 20px;
+}
+.tactic-pill { cursor: pointer; }
+.heat-cell { display: inline-block; width: 100%; height: 28px; border-radius: 4px; text-align: center; line-height: 28px; font-size: 11px; color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🛡️ 自动化红蓝对抗与攻击模拟平台</h1>
+  <div>
+    <span class="badge">第24轮升级 · 方向1</span>
+    <span class="badge" id="health-badge">检查中</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="overview">📊 总览</button>
+  <button class="tab-btn" data-tab="attack">⚔️ 攻击模拟</button>
+  <button class="tab-btn" data-tab="defense">🛡️ 防御验证</button>
+  <button class="tab-btn" data-tab="exercise">🎯 对抗管理</button>
+  <button class="tab-btn" data-tab="viz">🌐 可视化</button>
+  <button class="tab-btn" data-tab="tools">🔧 工具集成</button>
+  <button class="tab-btn" data-tab="settings">⚙️ 设置</button>
+</div>
+
+<!-- ============ 总览 ============ -->
+<div class="tab-content active" id="tab-overview">
+  <div class="card">
+    <h3>对抗总览 <button class="btn btn-secondary" onclick="loadOverview()" style="margin-left:auto">刷新</button></h3>
+    <div class="stat-grid" id="overview-stats"></div>
+    <div id="overview-result"></div>
+  </div>
+  <div class="card">
+    <h3>综合评分趋势（近10次对抗）</h3>
+    <div id="trend-result"></div>
+  </div>
+  <div class="card">
+    <h3>平台模块统计</h3>
+    <div id="stats-result"></div>
+  </div>
+</div>
+
+<!-- ============ 攻击模拟 ============ -->
+<div class="tab-content" id="tab-attack">
+  <div class="card">
+    <h3>ATT&CK 战术库（14个）</h3>
+    <div class="form-row">
+      <button class="btn" onclick="loadTactics()">加载战术</button>
+    </div>
+    <div id="tactics-result"></div>
+  </div>
+  <div class="card">
+    <h3>攻击技术库</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>按战术过滤</label>
+        <select id="tech-tactic"><option value="">全部</option></select>
+      </div>
+      <div class="form-group" style="flex:0">
+        <label>&nbsp;</label>
+        <button class="btn btn-blue" onclick="loadTechniques()">查询技术</button>
+      </div>
+    </div>
+    <div id="techniques-result"></div>
+  </div>
+  <div class="card">
+    <h3>攻击场景库</h3>
+    <div id="scenarios-result"></div>
+  </div>
+  <div class="card">
+    <h3>构建并执行攻击链</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>选择场景</label>
+        <select id="chain-scenario">
+          <option value="scenario-apt29">APT29 定向攻击</option>
+          <option value="scenario-ransomware-conti">Conti 勒索软件</option>
+          <option value="scenario-data-breach">数据泄露</option>
+          <option value="scenario-lateral">内网横向渗透</option>
+          <option value="scenario-phishing">钓鱼邮件攻击</option>
+          <option value="scenario-apt-china">APT 长期潜伏</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>目标</label>
+        <input id="chain-target" value="10.0.0.0/24">
+      </div>
+      <div class="form-group" style="flex:0">
+        <label>&nbsp;</label>
+        <button class="btn" onclick="buildAndExecuteChain()">构建并执行</button>
+      </div>
+    </div>
+    <div id="chain-result"></div>
+  </div>
+  <div class="card">
+    <h3>执行单个攻击技术</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>技术 ID</label>
+        <input id="exec-tech" value="T1059.001">
+      </div>
+      <div class="form-group">
+        <label>目标</label>
+        <input id="exec-target" value="10.0.0.5">
+      </div>
+      <div class="form-group" style="flex:0">
+        <label>&nbsp;</label>
+        <button class="btn btn-red" onclick="execTech()">执行</button>
+      </div>
+    </div>
+    <div id="exec-result"></div>
+  </div>
+</div>
+
+<!-- ============ 防御验证 ============ -->
+<div class="tab-content" id="tab-defense">
+  <div class="card">
+    <h3>防御规则库</h3>
+    <div class="form-row">
+      <button class="btn btn-blue" onclick="loadRules()">加载规则</button>
+      <button class="btn btn-secondary" onclick="loadCoverage()">检测覆盖率分析</button>
+      <button class="btn btn-secondary" onclick="loadAlerts()">防御告警</button>
+      <button class="btn btn-secondary" onclick="loadAlertQuality()">告警质量</button>
+      <button class="btn btn-secondary" onclick="loadEffectiveness()">防御有效性</button>
+      <button class="btn btn-secondary" onclick="loadImprovements()">改进建议</button>
+    </div>
+    <div id="defense-result"></div>
+  </div>
+</div>
+
+<!-- ============ 对抗管理 ============ -->
+<div class="tab-content" id="tab-exercise">
+  <div class="card">
+    <h3>创建红蓝对抗项目</h3>
+    <div class="form-row">
+      <div class="form-group"><label>项目名称</label><input id="ex-name" value="2026 Q3 红蓝对抗演练"></div>
+      <div class="form-group"><label>范围</label><input id="ex-scope" value="10.0.0.0/8"></div>
+      <div class="form-group"><label>红队</label><input id="ex-red" value="红队-Ares"></div>
+      <div class="form-group"><label>蓝队</label><input id="ex-blue" value="蓝队-Athena"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="flex:0"><button class="btn" onclick="createExercise()">创建项目</button></div>
+      <div class="form-group" style="flex:0"><button class="btn btn-blue" onclick="loadExercises()">项目列表</button></div>
+    </div>
+    <div id="exercise-create-result"></div>
+  </div>
+  <div class="card">
+    <h3>对抗控制 / 评分 / 复盘</h3>
+    <div class="form-row">
+      <div class="form-group"><label>对抗 ID</label><input id="ex-id" placeholder="exercise-xxxx"></div>
+      <div class="form-group" style="flex:0"><label>&nbsp;</label>
+        <select id="ex-action"><option value="start">开始</option><option value="pause">暂停</option><option value="resume">恢复</option><option value="terminate">终止</option></select>
+      </div>
+      <div class="form-group" style="flex:0"><label>&nbsp;</label>
+        <button class="btn btn-green" onclick="controlExercise()">控制</button>
+      </div>
+      <div class="form-group" style="flex:0"><label>&nbsp;</label>
+        <button class="btn btn-blue" onclick="scoreExercise()">评分</button>
+      </div>
+      <div class="form-group" style="flex:0"><label>&nbsp;</label>
+        <button class="btn btn-red" onclick="debriefExercise()">复盘</button>
+      </div>
+    </div>
+    <div id="exercise-control-result"></div>
+  </div>
+</div>
+
+<!-- ============ 可视化 ============ -->
+<div class="tab-content" id="tab-viz">
+  <div class="card">
+    <h3>攻击可视化 <button class="btn btn-secondary" onclick="loadAllViz()" style="margin-left:auto">全部加载</button></h3>
+    <div class="form-row">
+      <button class="btn" onclick="loadViz('topology')">攻击拓扑图</button>
+      <button class="btn" onclick="loadViz('timeline')">攻击链时间线</button>
+      <button class="btn" onclick="loadViz('attack-tree')">攻击树</button>
+      <button class="btn" onclick="loadViz('killchain')">杀伤链分析</button>
+      <button class="btn" onclick="loadViz('heatmap')">热力图</button>
+      <button class="btn" onclick="loadViz('map3d')">3D 攻击地图</button>
+    </div>
+    <div id="viz-result"></div>
+  </div>
+</div>
+
+<!-- ============ 工具集成 ============ -->
+<div class="tab-content" id="tab-tools">
+  <div class="card">
+    <h3>攻击工具集成</h3>
+    <div class="form-row">
+      <button class="btn btn-blue" onclick="loadToolMarket()">工具市场</button>
+      <button class="btn btn-secondary" onclick="loadMsfModules()">Metasploit 模块</button>
+      <button class="btn btn-secondary" onclick="loadCsBeacons()">Cobalt Strike Beacon</button>
+    </div>
+    <div id="tools-result"></div>
+  </div>
+  <div class="card">
+    <h3>Nmap 端口扫描</h3>
+    <div class="form-row">
+      <div class="form-group"><label>目标</label><input id="nmap-target" value="10.0.0.5"></div>
+      <div class="form-group"><label>端口</label><input id="nmap-ports" value="1-1000"></div>
+      <div class="form-group" style="flex:0"><label>&nbsp;</label><button class="btn" onclick="runNmap()">扫描</button></div>
+    </div>
+    <div id="nmap-result"></div>
+  </div>
+  <div class="card">
+    <h3>SQLMap 注入检测</h3>
+    <div class="form-row">
+      <div class="form-group"><label>目标 URL</label><input id="sqlmap-url" value="http://example.com/vuln?id=1"></div>
+      <div class="form-group" style="flex:0"><label>&nbsp;</label><button class="btn" onclick="runSqlmap()">检测</button></div>
+    </div>
+    <div id="sqlmap-result"></div>
+  </div>
+  <div class="card">
+    <h3>Metasploit 模块执行</h3>
+    <div class="form-row">
+      <div class="form-group"><label>模块</label><input id="msf-module" value="windows/smb/ms17_010_eternalblue"></div>
+      <div class="form-group"><label>目标</label><input id="msf-target" value="10.0.0.5"></div>
+      <div class="form-group" style="flex:0"><label>&nbsp;</label><button class="btn btn-red" onclick="runMsf()">执行</button></div>
+    </div>
+    <div id="msf-result"></div>
+  </div>
+</div>
+
+<!-- ============ 设置 ============ -->
+<div class="tab-content" id="tab-settings">
+  <div class="card">
+    <h3>系统设置 <button class="btn btn-secondary" onclick="loadSettings()" style="margin-left:auto">刷新</button></h3>
+    <div id="settings-result"></div>
+  </div>
+</div>
+
+<div class="footer">
+  自动化红蓝对抗与攻击模拟平台 · 第24轮升级方向1 · ATT&CK 14战术 / 190+技术 / 真实攻击链构建与防御评估
+</div>
+
+<script>
+const API = '/api/v1/red-blue-team';
+
+// Tab 切换
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+async function apiCall(path, method='GET', body=null) {
+  const opts = { method, headers: {'Content-Type': 'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const resp = await fetch(API + path, opts);
+  return await resp.json();
+}
+function render(elId, data) {
+  document.getElementById(elId).innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+}
+function fail(elId, msg) {
+  document.getElementById(elId).innerHTML =
+    '<span class="status-pill status-failed">' + msg + '</span>';
+}
+
+// 健康检查
+async function checkHealth() {
+  try {
+    const r = await apiCall('/health');
+    const b = document.getElementById('health-badge');
+    if (r.success && r.data.status === 'healthy') {
+      b.textContent = '✓ 模块就绪 · ' + r.data.techniques + ' 技术';
+      b.style.color = 'var(--green)';
+    } else {
+      b.textContent = '✗ 模块异常';
+      b.style.color = 'var(--red)';
+    }
+  } catch(e) {
+    document.getElementById('health-badge').textContent = '✗ 无法连接';
+  }
+}
+
+// 总览
+async function loadOverview() {
+  try {
+    const r = await apiCall('/dashboard/overview');
+    if (r.success) {
+      const d = r.data;
+      document.getElementById('overview-stats').innerHTML = `
+        <div class="stat-card"><div class="value">${d.total_exercises}</div><div class="label">对抗总数</div></div>
+        <div class="stat-card"><div class="value blue">${d.in_progress}</div><div class="label">进行中</div></div>
+        <div class="stat-card"><div class="value green">${d.completed}</div><div class="label">已完成</div></div>
+        <div class="stat-card"><div class="value orange">${(d.attack_success_rate*100).toFixed(0)}%</div><div class="label">攻击成功率</div></div>
+        <div class="stat-card"><div class="value blue">${(d.defense_success_rate*100).toFixed(0)}%</div><div class="label">防御成功率</div></div>
+        <div class="stat-card"><div class="value">${d.techniques_in_library}</div><div class="label">攻击技术</div></div>
+        <div class="stat-card"><div class="value green">${d.rules_deployed}</div><div class="label">防御规则</div></div>
+        <div class="stat-card"><div class="value orange">${d.alerts_triggered}</div><div class="label">告警数</div></div>`;
+      document.getElementById('overview-result').innerHTML = '';
+    } else fail('overview-stats', r.error);
+  } catch(e) { fail('overview-stats', '请求失败: ' + e); }
+}
+async function loadTrend() {
+  const r = await apiCall('/dashboard/score-trend');
+  render('trend-result', r.success ? r.data : r.error);
+}
+async function loadModuleStats() {
+  const r = await apiCall('/dashboard/stats');
+  render('stats-result', r.success ? r.data : r.error);
+}
+
+// 攻击模拟
+async function loadTactics() {
+  const r = await apiCall('/attack/tactics');
+  render('tactics-result', r.success ? r.data : r.error);
+  if (r.success) {
+    const sel = document.getElementById('tech-tactic');
+    sel.innerHTML = '<option value="">全部</option>' + r.data.map(t => `<option value="${t.id}">${t.cn}</option>`).join('');
+  }
+}
+async function loadTechniques() {
+  const tac = document.getElementById('tech-tactic').value;
+  const r = await apiCall('/attack/techniques' + (tac ? '?tactic=' + tac : ''));
+  render('techniques-result', r.success ? r.data : r.error);
+}
+async function loadScenarios() {
+  const r = await apiCall('/attack/scenarios');
+  render('scenarios-result', r.success ? r.data : r.error);
+}
+async function buildAndExecuteChain() {
+  const sid = document.getElementById('chain-scenario').value;
+  const target = document.getElementById('chain-target').value;
+  document.getElementById('chain-result').innerHTML = '<span class="status-pill status-running">构建攻击链中...</span>';
+  try {
+    const b = await apiCall('/attack/chains/build', 'POST', { scenario_id: sid, target: target });
+    if (!b.success) { fail('chain-result', b.error); return; }
+    document.getElementById('chain-result').innerHTML = '<span class="status-pill status-running">执行攻击链中...</span>';
+    const e = await apiCall('/attack/execute/chain/' + b.data.chain_id, 'POST');
+    render('chain-result', e.success ? e.data : e.error);
+  } catch(err) { fail('chain-result', '失败: ' + err); }
+}
+async function execTech() {
+  const tid = document.getElementById('exec-tech').value;
+  const target = document.getElementById('exec-target').value;
+  document.getElementById('exec-result').innerHTML = '<span class="status-pill status-running">执行中...</span>';
+  try {
+    const r = await apiCall('/attack/execute/technique', 'POST', { technique_id: tid, target: target });
+    render('exec-result', r.success ? r.data : r.error);
+  } catch(err) { fail('exec-result', '失败: ' + err); }
+}
+
+// 防御验证
+async function loadRules() { const r = await apiCall('/defense/rules'); render('defense-result', r.success ? r.data : r.error); }
+async function loadCoverage() { const r = await apiCall('/defense/coverage'); render('defense-result', r.success ? r.data : r.error); }
+async function loadAlerts() { const r = await apiCall('/defense/alerts'); render('defense-result', r.success ? r.data : r.error); }
+async function loadAlertQuality() { const r = await apiCall('/defense/alerts/quality'); render('defense-result', r.success ? r.data : r.error); }
+async function loadEffectiveness() { const r = await apiCall('/defense/effectiveness'); render('defense-result', r.success ? r.data : r.error); }
+async function loadImprovements() { const r = await apiCall('/defense/improvements'); render('defense-result', r.success ? r.data : r.error); }
+
+// 对抗管理
+async function createExercise() {
+  const body = {
+    name: document.getElementById('ex-name').value,
+    scope: document.getElementById('ex-scope').value,
+    red_team_name: document.getElementById('ex-red').value,
+    blue_team_name: document.getElementById('ex-blue').value,
+    start: '2026-10-01T09:00:00', end: '2026-10-03T18:00:00'
+  };
+  const r = await apiCall('/exercises', 'POST', body);
+  render('exercise-create-result', r.success ? r.data : r.error);
+  if (r.success) document.getElementById('ex-id').value = r.data.exercise_id;
+}
+async function loadExercises() {
+  const r = await apiCall('/exercises');
+  render('exercise-create-result', r.success ? r.data : r.error);
+}
+async function controlExercise() {
+  const eid = document.getElementById('ex-id').value;
+  const act = document.getElementById('ex-action').value;
+  if (!eid) { fail('exercise-control-result', '请输入对抗 ID'); return; }
+  const r = await apiCall('/exercises/' + eid + '/control?action=' + act, 'POST');
+  render('exercise-control-result', r.success ? r.data : r.error);
+}
+async function scoreExercise() {
+  const eid = document.getElementById('ex-id').value;
+  if (!eid) { fail('exercise-control-result', '请输入对抗 ID'); return; }
+  const r = await apiCall('/exercises/' + eid + '/score?attack_success=0.6&detection=0.7&response_time=30', 'POST');
+  render('exercise-control-result', r.success ? r.data : r.error);
+}
+async function debriefExercise() {
+  const eid = document.getElementById('ex-id').value;
+  if (!eid) { fail('exercise-control-result', '请输入对抗 ID'); return; }
+  const r = await apiCall('/exercises/' + eid + '/debrief', 'POST');
+  render('exercise-control-result', r.success ? r.data : r.error);
+}
+
+// 可视化
+async function loadViz(kind) {
+  const r = await apiCall('/viz/' + kind);
+  render('viz-result', r.success ? r.data : r.error);
+}
+async function loadAllViz() {
+  const kinds = ['topology','timeline','attack-tree','killchain','heatmap','map3d'];
+  const all = {};
+  for (const k of kinds) {
+    const r = await apiCall('/viz/' + k);
+    all[k] = r.success ? r.data : r.error;
+  }
+  render('viz-result', all);
+}
+
+// 工具
+async function loadToolMarket() { const r = await apiCall('/tools/market'); render('tools-result', r.success ? r.data : r.error); }
+async function loadMsfModules() { const r = await apiCall('/tools/metasploit/modules'); render('tools-result', r.success ? r.data : r.error); }
+async function loadCsBeacons() { const r = await apiCall('/tools/cobaltstrike/beacons'); render('tools-result', r.success ? r.data : r.error); }
+async function runNmap() {
+  const target = document.getElementById('nmap-target').value;
+  const ports = document.getElementById('nmap-ports').value;
+  const r = await apiCall('/tools/nmap/scan', 'POST', { target, ports });
+  render('nmap-result', r.success ? r.data : r.error);
+}
+async function runSqlmap() {
+  const url = document.getElementById('sqlmap-url').value;
+  const r = await apiCall('/tools/sqlmap/detect', 'POST', { url });
+  render('sqlmap-result', r.success ? r.data : r.error);
+}
+async function runMsf() {
+  const module = document.getElementById('msf-module').value;
+  const target = document.getElementById('msf-target').value;
+  const r = await apiCall('/tools/metasploit/run', 'POST', { module, target, options: {} });
+  render('msf-result', r.success ? r.data : r.error);
+}
+
+// 设置
+async function loadSettings() {
+  const r = await apiCall('/settings');
+  render('settings-result', r.success ? r.data : r.error);
+}
+
+// 初始化
+checkHealth();
+loadOverview();
+loadTrend();
+loadModuleStats();
+loadTactics();
+loadScenarios();
+loadRules();
+loadSettings();
+loadToolMarket();
+</script>
+</body>
+</html>

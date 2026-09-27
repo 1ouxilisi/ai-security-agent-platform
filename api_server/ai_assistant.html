@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="page.assistant.title">AI安全助手</title>
+<!-- Markdown 渲染 -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- 代码高亮 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/common.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0f1115;
+    --sidebar: #161922;
+    --panel: #1c2029;
+    --border: #2a2f3a;
+    --user-bubble: #2f6df6;
+    --ai-bubble: #252b37;
+    --text: #e6e8ec;
+    --muted: #8b93a3;
+    --online: #34d399;
+    --offline: #f87171;
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", Segoe UI, sans-serif;
+    background: var(--bg); color: var(--text);
+    display: flex; overflow: hidden;
+  }
+  /* 左侧对话历史 */
+  #sidebar {
+    width: 260px; min-width: 260px; background: var(--sidebar);
+    border-right: 1px solid var(--border); display: flex; flex-direction: column;
+  }
+  #sidebar .new-chat {
+    margin: 12px; padding: 10px; background: var(--user-bubble); color: #fff;
+    border: none; border-radius: 8px; cursor: pointer; font-size: 14px;
+  }
+  #sidebar .new-chat:hover { filter: brightness(1.1); }
+  #chat-list { flex: 1; overflow-y: auto; padding: 0 8px; }
+  .chat-item {
+    padding: 10px 12px; margin-bottom: 4px; border-radius: 8px; cursor: pointer;
+    color: var(--muted); font-size: 13px; display: flex; justify-content: space-between;
+    align-items: center;
+  }
+  .chat-item:hover { background: var(--panel); color: var(--text); }
+  .chat-item.active { background: var(--panel); color: var(--text); }
+  .chat-item .del { color: var(--offline); font-size: 12px; opacity: 0.7; }
+  .chat-item .del:hover { opacity: 1; }
+
+  /* 右侧主区 */
+  #main { flex: 1; display: flex; flex-direction: column; }
+  #topbar {
+    height: 56px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 20px; gap: 10px;
+  }
+  #topbar h1 { font-size: 17px; font-weight: 600; }
+  .status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--offline); }
+  .status-dot.online { background: var(--online); box-shadow: 0 0 6px var(--online); }
+  #status-text { font-size: 12px; color: var(--muted); }
+
+  #messages { flex: 1; overflow-y: auto; padding: 24px; }
+  .msg { display: flex; margin-bottom: 18px; }
+  .msg.user { justify-content: flex-end; }
+  .bubble {
+    max-width: 72%; padding: 12px 16px; border-radius: 12px;
+    line-height: 1.65; font-size: 14px; white-space: pre-wrap; word-break: break-word;
+  }
+  .msg.user .bubble { background: var(--user-bubble); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.ai .bubble { background: var(--ai-bubble); border-bottom-left-radius: 4px; }
+  .bubble pre { background: #0d1017; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 8px 0; }
+  .bubble code { font-family: Consolas, monospace; font-size: 13px; }
+  .bubble:not(pre) code { background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 4px; }
+  .bubble ul, .bubble ol { margin: 6px 0 6px 22px; }
+  .bubble h1, .bubble h2, .bubble h3 { margin: 8px 0; }
+  .typing { color: var(--muted); font-style: italic; }
+
+  /* 底部输入 */
+  #input-bar {
+    border-top: 1px solid var(--border); padding: 14px 20px;
+    display: flex; gap: 10px; align-items: flex-end; background: var(--sidebar);
+  }
+  #input-box {
+    flex: 1; background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); border-radius: 10px; padding: 12px 14px; font-size: 14px;
+    resize: none; min-height: 46px; max-height: 140px; outline: none; font-family: inherit;
+  }
+  #input-box:focus { border-color: var(--user-bubble); }
+  #send-btn {
+    background: var(--user-bubble); color: #fff; border: none; border-radius: 10px;
+    padding: 0 22px; height: 46px; cursor: pointer; font-size: 14px;
+  }
+  #send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  #hint { font-size: 11px; color: var(--muted); padding: 4px 20px 8px; }
+</style>
+<link rel="stylesheet" href="/static/css/responsive.css">
+</head>
+<body>
+  <!-- 左侧：对话历史 -->
+  <aside id="sidebar">
+    <button class="new-chat" onclick="newChat()">+ 新建对话</button>
+    <div id="chat-list"></div>
+  </aside>
+
+  <!-- 右侧：聊天主区 -->
+  <section id="main" class="main-content">
+    <header id="topbar">
+      <span class="status-dot" id="status-dot"></span>
+      <h1 data-i18n="page.assistant.title">AI安全助手</h1>
+      <span id="status-text">检测连接中…</span>
+    </header>
+    <div id="messages"></div>
+    <div id="input-bar">
+      <textarea id="input-box" placeholder="输入你的问题，例如：SQL注入是什么？怎么修复？（Enter 发送，Shift+Enter 换行）"></textarea>
+      <button id="send-btn" onclick="send()">发送</button>
+    </div>
+    <div id="hint">本助手仅用于授权安全评估的防御/检测/修复场景，不提供真实攻击利用指导。</div>
+  </section>
+
+<script>
+  // marked + highlight 初始化
+  if (window.marked) {
+    marked.setOptions({
+      highlight: function(code, lang) {
+        if (window.hljs && lang && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, { language: lang }).value;
+        }
+        return window.hljs ? hljs.highlightAuto(code).value : code;
+      },
+      breaks: true
+    });
+  }
+
+  let sessions = JSON.parse(localStorage.getItem('ai_sessions') || '[]');
+  if (sessions.length === 0) { sessions = ['default']; }
+  let currentSession = sessions[0];
+
+  function renderChatList() {
+    const list = document.getElementById('chat-list');
+    list.innerHTML = '';
+    sessions.forEach((sid, idx) => {
+      const div = document.createElement('div');
+      div.className = 'chat-item' + (sid === currentSession ? ' active' : '');
+      const label = document.createElement('span');
+      label.textContent = (idx + 1) + '. ' + sid;
+      label.onclick = () => switchChat(sid);
+      const del = document.createElement('span');
+      del.className = 'del'; del.textContent = '删除';
+      del.onclick = (e) => { e.stopPropagation(); deleteChat(idx); };
+      div.appendChild(label); div.appendChild(del);
+      list.appendChild(div);
+    });
+  }
+
+  function switchChat(sid) {
+    currentSession = sid;
+    renderChatList();
+    document.getElementById('messages').innerHTML = '';
+    appendMsg('ai', '已切换到对话「' + sid + '」，请输入你的问题。');
+  }
+
+  function newChat() {
+    const sid = 'chat_' + Date.now();
+    sessions.push(sid);
+    localStorage.setItem('ai_sessions', JSON.stringify(sessions));
+    switchChat(sid);
+  }
+
+  function deleteChat(idx) {
+    const sid = sessions[idx];
+    sessions.splice(idx, 1);
+    if (sessions.length === 0) { sessions.push('default'); }
+    localStorage.setItem('ai_sessions', JSON.stringify(sessions));
+    currentSession = sessions[0];
+    renderChatList();
+  }
+
+  function appendMsg(role, text) {
+    const wrap = document.createElement('div');
+    wrap.className = 'msg ' + role;
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    if (role === 'ai' && window.marked) {
+      bubble.innerHTML = marked.parse(text);
+    } else {
+      bubble.textContent = text;
+    }
+    wrap.appendChild(bubble);
+    document.getElementById('messages').appendChild(wrap);
+    document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+    return bubble;
+  }
+
+  async function checkStatus() {
+    try {
+      const r = await fetch('/api/v1/ai/status');
+      const d = await r.json();
+      const dot = document.getElementById('status-dot');
+      const txt = document.getElementById('status-text');
+      if (d.llm_available) {
+        dot.classList.add('online');
+        txt.textContent = '在线 · 模型 ' + (d.model || 'unknown');
+      } else {
+        dot.classList.remove('online');
+        txt.textContent = '在线（规则降级模式）· ' + (d.modules_loaded || []).join(',');
+      }
+    } catch (e) {
+      document.getElementById('status-text').textContent = '离线 · 无法连接后端';
+    }
+  }
+
+  async function send() {
+    const box = document.getElementById('input-box');
+    const text = box.value.trim();
+    if (!text) return;
+    box.value = '';
+    appendMsg('user', text);
+    const btn = document.getElementById('send-btn');
+    btn.disabled = true;
+
+    const typing = appendMsg('ai', '正在思考…');
+    try {
+      const r = await fetch('/api/v1/ai/assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, session_id: currentSession })
+      });
+      const d = await r.json();
+      const reply = d.reply || d.detail || '（无返回内容）';
+      typing.innerHTML = window.marked ? marked.parse(reply) : reply;
+      document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+    } catch (e) {
+      typing.textContent = '请求失败：' + e.message;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // Enter 发送
+  document.getElementById('input-box').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+
+  // 初始化
+  renderChatList();
+  appendMsg('ai', '你好，我是 AI 安全助手。可以问我：某个漏洞的原理与修复、平台功能用法、安全建设建议，或让我解读评估报告。');
+  checkStatus();
+  setInterval(checkStatus, 30000);
+</script>
+<script src="/static/js/i18n.js"></script>
+<script src="/static/js/mobile-nav.js"></script>
+
+<!-- Round8: mobile + i18n boot -->
+<div id="lang-switcher" style="position:fixed;top:10px;right:10px;z-index:1300;display:flex;gap:6px;">
+  <button type="button" data-lang="zh-CN" class="lang-btn" style="min-height:44px;padding:8px 14px;background:#161b22;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;cursor:pointer;font-size:13px;">中文</button>
+  <button type="button" data-lang="en-US" class="lang-btn" style="min-height:44px;padding:8px 14px;background:#161b22;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;cursor:pointer;font-size:13px;">EN</button>
+</div>
+<script>
+(function(){
+  function bindLangSwitch(){
+    var btns = document.querySelectorAll('#lang-switcher .lang-btn');
+    btns.forEach(function(b){
+      b.addEventListener('click', function(){
+        var lang = b.getAttribute('data-lang');
+        if (window.i18n) window.i18n.setLanguage(lang);
+      });
+    });
+    function highlight(){
+      var cur = (window.i18n && window.i18n.getLanguage()) || 'zh-CN';
+      btns.forEach(function(b){
+        var active = b.getAttribute('data-lang') === cur;
+        b.style.borderColor = active ? '#58a6ff' : '#30363d';
+        b.style.color = active ? '#58a6ff' : '#c9d1d9';
+      });
+    }
+    window.addEventListener('i18n:change', highlight);
+    // initial highlight once i18n boots
+    var tries = 0;
+    var t = setInterval(function(){ if (window.i18n) { highlight(); clearInterval(t); } else if (++tries > 50) clearInterval(t); }, 100);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindLangSwitch);
+  else bindLangSwitch();
+})();
+</script>
+
+</body>
+</html>

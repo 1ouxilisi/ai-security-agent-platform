@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全度量与KPI控制台 · Round 15 · CISO</title>
+<style>
+  :root {
+    --bg: #0a0e16; --panel: #111826; --panel2: #182236; --border: #24334f;
+    --text: #d8e0f0; --muted: #7c8db0; --accent: #4f8ff7; --accent2: #38c9a8;
+    --crit: #ff4d4f; --high: #fa8c16; --med: #fadb14; --low: #52c41a; --info: #1890ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; font-size: 14px; }
+  header { background: linear-gradient(90deg,#0c1424,#142138); padding: 14px 24px;
+    border-bottom: 1px solid var(--border); display:flex; align-items:center; gap:14px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 18px; color: var(--accent); }
+  header .tag { background: var(--panel2); padding: 3px 10px; border-radius: 10px;
+    font-size: 12px; color: var(--muted); }
+  nav { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 24px;
+    background: #0d1524; border-bottom: 1px solid var(--border); position: sticky; top:0; z-index: 9; }
+  nav button { background: transparent; color: var(--muted); border: 1px solid var(--border);
+    padding: 8px 16px; cursor: pointer; border-radius: 6px; font-size: 13px; }
+  nav button.active { background: var(--accent); color: #04101f; border-color: var(--accent); font-weight: 600; }
+  nav button:hover { color: var(--text); }
+  main { padding: 18px 24px; max-width: 1480px; margin: 0 auto; }
+  .tab { display: none; } .tab.active { display: block; }
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+  .span4 { grid-column: span 4; } .span6 { grid-column: span 6; }
+  .span8 { grid-column: span 8; } .span12 { grid-column: span 12; }
+  @media (max-width: 1000px) { .span4,.span6,.span8 { grid-column: span 12; } }
+  .card { background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .card h3 { margin: 0 0 10px; font-size: 14px; color: var(--accent);
+    border-left: 3px solid var(--accent); padding-left: 8px; }
+  .kpi { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 14px; }
+  .kpi .v { font-size: 24px; font-weight: 700; color: var(--accent2); }
+  .kpi .l { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  label { display:block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+  select, input { width: 100%; background: #0b1220; color: var(--text);
+    border: 1px solid var(--border); border-radius: 5px; padding: 7px 9px; font-size: 13px; }
+  button.action { background: var(--accent); color: #04101f; border: none;
+    padding: 9px 18px; border-radius: 5px; cursor: pointer; font-weight: 600; margin-top: 10px; }
+  button.action:hover { opacity: .9; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { border-bottom: 1px solid var(--border); padding: 6px 8px; text-align: left; }
+  th { color: var(--accent); background: #0e1729; }
+  tr:hover td { background: rgba(79,143,247,.06); }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .pill.critical { background: rgba(255,77,79,.18); color: var(--crit); }
+  .pill.high { background: rgba(250,140,22,.18); color: var(--high); }
+  .pill.medium { background: rgba(250,219,20,.18); color: var(--med); }
+  .pill.low { background: rgba(82,196,26,.18); color: var(--low); }
+  .pill.info, .pill.none { background: rgba(24,144,255,.18); color: var(--info); }
+  .bar { height: 8px; background: var(--panel2); border-radius: 4px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: linear-gradient(90deg,var(--accent),var(--accent2)); }
+  .status { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .status.done { color: var(--low); } .status.error { color: var(--crit); }
+  pre { background: #090f1c; border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px; overflow: auto; max-height: 420px; font-size: 12px;
+    white-space: pre-wrap; word-break: break-all; }
+  .heat { display: grid; gap: 3px; font-size: 11px; }
+  .heat div.cell { padding: 6px; border-radius: 4px; text-align: center; color: #04101f; font-weight: 600; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  canvas { background: #0b1220; border-radius: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>安全度量与KPI体系</h1>
+  <span class="tag">Round 15</span>
+  <span class="tag">面向 CISO / 管理层</span>
+  <span class="tag" style="margin-left:auto" id="clock"></span>
+</header>
+<nav id="nav">
+  <button data-tab="maturity" class="active">成熟度模型</button>
+  <button data-tab="kpi">KPI指标库</button>
+  <button data-tab="risk">风险评分</button>
+  <button data-tab="ops">运营效率</button>
+  <button data-tab="comp">合规审计</button>
+  <button data-tab="exec">高管仪表盘</button>
+</nav>
+<main>
+
+<!-- ===================== 1. 成熟度模型 ===================== -->
+<section class="tab active" id="tab-maturity">
+  <div class="grid">
+    <div class="card span4">
+      <h3>成熟度评估</h3>
+      <label>对标行业</label>
+      <select id="mm-industry">
+        <option>金融</option><option>互联网</option><option>制造</option>
+        <option>医疗</option><option>政府</option><option>零售</option>
+      </select>
+      <button class="action" onclick="runMaturity()">执行成熟度评估</button>
+      <div class="status" id="mm-status">就绪</div>
+    </div>
+    <div class="card span4">
+      <h3>综合成熟度得分</h3>
+      <div class="kpi"><div class="v" id="mm-score">-</div><div class="l" id="mm-level">/ 5.0</div></div>
+    </div>
+    <div class="card span4">
+      <h3>等级说明</h3>
+      <div id="mm-desc" class="muted">选择行业后点击评估</div>
+    </div>
+    <div class="card span6">
+      <h3>五维度雷达（当前 vs 行业对标）</h3>
+      <canvas id="radar" width="520" height="360"></canvas>
+    </div>
+    <div class="card span6">
+      <h3>维度得分与权重</h3>
+      <div id="mm-dims"></div>
+    </div>
+    <div class="card span6">
+      <h3>差距分析</h3>
+      <div id="mm-gap"></div>
+    </div>
+    <div class="card span6">
+      <h3>改进路线图</h3>
+      <div id="mm-roadmap"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 2. KPI 指标库 ===================== -->
+<section class="tab" id="tab-kpi">
+  <div class="grid">
+    <div class="card span12">
+      <h3>KPI 指标库（300+）</h3>
+      <div class="row">
+        <div style="flex:2"><label>分类</label>
+          <select id="kpi-cat" onchange="loadKPI()">
+            <option value="">全部</option>
+            <option value="risk">风险类</option><option value="ops">运营类</option>
+            <option value="tech">技术类</option><option value="compliance">合规类</option>
+            <option value="finance">财务类</option></select></div>
+        <div style="flex:3"><label>搜索</label>
+          <input id="kpi-q" placeholder="输入指标名 / ID" oninput="loadKPI()"></div>
+        <div style="flex:1"><label>&nbsp;</label>
+          <div class="muted" id="kpi-count">-</div></div>
+      </div>
+    </div>
+    <div class="card span12"><div id="kpi-table"></div></div>
+  </div>
+</section>
+
+<!-- ===================== 3. 风险评分 ===================== -->
+<section class="tab" id="tab-risk">
+  <div class="grid">
+    <div class="card span3 kpi"><div class="v" id="rk-avg">-</div><div class="l">综合风险分</div></div>
+    <div class="card span3 kpi"><div class="v" id="rk-crit">-</div><div class="l">严重风险</div></div>
+    <div class="card span3 kpi"><div class="v" id="rk-high">-</div><div class="l">高风险</div></div>
+    <div class="card span3 kpi"><div class="v" id="rk-pred">-</div><div class="l">下期预测</div></div>
+    <div class="card span7">
+      <h3>风险趋势（近12期）</h3>
+      <canvas id="riskLine" width="640" height="260"></canvas>
+    </div>
+    <div class="card span5">
+      <h3>风险归因</h3>
+      <div id="rk-attr"></div>
+    </div>
+    <div class="card span12">
+      <h3>风险热力图（资产类别 × 威胁类型）</h3>
+      <div id="rk-heat"></div>
+    </div>
+    <div class="card span12">
+      <h3>风险登记册</h3>
+      <div id="rk-reg"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 4. 运营效率 ===================== -->
+<section class="tab" id="tab-ops">
+  <div class="grid">
+    <div class="card span3 kpi"><div class="v" id="op-mttd">-</div><div class="l">MTTD(h)</div></div>
+    <div class="card span3 kpi"><div class="v" id="op-mttr">-</div><div class="l">MTTR(h)</div></div>
+    <div class="card span3 kpi"><div class="v" id="op-sla">-</div><div class="l">SLA达成率%</div></div>
+    <div class="card span3 kpi"><div class="v" id="op-auto">-</div><div class="l">自动化率%</div></div>
+    <div class="card span7">
+      <h3>MTTD / MTTR / MTRS 趋势</h3>
+      <canvas id="mtLine" width="640" height="260"></canvas>
+    </div>
+    <div class="card span5">
+      <h3>告警量与误报率</h3>
+      <canvas id="alertBar" width="440" height="240"></canvas>
+    </div>
+    <div class="card span6">
+      <h3>工单 SLA（按级别）</h3>
+      <div id="op-sla"></div>
+    </div>
+    <div class="card span6">
+      <h3>分析师工作量</h3>
+      <div id="op-work"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 5. 合规审计 ===================== -->
+<section class="tab" id="tab-comp">
+  <div class="grid">
+    <div class="card span3 kpi"><div class="v" id="cp-pass">-</div><div class="l">框架平均通过率%</div></div>
+    <div class="card span3 kpi"><div class="v" id="cp-rem">-</div><div class="l">整改完成率%</div></div>
+    <div class="card span3 kpi"><div class="v" id="cp-over">-</div><div class="l">逾期项</div></div>
+    <div class="card span3 kpi"><div class="v" id="cp-read">-</div><div class="l">审计准备度%</div></div>
+    <div class="card span7">
+      <h3>合规通过率趋势</h3>
+      <canvas id="compLine" width="640" height="260"></canvas>
+    </div>
+    <div class="card span5">
+      <h3>框架对比</h3>
+      <div id="cp-fw"></div>
+    </div>
+    <div class="card span12">
+      <h3>审计发现明细</h3>
+      <div id="cp-find"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 6. 高管仪表盘 ===================== -->
+<section class="tab" id="tab-exec">
+  <div class="grid">
+    <div class="card span12"><h3>CISO 核心 KPI</h3><div class="row" id="ex-kpi"></div></div>
+    <div class="card span5">
+      <h3>安全投资回报 (ROI)</h3>
+      <div id="ex-roi"></div>
+    </div>
+    <div class="card span7">
+      <h3>管理层告警 / 行动项</h3>
+      <div id="ex-alert"></div>
+    </div>
+    <div class="card span12">
+      <h3>安全态势一页纸</h3>
+      <button class="action" onclick="loadOnePager()">刷新一页纸</button>
+      <pre id="ex-pager"></pre>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+const BASE = "/api/v1/security-metrics";
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?"":s).replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+function pill(sev){ const s=(sev||"info").toLowerCase();
+  return `<span class="pill ${s}">${s}</span>`; }
+async function api(path, opts={}){
+  const r = await fetch(BASE+path, {
+    method: opts.method || "GET",
+    headers: {"Content-Type":"application/json"},
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  const j = await r.json();
+  if(!j.success) throw new Error(j.error || "请求失败");
+  return j.data;
+}
+document.querySelectorAll("#nav button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active"); $("tab-"+b.dataset.tab).classList.add("active");
+  const t = b.dataset.tab;
+  if(t==="risk") loadRisk(); if(t==="ops") loadOps();
+  if(t==="comp") loadComp(); if(t==="exec") loadExec();
+  if(t==="kpi") loadKPI();
+}));
+setInterval(()=>$("clock").textContent = new Date().toLocaleString(), 1000);
+$("clock").textContent = new Date().toLocaleString();
+
+// ---------- 通用绘图 ----------
+function lineChart(canvasId, labels, series, opts={}){
+  const cv = $(canvasId), ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height, pad = {l:40,r:16,t:16,b:28};
+  ctx.clearRect(0,0,W,H);
+  const all = series.flatMap(s=>s.data);
+  const min = Math.min(...all, opts.min||0), max = Math.max(...all, opts.max||100);
+  const x = i => pad.l + i*(W-pad.l-pad.r)/Math.max(1,labels.length-1);
+  const y = v => H-pad.b - (v-min)*(H-pad.t-pad.b)/Math.max(0.001,(max-min));
+  ctx.strokeStyle="#24334f"; ctx.beginPath();
+  for(let g=0;g<=4;g++){ const yy=pad.t+g*(H-pad.t-pad.b)/4;
+    ctx.moveTo(pad.l,yy); ctx.lineTo(W-pad.r,yy);
+    ctx.fillStyle="#7c8db0"; ctx.font="10px sans-serif";
+    ctx.fillText(((max-(max-min)*g/4)).toFixed(0),4,yy+3); }
+  ctx.stroke();
+  ctx.fillStyle="#7c8db0";
+  labels.forEach((l,i)=>{ if(i%Math.ceil(labels.length/6)===0)
+    ctx.fillText(l, x(i)-12, H-8); });
+  series.forEach(s=>{
+    ctx.strokeStyle=s.color; ctx.lineWidth=2; ctx.beginPath();
+    s.data.forEach((v,i)=>{ i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v)); });
+    ctx.stroke();
+    ctx.fillStyle=s.color;
+    s.data.forEach((v,i)=>{ ctx.beginPath(); ctx.arc(x(i),y(v),2.5,0,7); ctx.fill(); });
+  });
+}
+function barChart(canvasId, labels, data, color="#4f8ff7"){
+  const cv=$(canvasId), ctx=cv.getContext("2d");
+  const W=cv.width,H=cv.height,pad={l:36,r:10,t:10,b:26};
+  ctx.clearRect(0,0,W,H);
+  const max=Math.max(...data,1);
+  const bw=(W-pad.l-pad.r)/labels.length-4;
+  data.forEach((v,i)=>{
+    const bh=(v/max)*(H-pad.t-pad.b);
+    ctx.fillStyle=color; ctx.fillRect(pad.l+i*(bw+4), H-pad.b-bh, bw, bh);
+    ctx.fillStyle="#7c8db0"; ctx.font="9px sans-serif";
+    if(i%2===0) ctx.fillText(labels[i], pad.l+i*(bw+4), H-8);
+  });
+}
+function radar(canvasId, labels, cur, bench){
+  const cv=$(canvasId), ctx=cv.getContext("2d");
+  const W=cv.width,H=cv.height,cx=W/2,cy=H/2,R=Math.min(W,H)/2-40,N=labels.length;
+  ctx.clearRect(0,0,W,H);
+  const pt=(i,v)=>{ const a=-Math.PI/2+i*2*Math.PI/N;
+    return [cx+Math.cos(a)*R*v/5, cy+Math.sin(a)*R*v/5]; };
+  for(let g=1;g<=5;g++){ ctx.strokeStyle="#24334f"; ctx.beginPath();
+    for(let i=0;i<=N;i++){ const [px,py]=pt(i%N,g); i?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+    ctx.stroke(); }
+  labels.forEach((l,i)=>{ const [px,py]=pt(i,5.4);
+    ctx.fillStyle="#7c8db0"; ctx.font="11px sans-serif"; ctx.fillText(l,px-24,py+3); });
+  const draw=(arr,color)=>{ ctx.strokeStyle=color; ctx.fillStyle=color+"33";
+    ctx.beginPath(); arr.forEach((v,i)=>{ const [px,py]=pt(i,v); i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.closePath(); ctx.fill(); ctx.stroke(); };
+  draw(bench,"#7c8db0"); draw(cur,"#38c9a8");
+}
+
+// ---------- 1. 成熟度 ----------
+async function runMaturity(){
+  try{
+    $("mm-status").textContent="评估中..."; $("mm-status").className="status";
+    const ind=$("mm-industry").value;
+    const d = await api("/maturity/assess",{method:"POST",body:{industry:ind,answers:{}}});
+    const r=d.result;
+    $("mm-score").textContent=r.overall_score;
+    $("mm-level").textContent=`${r.maturity_level}级 · ${r.level_name}`;
+    $("mm-desc").textContent="等级说明加载中...";
+    const lv=await api("/maturity/levels");
+    $("mm-desc").textContent=lv.levels[r.maturity_level].desc;
+    radar("radar", r.radar.labels.map(x=>x.split(" ")[0]), r.radar.current, r.radar.benchmark);
+    $("mm-dims").innerHTML = Object.values(r.dimension_details).map(d=>
+      `<div style="margin:8px 0"><div class="row" style="justify-content:space-between">
+        <span>${esc(d.name)}</span><b>${d.score}</b></div>
+        <div class="bar"><i style="width:${d.score/5*100}%"></i></div></div>`).join("");
+    $("mm-gap").innerHTML = r.gap_analysis.map(g=>
+      `<div class="row" style="justify-content:space-between;margin:4px 0">
+        <span>${esc(g.dimension)}</span>
+        <span class="muted">${g.score} vs ${g.benchmark}
+        <span class="pill ${g.status==="ahead"?"low":"high"}">${g.status==="ahead"?"领先":"落后"}</span></span></div>`).join("");
+    $("mm-roadmap").innerHTML = r.roadmap.map(p=>
+      `<div style="margin:8px 0"><b>${esc(p.phase)}</b> → 目标 ${p.target_level}级
+        <div class="muted">${p.actions.map(esc).join("；")}</div></div>`).join("");
+    $("mm-status").textContent="评估完成"; $("mm-status").className="status done";
+  }catch(e){ $("mm-status").textContent=e.message; $("mm-status").className="status error"; }
+}
+
+// ---------- 2. KPI ----------
+async function loadKPI(){
+  try{
+    const cat=$("kpi-cat").value, q=$("kpi-q").value.trim();
+    let d;
+    if(q) d=await api("/kpi/search?q="+encodeURIComponent(q));
+    else d=await api("/kpi/list"+(cat?("?category="+cat):""));
+    $("kpi-count").textContent=`共 ${d.total} 项，展示 ${d.returned}`;
+    const rows=d.items.map(k=>[esc(k.id),esc(k.name),esc(k.category_name),
+      esc(k.series), k.target+esc(k.unit),
+      `<span class="pill ${k.direction==="higher_better"?"low":"high"}">${k.direction==="higher_better"?"↑好":"↓好"}</span>`]);
+    $("kpi-table").innerHTML="<table><tr><th>ID</th><th>名称</th><th>分类</th><th>系列</th><th>目标值</th><th>方向</th></tr>"
+      +rows.map(r=>"<tr>"+r.join("")+"</tr>").join("")+"</table>";
+  }catch(e){ $("kpi-count").textContent=e.message; }
+}
+
+// ---------- 3. 风险 ----------
+async function loadRisk(){
+  try{
+    const sc=await api("/risk/scorecard");
+    $("rk-avg").textContent=sc.overall_risk_score;
+    $("rk-crit").textContent=sc.level_distribution.critical||0;
+    $("rk-high").textContent=sc.level_distribution.high||0;
+    const pred=await api("/risk/predict");
+    $("rk-pred").textContent=pred.forecast[0].predicted_score;
+    const tr=await api("/risk/trend");
+    lineChart("riskLine", tr.periods, [{data:tr.scores,color:"#ff6b6b"}]);
+    const at=await api("/risk/attribution");
+    $("rk-attr").innerHTML=
+      `<div>Top 贡献资产：<b>${esc(at.top_contributing_asset.category)}</b>（${at.top_contributing_asset.share_pct}%）</div>
+       <div>Top 威胁：<b>${esc(at.top_contributing_threat.type)}</b>（${at.top_contributing_threat.share_pct}%）</div>
+       <div class="muted" style="margin-top:6px">${esc(at.recommendation)}</div>`;
+    const hm=await api("/risk/heatmap");
+    let html=`<div class="heat" style="grid-template-columns:120px repeat(${hm.threats.length},1fr)">`;
+    html+=`<div></div>`+hm.threats.map(t=>`<div class="muted">${esc(t)}</div>`).join("");
+    hm.grid.forEach(row=>{
+      html+=`<div class="muted">${esc(row.asset)}</div>`;
+      row.cells.forEach(c=>{
+        const col = c.level==="critical"?"#ff4d4f":c.level==="high"?"#fa8c16":
+          c.level==="medium"?"#fadb14":c.level==="low"?"#52c41a":"#1a2333";
+        html+=`<div class="cell" style="background:${col}">${c.value||""}</div>`;
+      });
+    });
+    $("rk-heat").innerHTML=html+"</div>";
+    const reg=await api("/risk/register");
+    const rows=reg.items.map(r=>[esc(r.risk_id),esc(r.name),
+      pill(r.level),esc(r.treatment),esc(r.due_date)]);
+    $("rk-reg").innerHTML="<table><tr><th>ID</th><th>风险</th><th>等级</th><th>处置</th><th>截止</th></tr>"
+      +rows.map(r=>"<tr>"+r.join("")+"</tr>").join("")+"</table>";
+  }catch(e){ console.error(e); }
+}
+
+// ---------- 4. 运营 ----------
+async function loadOps(){
+  try{
+    const mt=await api("/ops/mt");
+    $("op-mttd").textContent=mt.MTTD.latest;
+    $("op-mttr").textContent=mt.MTTR.latest;
+    lineChart("mtLine", mt.periods, [
+      {data:mt.MTTD.series,color:"#38c9a8"},
+      {data:mt.MTTR.series,color:"#4f8ff7"},
+      {data:mt.MTRS.series,color:"#fa8c16"}]);
+    const al=await api("/ops/alerts");
+    $("op-auto").textContent=al.automation_rate.latest;
+    barChart("alertBar", al.periods, al.false_positive_rate.series, "#fa8c16");
+    const sla=await api("/ops/sla");
+    $("op-sla").textContent="";
+    $("op-sla").innerHTML=`<div class="muted">整体 SLA 达成率 ${sla.overall_sla_rate}%</div>`+
+      sla.by_level.map(r=>`<div class="row" style="justify-content:space-between;margin:4px 0">
+        <span>${r.level} · ${r.total}单</span>
+        <span class="pill ${r.sla_rate>=95?"low":"high"}">${r.sla_rate}%</span></div>`).join("");
+    $("op-sla").innerHTML+=`<div class="muted" style="margin-top:6px">目标 ${sla.target_sla_rate}%</div>`;
+    const wl=await api("/ops/workload");
+    $("op-work").innerHTML=`<div>分析师 ${wl.analyst_count} 人，人均日研判 <b>${wl.average_daily_per_analyst}</b> 单</div>
+      <div>过载人数：<b style="color:var(--high)">${wl.overloaded_count}</b>，利用率 ${wl.utilization_pct}%</div>
+      <div class="muted" style="margin-top:6px">${esc(wl.capacity_note)}</div>`;
+  }catch(e){ console.error(e); }
+}
+
+// ---------- 5. 合规 ----------
+async function loadComp(){
+  try{
+    const fw=await api("/compliance/frameworks");
+    $("cp-pass").textContent=fw.overall_avg_pass_rate;
+    $("cp-fw").innerHTML=fw.frameworks.map(f=>
+      `<div style="margin:6px 0"><div class="row" style="justify-content:space-between">
+        <span>${esc(f.name.split("（")[0])}</span><b>${f.pass_rate}%</b></div>
+        <div class="bar"><i style="width:${f.pass_rate}%"></i></div></div>`).join("");
+    const tr=await api("/compliance/trend");
+    lineChart("compLine", tr.periods, [{data:tr.pass_rates,color:"#38c9a8"}], {min:70,max:100});
+    const rem=await api("/compliance/remediation");
+    $("cp-rem").textContent=rem.remediation_rate_pct;
+    $("cp-over").textContent=rem.overdue;
+    const rd=await api("/compliance/readiness");
+    $("cp-read").textContent=rd.overall_readiness_pct;
+    const f=await api("/compliance/findings");
+    $("cp-find").innerHTML="<table><tr><th>编号</th><th>等级</th><th>框架</th><th>描述</th><th>状态</th></tr>"
+      +f.items.map(x=>"<tr><td>"+esc(x.finding_id)+"</td><td>"+pill(x.severity)+"</td><td>"
+      +esc(x.framework)+"</td><td>"+esc(x.description)+"</td><td>"+esc(x.status)+"</td></tr>").join("")+"</table>";
+  }catch(e){ console.error(e); }
+}
+
+// ---------- 6. 高管 ----------
+async function loadExec(){
+  try{
+    const d=await api("/executive/dashboard");
+    $("ex-kpi").innerHTML=Object.entries(d.top_kpi).map(([k,v])=>
+      `<div class="kpi" style="flex:1;min-width:150px"><div class="v">${v}</div><div class="l">${esc(k)}</div></div>`).join("");
+    $("ex-alert").innerHTML=d.alerts.map(a=>
+      `<div style="margin:6px 0">${pill(a.level)} ${esc(a.text)}</div>`).join("");
+    await loadOnePager();
+  }catch(e){ console.error(e); }
+}
+async function loadOnePager(){
+  try{
+    const op=await api("/executive/one-pager");
+    const roi=await api("/executive/roi");
+    $("ex-roi").innerHTML=
+      `<div class="kpi"><div class="v">${roi.ROI_pct}%</div><div class="l">安全投资回报率</div></div>
+       <div class="muted" style="margin-top:8px">年投入 ${roi.annual_investment_wan} 万 · 规避损失 ${roi.avoided_loss_wan} 万 · 回收期 ${roi.payback_months} 月</div>`;
+    $("ex-pager").textContent = "【"+op.title+"】"+op.date+"\n\n"+op.executive_summary
+      +"\n\nTop 风险：\n"+op.top_risks.map(r=>" · "+r.name+" ("+r.score+")").join("\n")
+      +"\n\n下一步：\n"+op.next_steps.map(s=>" · "+s).join("\n");
+  }catch(e){ $("ex-pager").textContent=e.message; }
+}
+
+// 初始加载
+loadKPI();
+</script>
+</body>
+</html>

@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>云原生安全深度控制台 (CNAPP)</title>
+<style>
+:root{
+  --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --border:#30363d;
+  --fg:#e6edf3; --muted:#8b949e; --accent:#58a6ff;
+  --critical:#f85149; --high:#ff7b72; --medium:#d29922; --low:#3fb950; --info:#58a6ff;
+  --purple:#bc8cff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--fg);font-size:14px;line-height:1.5}
+.header{background:linear-gradient(135deg,#1f6feb 0%,#3b1f6f 100%);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.header h1{font-size:18px;font-weight:600}
+.header .meta{font-size:12px;color:var(--muted);margin-top:2px}
+.tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{padding:12px 18px;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);white-space:nowrap;font-size:13px}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--bg)}
+.tab:hover{color:var(--fg)}
+.container{padding:20px;max-width:1600px;margin:0 auto}
+.panel{display:none}
+.panel.active{display:block}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:16px}
+.card h3{font-size:14px;margin-bottom:12px;color:var(--accent)}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+input,select{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--fg);padding:8px;border-radius:4px;font-size:13px}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+button.btn{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-size:13px;margin-right:8px;margin-bottom:4px}
+button.btn:hover{opacity:.88}
+button.btn.secondary{background:var(--bg3);border:1px solid var(--border);color:var(--fg)}
+button.btn.danger{background:var(--critical)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:12px 0}
+.stat{background:var(--bg3);padding:12px;border-radius:6px;border-left:3px solid var(--accent)}
+.stat .num{font-size:22px;font-weight:700}
+.stat .lbl{font-size:11px;color:var(--muted)}
+.stat.critical{border-left-color:var(--critical)} .stat.critical .num{color:var(--critical)}
+.stat.high{border-left-color:var(--high)} .stat.high .num{color:var(--high)}
+.stat.medium{border-left-color:var(--medium)} .stat.medium .num{color:var(--medium)}
+.stat.low{border-left-color:var(--low)} .stat.low .num{color:var(--low)}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:600;background:var(--bg3)}
+tr:hover{background:rgba(88,166,255,.05)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge.critical{background:rgba(248,81,73,.2);color:var(--critical)}
+.badge.high{background:rgba(255,123,114,.2);color:var(--high)}
+.badge.medium{background:rgba(210,153,34,.2);color:var(--medium)}
+.badge.low{background:rgba(63,185,80,.2);color:var(--low)}
+.badge.info{background:rgba(88,166,255,.2);color:var(--info)}
+.badge.pass{background:rgba(63,185,80,.2);color:var(--low)}
+.badge.fail{background:rgba(248,81,73,.2);color:var(--critical)}
+.progress{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:4px}
+.progress>div{height:100%;background:var(--accent)}
+pre{background:#010409;border:1px solid var(--border);padding:12px;border-radius:4px;overflow:auto;max-height:400px;font-size:12px}
+.toast{position:fixed;top:20px;right:20px;background:var(--bg3);border:1px solid var(--accent);padding:12px 20px;border-radius:6px;z-index:9999;display:none}
+.sub-tabs{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.sub-tab{padding:6px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:12px;color:var(--muted)}
+.sub-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.flex{display:flex;gap:16px;flex-wrap:wrap}
+.flex>*{flex:1;min-width:300px}
+.timeline{border-left:2px solid var(--border);padding-left:16px;margin:12px 0}
+.timeline .item{margin-bottom:12px;position:relative}
+.timeline .item::before{content:'';position:absolute;left:-22px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.timeline .item.critical::before{background:var(--critical)}
+.timeline .item.high::before{background:var(--high)}
+.skeleton{background:var(--bg3);border-radius:4px;height:20px;margin:4px 0;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+@media(max-width:768px){.container{padding:10px}.row{grid-template-columns:1fr}.flex{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>云原生安全深度控制台 (CNAPP)</h1>
+    <div class="meta">Cloud-Native Application Protection Platform · Round 25 · Direction 2</div>
+  </div>
+  <button class="btn secondary" onclick="refreshAll()">刷新全部</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="overview" onclick="switchTab('overview')">总览</div>
+  <div class="tab" data-tab="k8s" onclick="switchTab('k8s')">K8s 运行时</div>
+  <div class="tab" data-tab="container" onclick="switchTab('container')">容器安全</div>
+  <div class="tab" data-tab="mesh" onclick="switchTab('mesh')">服务网格</div>
+  <div class="tab" data-tab="cwpp" onclick="switchTab('cwpp')">CWPP</div>
+  <div class="tab" data-tab="cspm" onclick="switchTab('cspm')">CSPM</div>
+  <div class="tab" data-tab="settings" onclick="switchTab('settings')">系统设置</div>
+</div>
+
+<div class="container">
+
+<!-- ====== 总览 ====== -->
+<div class="panel active" id="panel-overview">
+  <div class="card">
+    <h3>云原生安全总览</h3>
+    <div class="stats" id="ov-stats"></div>
+  </div>
+  <div class="flex">
+    <div class="card">
+      <h3>安全趋势 (近7天)</h3>
+      <div id="ov-trend"></div>
+    </div>
+    <div class="card">
+      <h3>Top 风险项</h3>
+      <div id="ov-top-findings"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== K8s ====== -->
+<div class="panel" id="panel-k8s">
+  <div class="sub-tabs">
+    <div class="sub-tab active" data-sub="k8s-assets" onclick="switchSub('k8s','k8s-assets')">资产发现</div>
+    <div class="sub-tab" data-sub="k8s-audit" onclick="switchSub('k8s','k8s-audit')">配置审计</div>
+    <div class="sub-tab" data-sub="k8s-monitor" onclick="switchSub('k8s','k8s-monitor')">运行时监控</div>
+    <div class="sub-tab" data-sub="k8s-escape" onclick="switchSub('k8s','k8s-escape')">逃逸检测</div>
+    <div class="sub-tab" data-sub="k8s-threat" onclick="switchSub('k8s','k8s-threat')">威胁检测</div>
+    <div class="sub-tab" data-sub="k8s-resp" onclick="switchSub('k8s','k8s-resp')">响应</div>
+  </div>
+
+  <div class="card sub-panel active" id="k8s-assets">
+    <h3>K8s 资产发现</h3>
+    <div class="row">
+      <div><label>集群</label><input id="k8s-cluster" placeholder="留空为全部"></div>
+    </div>
+    <button class="btn" onclick="k8sLoadAssets()">发现资产</button>
+    <div id="k8s-assets-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="k8s-audit">
+    <h3>K8s 配置审计</h3>
+    <button class="btn" onclick="k8sAudit('rbac')">RBAC 审计</button>
+    <button class="btn secondary" onclick="k8sAudit('security-context')">安全上下文</button>
+    <button class="btn secondary" onclick="k8sAudit('resource-limits')">资源限制</button>
+    <button class="btn secondary" onclick="k8sAudit('pod-standards')">Pod 安全标准</button>
+    <div id="k8s-audit-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="k8s-monitor">
+    <h3>K8s 运行时监控</h3>
+    <button class="btn" onclick="k8sMonitor('processes')">进程监控</button>
+    <button class="btn secondary" onclick="k8sMonitor('network')">网络监控</button>
+    <button class="btn secondary" onclick="k8sAnomalies()">异常检测</button>
+    <div id="k8s-monitor-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="k8s-escape">
+    <h3>容器逃逸检测</h3>
+    <button class="btn" onclick="k8sEscape()">检测逃逸风险</button>
+    <div id="k8s-escape-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="k8s-threat">
+    <h3>K8s 威胁检测</h3>
+    <button class="btn" onclick="k8sThreats()">检测威胁</button>
+    <div id="k8s-threat-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="k8s-resp">
+    <h3>K8s 响应操作</h3>
+    <div class="row">
+      <div><label>Pod 名称</label><input id="resp-pod" placeholder="suspicious-pod-xyz"></div>
+      <div><label>命名空间</label><input id="resp-ns" placeholder="default"></div>
+    </div>
+    <button class="btn danger" onclick="k8sIsolatePod()">隔离 Pod</button>
+    <button class="btn secondary" onclick="k8sForensics()">收集取证</button>
+    <button class="btn secondary" onclick="k8sRespHistory()">响应历史</button>
+    <div id="k8s-resp-result"></div>
+  </div>
+</div>
+
+<!-- ====== 容器安全 ====== -->
+<div class="panel" id="panel-container">
+  <div class="sub-tabs">
+    <div class="sub-tab active" data-sub="ct-scan" onclick="switchSub('container','ct-scan')">镜像扫描</div>
+    <div class="sub-tab" data-sub="ct-runtime" onclick="switchSub('container','ct-runtime')">运行时安全</div>
+    <div class="sub-tab" data-sub="ct-hardening" onclick="switchSub('container','ct-hardening')">逃逸防护</div>
+    <div class="sub-tab" data-sub="ct-net" onclick="switchSub('container','ct-net')">网络安全</div>
+    <div class="sub-tab" data-sub="ct-compliance" onclick="switchSub('container','ct-compliance')">合规</div>
+    <div class="sub-tab" data-sub="ct-lifecycle" onclick="switchSub('container','ct-lifecycle')">生命周期</div>
+  </div>
+
+  <div class="card sub-panel active" id="ct-scan">
+    <h3>容器镜像扫描</h3>
+    <div class="row">
+      <div><label>镜像名称</label><input id="ct-image" placeholder="nginx:1.25-alpine"></div>
+    </div>
+    <button class="btn" onclick="ctScan()">启动扫描</button>
+    <div id="ct-scan-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="ct-runtime">
+    <h3>容器运行时安全</h3>
+    <button class="btn" onclick="ctRuntimeAnomalies()">异常行为检测</button>
+    <button class="btn secondary" onclick="ctWhitelist()">进程白名单</button>
+    <button class="btn secondary" onclick="ctSyscallFilter()">系统调用过滤</button>
+    <div id="ct-runtime-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="ct-hardening">
+    <h3>容器逃逸防护</h3>
+    <button class="btn" onclick="ctHardeningRules()">防护规则</button>
+    <button class="btn secondary" onclick="ctAssessHardening()">加固评估</button>
+    <div id="ct-hardening-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="ct-net">
+    <h3>容器网络安全</h3>
+    <button class="btn" onclick="ctTopology()">网络拓扑</button>
+    <button class="btn secondary" onclick="ctTunnels()">隧道检测</button>
+    <div id="ct-net-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="ct-compliance">
+    <h3>容器合规报告</h3>
+    <div class="row">
+      <div><label>合规框架</label>
+        <select id="ct-framework">
+          <option value="cis-docker">CIS Docker Benchmark</option>
+          <option value="cis-k8s">CIS Kubernetes Benchmark</option>
+          <option value="nist">NIST 容器安全指南</option>
+          <option value="pci">PCI 容器要求</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="ctCompliance()">生成报告</button>
+    <div id="ct-compliance-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="ct-lifecycle">
+    <h3>容器生命周期安全</h3>
+    <button class="btn" onclick="ctLifecycle('build')">构建安全</button>
+    <button class="btn secondary" onclick="ctLifecycle('signing')">镜像签名</button>
+    <button class="btn secondary" onclick="ctLifecycle('destroy')">销毁安全</button>
+    <div id="ct-lifecycle-result"></div>
+  </div>
+</div>
+
+<!-- ====== 服务网格 ====== -->
+<div class="panel" id="panel-mesh">
+  <div class="sub-tabs">
+    <div class="sub-tab active" data-sub="mesh-assets" onclick="switchSub('mesh','mesh-assets')">资产发现</div>
+    <div class="sub-tab" data-sub="mesh-audit" onclick="switchSub('mesh','mesh-audit')">配置审计</div>
+    <div class="sub-tab" data-sub="mesh-cert" onclick="switchSub('mesh','mesh-cert')">证书管理</div>
+    <div class="sub-tab" data-sub="mesh-threat" onclick="switchSub('mesh','mesh-threat')">威胁检测</div>
+    <div class="sub-tab" data-sub="mesh-viz" onclick="switchSub('mesh','mesh-viz')">可视化</div>
+    <div class="sub-tab" data-sub="mesh-resp" onclick="switchSub('mesh','mesh-resp')">响应</div>
+  </div>
+
+  <div class="card sub-panel active" id="mesh-assets">
+    <h3>服务网格资产发现</h3>
+    <button class="btn" onclick="meshDiscover()">发现网格</button>
+    <button class="btn secondary" onclick="meshServices()">服务列表</button>
+    <div id="mesh-assets-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="mesh-audit">
+    <h3>服务网格配置审计</h3>
+    <button class="btn" onclick="meshAudit('mtls')">mTLS 审计</button>
+    <button class="btn secondary" onclick="meshAudit('authz')">授权策略审计</button>
+    <div id="mesh-audit-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="mesh-cert">
+    <h3>证书管理</h3>
+    <button class="btn" onclick="meshCerts()">证书状态</button>
+    <div id="mesh-cert-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="mesh-threat">
+    <h3>服务网格威胁检测</h3>
+    <button class="btn" onclick="meshThreats()">检测威胁</button>
+    <div id="mesh-threat-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="mesh-viz">
+    <h3>服务网格可视化</h3>
+    <button class="btn" onclick="meshTopology()">服务拓扑</button>
+    <button class="btn secondary" onclick="meshSecurityGraph()">安全图</button>
+    <div id="mesh-viz-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="mesh-resp">
+    <h3>服务网格响应</h3>
+    <div class="row">
+      <div><label>服务名</label><input id="mesh-svc" placeholder="backend"></div>
+      <div><label>命名空间</label><input id="mesh-ns" placeholder="prod-backend"></div>
+    </div>
+    <button class="btn danger" onclick="meshIsolate()">隔离服务</button>
+    <div id="mesh-resp-result"></div>
+  </div>
+</div>
+
+<!-- ====== CWPP ====== -->
+<div class="panel" id="panel-cwpp">
+  <div class="sub-tabs">
+    <div class="sub-tab active" data-sub="cwpp-discovery" onclick="switchSub('cwpp','cwpp-discovery')">工作负载发现</div>
+    <div class="sub-tab" data-sub="cwpp-audit" onclick="switchSub('cwpp','cwpp-audit')">配置审计</div>
+    <div class="sub-tab" data-sub="cwpp-runtime" onclick="switchSub('cwpp','cwpp-runtime')">运行时保护</div>
+    <div class="sub-tab" data-sub="cwpp-vuln" onclick="switchSub('cwpp','cwpp-vuln')">漏洞管理</div>
+    <div class="sub-tab" data-sub="cwpp-compliance" onclick="switchSub('cwpp','cwpp-compliance')">合规</div>
+    <div class="sub-tab" data-sub="cwpp-resp" onclick="switchSub('cwpp','cwpp-resp')">响应</div>
+  </div>
+
+  <div class="card sub-panel active" id="cwpp-discovery">
+    <h3>云工作负载发现</h3>
+    <button class="btn" onclick="cwppDiscover()">发现工作负载</button>
+    <div id="cwpp-discovery-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="cwpp-audit">
+    <h3>工作负载配置审计</h3>
+    <button class="btn" onclick="cwppAudit('sg')">安全组审计</button>
+    <button class="btn secondary" onclick="cwppAudit('encryption')">加密审计</button>
+    <div id="cwpp-audit-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="cwpp-runtime">
+    <h3>运行时入侵检测</h3>
+    <button class="btn" onclick="cwppIDS()">入侵检测告警</button>
+    <div id="cwpp-runtime-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="cwpp-vuln">
+    <h3>漏洞管理</h3>
+    <button class="btn" onclick="cwppVulnScan()">扫描漏洞</button>
+    <button class="btn secondary" onclick="cwppVulnTrends()">漏洞趋势</button>
+    <div id="cwpp-vuln-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="cwpp-compliance">
+    <h3>工作负载合规</h3>
+    <div class="row">
+      <div><label>合规框架</label>
+        <select id="cwpp-framework">
+          <option value="cis-aws">CIS AWS Benchmark</option>
+          <option value="nist-cloud">NIST 云安全指南</option>
+          <option value="pci-cloud">PCI 云要求</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="cwppCompliance()">生成报告</button>
+    <div id="cwpp-compliance-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="cwpp-resp">
+    <h3>工作负载响应</h3>
+    <div class="row">
+      <div><label>实例 ID</label><input id="cwpp-instance" placeholder="i-0a1b2c3d"></div>
+    </div>
+    <button class="btn danger" onclick="cwppIsolate()">隔离实例</button>
+    <button class="btn secondary" onclick="cwppSnapshot()">创建快照</button>
+    <div id="cwpp-resp-result"></div>
+  </div>
+</div>
+
+<!-- ====== CSPM ====== -->
+<div class="panel" id="panel-cspm">
+  <div class="sub-tabs">
+    <div class="sub-tab active" data-sub="cspm-assets" onclick="switchSub('cspm','cspm-assets')">云资产</div>
+    <div class="sub-tab" data-sub="cspm-audit" onclick="switchSub('cspm','cspm-audit')">配置审计</div>
+    <div class="sub-tab" data-sub="cspm-compliance" onclick="switchSub('cspm','cspm-compliance')">合规评估</div>
+    <div class="sub-tab" data-sub="cspm-risk" onclick="switchSub('cspm','cspm-risk')">风险评分</div>
+    <div class="sub-tab" data-sub="cspm-paths" onclick="switchSub('cspm','cspm-paths')">攻击路径</div>
+    <div class="sub-tab" data-sub="cspm-reco" onclick="switchSub('cspm','cspm-reco')">改进建议</div>
+  </div>
+
+  <div class="card sub-panel active" id="cspm-assets">
+    <h3>云资产发现</h3>
+    <button class="btn" onclick="cspmAssets()">发现云资产</button>
+    <div id="cspm-assets-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="cspm-audit">
+    <h3>云配置审计</h3>
+    <button class="btn" onclick="cspmAudit('sg')">安全组审计</button>
+    <button class="btn secondary" onclick="cspmAudit('storage')">存储桶审计</button>
+    <button class="btn secondary" onclick="cspmAudit('iam')">IAM 审计</button>
+    <button class="btn secondary" onclick="cspmAudit('logging')">日志审计</button>
+    <div id="cspm-audit-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="cspm-compliance">
+    <h3>云合规评估</h3>
+    <div class="row">
+      <div><label>合规框架</label>
+        <select id="cspm-framework">
+          <option value="cis-aws">CIS AWS Benchmark</option>
+          <option value="cis-azure">CIS Azure Benchmark</option>
+          <option value="cis-gcp">CIS GCP Benchmark</option>
+          <option value="dengbao">等保 2.0 云要求</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="cspmCompliance()">评估合规</button>
+    <div id="cspm-compliance-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="cspm-risk">
+    <h3>云风险评分</h3>
+    <button class="btn" onclick="cspmRisk()">计算风险评分</button>
+    <div id="cspm-risk-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="cspm-paths">
+    <h3>云攻击路径分析</h3>
+    <button class="btn" onclick="cspmPaths()">分析攻击路径</button>
+    <div id="cspm-paths-result"></div>
+  </div>
+
+  <div class="card sub-panel" id="cspm-reco">
+    <h3>云安全改进建议</h3>
+    <button class="btn" onclick="cspmReco()">获取建议</button>
+    <div id="cspm-reco-result"></div>
+  </div>
+</div>
+
+<!-- ====== 设置 ====== -->
+<div class="panel" id="panel-settings">
+  <div class="card">
+    <h3>系统设置</h3>
+    <button class="btn" onclick="loadSettings()">加载设置</button>
+    <div id="settings-result"></div>
+  </div>
+</div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "/api/v1/cloud-native-security";
+
+function switchTab(name){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  document.querySelector(`.tab[data-tab="${name}"]`).classList.add("active");
+  document.getElementById(`panel-${name}`).classList.add("active");
+  if(name==="overview") loadOverview();
+}
+
+function switchSub(prefix, sub){
+  document.querySelectorAll(`#panel-${prefix} .sub-tab`).forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(`#panel-${prefix} .sub-panel`).forEach(p=>p.classList.remove("active"));
+  document.querySelector(`.sub-tab[data-sub="${sub}"]`).classList.add("active");
+  document.getElementById(sub).classList.add("active");
+}
+
+function toast(msg){
+  const el=document.getElementById("toast");
+  el.textContent=msg; el.style.display="block";
+  setTimeout(()=>el.style.display="none",3000);
+}
+
+async function api(path, opts){
+  try{
+    const r=await fetch(API+path,opts);
+    return await r.json();
+  }catch(e){return {success:false,error:String(e)};}
+}
+
+function showStats(elId, data){
+  const el=document.getElementById(elId);
+  if(!el) return;
+  let html="";
+  if(data.critical!==undefined) html+=`<div class="stat critical"><div class="num">${data.critical}</div><div class="lbl">Critical</div></div>`;
+  if(data.high!==undefined) html+=`<div class="stat high"><div class="num">${data.high}</div><div class="lbl">High</div></div>`;
+  if(data.medium!==undefined) html+=`<div class="stat medium"><div class="num">${data.medium}</div><div class="lbl">Medium</div></div>`;
+  if(data.low!==undefined) html+=`<div class="stat low"><div class="num">${data.low}</div><div class="lbl">Low</div></div>`;
+  if(data.total!==undefined && data.critical===undefined) html+=`<div class="stat"><div class="num">${data.total}</div><div class="lbl">总计</div></div>`;
+  if(data.compliance_score!==undefined) html+=`<div class="stat"><div class="num">${data.compliance_score}%</div><div class="lbl">合规分</div></div>`;
+  el.innerHTML=html;
+}
+
+function renderFindings(elId, findings){
+  const el=document.getElementById(elId);
+  if(!el) return;
+  if(!findings||!findings.length){el.innerHTML="<p style='color:var(--muted)'>无数据</p>";return;}
+  let html="<table><tr><th>ID</th><th>级别</th><th>标题</th><th>描述</th><th>修复建议</th></tr>";
+  findings.forEach(f=>{
+    const sev=f.severity||"medium";
+    html+=`<tr><td>${f.id||""}</td><td><span class="badge ${sev}">${sev.toUpperCase()}</span></td><td>${f.title||f.type||""}</td><td>${f.description||""}</td><td>${f.remediation||""}</td></tr>`;
+  });
+  html+="</table>";
+  el.innerHTML=html;
+}
+
+function renderTable(elId, items, cols){
+  const el=document.getElementById(elId);
+  if(!el) return;
+  if(!items||!items.length){el.innerHTML="<p style='color:var(--muted)'>无数据</p>";return;}
+  let html="<tr>"+cols.map(c=>`<th>${c.label}</th>`).join("")+"</tr>";
+  items.forEach(it=>{
+    html+="<tr>"+cols.map(c=>`<td>${it[c.key]??"-"}</td>`).join("")+"</tr>";
+  });
+  el.innerHTML="<table>"+html+"</table>";
+}
+
+// ===== 总览 =====
+async function loadOverview(){
+  const r=await api("/dashboard/overview");
+  if(!r.success){toast(r.error);return;}
+  const s=r.data.summary;
+  document.getElementById("ov-stats").innerHTML=`
+    <div class="stat"><div class="num">${s.cloud_assets}</div><div class="lbl">云资产</div></div>
+    <div class="stat critical"><div class="num">${s.critical_risks}</div><div class="lbl">严重风险</div></div>
+    <div class="stat high"><div class="num">${s.high_risks}</div><div class="lbl">高危风险</div></div>
+    <div class="stat"><div class="num">${s.vulnerabilities}</div><div class="lbl">漏洞总数</div></div>
+    <div class="stat high"><div class="num">${s.active_alerts}</div><div class="lbl">活跃告警</div></div>
+    <div class="stat medium"><div class="num">${s.compliance_score}%</div><div class="lbl">合规评分</div></div>
+    <div class="stat"><div class="num">${s.attack_paths}</div><div class="lbl">攻击路径</div></div>
+    <div class="stat"><div class="num">${s.clusters}</div><div class="lbl">K8s集群</div></div>
+  `;
+  const trend=r.data.security_trend;
+  let tHtml="<table><tr><th>日期</th><th>评分</th><th>风险数</th><th>告警数</th></tr>";
+  trend.forEach(t=>{tHtml+=`<tr><td>${t.date}</td><td>${t.score}</td><td>${t.risks}</td><td>${t.alerts}</td></tr>`;});
+  tHtml+="</table>";
+  document.getElementById("ov-trend").innerHTML=tHtml;
+  let fHtml="<table><tr><th>级别</th><th>风险项</th><th>来源</th></tr>";
+  r.data.top_findings.forEach(f=>{
+    fHtml+=`<tr><td><span class="badge ${f.severity}">${f.severity.toUpperCase()}</span></td><td>${f.title}</td><td>${f.source}</td></tr>`;
+  });
+  fHtml+="</table>";
+  document.getElementById("ov-top-findings").innerHTML=fHtml;
+}
+
+// ===== K8s =====
+async function k8sLoadAssets(){
+  const cluster=document.getElementById("k8s-cluster").value;
+  const r=await api(`/k8s/clusters${cluster?`?cluster=${cluster}`:""}`);
+  if(!r.success){toast(r.error);return;}
+  let html="<h4>集群</h4>";
+  html+="<table><tr><th>名称</th><th>版本</th><th>提供商</th><th>节点数</th><th>状态</th></tr>";
+  r.data.clusters.forEach(c=>{
+    html+=`<tr><td>${c.name}</td><td>${c.version}</td><td>${c.provider}</td><td>${c.nodes}</td><td>${c.status}</td></tr>`;
+  });
+  html+="</table>";
+  const ns=await api(`/k8s/namespaces${cluster?`?cluster=${cluster}`:""}`);
+  if(ns.success){
+    html+="<h4 style='margin-top:12px'>命名空间 ("+ns.data.total+")</h4>";
+    html+="<table><tr><th>名称</th><th>状态</th></tr>";
+    ns.data.namespaces.forEach(n=>{html+=`<tr><td>${n.name}</td><td>${n.status}</td></tr>`;});
+    html+="</table>";
+  }
+  const pods=await api(`/k8s/pods${cluster?`?cluster=${cluster}`:""}`);
+  if(pods.success){
+    html+="<h4 style='margin-top:12px'>Pod ("+pods.data.total+")</h4>";
+    html+="<table><tr><th>名称</th><th>命名空间</th><th>镜像</th><th>状态</th><th>特权</th></tr>";
+    pods.data.pods.forEach(p=>{
+      html+=`<tr><td>${p.name}</td><td>${p.namespace}</td><td>${p.image}</td><td>${p.status}</td><td>${p.privileged?'<span class="badge critical">是</span>':'<span class="badge low">否</span>'}</td></tr>`;
+    });
+    html+="</table>";
+  }
+  document.getElementById("k8s-assets-result").innerHTML=html;
+}
+
+async function k8sAudit(type){
+  const r=await api(`/k8s/audit/${type}`);
+  if(!r.success){toast(r.error);return;}
+  renderFindings("k8s-audit-result",r.data.findings);
+}
+
+async function k8sMonitor(type){
+  const r=await api(`/k8s/monitor/${type}`);
+  if(!r.success){toast(r.error);return;}
+  const key=type==="processes"?"processes":"network_connections";
+  renderTable("k8s-monitor-result",r.data[key],Object.keys(r.data[key][0]||{}).map(k=>({key:k,label:k})));
+}
+
+async function k8sAnomalies(){
+  const r=await api("/k8s/monitor/network");
+  if(!r.success){toast(r.error);return;}
+  renderTable("k8s-monitor-result",r.data.network_connections,Object.keys(r.data.network_connections[0]||{}).map(k=>({key:k,label:k})));
+}
+
+async function k8sEscape(){
+  const r=await api("/k8s/detect/escape");
+  if(!r.success){toast(r.error);return;}
+  let html="";
+  html+="<h4>特权容器 ("+r.data.privileged.total+")</h4>";
+  renderFindings("k8s-escape-result",r.data.privileged.findings);
+  html+="<h4 style='margin-top:12px'>宿主机挂载 ("+r.data.host_mounts.total+")</h4>";
+  html+="<table><tr><th>ID</th><th>级别</th><th>Pod</th><th>宿主机路径</th><th>风险</th></tr>";
+  r.data.host_mounts.findings.forEach(f=>{
+    html+=`<tr><td>${f.id}</td><td><span class="badge ${f.severity}">${f.severity}</span></td><td>${f.pod}</td><td>${f.host_path}</td><td>${f.risk}</td></tr>`;
+  });
+  html+="</table>";
+  html+="<h4 style='margin-top:12px'>逃逸技术 ("+r.data.techniques.total+")</h4>";
+  html+="<table><tr><th>技术</th><th>MITRE</th><th>级别</th><th>描述</th></tr>";
+  r.data.techniques.techniques.forEach(t=>{
+    html+=`<tr><td>${t.technique}</td><td>${t.mitre_id}</td><td><span class="badge ${t.severity}">${t.severity}</span></td><td>${t.description}</td></tr>`;
+  });
+  html+="</table>";
+  document.getElementById("k8s-escape-result").innerHTML=html;
+}
+
+async function k8sThreats(){
+  const r=await api("/k8s/detect/threats");
+  if(!r.success){toast(r.error);return;}
+  let html="";
+  const groups=[["异常Pod创建",r.data.anomalous_pod_creation.alerts],["异常服务暴露",r.data.anomalous_service_exposure.alerts],["异常配置修改",r.data.anomalous_config_changes.alerts],["横向移动",r.data.lateral_movement.alerts]];
+  groups.forEach(([name,alerts])=>{
+    html+=`<h4>${name} (${alerts.length})</h4>`;
+    html+="<table><tr><th>ID</th><th>级别</th><th>描述</th><th>时间</th></tr>";
+    alerts.forEach(a=>{
+      html+=`<tr><td>${a.id}</td><td><span class="badge ${a.severity}">${a.severity}</span></td><td>${a.description||a.reason}</td><td>${a.detected_at||""}</td></tr>`;
+    });
+    html+="</table>";
+  });
+  document.getElementById("k8s-threat-result").innerHTML=html;
+}
+
+async function k8sIsolatePod(){
+  const pod=document.getElementById("resp-pod").value||"suspicious-pod-xyz";
+  const ns=document.getElementById("resp-ns").value||"default";
+  const r=await api("/k8s/response/isolate-pod",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pod_name:pod,namespace:ns})});
+  if(r.success){toast("Pod 已隔离");document.getElementById("k8s-resp-result").innerHTML="<pre>"+JSON.stringify(r.data,null,2)+"</pre>";}
+  else toast(r.error);
+}
+
+async function k8sForensics(){
+  const pod=document.getElementById("resp-pod").value||"suspicious-pod-xyz";
+  const ns=document.getElementById("resp-ns").value||"default";
+  const r=await api("/k8s/response/forensics",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pod_name:pod,namespace:ns})});
+  if(r.success){toast("取证完成");document.getElementById("k8s-resp-result").innerHTML="<pre>"+JSON.stringify(r.data,null,2)+"</pre>";}
+  else toast(r.error);
+}
+
+async function k8sRespHistory(){
+  const r=await api("/k8s/response/history");
+  if(r.success) renderTable("k8s-resp-result",r.data.history,Object.keys(r.data.history[0]||{}).map(k=>({key:k,label:k})));
+  else toast(r.error);
+}
+
+// ===== 容器 =====
+async function ctScan(){
+  const img=document.getElementById("ct-image").value||"nginx:1.25-alpine";
+  const r=await api("/container/scan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image:img})});
+  if(!r.success){toast(r.error);return;}
+  const tid=r.data.task_id;
+  document.getElementById("ct-scan-result").innerHTML="<p>扫描任务已启动: "+tid+", 等待结果...</p>";
+  setTimeout(async()=>{
+    const res=await api(`/tasks/${tid}/results`);
+    if(res.success){
+      const d=res.data;
+      let html=`<h4>扫描摘要</h4><div class="stats">
+        <div class="stat critical"><div class="num">${d.summary.os_vulnerabilities+d.summary.app_vulnerabilities}</div><div class="lbl">漏洞</div></div>
+        <div class="stat high"><div class="num">${d.summary.misconfigurations}</div><div class="lbl">配置错误</div></div>
+        <div class="stat critical"><div class="num">${d.summary.malware}</div><div class="lbl">恶意软件</div></div>
+        <div class="stat high"><div class="num">${d.summary.secrets}</div><div class="lbl">密钥泄露</div></div>
+        <div class="stat"><div class="num">${d.summary.image_size_mb}MB</div><div class="lbl">镜像大小</div></div>
+      </div>`;
+      html+="<h4>漏洞列表</h4><table><tr><th>CVE</th><th>包</th><th>级别</th><th>CVSS</th></tr>";
+      [...d.os_vulnerabilities,...d.app_vulnerabilities].forEach(v=>{
+        html+=`<tr><td>${v.id}</td><td>${v.package}</td><td><span class="badge ${v.severity}">${v.severity}</span></td><td>${v.cvss}</td></tr>`;
+      });
+      html+="</table>";
+      html+="<h4>密钥泄露</h4><table><tr><th>类型</th><th>路径</th><th>级别</th></tr>";
+      d.secrets.forEach(s=>{html+=`<tr><td>${s.type}</td><td>${s.path}</td><td><span class="badge ${s.severity}">${s.severity}</span></td></tr>`;});
+      html+="</table>";
+      document.getElementById("ct-scan-result").innerHTML=html;
+    } else toast("扫描未完成: "+res.error);
+  },1500);
+}
+
+async function ctRuntimeAnomalies(){
+  const r=await api("/container/runtime/anomalies");
+  if(r.success) renderFindings("ct-runtime-result",r.data.anomalies);
+  else toast(r.error);
+}
+async function ctWhitelist(){
+  const r=await api("/container/runtime/whitelist");
+  if(r.success) document.getElementById("ct-runtime-result").innerHTML="<pre>"+JSON.stringify(r.data,null,2)+"</pre>";
+  else toast(r.error);
+}
+async function ctSyscallFilter(){
+  const r=await api("/container/runtime/syscall-filter");
+  if(r.success) document.getElementById("ct-runtime-result").innerHTML="<pre>"+JSON.stringify(r.data,null,2)+"</pre>";
+  else toast(r.error);
+}
+async function ctHardeningRules(){
+  const r=await api("/container/hardening/rules");
+  if(r.success) renderFindings("ct-hardening-result",r.data.rules);
+  else toast(r.error);
+}
+async function ctAssessHardening(){
+  const r=await api("/container/hardening/assess");
+  if(r.success) document.getElementById("ct-hardening-result").innerHTML="<pre>"+JSON.stringify(r.data,null,2)+"</pre>";
+  else toast(r.error);
+}
+async function ctTopology(){
+  const r=await api("/container/network/topology");
+  if(r.success) document.getElementById("ct-net-result").innerHTML="<pre>"+JSON.stringify(r.data,null,2)+"</pre>";
+  else toast(r.error);
+}
+async function ctTunnels(){
+  const r=await api("/container/network/tunnels");
+  if(r.success) renderFindings("ct-net-result",r.data.tunnels);
+  else toast(r.error);
+}
+async function ctCompliance(){
+  const fw=document.getElementById("ct-framework").value;
+  const r=await api(`/container/compliance/${fw}`);
+  if(r.success){
+    let html=`<h4>${r.data.framework_name} — 合规分: ${r.data.compliance_score}%</h4>`;
+    html+="<div class='progress'><div style='width:"+r.data.compliance_score+"%'></div></div>";
+    html+="<table><tr><th>ID</th><th>控制项</th><th>状态</th></tr>";
+    r.data.controls.forEach(c=>{html+=`<tr><td>${c.id}</td><td>${c.title}</td><td><span class="badge ${c.status}">${c.status}</span></td></tr>`;});
+    html+="</table>";
+    document.getElementById("ct-compliance-result").innerHTML=html;
+  } else toast(r.error);
+}
+async function ctLifecycle(stage){
+  const r=await api(`/container/lifecycle/${stage}`);
+  if(r.success) renderTable("ct-lifecycle-result",r.data.checks,Object.keys(r.data.checks[0]||{}).map(k=>({key:k,label:k})));
+  else toast(r.error);
+}
+
+// ===== 服务网格 =====
+async function meshDiscover(){
+  const r=await api("/mesh/meshes");
+  if(r.success) renderTable("mesh-assets-result",r.data.meshes,Object.keys(r.data.meshes[0]||{}).map(k=>({key:k,label:k})));
+  else toast(r.error);
+}
+async function meshServices(){
+  const r=await api("/mesh/services");
+  if(r.success) renderTable("mesh-assets-result",r.data.services,Object.keys(r.data.services[0]||{}).map(k=>({key:k,label:k})));
+  else toast(r.error);
+}
+async function meshAudit(type){
+  const r=await api(`/mesh/audit/${type}`);
+  if(r.success) renderFindings("mesh-audit-result",r.data.findings);
+  else toast(r.error);
+}
+async function meshCerts(){
+  const r=await api("/mesh/certificates");
+  if(r.success) renderTable("mesh-cert-result",r.data.certificates,Object.keys(r.data.certificates[0]||{}).map(k=>({key:k,label:k})));
+  else toast(r.error);
+}
+async function meshThreats(){
+  const r=await api("/mesh/detect/threats");
+  if(r.success){
+    let html="";
+    [["异常调用",r.data.anomalous_calls.alerts],["未授权访问",r.data.unauthorized_access.alerts],["证书异常",r.data.certificate_anomalies.alerts]].forEach(([n,a])=>{
+      html+=`<h4>${n} (${a.length})</h4><table><tr><th>ID</th><th>级别</th><th>描述</th></tr>`;
+      a.forEach(x=>{html+=`<tr><td>${x.id}</td><td><span class="badge ${x.severity}">${x.severity}</span></td><td>${x.description}</td></tr>`;});
+      html+="</table>";
+    });
+    document.getElementById("mesh-threat-result").innerHTML=html;
+  } else toast(r.error);
+}
+async function meshTopology(){
+  const r=await api("/mesh/topology");
+  if(r.success) document.getElementById("mesh-viz-result").innerHTML="<pre>"+JSON.stringify(r.data,null,2)+"</pre>";
+  else toast(r.error);
+}
+async function meshSecurityGraph(){
+  const r=await api("/mesh/security-graph");
+  if(r.success) document.getElementById("mesh-viz-result").innerHTML="<pre>"+JSON.stringify(r.data,null,2)+"</pre>";
+  else toast(r.error);
+}
+async function meshIsolate(){
+  const svc=document.getElementById("mesh-svc").value||"backend";
+  const ns=document.getElementById("mesh-ns").value||"prod-backend";
+  const r=await api("/mesh/response/isolate-service",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({service:svc,namespace:ns})});
+  if(r.success){toast("服务已隔离");document.getElementById("mesh-resp-result").innerHTML="<pre>"+JSON.stringify(r.data,null,2)+"</pre>";}
+  else toast(r.error);
+}
+
+// ===== CWPP =====
+async function cwppDiscover(){
+  const r=await api("/cwpp/workloads");
+  if(r.success) renderTable("cwpp-discovery-result",r.data.workloads,Object.keys(r.data.workloads[0]||{}).map(k=>({key:k,label:k})));
+  else toast(r.error);
+}
+async function cwppAudit(type){
+  const r=await api(`/cwpp/audit/${type}`);
+  if(r.success) renderFindings("cwpp-audit-result",r.data.findings);
+  else toast(r.error);
+}
+async function cwppIDS(){
+  const r=await api("/cwpp/runtime/ids");
+  if(r.success) renderFindings("cwpp-runtime-result",r.data.alerts);
+  else toast(r.error);
+}
+async function cwppVulnScan(){
+  const r=await api("/cwpp/vuln/scan",{method:"POST"});
+  if(!r.success){toast(r.error);return;}
+  const tid=r.data.task_id;
+  document.getElementById("cwpp-vuln-result").innerHTML="<p>扫描中... "+tid+"</p>";
+  setTimeout(async()=>{
+    const res=await api(`/tasks/${tid}/results`);
+    if(res.success) renderTable("cwpp-vuln-result",res.data.vulnerabilities,Object.keys(res.data.vulnerabilities[0]||{}).map(k=>({key:k,label:k})));
+    else toast("扫描未完成");
+  },1500);
+}
+async function cwppVulnTrends(){
+  const r=await api("/cwpp/vuln/trends");
+  if(r.success) renderTable("cwpp-vuln-result",r.data.trends,Object.keys(r.data.trends[0]||{}).map(k=>({key:k,label:k})));
+  else toast(r.error);
+}
+async function cwppCompliance(){
+  const fw=document.getElementById("cwpp-framework").value;
+  const r=await api(`/cwpp/compliance/${fw}`);
+  if(r.success){
+    let html=`<h4>${r.data.framework_name} — ${r.data.compliance_score}%</h4>`;
+    html+="<table><tr><th>ID</th><th>控制项</th><th>状态</th></tr>";
+    r.data.controls.forEach(c=>{html+=`<tr><td>${c.id}</td><td>${c.title}</td><td><span class="badge ${c.status}">${c.status}</span></td></tr>`;});
+    html+="</table>";
+    document.getElementById("cwpp-compliance-result").innerHTML=html;
+  } else toast(r.error);
+}
+async function cwppIsolate(){
+  const id=document.getElementById("cwpp-instance").value||"i-0a1b2c3d";
+  const r=await api("/cwpp/response/isolate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({instance_id:id})});
+  if(r.success){toast("实例已隔离");document.getElementById("cwpp-resp-result").innerHTML="<pre>"+JSON.stringify(r.data,null,2)+"</pre>";}
+  else toast(r.error);
+}
+async function cwppSnapshot(){
+  const id=document.getElementById("cwpp-instance").value||"i-0a1b2c3d";
+  const r=await api(`/cwpp/response/snapshot?resource_id=${id}`);
+  if(r.success){toast("快照已创建");document.getElementById("cwpp-resp-result").innerHTML="<pre>"+JSON.stringify(r.data,null,2)+"</pre>";}
+  else toast(r.error);
+}
+
+// ===== CSPM =====
+async function cspmAssets(){
+  const r=await api("/cspm/assets");
+  if(r.success) renderTable("cspm-assets-result",r.data.assets,Object.keys(r.data.assets[0]||{}).map(k=>({key:k,label:k})));
+  else toast(r.error);
+}
+async function cspmAudit(type){
+  const r=await api(`/cspm/audit/${type}`);
+  if(r.success) renderFindings("cspm-audit-result",r.data.findings);
+  else toast(r.error);
+}
+async function cspmCompliance(){
+  const fw=document.getElementById("cspm-framework").value;
+  const r=await api(`/cspm/compliance/${fw}`);
+  if(r.success){
+    let html=`<h4>${r.data.framework_name} — ${r.data.compliance_score}%</h4>`;
+    html+="<table><tr><th>ID</th><th>控制项</th><th>状态</th></tr>";
+    r.data.controls.forEach(c=>{html+=`<tr><td>${c.id}</td><td>${c.title}</td><td><span class="badge ${c.status}">${c.status}</span></td></tr>`;});
+    html+="</table>";
+    document.getElementById("cspm-compliance-result").innerHTML=html;
+  } else toast(r.error);
+}
+async function cspmRisk(){
+  const r=await api("/cspm/risk-score");
+  if(r.success){
+    let html=`<h4>综合风险评分: ${r.data.overall_score} (${r.data.overall_level.toUpperCase()})</h4>`;
+    html+="<table><tr><th>类别</th><th>得分</th><th>级别</th><th>因素</th></tr>";
+    r.data.categories.forEach(c=>{
+      html+=`<tr><td>${c.description}</td><td>${c.score}</td><td><span class="badge ${c.level}">${c.level}</span></td><td>${c.factors.join(", ")}</td></tr>`;
+    });
+    html+="</table>";
+    document.getElementById("cspm-risk-result").innerHTML=html;
+  } else toast(r.error);
+}
+async function cspmPaths(){
+  const r=await api("/cspm/attack-paths");
+  if(r.success){
+    let html="";
+    r.data.attack_paths.forEach(p=>{
+      html+=`<h4><span class="badge ${p.severity}">${p.severity.toUpperCase()}</span> ${p.name}</h4>`;
+      html+="<div class='timeline'>";
+      p.steps.forEach(s=>{
+        html+=`<div class="item ${p.severity}"><strong>步骤${s.step}</strong> [${s.type}] ${s.name}<br><span style="color:var(--muted);font-size:12px">${s.detail}</span></div>`;
+      });
+      html+="</div>";
+      html+=`<p style="font-size:12px;color:var(--muted)">影响: ${p.impact} | 可能性: ${p.likelihood} | 风险分: ${p.risk_score}</p>`;
+    });
+    document.getElementById("cspm-paths-result").innerHTML=html;
+  } else toast(r.error);
+}
+async function cspmReco(){
+  const r=await api("/cspm/recommendations");
+  if(r.success){
+    let html="<table><tr><th>优先级</th><th>类别</th><th>标题</th><th>描述</th><th>操作</th></tr>";
+    r.data.recommendations.forEach(rec=>{
+      html+=`<tr><td>${rec.priority}</td><td>${rec.category}</td><td>${rec.title}</td><td>${rec.description}</td><td><code style="font-size:11px">${rec.action}</code></td></tr>`;
+    });
+    html+="</table>";
+    document.getElementById("cspm-reco-result").innerHTML=html;
+  } else toast(r.error);
+}
+
+// ===== 设置 =====
+async function loadSettings(){
+  const r=await api("/dashboard/settings");
+  if(r.success) document.getElementById("settings-result").innerHTML="<pre>"+JSON.stringify(r.data,null,2)+"</pre>";
+  else toast(r.error);
+}
+
+// ===== 初始化 =====
+function refreshAll(){
+  loadOverview();
+  toast("已刷新");
+}
+loadOverview();
+</script>
+</body>
+</html>

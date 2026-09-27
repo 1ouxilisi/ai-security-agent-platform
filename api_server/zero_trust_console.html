@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>零信任安全控制台 — 第13轮升级模块</title>
+<style>
+:root {
+  --bg-primary: #0a0e14;
+  --bg-secondary: #11161f;
+  --bg-tertiary: #1a2030;
+  --border-color: #2a3344;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --accent-blue: #58a6ff;
+  --accent-green: #3fb950;
+  --accent-yellow: #d29922;
+  --accent-red: #f85149;
+  --accent-purple: #bc8cff;
+  --accent-orange: #ffa657;
+  --radius: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; min-height: 100vh;
+}
+.header {
+  background: linear-gradient(135deg, #141b2d 0%, #0a0e14 100%);
+  border-bottom: 1px solid var(--border-color);
+  padding: 18px 30px; display: flex; align-items: center; justify-content: space-between;
+}
+.header h1 { font-size: 22px; font-weight: 600; color: var(--accent-blue); }
+.header .badge {
+  background: var(--bg-tertiary); border: 1px solid var(--border-color);
+  padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--text-secondary);
+}
+.tabs {
+  background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);
+  display: flex; overflow-x: auto; padding: 0 20px;
+}
+.tab-btn {
+  background: none; border: none; color: var(--text-secondary);
+  padding: 14px 18px; cursor: pointer; font-size: 14px;
+  border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text-primary); }
+.tab-btn.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+.tab-content { display: none; padding: 24px; max-width: 1400px; margin: 0 auto; }
+.tab-content.active { display: block; }
+.card {
+  background: var(--bg-secondary); border: 1px solid var(--border-color);
+  border-radius: var(--radius); padding: 18px; margin-bottom: 16px;
+}
+.card h3 { font-size: 16px; margin-bottom: 12px; color: var(--accent-blue); }
+.card h4 { font-size: 14px; margin: 12px 0 8px; color: var(--text-primary); }
+.btn {
+  background: var(--accent-blue); color: #fff; border: none; padding: 8px 18px;
+  border-radius: 6px; cursor: pointer; font-size: 13px; transition: opacity 0.2s;
+}
+.btn:hover { opacity: 0.85; }
+.btn.secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
+.stat-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px; margin-bottom: 16px;
+}
+.stat-card {
+  background: var(--bg-tertiary); border: 1px solid var(--border-color);
+  border-radius: var(--radius); padding: 14px; text-align: center;
+}
+.stat-card .value { font-size: 26px; font-weight: 700; }
+.stat-card .label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+.risk-critical { color: var(--accent-red); }
+.risk-high { color: var(--accent-orange); }
+.risk-medium { color: var(--accent-yellow); }
+.risk-low, .risk-trusted, .risk-allow { color: var(--accent-green); }
+.status-pill {
+  display: inline-block; padding: 3px 10px; border-radius: 12px;
+  font-size: 12px; font-weight: 500;
+}
+.status-running { background: rgba(210,153,34,0.15); color: var(--accent-yellow); }
+.status-success { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+.status-failed { background: rgba(248,81,73,0.15); color: var(--accent-red); }
+.table-wrap { overflow-x: auto; margin: 10px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border-color); }
+th { color: var(--text-secondary); font-weight: 600; background: var(--bg-tertiary); }
+.checklist { list-style: none; padding-left: 0; }
+.checklist li { padding: 4px 0; padding-left: 22px; position: relative; }
+.checklist li:before { content: "▸"; position: absolute; left: 4px; color: var(--accent-blue); }
+input, select {
+  background: var(--bg-tertiary); border: 1px solid var(--border-color);
+  color: var(--text-primary); padding: 7px 10px; border-radius: 6px; font-size: 13px;
+  margin-right: 8px;
+}
+label { font-size: 13px; color: var(--text-secondary); margin-right: 6px; }
+.empty-state { color: var(--text-secondary); text-align: center; padding: 20px; }
+pre {
+  background: var(--bg-primary); padding: 10px; border-radius: 6px;
+  overflow-x: auto; font-size: 12px; color: var(--text-secondary);
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🛡 零信任安全控制台</h1>
+  <span class="badge">第13轮升级 · Zero Trust Architecture</span>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="identity">身份与访问</button>
+  <button class="tab-btn" data-tab="verification">持续验证</button>
+  <button class="tab-btn" data-tab="microseg">微隔离</button>
+  <button class="tab-btn" data-tab="device">设备信任</button>
+  <button class="tab-btn" data-tab="appapi">应用API安全</button>
+  <button class="tab-btn" data-tab="maturity">成熟度评估</button>
+</div>
+
+<!-- 1. 身份与访问 -->
+<div class="tab-content active" id="tab-identity">
+  <div class="card">
+    <h3>身份与访问综合评估</h3>
+    <p style="color:var(--text-secondary);font-size:13px">身份生命周期 / MFA / SSO / PAM / 身份风险评分</p>
+    <div style="margin:12px 0">
+      <button class="btn" onclick="startIdentityAssess()">启动评估</button>
+      <button class="btn secondary" onclick="loadIdentityUsers()">用户列表</button>
+      <button class="btn secondary" onclick="loadIdentityPrivileged()">特权账户</button>
+      <span id="id-status" style="margin-left:10px"></span>
+    </div>
+    <div id="id-summary"></div>
+  </div>
+  <div class="card">
+    <h3>身份目录概览</h3>
+    <div id="id-users"><div class="empty-state">点击上方按钮加载</div></div>
+  </div>
+</div>
+
+<!-- 2. 持续验证 -->
+<div class="tab-content" id="tab-verification">
+  <div class="card">
+    <h3>实时风险评估与动态授权</h3>
+    <label>用户</label><input id="v-username" value="user0001" size="10">
+    <label>国家</label><input id="v-country" value="CN" size="6">
+    <label>应用</label><input id="v-app" value="app_1" size="8">
+    <button class="btn" onclick="startVerify()">评估</button>
+    <button class="btn secondary" onclick="loadSessions()">会话监控</button>
+    <span id="v-status" style="margin-left:10px"></span>
+    <div id="v-summary" style="margin-top:14px"></div>
+  </div>
+  <div class="card">
+    <h3>当前会话风险</h3>
+    <div id="v-sessions"><div class="empty-state">点击"会话监控"加载</div></div>
+  </div>
+</div>
+
+<!-- 3. 微隔离 -->
+<div class="tab-content" id="tab-microseg">
+  <div class="card">
+    <h3>微隔离与网络分段分析</h3>
+    <button class="btn" onclick="startMicroseg()">启动分析</button>
+    <button class="btn secondary" onclick="loadTopology()">网络拓扑</button>
+    <button class="btn secondary" onclick="loadMicroSegPolicies()">隔离策略</button>
+    <span id="ms-status" style="margin-left:10px"></span>
+    <div id="ms-summary" style="margin-top:14px"></div>
+  </div>
+  <div class="card">
+    <h3>拓扑与策略</h3>
+    <div id="ms-topology"><div class="empty-state">点击上方按钮加载</div></div>
+  </div>
+</div>
+
+<!-- 4. 设备信任 -->
+<div class="tab-content" id="tab-device">
+  <div class="card">
+    <h3>设备安全与终端信任评估</h3>
+    <button class="btn" onclick="startDeviceAssess()">启动评估</button>
+    <button class="btn secondary" onclick="loadInventory()">设备清单</button>
+    <button class="btn secondary" onclick="loadCompliance()">合规概览</button>
+    <span id="d-status" style="margin-left:10px"></span>
+    <div id="d-summary" style="margin-top:14px"></div>
+  </div>
+  <div class="card">
+    <h3>设备资产</h3>
+    <div id="d-inventory"><div class="empty-state">点击上方按钮加载</div></div>
+  </div>
+</div>
+
+<!-- 5. 应用API安全 -->
+<div class="tab-content" id="tab-appapi">
+  <div class="card">
+    <h3>应用与API安全评估</h3>
+    <button class="btn" onclick="startAppAssess()">启动评估</button>
+    <button class="btn secondary" onclick="loadServices()">服务清单</button>
+    <button class="btn secondary" onclick="loadGateways()">API网关</button>
+    <span id="a-status" style="margin-left:10px"></span>
+    <div id="a-summary" style="margin-top:14px"></div>
+  </div>
+  <div class="card">
+    <h3>服务与网关</h3>
+    <div id="a-services"><div class="empty-state">点击上方按钮加载</div></div>
+  </div>
+</div>
+
+<!-- 6. 成熟度评估 -->
+<div class="tab-content" id="tab-maturity">
+  <div class="card">
+    <h3>零信任成熟度评估</h3>
+    <label>行业</label>
+    <select id="m-industry">
+      <option>金融</option><option>互联网</option><option>制造业</option>
+      <option>医疗</option><option>政府</option><option>教育</option><option>能源</option>
+    </select>
+    <button class="btn" onclick="startMaturity()">开始评估</button>
+    <button class="btn secondary" onclick="loadRoadmap()">实施路线图</button>
+    <button class="btn secondary" onclick="loadMaturityHistory()">历史记录</button>
+    <span id="m-status" style="margin-left:10px"></span>
+    <div id="m-summary" style="margin-top:14px"></div>
+  </div>
+  <div class="card">
+    <h3>实施路线图</h3>
+    <div id="m-roadmap"><div class="empty-state">点击"实施路线图"加载</div></div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1/zero-trust';
+
+async function apiCall(path, method='POST', body=null) {
+  const opts = { method, headers: {'Content-Type': 'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const resp = await fetch(API + path, opts);
+  return await resp.json();
+}
+function riskClass(level) { return 'risk-' + (level || 'low'); }
+
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// Generic poller
+async function poll(taskId, statusEl, reportPath, renderFn, containerId) {
+  const check = async () => {
+    const s = await apiCall('/' + reportPath + '/' + taskId + '/status', 'GET');
+    if (s.data.status === 'success') {
+      const r = await apiCall('/' + reportPath + '/' + taskId + '/report', 'GET');
+      if (r.success) renderFn(r.data);
+      document.getElementById(statusEl).innerHTML = '<span class="status-pill status-success">完成</span>';
+    } else if (s.data.status === 'failed') {
+      document.getElementById(statusEl).innerHTML = '<span class="status-pill status-failed">失败</span>';
+    } else { setTimeout(check, 1200); }
+  };
+  check();
+}
+
+function statGrid(items) {
+  let html = '<div class="stat-grid">';
+  items.forEach(it => {
+    html += `<div class="stat-card"><div class="value ${it.cls||''}">${it.v}</div><div class="label">${it.l}</div></div>`;
+  });
+  return html + '</div>';
+}
+function recoList(list) {
+  if (!list || !list.length) return '';
+  let html = '<h4>加固建议</h4><ul class="checklist">';
+  list.forEach(r => html += '<li>' + r + '</li>');
+  return html + '</ul>';
+}
+
+// 1. 身份
+async function startIdentityAssess() {
+  try {
+    const r = await apiCall('/identity/assess', 'POST', {});
+    if (r.success) {
+      document.getElementById('id-status').innerHTML = '<span class="status-pill status-running">评估中...</span>';
+      await poll(r.data.task_id, 'id-status', 'identity', d => {
+        document.getElementById('id-summary').innerHTML =
+          statGrid([
+            {v: d.overall_score, l: '综合分', cls: riskClass(d.overall_score < 60 ? 'high' : 'low')},
+            {v: d.mfa ? d.mfa.mfa_coverage_pct : 0, l: 'MFA覆盖率%'},
+            {v: d.sso ? d.sso.sso_coverage_pct : 0, l: 'SSO覆盖率%'},
+            {v: d.pam ? d.pam.privileged_user_count : 0, l: '特权账户'},
+          ]) +
+          (d.executive_summary ? '<div class="card"><h4>概要</h4><p>'+d.executive_summary+'</p></div>' : '') +
+          recoList(d.top_remediations);
+      }, 'id-summary');
+    }
+  } catch(e) { alert(e); }
+}
+async function loadIdentityUsers() {
+  const r = await apiCall('/identity/users', 'GET');
+  if (r.success) {
+    let html = '<div class="table-wrap"><table><thead><tr><th>用户</th><th>部门</th><th>状态</th><th>MFA</th><th>风险分</th></tr></thead><tbody>';
+    (r.data.users||[]).slice(0,15).forEach(u => {
+      html += `<tr><td>${u.username}</td><td>${u.department}</td><td>${u.status}</td><td>${u.mfa_enabled?'是':'否'}</td><td class="${riskClass(u.risk_score>=60?'high':(u.risk_score>=35?'medium':'low'))}">${u.risk_score}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+    document.getElementById('id-users').innerHTML = html;
+  }
+}
+async function loadIdentityPrivileged() {
+  const r = await apiCall('/identity/privileged', 'GET');
+  if (r.success) {
+    let html = '<div class="table-wrap"><table><thead><tr><th>用户</th><th>类型</th><th>部门</th><th>MFA</th></tr></thead><tbody>';
+    (r.data.privileged_users||[]).forEach(u => {
+      html += `<tr><td>${u.username}</td><td>${u.type}</td><td>${u.department}</td><td>${u.mfa_enabled?'是':'否'}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+    document.getElementById('id-users').innerHTML = html;
+  }
+}
+
+// 2. 持续验证
+async function startVerify() {
+  const body = {
+    username: document.getElementById('v-username').value,
+    country: document.getElementById('v-country').value,
+    app: document.getElementById('v-app').value
+  };
+  const r = await apiCall('/verification/evaluate', 'POST', body);
+  if (r.success) {
+    document.getElementById('v-status').innerHTML = '<span class="status-pill status-running">评估中...</span>';
+    await poll(r.data.task_id, 'v-status', 'verification', d => {
+      const dec = (d.adaptive_decision||{}).decision || 'allow';
+      document.getElementById('v-summary').innerHTML =
+        statGrid([
+          {v: (d.realtime_risk||{}).overall_risk ?? 0, l: '综合风险', cls: riskClass((d.realtime_risk||{}).overall_risk||0)},
+          {v: dec, l: '授权决策', cls: 'risk-' + (dec==='deny'?'critical':dec)},
+          {v: (d.device_trust||{}).trust_score ?? 0, l: '设备信任分'},
+        ]) + '<p style="margin-top:10px">'+(d.summary||'')+'</p>';
+    });
+  }
+}
+async function loadSessions() {
+  const r = await apiCall('/verification/risk-scores', 'GET');
+  if (r.success) {
+    document.getElementById('v-sessions').innerHTML =
+      statGrid([
+        {v: r.data.active_sessions, l: '活跃会话'},
+        {v: r.data.anomaly_count, l: '异常会话', cls: 'risk-high'},
+      ]) +
+      '<h4>异常会话</h4><ul class="checklist">' +
+      (r.data.anomalous_sessions||[]).map(s=>'<li>'+s.username+' / '+s.ip+' / 风险'+s.risk_score+' / '+s.flags.join(',')+'</li>').join('') +
+      '</ul>';
+  }
+}
+
+// 3. 微隔离
+async function startMicroseg() {
+  const r = await apiCall('/microsegmentation/analyze', 'POST', {});
+  if (r.success) {
+    document.getElementById('ms-status').innerHTML = '<span class="status-pill status-running">分析中...</span>';
+    await poll(r.data.task_id, 'ms-status', 'microsegmentation', d => {
+      document.getElementById('ms-summary').innerHTML =
+        statGrid([
+          {v: d.overall_score, l: '微隔离评分'},
+          {v: (d.ztna||{}).overall_maturity ?? 0, l: 'ZTNA成熟度'},
+          {v: (d.sdp||{}).coverage_pct ?? 0, l: 'SDP覆盖%'},
+        ]) + '<p style="margin-top:10px">'+(d.summary||'')+'</p>';
+    });
+  }
+}
+async function loadTopology() {
+  const r = await apiCall('/microsegmentation/topology', 'GET');
+  if (r.success) {
+    let html = '<div class="table-wrap"><table><thead><tr><th>分区</th><th>网段</th><th>环境</th><th>信任级</th></tr></thead><tbody>';
+    (r.data.zones||[]).forEach(z => {
+      html += `<tr><td>${z.zone}</td><td>${z.cidr}</td><td>${z.env}</td><td>${z.trust}</td></tr>`;
+    });
+    document.getElementById('ms-topology').innerHTML = html + '</tbody></table></div>';
+  }
+}
+async function loadMicroSegPolicies() {
+  const r = await apiCall('/microsegmentation/policies', 'GET');
+  if (r.success) {
+    let html = '<div class="table-wrap"><table><thead><tr><th>策略</th><th>范围</th><th>动作</th><th>最小权限</th></tr></thead><tbody>';
+    (r.data.policies||[]).forEach(p => {
+      html += `<tr><td>${p.name}</td><td>${p.scope}</td><td>${p.action}</td><td>${p.least_privilege?'是':'否'}</td></tr>`;
+    });
+    document.getElementById('ms-topology').innerHTML = html + '</tbody></table></div>';
+  }
+}
+
+// 4. 设备
+async function startDeviceAssess() {
+  const r = await apiCall('/device/assess', 'POST', {});
+  if (r.success) {
+    document.getElementById('d-status').innerHTML = '<span class="status-pill status-running">评估中...</span>';
+    await poll(r.data.task_id, 'd-status', 'device', d => {
+      document.getElementById('d-summary').innerHTML =
+        statGrid([
+          {v: d.overall_score, l: '设备信任分'},
+          {v: (d.compliance||{}).compliance_pct ?? 0, l: '合规率%'},
+          {v: (d.edr||{}).edr_healthy_pct ?? 0, l: 'EDR健康率%'},
+          {v: (d.jailbreak_root||{}).flagged_count ?? 0, l: '越狱/Root', cls:'risk-high'},
+        ]) + '<p style="margin-top:10px">'+(d.summary||'')+'</p>';
+    });
+  }
+}
+async function loadInventory() {
+  const r = await apiCall('/device/inventory', 'GET');
+  if (r.success) {
+    let html = '<div class="table-wrap"><table><thead><tr><th>设备ID</th><th>主机名</th><th>所有者</th><th>类型</th><th>OS</th><th>受管</th></tr></thead><tbody>';
+    (r.data.inventory||[]).slice(0,15).forEach(d => {
+      html += `<tr><td>${d.device_id}</td><td>${d.hostname}</td><td>${d.owner}</td><td>${d.type}</td><td>${d.os}</td><td>${d.managed?'是':'否'}</td></tr>`;
+    });
+    document.getElementById('d-inventory').innerHTML = html + '</tbody></table></div>';
+  }
+}
+async function loadCompliance() {
+  const r = await apiCall('/device/compliance', 'GET');
+  if (r.success) {
+    document.getElementById('d-inventory').innerHTML =
+      statGrid([
+        {v: r.data.checked, l: '检查设备'},
+        {v: r.data.compliant, l: '合规'},
+        {v: r.data.non_compliant, l: '不合规', cls:'risk-high'},
+        {v: r.data.compliance_pct, l: '合规率%'},
+      ]);
+  }
+}
+
+// 5. 应用API
+async function startAppAssess() {
+  const r = await apiCall('/application/assess', 'POST', {});
+  if (r.success) {
+    document.getElementById('a-status').innerHTML = '<span class="status-pill status-running">评估中...</span>';
+    await poll(r.data.task_id, 'a-status', 'application', d => {
+      document.getElementById('a-summary').innerHTML =
+        statGrid([
+          {v: d.overall_score, l: 'API安全分'},
+          {v: (d.mtls_mesh||{}).mtls_coverage_pct ?? 0, l: 'mTLS覆盖%'},
+          {v: (d.service_accounts||{}).over_permissive_count ?? 0, l: '过权账户', cls:'risk-high'},
+        ]) + '<p style="margin-top:10px">'+(d.summary||'')+'</p>';
+    });
+  }
+}
+async function loadServices() {
+  const r = await apiCall('/application/services', 'GET');
+  if (r.success) {
+    let html = '<div class="table-wrap"><table><thead><tr><th>服务</th><th>集群</th><th>mTLS</th><th>SA</th><th>权限范围</th></tr></thead><tbody>';
+    (r.data.services||[]).forEach(s => {
+      html += `<tr><td>${s.name}</td><td>${s.cluster}</td><td>${s.mTLS?'是':'否'}</td><td>${s.sa}</td><td>${s.scope}</td></tr>`;
+    });
+    document.getElementById('a-services').innerHTML = html + '</tbody></table></div>';
+  }
+}
+async function loadGateways() {
+  const r = await apiCall('/application/api-gateway', 'GET');
+  if (r.success) {
+    let html = '<div class="table-wrap"><table><thead><tr><th>网关</th><th>覆盖率</th><th>WAF</th><th>限流</th><th>认证</th></tr></thead><tbody>';
+    (r.data.gateways||[]).forEach(g => {
+      html += `<tr><td>${g.name}</td><td>${(g.coverage*100).toFixed(0)}%</td><td>${g.waf?'是':'否'}</td><td>${g.rate_limit?'是':'否'}</td><td>${g.auth}</td></tr>`;
+    });
+    document.getElementById('a-services').innerHTML = html + '</tbody></table></div>';
+  }
+}
+
+// 6. 成熟度
+async function startMaturity() {
+  const ind = document.getElementById('m-industry').value;
+  const r = await apiCall('/maturity/assess', 'POST', {industry: ind});
+  if (r.success) {
+    document.getElementById('m-status').innerHTML = '<span class="status-pill status-running">评估中...</span>';
+    await poll(r.data.task_id, 'm-status', 'maturity', d => {
+      const ov = d.overall || {};
+      document.getElementById('m-summary').innerHTML =
+        statGrid([
+          {v: ov.score ?? 0, l: '综合成熟度', cls:'risk-medium'},
+          {v: ov.stage_name || '-', l: '当前阶段'},
+          {v: (d.benchmark||{}).delta ?? 0, l: 'vs行业基准'},
+        ]) + '<p style="margin-top:10px">'+(d.summary||'')+'</p>' +
+        '<h4>8 维评分</h4><div class="table-wrap"><table><thead><tr><th>维度</th><th>当前</th><th>权重</th><th>差距</th></tr></thead><tbody>' +
+        (d.dimensions||[]).map(x => `<tr><td>${x.name}</td><td>${x.current}</td><td>${(x.weight*100).toFixed(0)}%</td><td>${x.gap_to_stage4}</td></tr>`).join('') +
+        '</tbody></table></div>';
+    });
+  }
+}
+async function loadRoadmap() {
+  const r = await apiCall('/maturity/roadmap', 'GET');
+  if (r.success) {
+    let html = '';
+    (r.data.phases||[]).forEach(p => {
+      html += `<div class="card"><h4>${p.phase}. ${p.name}（${p.months}月）</h4><ul class="checklist">`;
+      p.items.forEach(i => html += '<li>'+i+'</li>');
+      html += '</ul><p style="color:var(--accent-green);font-size:12px">预期提升 +'+p.expected_score_gain+' 分</p></div>';
+    });
+    document.getElementById('m-roadmap').innerHTML = html;
+  }
+}
+async function loadMaturityHistory() {
+  const r = await apiCall('/maturity/history', 'GET');
+  if (r.success) {
+    const h = r.data.history || [];
+    if (!h.length) { document.getElementById('m-roadmap').innerHTML = '<div class="empty-state">暂无历史，先执行一次评估</div>'; return; }
+    let html = '<div class="table-wrap"><table><thead><tr><th>时间</th><th>综合分</th><th>阶段</th></tr></thead><tbody>';
+    h.forEach(x => {
+      html += `<tr><td>${x.time}</td><td>${x.overall.score}</td><td>${x.overall.stage_name}</td></tr>`;
+    });
+    document.getElementById('m-roadmap').innerHTML = html + '</tbody></table></div>';
+  }
+}
+</script>
+</body>
+</html>

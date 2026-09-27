@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>分布式扫描与任务调度控制台 · AI Hacking Agent</title>
+<style>
+:root{
+  --bg:#0d1117; --bg2:#161b22; --bg3:#1f2630; --border:#2d333b;
+  --fg:#e6edf3; --muted:#8b949e; --accent:#3fb950; --accent2:#1f6feb;
+  --warn:#d29922; --danger:#f85149; --purple:#a371f7; --cyan:#39c5cf;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.5}
+a{color:var(--accent2);text-decoration:none}
+.wrap{max-width:1400px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 0;border-bottom:1px solid var(--border);margin-bottom:16px}
+header h1{font-size:20px;font-weight:600}
+header h1 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);margin-right:80px;box-shadow:0 0 8px var(--accent)}
+.badge{background:var(--bg3);border:1px solid var(--border);padding:3px 10px;border-radius:12px;font-size:12px;color:var(--muted)}
+nav.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+nav.tabs button{background:var(--bg2);color:var(--muted);border:1px solid var(--border);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px}
+nav.tabs button.active{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+nav.tabs button:hover{color:var(--fg)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px}
+.card .k{color:var(--muted);font-size:12px;margin-bottom:6px}
+.card .v{font-size:24px;font-weight:600}
+.card .v.green{color:var(--accent)} .card .v.red{color:var(--danger)}
+.card .v.yellow{color:var(--warn)} .card .v.blue{color:var(--accent2)}
+.panel{display:none}
+.panel.active{display:block}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:500;background:var(--bg3)}
+tr:hover td{background:rgba(255,255,255,0.02)}
+.btn{background:var(--accent2);color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px}
+.btn.sec{background:var(--bg3);color:var(--fg);border:1px solid var(--border)}
+.btn.danger{background:var(--danger)} .btn.green{background:var(--accent)}
+.btn:hover{opacity:.88}
+input,select,textarea{background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;width:100%}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.row>div{flex:1;min-width:140px}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px}
+.tag.on{background:rgba(63,185,80,.15);color:var(--accent)}
+.tag.off{background:rgba(139,148,158,.15);color:var(--muted)}
+.tag.warn{background:rgba(210,153,34,.15);color:var(--warn)}
+.tag.bad{background:rgba(248,81,73,.15);color:var(--danger)}
+.tag.info{background:rgba(31,111,235,.15);color:var(--accent2)}
+.log{background:#0a0d12;border:1px solid var(--border);border-radius:8px;padding:10px;height:260px;overflow:auto;font-family:Consolas,monospace;font-size:12px;color:#9fd6a0}
+.progress{background:var(--bg3);border-radius:6px;height:8px;overflow:hidden}
+.progress>div{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .4s}
+.muted{color:var(--muted)}
+.mono{font-family:Consolas,monospace;font-size:12px}
+.flex{display:flex;gap:10px;flex-wrap:wrap}
+.h2{font-size:15px;font-weight:600;margin:14px 0 10px}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
+@media(max-width:768px){.grid{grid-template-columns:1fr 1fr}header h1{font-size:16px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1><span class="dot"></span>分布式扫描与任务调度控制台</h1>
+  <div class="flex">
+    <span class="badge" id="masterBadge">Master 在线</span>
+    <span class="badge" id="clock">--:--:--</span>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="overview" class="active">集群总览</button>
+  <button data-tab="nodes">节点管理</button>
+  <button data-tab="tasks">任务管理</button>
+  <button data-tab="proxy">代理池</button>
+  <button data-tab="resume">断点续扫</button>
+  <button data-tab="resource">资源监控</button>
+  <button data-tab="settings">系统设置</button>
+</nav>
+
+<!-- 总览 -->
+<section class="panel active" id="panel-overview">
+  <div class="grid" id="ovCards"></div>
+  <div class="card">
+    <div class="h2">队列深度 & 实时事件流</div>
+    <div class="row" style="margin-bottom:10px">
+      <div><label>就绪队列</label><div class="v blue" id="qReady">-</div></div>
+      <div><label>延迟队列</label><div class="v" id="qDelay">-</div></div>
+      <div><label>重试队列</label><div class="v yellow" id="qRetry">-</div></div>
+      <div><label>死信队列</label><div class="v red" id="qDead">-</div></div>
+      <div><label>调度策略</label><div class="v green" id="qStrategy">-</div></div>
+    </div>
+    <div class="log" id="eventLog"></div>
+  </div>
+</section>
+
+<!-- 节点 -->
+<section class="panel" id="panel-nodes">
+  <div class="row" style="margin-bottom:12px">
+    <div><label>节点ID</label><input id="nId" value="worker-auto-01"></div>
+    <div><label>能力(逗号)</label><input id="nCap" value="scan,vuln"></div>
+    <div><label>区域标签</label><input id="nTag" value="region=cn"></div>
+    <div style="flex:0"><button class="btn green" onclick="registerNode()">注册Worker</button></div>
+    <div style="flex:0"><button class="btn sec" onclick="loadNodes()">刷新</button></div>
+  </div>
+  <div class="card">
+    <table><thead><tr>
+      <th>节点</th><th>状态</th><th>能力</th><th>CPU%</th><th>内存%</th><th>负载</th>
+      <th>已完成</th><th>心跳龄(s)</th><th>操作</th>
+    </tr></thead><tbody id="nodeRows"></tbody></table>
+  </div>
+</section>
+
+<!-- 任务 -->
+<section class="panel" id="panel-tasks">
+  <div class="card" style="margin-bottom:12px">
+    <div class="h2">创建扫描任务</div>
+    <div class="row">
+      <div><label>任务名</label><input id="tName" value="内网资产巡检"></div>
+      <div><label>目标(逗号分隔)</label><input id="tTargets" value="10.0.0.1,10.0.0.2,10.0.0.3,10.0.0.4,10.0.0.5,10.0.0.6"></div>
+      <div><label>优先级(1最高)</label><input id="tPrio" type="number" value="5" min="1" max="10"></div>
+      <div><label>分片大小</label><input id="tShard" type="number" value="2"></div>
+      <div style="flex:0"><button class="btn" onclick="createTask()">创建并入队</button></div>
+      <div style="flex:0"><button class="btn green" onclick="dispatchNext()">调度并执行一个</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="h2">任务列表 <button class="btn sec" style="float:right" onclick="loadTasks()">刷新</button></div>
+    <table><thead><tr>
+      <th>任务ID</th><th>名称</th><th>状态</th><th>进度</th><th>优先级</th>
+      <th>节点</th><th>端口</th><th>漏洞</th><th>操作</th>
+    </tr></thead><tbody id="taskRows"></tbody></table>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="h2">任务详情 / 日志 <span class="muted" id="detailTaskId"></span></div>
+    <div id="taskDetail" class="muted">选择上方任务查看详情</div>
+    <div class="log" id="taskLog" style="margin-top:8px"></div>
+  </div>
+</section>
+
+<!-- 代理池 -->
+<section class="panel" id="panel-proxy">
+  <div class="grid" id="pxCards"></div>
+  <div class="row" style="margin-bottom:12px">
+    <div><label>轮换策略</label>
+      <select id="pxStrategy">
+        <option value="random">随机</option>
+        <option value="per_request">按请求</option>
+        <option value="per_time">按时间</option>
+        <option value="per_target">按目标</option>
+        <option value="sticky">粘性会话</option>
+        <option value="failover">失败转移</option>
+      </select></div>
+    <div><label>全局RPS</label><input id="pxRps" type="number" value="50"></div>
+    <div style="flex:0"><button class="btn" onclick="setProxyPolicy()">应用策略</button></div>
+    <div style="flex:0"><button class="btn sec" onclick="healthCheck()">全量健康检查</button></div>
+    <div style="flex:0"><button class="btn green" onclick="acquireProxy()">取一个代理</button></div>
+  </div>
+  <div class="card">
+    <table><thead><tr>
+      <th>ID</th><th>地址</th><th>类型</th><th>状态</th><th>评分</th>
+      <th>延迟ms</th><th>匿名度</th><th>国家</th><th>操作</th>
+    </tr></thead><tbody id="pxRows"></tbody></table>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="h2">反检测请求头</div>
+    <pre class="mono" id="antiHeaders" style="white-space:pre-wrap"></pre>
+  </div>
+</section>
+
+<!-- 断点续扫 -->
+<section class="panel" id="panel-resume">
+  <div class="row" style="margin-bottom:12px">
+    <div><label>任务ID</label><input id="rsTask" placeholder="scan-xxxx"></div>
+    <div style="flex:0"><button class="btn" onclick="saveState()">保存断点</button></div>
+    <div style="flex:0"><button class="btn green" onclick="resumeTask()">断点恢复</button></div>
+    <div style="flex:0"><button class="btn sec" onclick="takeSnapshot()">打快照</button></div>
+  </div>
+  <div class="grid">
+    <div class="card"><div class="k">分片统计</div><div class="v blue" id="shardStat">-</div></div>
+    <div class="card"><div class="k">缓存键</div><div class="v green" id="cacheStat">-</div></div>
+    <div class="card"><div class="k">快照数</div><div class="v yellow" id="snapCount">-</div></div>
+  </div>
+  <div class="card">
+    <div class="h2">快照列表</div>
+    <table><thead><tr><th>快照ID</th><th>任务</th><th>进度</th><th>端口</th><th>漏洞</th><th>时间</th><th>操作</th></tr></thead>
+    <tbody id="snapRows"></tbody></table>
+  </div>
+</section>
+
+<!-- 资源 -->
+<section class="panel" id="panel-resource">
+  <div class="grid" id="resCards"></div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="h2">资源调度决策</div>
+    <div id="schedDecision" class="muted">加载中...</div>
+  </div>
+  <div class="card">
+    <div class="h2">告警历史 <button class="btn sec" style="float:right" onclick="loadAlarms()">刷新</button></div>
+    <table><thead><tr><th>时间</th><th>规则</th><th>指标</th><th>值/阈值</th><th>级别</th><th>建议</th></tr></thead>
+    <tbody id="alarmRows"></tbody></table>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="h2">资源报表</div>
+    <pre class="mono" id="resReport" style="white-space:pre-wrap"></pre>
+  </div>
+</section>
+
+<!-- 设置 -->
+<section class="panel" id="panel-settings">
+  <div class="card">
+    <div class="h2">集群设置</div>
+    <div class="row">
+      <div><label>调度策略</label>
+        <select id="setStrategy">
+          <option value="priority">优先级</option>
+          <option value="fifo">FIFO</option>
+          <option value="fair">公平</option>
+          <option value="resource_aware">资源感知</option>
+        </select></div>
+      <div><label>最大重试</label><input id="setRetry" type="number" value="3"></div>
+      <div><label>心跳超时(s)</label><input id="setHb" type="number" value="30"></div>
+      <div style="flex:0"><button class="btn" onclick="saveSettings()">保存设置</button></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="h2">审计日志</div>
+    <div class="log" id="auditLog"></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+const BASE='/api/v1/distributed-scan';
+let curTask=null;
+async function api(path,opts={}){
+  const r=await fetch(BASE+path,{headers:{'Content-Type':'application/json'},...opts});
+  const j=await r.json().catch(()=>({success:false,error:'bad json'}));
+  return j;
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function tag(s){const m={on:['online','completed','healthy','success'],off:['offline','dead','unchecked'],warn:['queued','paused','retrying','slow'],bad:['failed','canceled','timeout','dead_letter','dead']};let cls='info';for(const k in m){if(m[k].includes(s))cls=k;}return `<span class="tag ${cls}">${esc(s)}</span>`;}
+
+// tabs
+document.querySelectorAll('#tabs button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('panel-'+b.dataset.tab).classList.add('active');
+    loadTab(b.dataset.tab);
+  };
+});
+function loadTab(t){
+  if(t==='overview')loadOverview();
+  if(t==='nodes')loadNodes();
+  if(t==='tasks')loadTasks();
+  if(t==='proxy')loadProxy();
+  if(t==='resume')loadResume();
+  if(t==='resource')loadResource();
+  if(t==='settings')loadSettings();
+}
+
+async function loadOverview(){
+  const j=await api('/cluster/overview'); if(!j.success)return;
+  const d=j.data;
+  document.getElementById('ovCards').innerHTML=[
+    ['节点在线',`${d.nodes_online}/${d.nodes_total}`,'green'],
+    ['运行任务',d.tasks_running,'blue'],
+    ['队列中',d.tasks_queued,'yellow'],
+    ['扫描速度',d.scan_speed+' 端口/s','green'],
+    ['CPU平均',d.avg_cpu+'%','blue'],
+    ['内存平均',d.avg_mem+'%','yellow'],
+    ['开放端口',d.found_ports,'blue'],
+    ['唯一漏洞',d.found_vulns,'red'],
+  ].map(([k,v,c])=>`<div class="card"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`).join('');
+  const q=d.queue_depth||{};
+  document.getElementById('qReady').textContent=q.ready;
+  document.getElementById('qDelay').textContent=q.delay;
+  document.getElementById('qRetry').textContent=q.retry;
+  document.getElementById('qDead').textContent=q.dead;
+  document.getElementById('qStrategy').textContent=d.master?d.master.strategy:'-';
+  const ev=(await api('/cluster/events?limit=40')).data||[];
+  document.getElementById('eventLog').innerHTML=ev.map(e=>`<div>[${esc(e.time?.slice(11,19))}] <span style="color:#79c0ff">${esc(e.kind)}</span> ${esc(e.message)}</div>`).join('');
+}
+
+async function loadNodes(){
+  const j=await api('/cluster/nodes'); if(!j.success)return;
+  document.getElementById('nodeRows').innerHTML=j.data.map(n=>`<tr>
+    <td class="mono">${esc(n.id)}</td><td>${tag(n.status)}</td>
+    <td>${(n.capabilities||[]).map(c=>`<span class="tag info">${esc(c)}</span>`).join(' ')}</td>
+    <td>${n.resources.cpu}</td><td>${n.resources.mem}</td>
+    <td>${(n.load*100).toFixed(0)}%</td><td>${n.tasks_done}</td>
+    <td>${n.heartbeat_age}</td>
+    <td><button class="btn sec" onclick="hb('${n.id}')">心跳</button>
+        <button class="btn danger" onclick="rmNode('${n.id}')">移除</button></td></tr>`).join('');
+}
+async function registerNode(){
+  const id=document.getElementById('nId').value.trim();
+  const cap=document.getElementById('nCap').value.split(',').map(s=>s.trim()).filter(Boolean);
+  await api('/cluster/nodes/register',{method:'POST',body:JSON.stringify({node_id:id,capabilities:cap})});
+  loadNodes();
+}
+async function hb(id){await api(`/cluster/nodes/${id}/heartbeat`,{method:'POST',body:JSON.stringify({resources:{cpu:Math.random()*80,mem:Math.random()*80,net:Math.random()*60}})});loadNodes();}
+async function rmNode(id){await api(`/cluster/nodes/${id}`,{method:'DELETE'});loadNodes();}
+
+async function loadTasks(){
+  const j=await api('/tasks'); if(!j.success)return;
+  document.getElementById('taskRows').innerHTML=j.data.map(t=>`<tr>
+    <td class="mono">${esc(t.task_id)}</td><td>${esc(t.name)}</td><td>${tag(t.status)}</td>
+    <td><div class="progress" style="width:90px"><div style="width:${t.progress}%"></div></div><span class="muted">${t.progress}%</span></td>
+    <td>${t.priority}</td><td>${esc(t.assigned_node||'-')}</td>
+    <td>${t.ports_found}</td><td>${t.vulns_found}</td>
+    <td><button class="btn sec" onclick="showDetail('${t.task_id}')">详情</button>
+        <button class="btn" onclick="ctl('${t.task_id}','pause')">暂停</button>
+        <button class="btn green" onclick="ctl('${t.task_id}','resume')">继续</button>
+        <button class="btn danger" onclick="ctl('${t.task_id}','cancel')">取消</button></td></tr>`).join('');
+}
+async function createTask(){
+  const targets=document.getElementById('tTargets').value.split(',').map(s=>s.trim()).filter(Boolean);
+  await api('/tasks',{method:'POST',body:JSON.stringify({
+    name:document.getElementById('tName').value,targets,
+    priority:parseInt(document.getElementById('tPrio').value),
+    resource_config:{shard_size:parseInt(document.getElementById('tShard').value)}
+  })});
+  loadTasks();
+}
+async function dispatchNext(){const j=await api('/cluster/dispatch',{method:'POST',body:JSON.stringify({})});alert(j.data?('已调度: '+j.data.task_id+' 进度'+j.data.progress+'%'):j.error);loadTasks();}
+async function ctl(id,action){await api(`/tasks/${id}/control`,{method:'POST',body:JSON.stringify({action})});loadTasks();}
+async function showDetail(id){
+  curTask=id; document.getElementById('detailTaskId').textContent=' · '+id;
+  const d=(await api('/tasks/'+id)).data;
+  document.getElementById('taskDetail').innerHTML=`<div class="grid" style="margin:0">
+    <div class="card"><div class="k">状态</div><div class="v blue">${esc(d.status_cn)}</div></div>
+    <div class="card"><div class="k">当前阶段</div><div class="v">${esc(d.current_stage)}</div></div>
+    <div class="card"><div class="k">扫描速度</div><div class="v green">${d.scan_speed}/s</div></div>
+    <div class="card"><div class="k">预计剩余</div><div class="v yellow">${d.eta_seconds}s</div></div>
+  </div>`;
+  const logs=(await api(`/tasks/${id}/logs`)).data||[];
+  document.getElementById('taskLog').innerHTML=logs.map(e=>`<div>[${esc(e.time?.slice(11,19))}] ${esc(e.message)}</div>`).join('');
+}
+
+async function loadProxy(){
+  const s=(await api('/proxy/pool')).data;
+  document.getElementById('pxCards').innerHTML=[
+    ['总数',s.total,'blue'],['健康',s.healthy,'green'],['死',s.dead,'red'],['平均评分',s.avg_score,'yellow'],
+  ].map(([k,v,c])=>`<div class="card"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`).join('');
+  const l=(await api('/proxy/list')).data;
+  document.getElementById('pxRows').innerHTML=l.map(p=>`<tr>
+    <td class="mono">${esc(p.id)}</td><td>${esc(p.host)}:${p.port}</td><td>${esc(p.type)}</td>
+    <td>${tag(p.status)}</td><td>${p.score}</td><td>${p.latency_ms||'-'}</td>
+    <td>${esc(p.anonymity)}</td><td>${esc(p.country)}</td>
+    <td><button class="btn sec" onclick="detectPx('${p.id}')">检测</button>
+        <button class="btn danger" onclick="delPx('${p.id}')">删</button></td></tr>`).join('');
+}
+async function detectPx(id){await api(`/proxy/${id}/detect`,{method:'POST',body:'{}'});loadProxy();}
+async function delPx(id){await api(`/proxy/${id}`,{method:'DELETE'});loadProxy();}
+async function setProxyPolicy(){await api('/proxy/policy',{method:'POST',body:JSON.stringify({rotation_strategy:document.getElementById('pxStrategy').value,global_rps:parseFloat(document.getElementById('pxRps').value)})});loadProxy();}
+async function healthCheck(){await api('/proxy/health-check',{method:'POST',body:'{}'});loadProxy();}
+async function acquireProxy(){
+  const j=await api('/proxy/acquire',{method:'POST',body:JSON.stringify({target:'example.com'})});
+  const h=(await api('/proxy/anti-detect')).data.headers;
+  document.getElementById('antiHeaders').textContent=JSON.stringify(j.data?{proxy:j.data.host+':'+j.data.port,headers:h}:{error:j.error},null,2);
+}
+
+async function loadResume(){
+  const sh=(await api('/shards/stats')).data;
+  document.getElementById('shardStat').textContent=sh.total+' ('+(sh.by_status.pending||0)+'待)';
+  const c=(await api('/cache/stats')).data;
+  document.getElementById('cacheStat').textContent=c.alive_keys+'/'+c.total_keys;
+  const sn=(await api('/snapshots')).data;
+  document.getElementById('snapCount').textContent=sn.length;
+  document.getElementById('snapRows').innerHTML=sn.map(s=>`<tr>
+    <td class="mono">${esc(s.snapshot_id)}</td><td>${esc(s.task_id)}</td>
+    <td>${s.progress}%</td><td>${(s.ports||[]).length}</td><td>${(s.vulns||[]).length}</td>
+    <td>${esc(s.taken_at?.slice(0,19))}</td>
+    <td><button class="btn" onclick="rollback('${s.snapshot_id}')">回滚</button></td></tr>`).join('');
+}
+async function saveState(){const id=document.getElementById('rsTask').value.trim();if(id){await api(`/tasks/${id}/snapshot/save`,{method:'POST',body:'{}'});alert('断点已保存');}}
+async function resumeTask(){const id=document.getElementById('rsTask').value.trim();if(id){const j=await api(`/tasks/${id}/resume`,{method:'POST',body:'{}'});alert(j.data?j.data.message:j.error);loadResume();}}
+async function takeSnapshot(){const id=document.getElementById('rsTask').value.trim();if(id){await api('/snapshots/take?task_id='+encodeURIComponent(id),{method:'POST',body:JSON.stringify({name:'手动'})});loadResume();}}
+async function rollback(id){await api(`/snapshots/${id}/rollback`,{method:'POST',body:'{}'});loadResume();}
+
+async function loadResource(){
+  const m=(await api('/resource/realtime')).data;
+  document.getElementById('resCards').innerHTML=[
+    ['CPU',m.host.cpu_pct+'%',m.host.cpu_pct>85?'red':'green'],
+    ['内存',m.host.mem_pct+'%',m.host.mem_pct>90?'red':'green'],
+    ['磁盘',m.host.disk_pct+'%',m.host.disk_pct>90?'red':'blue'],
+    ['网络',m.host.net_mbps+' Mbps','blue'],
+    ['连接数',m.host.connections,'yellow'],
+    ['线程',m.host.threads,'yellow'],
+  ].map(([k,v,c])=>`<div class="card"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`).join('');
+  const sd=(await api('/resource/schedule-decision')).data;
+  document.getElementById('schedDecision').innerHTML=`过载节点: ${(sd.overloaded||[]).length} ｜ 空闲节点: ${(sd.idle||[]).length} ｜ 建议: ${esc(sd.recommendation)} ${sd.scale_up?'<span class="tag bad">建议扩容</span>':''}`;
+  const al=(await api('/resource/alarms')).data;
+  document.getElementById('alarmRows').innerHTML=al.map(a=>`<tr>
+    <td>${esc(a.time?.slice(5,19))}</td><td>${esc(a.rule)}</td><td>${esc(a.metric)}</td>
+    <td>${a.value}/${a.threshold}</td><td>${tag(a.level)}</td><td>${esc(a.suggestion)}</td></tr>`).join('')||'<tr><td colspan=6 class="muted">无告警</td></tr>';
+  const r=(await api('/resource/report')).data;
+  document.getElementById('resReport').textContent=JSON.stringify({平均CPU:r.avg_cpu+'%',平均内存:r.avg_mem+'%',峰值CPU:r.peak_cpu+'%',预估成本:r.estimated_cost_cny_per_hour+' 元/小时',建议:r.optimization_tips},null,2);
+}
+
+async function loadSettings(){
+  const s=(await api('/settings')).data.settings;
+  document.getElementById('setStrategy').value=s.schedule_strategy;
+  document.getElementById('setRetry').value=s.max_retries;
+  document.getElementById('setHb').value=s.heartbeat_timeout;
+  const a=(await api('/audit')).data;
+  document.getElementById('auditLog').innerHTML=a.map(e=>`<div>[${esc(e.time?.slice(11,19))}] ${esc(e.action)}</div>`).join('')||'<div class="muted">暂无审计</div>';
+}
+async function saveSettings(){
+  await api('/settings',{method:'PUT',body:JSON.stringify({patch:{
+    schedule_strategy:document.getElementById('setStrategy').value,
+    max_retries:parseInt(document.getElementById('setRetry').value),
+    heartbeat_timeout:parseFloat(document.getElementById('setHb').value)
+  }})});
+  alert('设置已保存');
+}
+
+setInterval(()=>{const d=new Date();document.getElementById('clock').textContent=d.toLocaleTimeString('zh-CN');},1000);
+loadOverview();
+setInterval(()=>{if(document.getElementById('panel-overview').classList.contains('active'))loadOverview();},5000);
+</script>
+</body>
+</html>

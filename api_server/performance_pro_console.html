@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>性能大升级 · Performance Pro</title>
+<style>
+:root{
+  --bg:#0d1117; --card:#161b22; --inset:#010409; --border:#30363d;
+  --fg:#e6edf3; --muted:#8b949e; --faint:#6e7681;
+  --accent:#3fb6ff; --ok:#3fb950; --warn:#d29922; --bad:#f85149; --info:#39d2c0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);
+  font-family:"Inter","Microsoft YaHei",system-ui,sans-serif;font-size:14px}
+header{padding:18px 26px;background:linear-gradient(90deg,#3fb6ff33,#3fb6ff00);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:20px}
+header .sub{color:var(--muted);font-size:13px}
+header .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+main{padding:22px 26px;max-width:1400px;margin:0 auto}
+.grid{display:grid;gap:16px}
+.g-score{grid-template-columns:repeat(6,1fr)}
+.g-2{grid-template-columns:1fr 1fr}
+.g-3{grid-template-columns:repeat(3,1fr)}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+.panel h2{font-size:15px;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.kpi .v{font-size:28px;font-weight:800}
+.kpi .l{color:var(--muted);font-size:12px;margin-top:4px}
+.score{padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--card)}
+.score .t{font-weight:700;margin:6px 0 4px}
+.score .d{color:var(--muted);font-size:12px}
+.score .s{float:right;font-size:22px;font-weight:800}
+.score.pass{border-left:4px solid var(--ok)} .score.fail{border-left:4px solid var(--bad)}
+button{background:var(--accent);color:#0d1117;border:none;padding:9px 16px;border-radius:8px;
+  cursor:pointer;font-weight:600;font-size:13px}
+button:hover{filter:brightness(1.1)}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--border)}
+button.ghost:hover{border-color:var(--accent);color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:600}
+.tag{font-size:11px;padding:2px 8px;border-radius:10px}
+.tag.pass{background:#3fb95022;color:var(--ok)}
+.tag.fail{background:#f8514922;color:var(--bad)}
+pre{background:var(--inset);border:1px solid var(--border);border-radius:8px;padding:10px;
+  font-size:12px;overflow:auto;max-height:240px}
+input{background:var(--inset);border:1px solid var(--border);color:var(--fg);
+  padding:8px 10px;border-radius:8px;min-width:160px}
+.mono{font-family:Consolas,monospace;color:var(--info)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+@media(max-width:1100px){.g-score{grid-template-columns:repeat(2,1fr)}.g-2,.g-3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>⚡ 性能大升级控制台</h1>
+    <div class="sub">方向6 · 启动<10s · P95<50ms · 100并发 · LRU缓存 · DB索引 · 静态CDN</div>
+  </div>
+  <div class="right">
+    <button class="ghost" onclick="loadAll()">🔄 刷新</button>
+    <span class="tag pass" id="uptimeTag">score --</span>
+  </div>
+</header>
+
+<main>
+  <div class="grid g-score" style="margin-bottom:16px" id="scoreGrid"></div>
+
+  <div class="grid g-2" style="margin-bottom:16px">
+    <div class="panel">
+      <h2>⏱️ 启动速度优化</h2>
+      <div class="row">
+        <div class="kpi"><div class="v mono" id="fullMs">--</div><div class="l">全量启动(ms)</div></div>
+        <div class="kpi"><div class="v mono" id="lazyMs">--</div><div class="l">懒加载(ms)</div></div>
+        <div class="kpi"><div class="v mono" id="savedPct">--</div><div class="l">节省(%)</div></div>
+      </div>
+      <div class="row"><button onclick="warmupAll()">🔥 预热重模块</button>
+        <button class="ghost" onclick="showLazy()">懒加载状态</button></div>
+      <pre id="lazyOut">启动对比…</pre>
+    </div>
+
+    <div class="panel">
+      <h2>📈 API 响应分位 & 缓存</h2>
+      <div class="row">
+        <div class="kpi"><div class="v mono" id="p95">--</div><div class="l">P95(ms) 目标<50</div></div>
+        <div class="kpi"><div class="v mono" id="p50">--</div><div class="l">P50(ms)</div></div>
+        <div class="kpi"><div class="v mono" id="hitRate">--</div><div class="l">缓存命中(%)</div></div>
+      </div>
+      <div class="row"><button onclick="demoCache()">缓存命中演示</button>
+        <button class="ghost" onclick="clearCache()">清缓存</button></div>
+      <pre id="cacheOut">缓存演示…</pre>
+    </div>
+  </div>
+
+  <div class="grid g-2" style="margin-bottom:16px">
+    <div class="panel">
+      <h2>🧵 并发控制</h2>
+      <div class="row">
+        <div class="kpi"><div class="v mono" id="maxc">--</div><div class="l">并发上限</div></div>
+        <div class="kpi"><div class="v mono" id="submitted">--</div><div class="l">已提交任务</div></div>
+        <div class="kpi"><div class="v mono" id="rejected">--</div><div class="l">被限流</div></div>
+      </div>
+      <div class="row">
+        <input id="stressN" type="number" value="100" style="min-width:90px">
+        <button onclick="doStress()">🚀 压测(100并发)</button>
+        <button class="ghost" onclick="showTasks()">任务列表</button>
+      </div>
+      <pre id="stressOut">压测验证不崩…</pre>
+    </div>
+
+    <div class="panel">
+      <h2>🗄️ 数据库优化 V2</h2>
+      <div class="row"><button onclick="showDb()">推荐索引</button>
+        <button class="ghost" onclick="explainDemo()">EXPLAIN 演示</button></div>
+      <pre id="dbOut">DB 优化…</pre>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>📦 静态资源优化</h2>
+    <div class="row">
+      <div class="kpi"><div class="v mono" id="beforeKb">--</div><div class="l">压缩前(KB)</div></div>
+      <div class="kpi"><div class="v mono" id="afterKb">--</div><div class="l">压缩后(KB)</div></div>
+      <div class="kpi"><div class="v mono" id="savedPct2">--</div><div class="l">节省(%)</div></div>
+      <div class="kpi"><div class="v" style="font-size:16px;color:var(--ok)">gzip+brotli+CDN</div><div class="l">已启用</div></div>
+    </div>
+    <pre id="staticOut">静态资源…</pre>
+  </div>
+</main>
+
+<script>
+const BASE='/api/v1/performance-pro';
+async function api(path,opts={}){
+  const r=await fetch(BASE+path,{method:opts.method||'GET',
+    headers:{'Content-Type':'application/json'},
+    body:opts.body?JSON.stringify(opts.body):undefined});
+  return r.json();
+}
+function esc(o){return typeof o==='string'?o:JSON.stringify(o,null,2);}
+async function loadAll(){
+  const sc=await api('/scorecard');
+  const g=document.getElementById('scoreGrid');g.innerHTML='';
+  for(const k in sc.data){
+    const c=sc.data[k];
+    if(!c.label)continue;
+    g.innerHTML+=`<div class="score ${c.ok?'pass':'fail'}">
+      <div class="s">${c.score}</div><div class="t">${c.label}</div>
+      <div class="d">${c.detail}</div></div>`;
+  }
+  document.getElementById('uptimeTag').textContent='总分 '+sc.data.total.score;
+
+  const ov=await api('/overview');
+  document.getElementById('fullMs').textContent=ov.data.startup.full_load_ms;
+  document.getElementById('lazyMs').textContent=ov.data.startup.lazy_load_ms;
+  document.getElementById('savedPct').textContent=ov.data.startup.saved_pct;
+  document.getElementById('p50').textContent=ov.data.latency.p50;
+  document.getElementById('p95').textContent=ov.data.latency.p95;
+  document.getElementById('hitRate').textContent=ov.data.cache.hit_rate;
+  document.getElementById('maxc').textContent=ov.data.concurrency.max_concurrent;
+  document.getElementById('submitted').textContent=ov.data.concurrency.submitted;
+  document.getElementById('rejected').textContent=ov.data.concurrency.rejected;
+  document.getElementById('beforeKb').textContent=ov.data.static.total_before_kb;
+  document.getElementById('afterKb').textContent=ov.data.static.total_after_kb;
+  document.getElementById('savedPct2').textContent=ov.data.static.saved_pct;
+  document.getElementById('staticOut').textContent=esc(ov.data.static);
+}
+async function warmupAll(){
+  const r=await api('/startup/lazy/warmup',{method:'POST',body:{modules:[]}});
+  document.getElementById('lazyOut').textContent=esc(r);
+}
+async function showLazy(){
+  const r=await api('/startup/lazy/status');
+  document.getElementById('lazyOut').textContent=esc(r);
+}
+async function demoCache(){
+  const r=await api('/batch/merge',{method:'POST',body:{resources:['report','metrics','list']}});
+  document.getElementById('cacheOut').textContent=esc(r);
+}
+async function clearCache(){
+  const r=await api('/cache/clear');
+  document.getElementById('cacheOut').textContent=esc(r);
+}
+async function doStress(){
+  const n=parseInt(document.getElementById('stressN').value)||100;
+  const r=await api('/concurrency/stress?n='+n);
+  document.getElementById('stressOut').textContent=esc(r);
+  setTimeout(loadAll,800);
+}
+async function showTasks(){
+  const r=await api('/concurrency/tasks?limit=10');
+  document.getElementById('stressOut').textContent=esc(r);
+}
+async function showDb(){
+  const r=await api('/db/indexes');
+  document.getElementById('dbOut').textContent=esc(r);
+}
+async function explainDemo(){
+  const r=await api('/db/explain',{method:'POST',
+    body:{sql:'SELECT * FROM vuln_findings WHERE severity = \'critical\' AND task_id=123'}});
+  document.getElementById('dbOut').textContent=esc(r);
+}
+loadAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>真实环境验证中心 · AI Hacking Agent</title>
+<style>
+:root{--bg:#0f1419;--panel:#161d26;--border:#263140;--txt:#e6e6e6;--mut:#8a97a8;--blue:#4fc3f7;--green:#66bb6a;--orange:#ffa726;--red:#ef5350;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft YaHei",Segoe UI,sans-serif;background:var(--bg);color:var(--txt);padding:18px;font-size:14px}
+h1{font-size:20px;color:var(--blue);margin-bottom:4px}
+.sub{color:var(--mut);font-size:12px;margin-bottom:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer}
+.card:hover{border-color:var(--blue)}
+.card .n{font-size:22px;font-weight:700}
+.card .l{color:var(--mut);font-size:12px;margin-top:4px}
+.box{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+.box h2{font-size:15px;color:var(--blue);margin-bottom:10px;border-left:4px solid var(--blue);padding-left:8px}
+button{background:#0b5394;color:#fff;border:0;border-radius:6px;padding:7px 12px;cursor:pointer;font-size:13px;margin:2px}
+button:hover{background:#0d66b5}
+button.alt{background:#2a3441}
+.mut{color:var(--mut);font-size:12px}
+#out{white-space:pre-wrap;background:#0d131a;border:1px solid var(--border);border-radius:6px;padding:12px;max-height:420px;overflow:auto;font-size:12px;font-family:Consolas,monospace}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;margin:2px}
+.ok{background:#1b3a1b;color:var(--green)}
+.no{background:#3a1b1b;color:var(--red)}
+.warn{background:#3a2f1b;color:var(--orange)}
+</style>
+</head>
+<body>
+<h1>真实环境验证中心</h1>
+<div class="sub">方向5 · 工具检测 / 靶场部署 / 扫描验证 / 报告验证 / 性能压测 / 安全测试</div>
+
+<div class="cards">
+  <div class="card" onclick="runAll()"><div class="n" style="color:var(--blue)">一键验证 ▶</div><div class="l">运行所有验证</div></div>
+  <div class="card" onclick="detectTools()"><div class="n" id="cTools">-</div><div class="l">已装工具 / 总数</div></div>
+  <div class="card" onclick="showRanges()"><div class="n" id="cRanges">-</div><div class="l">靶场目录</div></div>
+  <div class="card" onclick="loadHistory()"><div class="n" id="cHist">-</div><div class="l">历史记录</div></div>
+</div>
+
+<div class="grid">
+  <div class="box">
+    <h2>操作面板</h2>
+    <button onclick="runAll()">一键全量验证</button>
+    <button class="alt" onclick="detectTools()">检测工具</button>
+    <button class="alt" onclick="showRanges()">靶场目录</button>
+    <button class="alt" onclick="deployRange()">部署DVWA靶场</button>
+    <button class="alt" onclick="scanProjects()">扫描验证项</button>
+    <button class="alt" onclick="reportValidate()">报告质量评分</button>
+    <button class="alt" onclick="perfRun()">性能压测</button>
+    <button class="alt" onclick="secRun()">安全测试</button>
+    <button class="alt" onclick="loadHistory()">历史</button>
+  </div>
+  <div class="box"><h2>结果输出</h2><div id="out">点击上方按钮运行验证…</div></div>
+</div>
+
+<script>
+const B='/api/v1/validation';
+async function j(u,o){const r=await fetch(B+u,o);return r.json();}
+function show(t){document.getElementById('out').textContent=typeof t==='string'?t:JSON.stringify(t,null,2);}
+async function loadDash(){const d=await j('/dashboard');const s=d.data;
+  document.getElementById('cTools').textContent=s.tools.installed+'/'+s.tools.total;
+  document.getElementById('cRanges').textContent=s.ranges.catalog;
+  document.getElementById('cHist').textContent=s.history_count;}
+async function runAll(){show('正在运行一键验证（真实工具，可能耗时）…');const d=await j('/orchestrator/run-all',{method:'POST'});show(d.data);loadDash();}
+async function detectTools(){const d=await j('/tools/detect-all');show(d.data);loadDash();}
+async function showRanges(){const d=await j('/range/catalog');show(d.data);}
+async function deployRange(){const d=await j('/range/deploy/dvwa',{method:'POST'});show(d.data);}
+async function scanProjects(){const d=await j('/scan/projects');show(d.data);}
+async function reportValidate(){const txt='# 报告\n## 执行摘要\nCVE-2021-41773 CVSS 9.8\n## 修复\n升级 patch\n## 附录\nOWASP ATT&CK';const d=await j('/report/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:txt})});show(d.data);}
+async function perfRun(){show('压测中…');const d=await j('/performance/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:'http://127.0.0.1:8000',scenario:'home',concurrencies:[10],duration:5})});show(d.data);}
+async function secRun(){const d=await j('/security/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base_url:'http://127.0.0.1:8000'})});show(d.data);}
+async function loadHistory(){const d=await j('/orchestrator/history');show(d.data);loadDash();}
+loadDash();
+</script>
+</body>
+</html>

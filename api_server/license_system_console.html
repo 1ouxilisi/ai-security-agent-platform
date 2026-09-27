@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>License 授权系统控制台</title>
+<style>
+:root{
+  --bg:#0b0f17; --panel:#121826; --panel2:#1a2234; --border:#243049;
+  --fg:#d7e0f0; --muted:#8a97b1; --accent:#39c0ff; --ok:#3ddc84;
+  --warn:#ffb454; --err:#ff5d6c; --purple:#9d7bff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI","Microsoft YaHei",monospace,sans-serif;background:var(--bg);color:var(--fg);font-size:13px;line-height:1.5}
+header{background:linear-gradient(90deg,#0d1422,#13203a);padding:14px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+header h1{font-size:18px;color:var(--accent);letter-spacing:1px}
+header .sub{color:var(--muted);font-size:12px}
+.tabs{display:flex;gap:2px;padding:0 22px;background:#0e1524;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.tab{padding:11px 18px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:.2s}
+.tab:hover{color:var(--fg)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+main{padding:18px 22px;max-width:1500px;margin:0 auto}
+.page{display:none}.page.active{display:block}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.card h2{font-size:15px;color:var(--accent);margin-bottom:12px;border-left:3px solid var(--accent);padding-left:8px}
+.card h3{font-size:13px;color:var(--purple);margin:10px 0 8px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.col{flex:1;min-width:280px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+.stat .num{font-size:24px;font-weight:700;color:var(--accent)}
+.stat .lbl{color:var(--muted);font-size:11px;margin-top:4px}
+.stat.ok .num{color:var(--ok)} .stat.warn .num{color:var(--warn)} .stat.err .num{color:var(--err)}
+input,select,textarea{background:#0a0f1a;border:1px solid var(--border);color:var(--fg);padding:7px 10px;border-radius:5px;width:100%;font-size:13px;font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+label{display:block;color:var(--muted);font-size:11px;margin:8px 0 3px}
+button{background:var(--accent);color:#04121d;border:0;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:600;font-size:12px}
+button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+button.danger{background:var(--err);color:#fff}
+button:hover{opacity:.88}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-weight:600;background:#0e1524}
+tr:hover td{background:#162034}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px}
+.badge.ok{background:rgba(61,220,132,.15);color:var(--ok)}
+.badge.warn{background:rgba(255,180,84,.15);color:var(--warn)}
+.badge.err{background:rgba(255,93,108,.15);color:var(--err)}
+.badge.info{background:rgba(57,192,255,.15);color:var(--accent)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.toolbar input,.toolbar select{width:auto;min-width:140px}
+pre{background:#060a12;border:1px solid var(--border);border-radius:6px;padding:10px;overflow:auto;max-height:300px;font-size:11px;color:#9fe6ff;white-space:pre-wrap;word-break:break-all}
+.foot{color:var(--muted);font-size:11px;text-align:center;padding:18px}
+.bar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-top:4px}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--purple))}
+.muted{color:var(--muted)}
+.row-actions button{margin-right:4px;padding:3px 9px;font-size:11px}
+</style>
+</head>
+<body>
+<header>
+  <h1>◆ LICENSE 授权系统控制台</h1>
+  <span class="sub">第21轮升级 · RSA-PSS 签名 · 设备绑定 · 防盗版 · 运营仪表盘</span>
+</header>
+<div class="tabs">
+  <div class="tab active" data-p="p-license">License 管理</div>
+  <div class="tab" data-p="p-device">激活设备</div>
+  <div class="tab" data-p="p-feature">功能权限</div>
+  <div class="tab" data-p="p-billing">续费升级</div>
+  <div class="tab" data-p="p-security">防盗版安全</div>
+  <div class="tab" data-p="p-dash">运营仪表盘</div>
+</div>
+
+<main>
+<!-- ============ License 管理 ============ -->
+<section id="p-license" class="page active">
+  <div class="card">
+    <h2>创建 License</h2>
+    <div class="row">
+      <div class="col" style="max-width:200px"><label>版本</label>
+        <select id="iss-plan">
+          <option value="trial">试用版</option><option value="standard">标准版</option>
+          <option value="professional" selected>专业版</option>
+          <option value="enterprise">企业版</option><option value="custom">定制版</option>
+        </select></div>
+      <div class="col"><label>客户标识</label><input id="iss-customer" placeholder="customer@corp.com"></div>
+      <div class="col" style="max-width:150px"><label>有效期(天)</label><input id="iss-days" type="number" value="365"></div>
+      <div class="col" style="display:flex;align-items:flex-end"><button onclick="issueLicense()">签发 License</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>License 列表</h2>
+    <div class="toolbar">
+      <input id="lic-q" placeholder="搜索 ID / 客户" oninput="loadLicenses()">
+      <select id="lic-plan-filter" onchange="loadLicenses()">
+        <option value="">全部版本</option><option value="trial">试用</option>
+        <option value="standard">标准</option><option value="professional">专业</option>
+        <option value="enterprise">企业</option><option value="custom">定制</option>
+      </select>
+      <button class="ghost" onclick="loadLicenses()">刷新</button>
+      <button class="ghost" onclick="batchIssue()">批量示例签发</button>
+    </div>
+    <table><thead><tr>
+      <th>License ID</th><th>客户</th><th>版本</th><th>到期</th><th>剩余天</th>
+      <th>状态</th><th>设备数</th><th>操作</th>
+    </tr></thead><tbody id="lic-tbody"></tbody></table>
+  </div>
+  <div class="card"><h2>License 详情 / 激活码</h2><pre id="lic-detail">点击列表行"详情"查看</pre></div>
+</section>
+
+<!-- ============ 激活设备 ============ -->
+<section id="p-device" class="page">
+  <div class="card">
+    <h2>当前设备指纹（真实采集）</h2>
+    <button onclick="loadFingerprint()">采集本机指纹</button>
+    <pre id="fp-out">未采集</pre>
+  </div>
+  <div class="card">
+    <h2>在线激活</h2>
+    <div class="row">
+      <div class="col"><label>License ID</label><input id="act-lid" placeholder="LIC-XXXX"></div>
+      <div class="col"><label>激活码</label><input id="act-code" placeholder="XXXXX-XXXXX-XXXXX-XXXXX"></div>
+      <div class="col" style="display:flex;align-items:flex-end"><button onclick="activate()">激活</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>离线激活</h2>
+    <div class="row">
+      <div class="col"><label>License ID</label><input id="off-lid"></div>
+      <div class="col" style="display:flex;align-items:flex-end"><button class="ghost" onclick="offlineReq()">生成离线请求</button></div>
+      <div class="col" style="display:flex;align-items:flex-end"><button class="ghost" onclick="offlineIssue()">签发离线码</button></div>
+    </div>
+    <pre id="off-out"></pre>
+  </div>
+  <div class="card">
+    <h2>激活记录 / 设备列表</h2>
+    <div class="toolbar"><button class="ghost" onclick="loadDevices()">刷新设备</button></div>
+    <table><thead><tr>
+      <th>激活ID</th><th>License</th><th>设备名</th><th>系统</th><th>指纹</th><th>时间</th><th>操作</th>
+    </tr></thead><tbody id="dev-tbody"></tbody></table>
+  </div>
+  <div class="card"><h2>激活诊断</h2>
+    <div class="row">
+      <div class="col"><input id="diag-lid" placeholder="License ID"></div>
+      <div class="col" style="display:flex;align-items:flex-end"><button onclick="diagnose()">诊断</button></div>
+    </div>
+    <pre id="diag-out"></pre>
+  </div>
+</section>
+
+<!-- ============ 功能权限 ============ -->
+<section id="p-feature" class="page">
+  <div class="card"><h2>功能模块控制</h2>
+    <div class="toolbar">
+      <input id="feat-lid" placeholder="License ID">
+      <button onclick="loadModules()">查询模块状态</button>
+    </div>
+    <div id="mod-grid" class="grid"></div>
+  </div>
+  <div class="card"><h2>配额检查（用户 / API / 数据量）</h2>
+    <div class="row">
+      <div class="col"><label>License ID</label><input id="q-lid"></div>
+      <div class="col" style="display:flex;align-items:flex-end">
+        <button class="ghost" onclick="checkApi()">API 扣1次</button>
+        <button class="ghost" onclick="checkTime()">时间状态</button>
+      </div>
+    </div>
+    <pre id="quota-out"></pre>
+  </div>
+  <div class="card"><h2>高级功能解锁</h2><pre id="adv-out">输入 License 后查询</pre></div>
+</section>
+
+<!-- ============ 续费升级 ============ -->
+<section id="p-billing" class="page">
+  <div class="card"><h2>报价</h2>
+    <div class="row">
+      <div class="col"><label>License ID</label><input id="bq-lid"></div>
+      <div class="col" style="display:flex;align-items:flex-end">
+        <button class="ghost" onclick="quoteRenew()">续费报价</button>
+        <button class="ghost" onclick="quoteUpgrade()">升级报价</button>
+        <button class="ghost" onclick="quoteExpand()">扩容报价</button>
+      </div>
+    </div>
+    <pre id="bq-out"></pre>
+  </div>
+  <div class="card"><h2>订单管理</h2>
+    <div class="toolbar"><button class="ghost" onclick="loadOrders()">刷新订单</button></div>
+    <table><thead><tr>
+      <th>订单号</th><th>License</th><th>类型</th><th>金额</th><th>状态</th><th>创建时间</th><th>操作</th>
+    </tr></thead><tbody id="ord-tbody"></tbody></table>
+  </div>
+  <div class="card"><h2>价格策略 / 收入</h2>
+    <div class="toolbar"><button class="ghost" onclick="loadPrices()">价格表</button>
+      <button class="ghost" onclick="loadRevenue()">收入统计</button></div>
+    <pre id="price-out"></pre>
+  </div>
+</section>
+
+<!-- ============ 防盗版安全 ============ -->
+<section id="p-security" class="page">
+  <div class="card"><h2>运行时防护 / 加固</h2>
+    <div class="toolbar"><button class="ghost" onclick="loadRuntime()">运行时检测</button>
+      <button class="ghost" onclick="loadHardening()">加固配置</button></div>
+    <pre id="rt-out"></pre>
+  </div>
+  <div class="card"><h2>破解行为检测</h2>
+    <div class="row">
+      <div class="col"><label>注入可疑库(逗号分隔)</label><input id="ck-libs" placeholder="frida,xposed"></div>
+      <div class="col"><label>License ID(可选)</label><input id="ck-lid"></div>
+      <div class="col" style="display:flex;align-items:flex-end"><button class="danger" onclick="detectCrack()">检测</button></div>
+    </div>
+    <pre id="ck-out"></pre>
+  </div>
+  <div class="card"><h2>水印 / 溯源</h2>
+    <div class="row">
+      <div class="col"><input id="wm-doc" placeholder="文档ID"></div>
+      <div class="col" style="display:flex;align-items:flex-end"><button class="ghost" onclick="embedWm()">嵌入水印</button></div>
+    </div>
+    <pre id="wm-out"></pre>
+  </div>
+  <div class="card"><h2>黑名单 / 安全告警 / 法律条款</h2>
+    <div class="toolbar">
+      <button class="ghost" onclick="loadBlacklist()">黑名单统计</button>
+      <button class="ghost" onclick="loadAlerts()">安全告警</button>
+      <button class="ghost" onclick="loadLegal()">法律条款</button>
+    </div>
+    <pre id="sec-out"></pre>
+  </div>
+</section>
+
+<!-- ============ 运营仪表盘 ============ -->
+<section id="p-dash" class="page">
+  <div class="card"><h2>总览</h2>
+    <div class="grid" id="ov-grid"></div>
+  </div>
+  <div class="card"><h2>License 版本分布</h2><div id="plan-dist"></div></div>
+  <div class="card"><h2>异常告警</h2><table><thead><tr><th>时间</th><th>类型</th><th>目标</th><th>详情</th></tr></thead>
+    <tbody id="al-tbody"></tbody></table></div>
+  <div class="card"><h2>系统设置 / 公钥</h2><pre id="set-out">点击刷新加载</pre></div>
+  <div class="toolbar"><button onclick="loadDashboard()">刷新仪表盘</button></div>
+</section>
+</main>
+<div class="foot">License 授权系统控制台 · 全部数据经内存字典模拟 · RSA-PSS 真实签名</div>
+
+<script>
+const BASE="/api/v1/license-system";
+async function api(path,opts={}){
+  try{
+    const r=await fetch(BASE+path,{headers:{"Content-Type":"application/json"},...opts});
+    const j=await r.json();
+    return j;
+  }catch(e){return {success:false,error:String(e)};}
+}
+function show(id,obj){document.getElementById(id).textContent=JSON.stringify(obj,null,2);}
+function badge(s){const m={active:["ok","活跃"],active2:["ok","已激活"],expired:["err","已过期"],
+  revoked:["err","已吊销"],grace:["warn","宽限"],expiring_soon:["warn","即将到期"],
+  pending:["warn","待支付"],paid:["ok","已支付"],refunded:["err","已退款"]};
+  const v=m[s]||["info",s];return `<span class="badge ${v[0]}">${v[1]}</span>`;}
+
+// tabs
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");document.getElementById(t.dataset.p).classList.add("active");
+});
+
+// ---- License ----
+async function issueLicense(){
+  const body={plan:val("iss-plan"),customer:val("iss-customer")||"demo@corp.com",days:+val("iss-days")||365};
+  const j=await api("/licenses/issue",{method:"POST",body:JSON.stringify(body)});
+  show("lic-detail",j.data||j.error);loadLicenses();
+}
+async function batchIssue(){
+  const customers=["acme","beta","gamma","delta","epsilon"].map(c=>c+"@demo.com");
+  const j=await api("/licenses/batch",{method:"POST",body:JSON.stringify({plan:"professional",customers})});
+  show("lic-detail",j.data||j.error);loadLicenses();
+}
+async function loadLicenses(){
+  const q=val("lic-q"),pf=val("lic-plan-filter");
+  let path="/licenses?";if(q)path+="q="+encodeURIComponent(q)+"&";if(pf)path+="plan="+pf;
+  const j=await api(path);if(!j.data)return;
+  const tb=document.getElementById("lic-tbody");tb.innerHTML="";
+  j.data.items.forEach(x=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${x.license_id}</td><td>${x.customer}</td><td>${x.plan_name}</td>
+      <td>${x.expires_at}</td><td>${x.days_remaining}</td><td>${badge(x.revoked?"revoked":(x.days_remaining<0?"expired":(x.days_remaining<15?"expiring_soon":"active")))}</td>
+      <td>${x.bound_devices}/${x.max_devices}</td>
+      <td class="row-actions">
+        <button class="ghost" onclick='showDetail("${x.license_id}")'>详情</button>
+        <button class="ghost" onclick='renewOne("${x.license_id}")'>续费</button>
+        <button class="danger" onclick='revokeOne("${x.license_id}")'>吊销</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+}
+async function showDetail(id){
+  const j=await api("/licenses/"+id);show("lic-detail",j.data||j.error);
+}
+async function renewOne(id){await api(`/licenses/${id}/extend`,{method:"POST",body:JSON.stringify({days:365})});loadLicenses();}
+async function revokeOne(id){if(confirm("确认吊销 "+id+"?")){await api(`/licenses/${id}/revoke`,{method:"POST",body:JSON.stringify({reason:"管理员吊销"})});loadLicenses();}}
+
+// ---- 设备 ----
+async function loadFingerprint(){const j=await api("/device/fingerprint");show("fp-out",j.data||j.error);}
+async function activate(){
+  const body={license_id:val("act-lid"),activation_code:val("act-code")};
+  const j=await api("/activation/activate",{method:"POST",body:JSON.stringify(body)});
+  show("lic-detail",j.data||j.error);loadDevices();
+}
+async function loadDevices(){
+  const j=await api("/devices");if(!j.data)return;
+  const tb=document.getElementById("dev-tbody");tb.innerHTML="";
+  j.data.items.forEach(x=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${x.activation_id}</td><td>${x.license_id}</td>
+      <td>${x.machine_name}</td><td>${x.os}</td>
+      <td class="muted">${x.fingerprint.slice(0,16)}…</td><td>${x.activated_at}</td>
+      <td class="row-actions"><button class="danger" onclick='unbindDev("${x.activation_id}")'>解绑</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+async function unbindDev(id){await api(`/devices/${id}/unbind`,{method:"POST"});loadDevices();}
+async function offlineReq(){
+  const j=await api("/offline/request",{method:"POST",body:JSON.stringify({license_id:val("off-lid")})});
+  show("off-out",j.data||j.error);
+}
+async function offlineIssue(){
+  const txt=document.getElementById("off-out").textContent;let tok="";
+  try{tok=JSON.parse(txt).offline_token;}catch(e){}
+  const j=await api("/offline/issue",{method:"POST",body:JSON.stringify({offline_token:tok})});
+  show("off-out",j.data||j.error);
+}
+async function diagnose(){
+  const j=await api("/activation/diagnose?license_id="+encodeURIComponent(val("diag-lid")));
+  show("diag-out",j.data||j.error);
+}
+
+// ---- 功能 ----
+async function loadModules(){
+  const j=await api("/features/modules/"+encodeURIComponent(val("feat-lid")));
+  const g=document.getElementById("mod-grid");g.innerHTML="";
+  if(!j.data||j.data.error){show("mod-grid",""+JSON.stringify(j.error||j.data));return;}
+  Object.entries(j.data.modules).forEach(([k,v])=>{
+    const d=document.createElement("div");d.className="stat";
+    d.innerHTML=`<div class="num" style="font-size:14px">${v.usable?'✓':'✗'}</div><div class="lbl">${k}</div>`;
+    g.appendChild(d);
+  });
+  const j2=await api("/features/advanced/"+encodeURIComponent(val("feat-lid")));
+  show("adv-out",j2.data||j2.error);
+}
+async function checkApi(){
+  const j=await api("/features/api-quota",{method:"POST",body:JSON.stringify({license_id:val("q-lid"),cost:1})});
+  show("quota-out",j.data||j.error);
+}
+async function checkTime(){
+  const j=await api("/features/time/"+encodeURIComponent(val("q-lid")));
+  show("quota-out",j.data||j.error);
+}
+
+// ---- 续费 ----
+async function quoteRenew(){const j=await api("/billing/quote/renew",{method:"POST",body:JSON.stringify({license_id:val("bq-lid"),years:1})});show("bq-out",j.data||j.error);}
+async function quoteUpgrade(){const j=await api("/billing/quote/upgrade",{method:"POST",body:JSON.stringify({license_id:val("bq-lid"),new_plan:"enterprise"})});show("bq-out",j.data||j.error);}
+async function quoteExpand(){const j=await api("/billing/quote/expand",{method:"POST",body:JSON.stringify({license_id:val("bq-lid"),extra_users:20})});show("bq-out",j.data||j.error);}
+async function loadOrders(){
+  const j=await api("/billing/orders");if(!j.data)return;
+  const tb=document.getElementById("ord-tbody");tb.innerHTML="";
+  j.data.items.forEach(o=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${o.order_id}</td><td>${o.license_id}</td><td>${o.kind}</td>
+      <td>¥${o.amount}</td><td>${badge(o.status)}</td><td>${o.created_at}</td>
+      <td class="row-actions">${o.status==="pending"?`<button class="ghost" onclick='payOrder("${o.order_id}")'>支付</button>`:""}</td>`;
+    tb.appendChild(tr);
+  });
+}
+async function payOrder(id){await api(`/billing/orders/${id}/pay`,{method:"POST"});loadOrders();}
+async function loadPrices(){const j=await api("/billing/prices");show("price-out",j.data||j.error);}
+async function loadRevenue(){const j=await api("/billing/revenue");show("price-out",j.data||j.error);}
+
+// ---- 安全 ----
+async function loadRuntime(){const j=await api("/security/runtime");show("rt-out",j.data||j.error);}
+async function loadHardening(){const j=await api("/security/hardening");show("rt-out",j.data||j.error);}
+async function detectCrack(){
+  const body={license_id:val("ck-lid")||null,loaded_libs:val("ck-libs").split(",").filter(Boolean),strings:[]};
+  const j=await api("/security/detect-crack",{method:"POST",body:JSON.stringify(body)});
+  show("ck-out",j.data||j.error);
+}
+async function embedWm(){
+  const lid=val("feat-lid")||"LIC-DEMO";
+  const j=await api("/security/watermark/embed",{method:"POST",body:JSON.stringify({license_id:lid,document_id:val("wm-doc")||"doc-1",wm_type:"invisible"})});
+  show("wm-out",j.data||j.error);
+}
+async function loadBlacklist(){const j=await api("/security/blacklist");show("sec-out",j.data||j.error);}
+async function loadAlerts(){const j=await api("/security/alerts");show("sec-out",j.data||j.error);}
+async function loadLegal(){const j=await api("/legal/docs");show("sec-out",j.data||j.error);}
+
+// ---- 仪表盘 ----
+async function loadDashboard(){
+  const j=await api("/dashboard/overview");if(!j.data)return;
+  const d=j.data;
+  const g=document.getElementById("ov-grid");
+  g.innerHTML=[["总License",d.total_licenses,""],["活跃",d.active,"ok"],
+    ["即将到期",d.expiring_soon,"warn"],["已过期",d.expired,"err"],
+    ["已吊销",d.revoked,"err"],["激活数",d.total_activations,""],
+    ["黑名单设备",d.blacklist_devices,"err"],["破解告警",d.crack_alerts,"err"]]
+    .map(x=>`<div class="stat ${x[2]}"><div class="num">${x[1]}</div><div class="lbl">${x[0]}</div></div>`).join("");
+  const pd=document.getElementById("plan-dist");
+  pd.innerHTML=Object.entries(d.plan_distribution).map(([k,v])=>
+    `<div style="margin-bottom:6px">${k}<div class="bar"><i style="width:${Math.min(100,v*10)}%"></i></div><span class="muted"> ${v}</span></div>`).join("");
+  const aj=await api("/dashboard/alerts");
+  const tb=document.getElementById("al-tbody");tb.innerHTML="";
+  (aj.data?.items||[]).slice(0,15).forEach(a=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${a.ts||""}</td><td>${a.type||""}</td><td>${a.target||a.license_id||""}</td><td>${a.detail||a.message||""}</td>`;
+    tb.appendChild(tr);
+  });
+  const sj=await api("/dashboard/settings");show("set-out",sj.data||sj.error);
+}
+function val(id){return document.getElementById(id).value.trim();}
+
+// 初始加载
+loadLicenses();loadDevices();loadDashboard();
+</script>
+</body>
+</html>

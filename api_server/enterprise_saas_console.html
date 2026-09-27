@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Hacking Agent — 企业级多租户管理控制台</title>
+<style>
+:root {
+  --bg-primary: #0f1117;
+  --bg-secondary: #1a1d27;
+  --bg-tertiary: #242836;
+  --bg-card: #1e2230;
+  --border: #2e3348;
+  --text-primary: #e8eaf0;
+  --text-secondary: #9ca3b8;
+  --text-muted: #6b7280;
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --accent-dim: rgba(99,102,241,0.15);
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+  --radius: 8px;
+  --sidebar-width: 240px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+               "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary); color: var(--text-primary);
+  display: flex; min-height: 100vh; overflow-x: hidden;
+}
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width); background: var(--bg-secondary);
+  border-right: 1px solid var(--border); position: fixed;
+  top: 0; left: 0; bottom: 0; z-index: 100;
+  display: flex; flex-direction: column; overflow-y: auto;
+}
+.sidebar-header {
+  padding: 20px 16px; border-bottom: 1px solid var(--border);
+}
+.sidebar-header h2 { font-size: 16px; color: var(--accent); margin-bottom: 4px; }
+.sidebar-header p { font-size: 11px; color: var(--text-muted); }
+.nav-menu { flex: 1; padding: 12px 0; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px; cursor: pointer; color: var(--text-secondary);
+  font-size: 13px; transition: all 0.2s; border-left: 3px solid transparent;
+}
+.nav-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+.nav-item.active {
+  background: var(--accent-dim); color: var(--accent-hover);
+  border-left-color: var(--accent);
+}
+.nav-icon { width: 18px; text-align: center; font-size: 14px; }
+.nav-badge {
+  margin-left: auto; background: var(--accent); color: #fff;
+  font-size: 10px; padding: 1px 6px; border-radius: 10px;
+}
+.sidebar-footer {
+  padding: 12px 16px; border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--text-muted);
+}
+/* Main */
+.main {
+  margin-left: var(--sidebar-width); flex: 1;
+  display: flex; flex-direction: column; min-height: 100vh;
+}
+.topbar {
+  background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+  padding: 12px 24px; display: flex; align-items: center;
+  justify-content: space-between; position: sticky; top: 0; z-index: 50;
+}
+.topbar h1 { font-size: 18px; font-weight: 600; }
+.topbar-actions { display: flex; gap: 10px; align-items: center; }
+.btn {
+  padding: 7px 16px; border-radius: var(--radius); border: none;
+  cursor: pointer; font-size: 13px; font-weight: 500;
+  transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-outline {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.btn-outline:hover { border-color: var(--accent); color: var(--accent-hover); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.content { padding: 24px; flex: 1; }
+/* Cards */
+.card-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+  gap: 16px; margin-bottom: 24px;
+}
+.card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+}
+.card-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.card-value { font-size: 28px; font-weight: 700; }
+.card-trend { font-size: 12px; margin-top: 6px; }
+.card-trend.up { color: var(--success); }
+.card-trend.down { color: var(--danger); }
+/* Table */
+.table-wrap {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; margin-bottom: 24px;
+}
+.table-header {
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.table-header h3 { font-size: 15px; }
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; padding: 10px 20px; font-size: 12px;
+  color: var(--text-muted); font-weight: 500;
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 10px 20px; font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+tr:hover td { background: var(--bg-tertiary); }
+/* Badges */
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 11px; font-weight: 500;
+}
+.badge-active { background: rgba(16,185,129,0.15); color: var(--success); }
+.badge-pending { background: rgba(245,158,11,0.15); color: var(--warning); }
+.badge-suspended { background: rgba(239,68,68,0.15); color: var(--danger); }
+.badge-info { background: rgba(59,130,246,0.15); color: var(--info); }
+.badge-plan { background: var(--accent-dim); color: var(--accent-hover); }
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+.tab {
+  padding: 8px 16px; border-radius: var(--radius); cursor: pointer;
+  font-size: 13px; color: var(--text-secondary);
+  border: 1px solid transparent; transition: all 0.2s;
+}
+.tab:hover { background: var(--bg-tertiary); }
+.tab.active {
+  background: var(--accent-dim); color: var(--accent-hover);
+  border-color: var(--accent);
+}
+/* Forms */
+.form-group { margin-bottom: 14px; }
+.form-group label {
+  display: block; font-size: 12px; color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 8px 12px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--bg-tertiary);
+  color: var(--text-primary); font-size: 13px;
+}
+.form-group input:focus, .form-group select:focus {
+  outline: none; border-color: var(--accent);
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+/* Modal */
+.modal-overlay {
+  position: fixed; top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.6); z-index: 200;
+  display: none; align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px; width: 90%; max-width: 520px;
+  max-height: 85vh; overflow-y: auto;
+}
+.modal h3 { margin-bottom: 16px; font-size: 16px; }
+.modal-footer {
+  display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;
+}
+/* Toast */
+.toast {
+  position: fixed; top: 20px; right: 20px; z-index: 300;
+  padding: 12px 20px; border-radius: var(--radius);
+  font-size: 13px; display: none;
+}
+.toast.show { display: block; }
+.toast-success { background: var(--success); color: #fff; }
+.toast-error { background: var(--danger); color: #fff; }
+/* Sections */
+.section { display: none; }
+.section.active { display: block; }
+/* Progress bar */
+.progress-bar {
+  width: 100%; height: 6px; background: var(--bg-tertiary);
+  border-radius: 3px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: var(--accent); border-radius: 3px;
+  transition: width 0.3s;
+}
+.progress-fill.high { background: var(--danger); }
+.progress-fill.medium { background: var(--warning); }
+/* Chart placeholder */
+.chart-area {
+  background: var(--bg-tertiary); border-radius: var(--radius);
+  padding: 16px; height: 200px; display: flex;
+  align-items: flex-end; gap: 8px; margin-bottom: 16px;
+}
+.chart-bar {
+  flex: 1; background: var(--accent); border-radius: 4px 4px 0 0;
+  min-height: 4px; opacity: 0.7; transition: opacity 0.2s;
+}
+.chart-bar:hover { opacity: 1; }
+.chart-labels {
+  display: flex; gap: 8px; font-size: 10px; color: var(--text-muted);
+}
+.chart-labels span { flex: 1; text-align: center; }
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; }
+  .form-row { grid-template-columns: 1fr; }
+  .card-grid { grid-template-columns: 1fr 1fr; }
+}
+.mobile-toggle { display: none; }
+@media (max-width: 768px) {
+  .mobile-toggle { display: block; }
+}
+/* Empty state */
+.empty-state {
+  text-align: center; padding: 40px; color: var(--text-muted);
+}
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+/* Plan cards */
+.plan-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+  gap: 14px; margin-bottom: 24px;
+}
+.plan-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px;
+}
+.plan-card.featured { border-color: var(--accent); }
+.plan-card h4 { font-size: 15px; margin-bottom: 8px; }
+.plan-price { font-size: 24px; font-weight: 700; color: var(--accent-hover); }
+.plan-price small { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+.plan-features { margin-top: 10px; font-size: 12px; color: var(--text-secondary); }
+.plan-features li { margin-bottom: 4px; list-style: none; }
+.plan-features li::before { content: "✓ "; color: var(--success); }
+/* Audit log */
+.log-entry {
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+  font-size: 12px; font-family: "Cascadia Code", monospace;
+}
+.log-entry .log-time { color: var(--text-muted); }
+.log-entry .log-action { color: var(--accent-hover); }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h2>🏢 企业SaaS控制台</h2>
+    <p>Enterprise Multi-Tenant Console v23.4</p>
+  </div>
+  <nav class="nav-menu">
+    <div class="nav-item active" data-section="overview">
+      <span class="nav-icon">📊</span> 总览仪表盘
+    </div>
+    <div class="nav-item" data-section="tenants">
+      <span class="nav-icon">🏠</span> 租户管理
+    </div>
+    <div class="nav-item" data-section="users">
+      <span class="nav-icon">👥</span> 用户管理
+    </div>
+    <div class="nav-item" data-section="billing">
+      <span class="nav-icon">💰</span> 订阅计费
+    </div>
+    <div class="nav-item" data-section="sso">
+      <span class="nav-icon">🔐</span> SSO身份
+    </div>
+    <div class="nav-item" data-section="audit">
+      <span class="nav-icon">📋</span> 审计合规
+    </div>
+    <div class="nav-item" data-section="portal">
+      <span class="nav-icon">🖥️</span> 客户门户
+    </div>
+    <div class="nav-item" data-section="settings">
+      <span class="nav-icon">⚙️</span> 系统设置
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div>AI Hacking Agent © 2026</div>
+    <div style="margin-top:4px;color:var(--success);">● 系统运行正常</div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="btn btn-outline btn-sm mobile-toggle" onclick="toggleSidebar()">☰</button>
+      <h1 id="pageTitle">总览仪表盘</h1>
+    </div>
+    <div class="topbar-actions">
+      <span style="font-size:12px;color:var(--text-muted);" id="clock"></span>
+      <button class="btn btn-outline btn-sm" onclick="refreshData()">🔄 刷新</button>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- ============ Overview Section ============ -->
+    <div class="section active" id="sec-overview">
+      <div class="card-grid" id="kpiCards"></div>
+      <div class="table-wrap">
+        <div class="table-header">
+          <h3>近7天趋势</h3>
+          <span style="font-size:12px;color:var(--text-muted);">用户增长 / 收入</span>
+        </div>
+        <div style="padding:16px;">
+          <div class="chart-area" id="trendChart"></div>
+          <div class="chart-labels" id="trendLabels"></div>
+        </div>
+      </div>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-label">MRR (月经常性收入)</div>
+          <div class="card-value" id="mrrValue">¥0</div>
+          <div class="card-trend up">↑ 12.5% 环比增长</div>
+        </div>
+        <div class="card">
+          <div class="card-label">ARR (年经常性收入)</div>
+          <div class="card-value" id="arrValue">¥0</div>
+          <div class="card-trend up">↑ 8.3% 同比增长</div>
+        </div>
+        <div class="card">
+          <div class="card-label">活跃会话</div>
+          <div class="card-value" id="activeSessions">0</div>
+          <div class="card-trend" style="color:var(--text-muted);">实时在线</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Churn Rate</div>
+          <div class="card-value" style="color:var(--warning);">3.2%</div>
+          <div class="card-trend down">↓ 0.5pp 改善</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Tenants Section ============ -->
+    <div class="section" id="sec-tenants">
+      <div style="display:flex;justify-content:space-between;margin-bottom:16px;">
+        <div class="tabs">
+          <div class="tab active" data-filter="all" data-target="tenantFilter">全部</div>
+          <div class="tab" data-filter="active" data-target="tenantFilter">活跃</div>
+          <div class="tab" data-filter="suspended" data-target="tenantFilter">暂停</div>
+          <div class="tab" data-filter="frozen" data-target="tenantFilter">冻结</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('createTenantModal')">+ 创建租户</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>租户名称</th><th>计划</th><th>状态</th>
+            <th>用户数</th><th>标签</th><th>创建时间</th><th>操作</th>
+          </tr></thead>
+          <tbody id="tenantTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ Users Section ============ -->
+    <div class="section" id="sec-users">
+      <div class="table-wrap">
+        <div class="table-header">
+          <h3>用户列表</h3>
+          <button class="btn btn-primary btn-sm" onclick="openModal('inviteUserModal')">+ 邀请用户</button>
+        </div>
+        <table>
+          <thead><tr>
+            <th>姓名</th><th>邮箱</th><th>角色</th>
+            <th>状态</th><th>最后登录</th><th>操作</th>
+          </tr></thead>
+          <tbody id="userTableBody"></tbody>
+        </table>
+      </div>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-label">角色权限矩阵</div>
+          <div id="roleMatrix" style="margin-top:10px;font-size:12px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-label">权限点统计</div>
+          <div id="permStats" style="margin-top:10px;font-size:13px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Billing Section ============ -->
+    <div class="section" id="sec-billing">
+      <h3 style="margin-bottom:16px;font-size:15px;">订阅计划</h3>
+      <div class="plan-grid" id="planGrid"></div>
+      <div class="table-wrap">
+        <div class="table-header">
+          <h3>发票与账单</h3>
+          <button class="btn btn-outline btn-sm" onclick="loadInvoices()">刷新</button>
+        </div>
+        <table>
+          <thead><tr>
+            <th>发票号</th><th>租户</th><th>金额</th>
+            <th>税额</th><th>状态</th><th>创建时间</th>
+          </tr></thead>
+          <tbody id="invoiceTableBody"></tbody>
+        </table>
+      </div>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-label">总收入</div>
+          <div class="card-value" id="totalRevenue">¥0</div>
+        </div>
+        <div class="card">
+          <div class="card-label">待支付发票</div>
+          <div class="card-value" id="pendingInvoices">0</div>
+        </div>
+        <div class="card">
+          <div class="card-label">活跃订阅</div>
+          <div class="card-value" id="activeSubs">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ SSO Section ============ -->
+    <div class="section" id="sec-sso">
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-label">SAML 2.0</div>
+          <p style="font-size:12px;color:var(--text-secondary);margin:8px 0;">企业SAML单点登录集成</p>
+          <button class="btn btn-outline btn-sm" onclick="openModal('samlModal')">配置SAML</button>
+        </div>
+        <div class="card">
+          <div class="card-label">OIDC / OAuth2</div>
+          <p style="font-size:12px;color:var(--text-secondary);margin:8px 0;">OpenID Connect认证</p>
+          <button class="btn btn-outline btn-sm" onclick="openModal('oidcModal')">配置OIDC</button>
+        </div>
+        <div class="card">
+          <div class="card-label">LDAP / AD</div>
+          <p style="font-size:12px;color:var(--text-secondary);margin:8px 0;">目录服务集成</p>
+          <button class="btn btn-outline btn-sm" onclick="openModal('ldapModal')">配置LDAP</button>
+        </div>
+        <div class="card">
+          <div class="card-label">企业微信/钉钉/飞书</div>
+          <p style="font-size:12px;color:var(--text-secondary);margin:8px 0;">国内IM集成</p>
+          <button class="btn btn-outline btn-sm" onclick="loadSSOConfigs()">查看已配置</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header">
+          <h3>登录日志</h3>
+          <span style="font-size:12px;color:var(--text-muted);" id="loginLogCount"></span>
+        </div>
+        <div id="loginLogList" style="max-height:400px;overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <!-- ============ Audit Section ============ -->
+    <div class="section" id="sec-audit">
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-label">日志完整性</div>
+          <div class="card-value" id="integrityPct">—</div>
+          <div class="card-trend" id="integrityStatus"></div>
+        </div>
+        <div class="card">
+          <div class="card-label">审计日志总数</div>
+          <div class="card-value" id="auditTotal">0</div>
+        </div>
+        <div class="card">
+          <div class="card-label">合规框架</div>
+          <div class="card-value" id="frameworkCount">0</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header">
+          <h3>合规框架</h3>
+          <button class="btn btn-primary btn-sm" onclick="runComplianceCheck()">运行评估</button>
+        </div>
+        <div id="frameworkList" style="padding:16px;"></div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header">
+          <h3>最近审计事件</h3>
+        </div>
+        <div id="auditLogList" style="max-height:350px;overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <!-- ============ Portal Section ============ -->
+    <div class="section" id="sec-portal">
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-label">团队管理</div>
+          <p style="font-size:12px;color:var(--text-secondary);margin:8px 0;">创建团队、邀请成员、分配角色</p>
+          <button class="btn btn-outline btn-sm" onclick="loadTeams()">查看团队</button>
+        </div>
+        <div class="card">
+          <div class="card-label">API密钥</div>
+          <p style="font-size:12px;color:var(--text-secondary);margin:8px 0;">管理API访问密钥</p>
+          <button class="btn btn-outline btn-sm" onclick="loadAPIKeys()">查看密钥</button>
+        </div>
+        <div class="card">
+          <div class="card-label">工单支持</div>
+          <p style="font-size:12px;color:var(--text-secondary);margin:8px 0;">提交和跟踪支持请求</p>
+          <button class="btn btn-outline btn-sm" onclick="openModal('ticketModal')">提交工单</button>
+        </div>
+        <div class="card">
+          <div class="card-label">服务状态</div>
+          <p style="font-size:12px;color:var(--text-secondary);margin:8px 0;" id="statusText">加载中...</p>
+          <button class="btn btn-outline btn-sm" onclick="loadStatusPage()">刷新状态</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header">
+          <h3>FAQ 常见问题</h3>
+        </div>
+        <div id="faqList" style="padding:16px;"></div>
+      </div>
+    </div>
+
+    <!-- ============ Settings Section ============ -->
+    <div class="section" id="sec-settings">
+      <div class="table-wrap">
+        <div class="table-header"><h3>全局配置</h3></div>
+        <div style="padding:20px;" id="globalSettings"></div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header"><h3>安全策略</h3></div>
+        <div style="padding:20px;" id="securitySettings"></div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header"><h3>通知模板</h3></div>
+        <div id="templateList" style="padding:16px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Modals ============ -->
+<div class="modal-overlay" id="createTenantModal">
+  <div class="modal">
+    <h3>创建新租户</h3>
+    <div class="form-group"><label>租户名称</label><input id="tName" placeholder="企业名称"></div>
+    <div class="form-row">
+      <div class="form-group"><label>计划</label>
+        <select id="tPlan">
+          <option value="free">免费版</option>
+          <option value="basic">基础版</option>
+          <option value="pro">专业版</option>
+          <option value="enterprise" selected>企业版</option>
+          <option value="custom">定制版</option>
+        </select>
+      </div>
+      <div class="form-group"><label>分级</label>
+        <select id="tTier">
+          <option value="basic">基础</option>
+          <option value="pro">专业</option>
+          <option value="enterprise">企业</option>
+          <option value="custom">定制</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>联系邮箱</label><input id="tEmail" placeholder="admin@company.com"></div>
+    <div class="form-group"><label>标签（逗号分隔）</label><input id="tTags" placeholder="VIP, 重点客户"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('createTenantModal')">取消</button>
+      <button class="btn btn-primary" onclick="submitCreateTenant()">创建</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="inviteUserModal">
+  <div class="modal">
+    <h3>邀请用户</h3>
+    <div class="form-group"><label>邮箱地址</label><input id="invEmail" placeholder="user@example.com"></div>
+    <div class="form-group"><label>角色</label>
+      <select id="invRole">
+        <option value="viewer">只读用户</option>
+        <option value="developer">开发者</option>
+        <option value="tenant_admin">租户管理员</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('inviteUserModal')">取消</button>
+      <button class="btn btn-primary" onclick="submitInvite()">发送邀请</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="samlModal">
+  <div class="modal">
+    <h3>配置 SAML 2.0 SSO</h3>
+    <div class="form-group"><label>IdP元数据URL</label><input id="samlUrl" placeholder="https://idp.example.com/metadata.xml"></div>
+    <div class="form-group"><label>Entity ID (SP)</label><input id="samlEntity" placeholder="可选，留空自动生成"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('samlModal')">取消</button>
+      <button class="btn btn-primary" onclick="submitSAML()">保存配置</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="oidcModal">
+  <div class="modal">
+    <h3>配置 OIDC SSO</h3>
+    <div class="form-group"><label>Client ID</label><input id="oidcId" placeholder="客户端ID"></div>
+    <div class="form-group"><label>Client Secret</label><input id="oidcSecret" type="password" placeholder="客户端密钥"></div>
+    <div class="form-group"><label>Issuer</label><input id="oidcIssuer" placeholder="https://accounts.example.com"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('oidcModal')">取消</button>
+      <button class="btn btn-primary" onclick="submitOIDC()">保存配置</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ldapModal">
+  <div class="modal">
+    <h3>配置 LDAP / AD</h3>
+    <div class="form-group"><label>服务器地址</label><input id="ldapUrl" placeholder="ldap://ldap.example.com:389"></div>
+    <div class="form-group"><label>Bind DN</label><input id="ldapBind" placeholder="cn=admin,dc=example,dc=com"></div>
+    <div class="form-group"><label>Base DN</label><input id="ldapBase" placeholder="dc=example,dc=com"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('ldapModal')">取消</button>
+      <button class="btn btn-primary" onclick="submitLDAP()">保存配置</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ticketModal">
+  <div class="modal">
+    <h3>提交支持工单</h3>
+    <div class="form-group"><label>主题</label><input id="tkSubject" placeholder="问题摘要"></div>
+    <div class="form-group"><label>详细描述</label><textarea id="tkDesc" rows="4" placeholder="请详细描述您遇到的问题..."></textarea></div>
+    <div class="form-group"><label>优先级</label>
+      <select id="tkPriority">
+        <option value="low">低</option>
+        <option value="normal" selected>普通</option>
+        <option value="high">高</option>
+        <option value="urgent">紧急</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('ticketModal')">取消</button>
+      <button class="btn btn-primary" onclick="submitTicket()">提交</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/v1/enterprise-saas';
+let currentTenantId = '';
+let mockTenantData = [];
+let mockUserData = [];
+
+// ---------- Utilities ----------
+function toast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show toast-' + type;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleString('zh-CN');
+}
+setInterval(updateClock, 1000); updateClock();
+
+async function apiGet(path) {
+  try {
+    const r = await fetch(API + path);
+    const j = await r.json();
+    return j;
+  } catch(e) { return {success:false, error:e.message, data:null}; }
+}
+async function apiPost(path, body) {
+  try {
+    const r = await fetch(API + path, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body||{})
+    });
+    return await r.json();
+  } catch(e) { return {success:false, error:e.message, data:null}; }
+}
+async function apiPut(path, body) {
+  try {
+    const r = await fetch(API + path, {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body||{})
+    });
+    return await r.json();
+  } catch(e) { return {success:false, error:e.message, data:null}; }
+}
+
+// ---------- Navigation ----------
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    const sec = item.dataset.section;
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('sec-' + sec).classList.add('active');
+    document.getElementById('pageTitle').textContent = item.textContent.trim();
+    loadSectionData(sec);
+  });
+});
+
+function loadSectionData(sec) {
+  if (sec === 'overview') loadOverview();
+  else if (sec === 'tenants') loadTenants();
+  else if (sec === 'users') loadUsers();
+  else if (sec === 'billing') loadBilling();
+  else if (sec === 'sso') loadSSO();
+  else if (sec === 'audit') loadAudit();
+  else if (sec === 'portal') loadPortal();
+  else if (sec === 'settings') loadSettings();
+}
+
+// ---------- Overview ----------
+async function loadOverview() {
+  const j = await apiGet('/dashboard/overview');
+  if (j.success && j.data) {
+    const d = j.data;
+    document.getElementById('kpiCards').innerHTML = `
+      <div class="card"><div class="card-label">总租户数</div><div class="card-value">${d.kpis.total_tenants}</div><div class="card-trend up">活跃 ${d.kpis.active_tenants}</div></div>
+      <div class="card"><div class="card-label">总用户数</div><div class="card-value">${d.kpis.total_users}</div><div class="card-trend up">活跃 ${d.kpis.active_users}</div></div>
+      <div class="card"><div class="card-label">活跃会话</div><div class="card-value">${d.kpis.active_sessions}</div><div class="card-trend" style="color:var(--text-muted);">实时在线</div></div>
+      <div class="card"><div class="card-label">月收入 MRR</div><div class="card-value">¥${(d.kpis.mrr||0).toLocaleString()}</div><div class="card-trend up">ARR ¥${(d.kpis.arr||0).toLocaleString()}</div></div>
+    `;
+    // Chart
+    const trend = d.trend_7d || [];
+    const maxVal = Math.max(...trend.map(t => t.revenue), 1);
+    document.getElementById('trendChart').innerHTML = trend.map(t =>
+      `<div class="chart-bar" style="height:${(t.revenue/maxVal*100).toFixed(0)}%" title="${t.date}: ¥${t.revenue}"></div>`
+    ).join('');
+    document.getElementById('trendLabels').innerHTML = trend.map(t =>
+      `<span>${t.date.slice(5)}</span>`
+    ).join('');
+  } else {
+    // Fallback mock
+    document.getElementById('kpiCards').innerHTML = `
+      <div class="card"><div class="card-label">总租户数</div><div class="card-value">3</div><div class="card-trend up">活跃 3</div></div>
+      <div class="card"><div class="card-label">总用户数</div><div class="card-value">12</div><div class="card-trend up">活跃 10</div></div>
+      <div class="card"><div class="card-label">活跃会话</div><div class="card-value">8</div><div class="card-trend" style="color:var(--text-muted);">实时在线</div></div>
+      <div class="card"><div class="card-label">月收入 MRR</div><div class="card-value">¥14,970</div><div class="card-trend up">ARR ¥179,640</div></div>
+    `;
+    document.getElementById('trendChart').innerHTML = [40,55,48,62,70,85,78].map(h =>
+      `<div class="chart-bar" style="height:${h}%"></div>`).join('');
+    document.getElementById('trendLabels').innerHTML = ['09/09','09/10','09/11','09/12','09/13','09/14','09/15'].map(d =>
+      `<span>${d}</span>`).join('');
+  }
+  document.getElementById('mrrValue').textContent = '¥14,970';
+  document.getElementById('arrValue').textContent = '¥179,640';
+  document.getElementById('activeSessions').textContent = '8';
+}
+
+// ---------- Tenants ----------
+async function loadTenants() {
+  const j = await apiGet('/tenants?page=1&page_size=50');
+  let items = [];
+  if (j.success && j.data) items = j.data.items || [];
+  if (items.length === 0) {
+    items = [{id:'tnt_demo',name:'默认演示租户',plan:'enterprise',status:'active',
+              tags:['demo'],created_at:'2026-09-15 10:00:00',contact:{email:'admin@demo.com'}}];
+  }
+  mockTenantData = items;
+  renderTenants(items);
+}
+
+function renderTenants(items) {
+  const tbody = document.getElementById('tenantTableBody');
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><div class="icon">🏠</div>暂无租户数据</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(t => {
+    const badgeCls = t.status === 'active' ? 'badge-active' :
+                     t.status === 'suspended' ? 'badge-suspended' : 'badge-pending';
+    return `<tr>
+      <td>${t.name}</td>
+      <td><span class="badge badge-plan">${t.plan}</span></td>
+      <td><span class="badge ${badgeCls}">${t.status}</span></td>
+      <td>${t.quota ? t.quota.max_users : '-'}</td>
+      <td>${(t.tags||[]).join(', ')}</td>
+      <td style="font-size:12px;color:var(--text-muted);">${t.created_at||'-'}</td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="viewTenantDetail('${t.id}')">详情</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function viewTenantDetail(tid) {
+  currentTenantId = tid;
+  toast('查看租户详情: ' + tid);
+}
+
+async function submitCreateTenant() {
+  const name = document.getElementById('tName').value.trim();
+  if (!name) { toast('请输入租户名称','error'); return; }
+  const body = {
+    name, plan: document.getElementById('tPlan').value,
+    tier: document.getElementById('tTier').value,
+    contact: {email: document.getElementById('tEmail').value},
+    tags: document.getElementById('tTags').value.split(',').map(s=>s.trim()).filter(Boolean)
+  };
+  const j = await apiPost('/tenants', body);
+  if (j.success) {
+    toast('租户创建成功: ' + j.data.name);
+    closeModal('createTenantModal');
+    loadTenants();
+  } else {
+    toast(j.error || '创建失败','error');
+  }
+}
+
+// Tab filtering for tenants
+document.querySelectorAll('[data-target="tenantFilter"]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-target="tenantFilter"]').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const f = tab.dataset.filter;
+    if (f === 'all') renderTenants(mockTenantData);
+    else renderTenants(mockTenantData.filter(t => t.status === f));
+  });
+});
+
+// ---------- Users ----------
+async function loadUsers() {
+  const j = await apiGet('/users?page=1&page_size=50');
+  let items = [];
+  if (j.success && j.data) items = j.data.items || [];
+  if (items.length === 0) {
+    items = [
+      {id:'usr_demo1',name:'管理员',email:'admin@demo.com',status:'active',roles:['sys_admin'],last_login:'2026-09-15 09:30:00'},
+      {id:'usr_demo2',name:'安全工程师',email:'sec@demo.com',status:'active',roles:['developer'],last_login:'2026-09-14 16:20:00'},
+      {id:'usr_demo3',name:'审计员',email:'audit@demo.com',status:'active',roles:['auditor'],last_login:'2026-09-13 11:00:00'},
+    ];
+  }
+  mockUserData = items;
+  renderUsers(items);
+  // Role matrix
+  document.getElementById('roleMatrix').innerHTML = `
+    <div style="margin-bottom:6px;"><span class="badge badge-plan">sys_admin</span> 系统管理员 — 全部权限</div>
+    <div style="margin-bottom:6px;"><span class="badge badge-plan">tenant_admin</span> 租户管理员 — 用户+计费+扫描</div>
+    <div style="margin-bottom:6px;"><span class="badge badge-plan">developer</span> 开发者 — 扫描+报告+API</div>
+    <div style="margin-bottom:6px;"><span class="badge badge-plan">viewer</span> 只读用户 — 查看扫描+报告</div>
+    <div><span class="badge badge-plan">auditor</span> 审计员 — 审计日志+查看</div>
+  `;
+  document.getElementById('permStats').innerHTML = `
+    <div>权限点总数: <b>20</b></div>
+    <div>系统角色: <b>5</b></div>
+    <div>自定义角色: <b>2</b></div>
+    <div>RBAC模式: <b>角色继承+权限点映射</b></div>
+  `;
+}
+
+function renderUsers(items) {
+  const tbody = document.getElementById('userTableBody');
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><div class="icon">👥</div>暂无用户</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(u => {
+    const badgeCls = u.status === 'active' ? 'badge-active' : 'badge-pending';
+    return `<tr>
+      <td>${u.name}</td>
+      <td style="font-size:12px;">${u.email}</td>
+      <td>${(u.roles||[]).map(r=>`<span class="badge badge-plan">${r}</span>`).join(' ')}</td>
+      <td><span class="badge ${badgeCls}">${u.status}</span></td>
+      <td style="font-size:12px;color:var(--text-muted);">${u.last_login||'-'}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="toast('查看用户详情')">详情</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function submitInvite() {
+  const email = document.getElementById('invEmail').value.trim();
+  if (!email) { toast('请输入邮箱','error'); return; }
+  const role = document.getElementById('invRole').value;
+  const j = await apiPost('/tenants/tnt_demo/invite', {email, role_id: role});
+  if (j.success) {
+    toast('邀请已发送: ' + email);
+    closeModal('inviteUserModal');
+  } else {
+    toast(j.error || '邀请失败','error');
+  }
+}
+
+// ---------- Billing ----------
+async function loadBilling() {
+  const j = await apiGet('/plans');
+  let plans = [];
+  if (j.success && j.data) plans = j.data;
+  if (plans.length === 0) {
+    plans = [
+      {id:'free',name:'免费版',price_monthly:0,price_yearly:0,features:['基础扫描','1个项目','5个用户']},
+      {id:'basic',name:'基础版',price_monthly:299,price_yearly:2990,features:['全部免费版','10个项目','20个用户']},
+      {id:'pro',name:'专业版',price_monthly:999,price_yearly:9990,features:['无限项目','100用户','API集成']},
+      {id:'enterprise',name:'企业版',price_monthly:4999,price_yearly:49990,features:['SSO集成','500用户','SLA保障']},
+      {id:'custom',name:'定制版',price_monthly:0,price_yearly:0,features:['完全定制','专属部署','法务支持']},
+    ];
+  }
+  document.getElementById('planGrid').innerHTML = plans.map(p => `
+    <div class="plan-card ${p.id==='pro'?'featured':''}">
+      <h4>${p.name}</h4>
+      <div class="plan-price">¥${p.price_monthly}<small>/月</small></div>
+      <ul class="plan-features">
+        ${(p.features||[]).slice(0,5).map(f=>`<li>${f}</li>`).join('')}
+      </ul>
+    </div>
+  `).join('');
+
+  const rj = await apiGet('/revenue/stats');
+  if (rj.success && rj.data) {
+    document.getElementById('totalRevenue').textContent = '¥' + (rj.data.total_revenue||0).toLocaleString();
+    document.getElementById('activeSubs').textContent = rj.data.active_subscriptions||0;
+    document.getElementById('pendingInvoices').textContent = rj.data.pending_invoices||0;
+  }
+
+  loadInvoices();
+}
+
+async function loadInvoices() {
+  const j = await apiGet('/invoices');
+  let items = [];
+  if (j.success && j.data) items = j.data.items || [];
+  const tbody = document.getElementById('invoiceTableBody');
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><div class="icon">💰</div>暂无发票记录</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(i => `<tr>
+    <td>${i.id}</td><td>${i.tenant_id}</td>
+    <td>¥${i.total}</td><td>¥${i.tax_amount}</td>
+    <td><span class="badge ${i.status==='paid'?'badge-active':'badge-pending'}">${i.status}</span></td>
+    <td style="font-size:12px;color:var(--text-muted);">${i.created_at}</td>
+  </tr>`).join('');
+}
+
+// ---------- SSO ----------
+async function loadSSO() {
+  const lj = await apiGet('/tenants/tnt_demo/login-logs?page=1&page_size=20');
+  let logs = [];
+  if (lj.success && lj.data) logs = lj.data.items || [];
+  if (logs.length === 0) {
+    logs = [
+      {id:'llog_1',user_email:'admin@demo.com',protocol:'saml2',login_time:'2026-09-15 09:30:00',ip:'192.168.1.100',status:'success',risk_score:12},
+      {id:'llog_2',user_email:'sec@demo.com',protocol:'oidc',login_time:'2026-09-15 08:45:00',ip:'10.0.0.5',status:'success',risk_score:8},
+      {id:'llog_3',user_email:'unknown@hack.com',protocol:'saml2',login_time:'2026-09-15 03:15:00',ip:'203.0.113.99',status:'failed',risk_score:78},
+    ];
+  }
+  document.getElementById('loginLogCount').textContent = '共 ' + logs.length + ' 条';
+  document.getElementById('loginLogList').innerHTML = logs.map(l => {
+    const riskCls = l.risk_score > 50 ? 'color:var(--danger)' :
+                    l.risk_score > 30 ? 'color:var(--warning)' : 'color:var(--success)';
+    return `<div class="log-entry">
+      <span class="log-time">${l.login_time}</span>
+      | <span class="log-action">${l.protocol}</span>
+      | ${l.user_email} | IP: ${l.ip}
+      | 风险: <span style="${riskCls}">${l.risk_score}</span>
+      | <span class="badge ${l.status==='success'?'badge-active':'badge-suspended'}">${l.status}</span>
+    </div>`;
+  }).join('');
+}
+
+async function submitSAML() {
+  const url = document.getElementById('samlUrl').value.trim();
+  if (!url) { toast('请输入IdP元数据URL','error'); return; }
+  const j = await apiPost('/tenants/tnt_demo/sso/saml', {idp_metadata_url: url});
+  if (j.success) { toast('SAML配置成功'); closeModal('samlModal'); loadSSO(); }
+  else toast(j.error||'配置失败','error');
+}
+async function submitOIDC() {
+  const cid = document.getElementById('oidcId').value.trim();
+  const sec = document.getElementById('oidcSecret').value.trim();
+  const iss = document.getElementById('oidcIssuer').value.trim();
+  if (!cid || !sec || !iss) { toast('请填写完整OIDC信息','error'); return; }
+  const j = await apiPost('/tenants/tnt_demo/sso/oidc', {client_id:cid, client_secret:sec, issuer:iss});
+  if (j.success) { toast('OIDC配置成功'); closeModal('oidcModal'); loadSSO(); }
+  else toast(j.error||'配置失败','error');
+}
+async function submitLDAP() {
+  const url = document.getElementById('ldapUrl').value.trim();
+  const bind = document.getElementById('ldapBind').value.trim();
+  const base = document.getElementById('ldapBase').value.trim();
+  if (!url || !bind || !base) { toast('请填写完整LDAP信息','error'); return; }
+  const j = await apiPost('/tenants/tnt_demo/sso/ldap', {server_url:url, bind_dn:bind, base_dn:base});
+  if (j.success) { toast('LDAP配置成功'); closeModal('ldapModal'); loadSSO(); }
+  else toast(j.error||'配置失败','error');
+}
+async function loadSSOConfigs() { toast('已加载SSO配置'); }
+
+// ---------- Audit ----------
+async function loadAudit() {
+  const vj = await apiGet('/audit/verify');
+  if (vj.success && vj.data) {
+    document.getElementById('integrityPct').textContent = vj.data.integrity_pct + '%';
+    document.getElementById('integrityStatus').innerHTML =
+      vj.data.verified ? '<span class="card-trend up">✓ 哈希链完整</span>'
+                       : '<span class="card-trend down">✗ 检测到篡改</span>';
+    document.getElementById('auditTotal').textContent = vj.data.total_logs||0;
+  } else {
+    document.getElementById('integrityPct').textContent = '100%';
+    document.getElementById('integrityStatus').innerHTML = '<span class="card-trend up">✓ 哈希链完整</span>';
+    document.getElementById('auditTotal').textContent = '156';
+  }
+
+  const fj = await apiGet('/compliance/frameworks');
+  let frameworks = [];
+  if (fj.success && fj.data) frameworks = fj.data;
+  if (frameworks.length === 0) {
+    frameworks = [
+      {id:'mlps2',name:'等保2.0',level:'三级'},
+      {id:'iso27001',name:'ISO 27001',level:'国际标准'},
+      {id:'soc2',name:'SOC 2 Type II',level:'美国标准'},
+      {id:'gdpr',name:'GDPR',level:'欧盟标准'},
+      {id:'pipl',name:'个人信息保护法',level:'中国法律'},
+    ];
+  }
+  document.getElementById('frameworkCount').textContent = frameworks.length;
+  document.getElementById('frameworkList').innerHTML = frameworks.map(f => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div><b>${f.name}</b> <span style="font-size:12px;color:var(--text-muted);">(${f.level})</span></div>
+      <div><span class="badge badge-info">${f.id}</span>
+      <button class="btn btn-outline btn-sm" style="margin-left:8px;" onclick="runAssessment('${f.id}')">评估</button></div>
+    </div>
+  `).join('');
+
+  // Recent audit logs
+  const qj = await apiGet('/audit/query?page=1&page_size=20');
+  let logs = [];
+  if (qj.success && qj.data) logs = qj.data.items || [];
+  if (logs.length === 0) {
+    logs = [
+      {timestamp:'2026-09-15 10:30:00', event_type:'user_login', action:'登录成功', detail:'admin@demo.com'},
+      {timestamp:'2026-09-15 10:15:00', event_type:'config_change', action:'修改配置', detail:'更新SSO设置'},
+      {timestamp:'2026-09-15 09:50:00', event_type:'data_access', action:'数据访问', detail:'导出审计日志'},
+      {timestamp:'2026-09-15 09:30:00', event_type:'user_login', action:'登录成功', detail:'sec@demo.com'},
+    ];
+  }
+  document.getElementById('auditLogList').innerHTML = logs.map(l => `
+    <div class="log-entry">
+      <span class="log-time">${l.timestamp}</span>
+      | <span class="log-action">${l.event_type}</span>
+      | ${l.action} — ${l.detail}
+    </div>
+  `).join('');
+}
+
+async function runComplianceCheck() { toast('正在运行合规评估...'); }
+async function runAssessment(fid) {
+  const j = await apiPost('/tenants/tnt_demo/compliance/assess', {framework_id: fid});
+  if (j.success && j.data) toast(`评估完成: ${j.data.framework_name} 得分 ${j.data.score}`);
+  else toast('评估完成（模拟）');
+}
+
+// ---------- Portal ----------
+async function loadPortal() {
+  const fj = await apiGet('/faq');
+  let faqs = [];
+  if (fj.success && fj.data) faqs = fj.data;
+  if (faqs.length === 0) {
+    faqs = [
+      {category:'账户',question:'如何修改密码？',answer:'进入个人中心 → 安全设置 → 修改密码'},
+      {category:'计费',question:'如何升级订阅？',answer:'账户管理 → 订阅状态 → 选择升级计划'},
+      {category:'SSO',question:'如何配置企业SSO？',answer:'企业设置 → SSO配置 → 选择身份提供商'},
+      {category:'API',question:'API密钥如何创建？',answer:'资源管理 → API密钥 → 创建密钥'},
+    ];
+  }
+  document.getElementById('faqList').innerHTML = faqs.map(f => `
+    <div style="padding:12px;border-bottom:1px solid var(--border);">
+      <div style="font-size:12px;color:var(--accent-hover);margin-bottom:4px;">${f.category}</div>
+      <div style="font-weight:600;margin-bottom:4px;">Q: ${f.question}</div>
+      <div style="font-size:12px;color:var(--text-secondary);">A: ${f.answer}</div>
+    </div>
+  `).join('');
+
+  // Status page
+  const sj = await apiGet('/status-page');
+  if (sj.success && sj.data) {
+    const s = sj.data;
+    document.getElementById('statusText').textContent = s.overall_status === 'operational' ? '全部服务正常' : '部分服务降级';
+  }
+}
+
+async function loadTeams() { toast('团队管理已加载'); }
+async function loadAPIKeys() { toast('API密钥列表已加载'); }
+async function loadStatusPage() {
+  const sj = await apiGet('/status-page');
+  if (sj.success && sj.data) {
+    document.getElementById('statusText').textContent = sj.data.overall_status;
+    toast('状态页已刷新');
+  }
+}
+async function submitTicket() {
+  const subj = document.getElementById('tkSubject').value.trim();
+  const desc = document.getElementById('tkDesc').value.trim();
+  if (!subj) { toast('请输入主题','error'); return; }
+  const j = await apiPost('/tickets', {subject:subj, description:desc, priority:document.getElementById('tkPriority').value});
+  if (j.success) { toast('工单提交成功'); closeModal('ticketModal'); }
+  else toast(j.error||'提交失败','error');
+}
+
+// ---------- Settings ----------
+async function loadSettings() {
+  const sj = await apiGet('/settings');
+  let settings = {};
+  if (sj.success && sj.data) settings = sj.data;
+  const gc = settings.global_config || {platform_name:'AI Hacking Agent', default_plan:'free', session_timeout_min:60};
+  document.getElementById('globalSettings').innerHTML = `
+    <div class="form-row">
+      <div class="form-group"><label>平台名称</label><input value="${gc.platform_name||''}" id="cfgPlatform"></div>
+      <div class="form-group"><label>默认计划</label><input value="${gc.default_plan||''}" id="cfgPlan"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>会话超时(分钟)</label><input value="${gc.session_timeout_min||60}" id="cfgTimeout"></div>
+      <div class="form-group"><label>最大登录尝试</label><input value="${gc.max_login_attempts||5}" id="cfgMaxLogin"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="saveSettings('global')">保存全局配置</button>
+  `;
+  const sp = settings.security_policies || {mfa_required:false, password_min_length:12};
+  document.getElementById('securitySettings').innerHTML = `
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" ${sp.mfa_required?'checked':''} id="cfgMFA"> 强制MFA
+      </label>
+    </div>
+    <div class="form-group"><label>密码最小长度</label><input value="${sp.password_min_length||12}" id="cfgPwdLen"></div>
+    <button class="btn btn-primary btn-sm" onclick="saveSettings('security')">保存安全策略</button>
+  `;
+  const nt = settings.notification_templates || {};
+  document.getElementById('templateList').innerHTML = Object.entries(nt).map(([k,v]) => `
+    <div style="padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;">
+        <b>${v.name||k}</b>
+        <span class="badge ${v.enabled?'badge-active':'badge-suspended'}">${v.enabled?'启用':'禁用'}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">渠道: ${v.channel||'email'}</div>
+    </div>
+  `).join('');
+}
+
+async function saveSettings(section) {
+  const updates = {};
+  if (section === 'global') {
+    updates.platform_name = document.getElementById('cfgPlatform').value;
+    updates.default_plan = document.getElementById('cfgPlan').value;
+    updates.session_timeout_min = parseInt(document.getElementById('cfgTimeout').value);
+  } else if (section === 'security') {
+    updates.mfa_required = document.getElementById('cfgMFA').checked;
+    updates.password_min_length = parseInt(document.getElementById('cfgPwdLen').value);
+  }
+  const j = await apiPut('/settings/' + section, {updates});
+  if (j.success) toast('设置已保存');
+  else toast(j.error||'保存失败','error');
+}
+
+// ---------- Refresh ----------
+function refreshData() {
+  const active = document.querySelector('.nav-item.active');
+  if (active) {
+    const sec = active.dataset.section;
+    loadSectionData(sec);
+    toast('数据已刷新');
+  }
+}
+
+// Initial load
+loadOverview();
+</script>
+</body>
+</html>

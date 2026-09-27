@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>SRC 挖洞辅助工作台</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --border:#30363d; --fg:#e6edf3;
+  --muted:#8b949e; --accent:#58a6ff; --ok:#3fb950; --warn:#d29922;
+  --bad:#f85149; --critical:#f85149; --high:#ff7a45;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:"Microsoft YaHei","Segoe UI",Arial,sans-serif;font-size:13px}
+header{padding:14px 22px;background:linear-gradient(90deg,#da363333,#da363300);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+header h1{font-size:18px;margin:0}
+header .sub{color:var(--muted);font-size:12px}
+.tabs{display:flex;gap:4px;padding:0 22px;background:var(--panel);
+  border-bottom:1px solid var(--border);flex-wrap:wrap}
+.tab{padding:10px 16px;cursor:pointer;border:none;background:transparent;
+  color:var(--muted);font-size:13px;border-bottom:2px solid transparent}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover{color:var(--fg)}
+main{padding:18px 22px;max-width:1500px;margin:0 auto}
+.panel{background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;padding:14px;margin-bottom:14px}
+.panel h2{margin:0 0 10px;font-size:15px;color:var(--accent)}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+input,select,textarea{background:#0d1117;border:1px solid var(--border);
+  color:var(--fg);padding:7px 10px;border-radius:4px;font-size:13px;
+  min-width:160px}
+textarea{width:100%;min-height:80px;font-family:Consolas,monospace}
+button{background:#238636;color:#fff;border:none;padding:7px 14px;
+  border-radius:4px;cursor:pointer;font-size:13px}
+button:hover{background:#2ea043}
+button.sec{background:#30363d}
+button.sec:hover{background:#444c56}
+button.danger{background:#da3633}
+button.danger:hover{background:#f85149}
+pre{background:#0d1117;border:1px solid var(--border);padding:10px;
+  border-radius:4px;overflow:auto;max-height:420px;
+  font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;
+  font-size:11px;margin-right:4px}
+.b-critical{background:#f8514922;color:var(--critical)}
+.b-high{background:#ff7a4522;color:var(--high)}
+.b-medium{background:#d2992222;color:var(--warn)}
+.b-low{background:#3fb95022;color:var(--ok)}
+.b-info{background:#58a6ff22;color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{border:1px solid var(--border);padding:6px 8px;text-align:left}
+th{background:#21262d}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.stat-card{background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;padding:16px;text-align:center}
+.stat-card .num{font-size:28px;font-weight:bold;color:var(--accent)}
+.stat-card .label{color:var(--muted);font-size:12px;margin-top:4px}
+.hidden{display:none}
+.kv{color:var(--muted)}
+.chart-box{height:240px}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.dot-running{background:var(--warn);animation:pulse 1.5s infinite}
+.dot-done{background:var(--ok)}
+.dot-failed{background:var(--bad)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+</style>
+</head>
+<body>
+<header>
+  <h1>SRC 挖洞辅助工作台</h1>
+  <span class="sub">方向5 · 资产发现 → 漏洞扫描 → 报告生成 → 项目跟踪</span>
+  <span style="flex:1"></span>
+  <span class="kv" id="tool-status">工具检测中...</span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-tab="t-pipeline">一键流水线</button>
+  <button class="tab" data-tab="t-recon">资产侦察</button>
+  <button class="tab" data-tab="t-port">端口扫描</button>
+  <button class="tab" data-tab="t-vuln">漏洞扫描</button>
+  <button class="tab" data-tab="t-report">SRC报告</button>
+  <button class="tab" data-tab="t-projects">项目管理</button>
+  <button class="tab" data-tab="t-stats">统计面板</button>
+</div>
+
+<main>
+
+<!-- ==================== 一键流水线 ==================== -->
+<section id="t-pipeline">
+  <div class="panel">
+    <h2>完整 SRC 挖洞流水线（一键执行）</h2>
+    <div class="row">
+      <input id="pl-domain" placeholder="输入目标主域名，如 example.com" value="example.com" style="flex:1">
+      <input id="pl-name" placeholder="项目名称（可选）">
+      <select id="pl-platform">
+        <option value="butian">补天</option>
+        <option value="hackerone">HackerOne</option>
+        <option value="aliyun">阿里云SRC</option>
+        <option value="tencent">腾讯TSRC</option>
+      </select>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="pl-port" checked> 端口扫描</label>
+      <label><input type="checkbox" id="pl-vuln" checked> 漏洞扫描</label>
+      <label><input type="checkbox" id="pl-report" checked> 自动生成报告</label>
+      <button onclick="runPipeline()">启动流水线</button>
+      <button class="sec" onclick="loadPipelines()">刷新历史</button>
+    </div>
+    <pre id="pl-out">—</pre>
+  </div>
+  <div class="panel">
+    <h2>流水线历史</h2>
+    <table id="pl-table">
+      <thead><tr><th>ID</th><th>域名</th><th>状态</th><th>阶段</th><th>项目ID</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== 资产侦察 ==================== -->
+<section id="t-recon" class="hidden">
+  <div class="panel">
+    <h2>子域名发现 + 存活检测</h2>
+    <div class="row">
+      <input id="rc-domain" placeholder="目标主域名" value="example.com" style="flex:1">
+      <button onclick="startRecon()">开始侦察</button>
+      <button class="sec" onclick="loadReconList()">任务列表</button>
+    </div>
+    <pre id="rc-out">—</pre>
+  </div>
+  <div class="panel">
+    <h2>存活主机列表</h2>
+    <table id="rc-table">
+      <thead><tr><th>子域名</th><th>IP</th><th>状态码</th><th>标题</th><th>URL</th><th>技术栈</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== 端口扫描 ==================== -->
+<section id="t-port" class="hidden">
+  <div class="panel">
+    <h2>nmap 端口扫描</h2>
+    <div class="row">
+      <textarea id="ps-hosts" placeholder='粘贴存活主机 JSON 数组，如 [{"subdomain":"a.com","ip":"1.2.3.4"}]'></textarea>
+    </div>
+    <div class="row">
+      <input id="ps-ports" placeholder="自定义端口（逗号分隔，留空用常用端口）">
+      <button onclick="runPortScan()">开始扫描</button>
+      <button class="sec" onclick="loadPortList()">任务列表</button>
+    </div>
+    <pre id="ps-out">—</pre>
+  </div>
+  <div class="panel">
+    <h2>开放端口结果</h2>
+    <table id="ps-table">
+      <thead><tr><th>主机</th><th>端口</th><th>协议</th><th>状态</th><th>服务</th><th>版本</th><th>Web?</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== 漏洞扫描 ==================== -->
+<section id="t-vuln" class="hidden">
+  <div class="panel">
+    <h2>nuclei 漏洞扫描</h2>
+    <div class="row">
+      <textarea id="vs-urls" placeholder="每行一个目标 URL" style="min-height:100px">https://example.com</textarea>
+    </div>
+    <div class="row">
+      <label>分类:</label>
+      <label><input type="checkbox" class="vs-cat" value="cve" checked> CVE</label>
+      <label><input type="checkbox" class="vs-cat" value="exposure" checked> 暴露面板</label>
+      <label><input type="checkbox" class="vs-cat" value="vulnerability" checked> 漏洞</label>
+      <label><input type="checkbox" class="vs-cat" value="tech"> 技术栈</label>
+      <span style="margin-left:20px">严重程度:</span>
+      <label><input type="checkbox" class="vs-sev" value="critical" checked> Critical</label>
+      <label><input type="checkbox" class="vs-sev" value="high" checked> High</label>
+      <label><input type="checkbox" class="vs-sev" value="medium"> Medium</label>
+    </div>
+    <div class="row">
+      <button onclick="runVulnScan()">开始扫描</button>
+      <button class="sec" onclick="loadVulnList()">任务列表</button>
+    </div>
+    <pre id="vs-out">—</pre>
+  </div>
+  <div class="panel">
+    <h2>漏洞发现</h2>
+    <table id="vs-table">
+      <thead><tr><th>严重度</th><th>名称</th><th>类型</th><th>URL</th><th>CVE</th><th>CWE</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== SRC 报告 ==================== -->
+<section id="t-report" class="hidden">
+  <div class="panel">
+    <h2>生成 SRC 提交报告</h2>
+    <div class="row">
+      <select id="rp-platform">
+        <option value="butian">补天</option>
+        <option value="hackerone">HackerOne</option>
+        <option value="aliyun">阿里云SRC</option>
+      </select>
+      <input id="rp-project" placeholder="项目名称">
+    </div>
+    <div class="row">
+      <textarea id="rp-finding" placeholder='粘贴单个 finding JSON'>{"name":"SQL注入","severity":"high","url":"http://x/?id=1","description":"id参数存在SQL注入","category":"vulnerability","cwe":"CWE-89"}</textarea>
+    </div>
+    <div class="row">
+      <button onclick="genReport()">生成报告</button>
+      <button class="sec" onclick="loadReports()">报告列表</button>
+    </div>
+    <pre id="rp-out">—</pre>
+  </div>
+  <div class="panel">
+    <h2>报告列表</h2>
+    <table id="rp-table">
+      <thead><tr><th>ID</th><th>标题</th><th>平台</th><th>严重度</th><th>状态</th><th>赏金</th><th>操作</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <pre id="rp-detail" style="margin-top:10px">—</pre>
+  </div>
+</section>
+
+<!-- ==================== 项目管理 ==================== -->
+<section id="t-projects" class="hidden">
+  <div class="panel">
+    <h2>创建 SRC 项目</h2>
+    <div class="row">
+      <input id="pj-name" placeholder="项目名称" style="flex:1">
+      <input id="pj-domain" placeholder="目标域名">
+      <select id="pj-platform">
+        <option value="butian">补天</option>
+        <option value="hackerone">HackerOne</option>
+        <option value="aliyun">阿里云SRC</option>
+        <option value="tencent">腾讯TSRC</option>
+      </select>
+      <button onclick="createProject()">创建</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>项目列表</h2>
+    <div class="row">
+      <button onclick="loadProjects()">刷新</button>
+    </div>
+    <table id="pj-table">
+      <thead><tr><th>ID</th><th>名称</th><th>域名</th><th>平台</th><th>状态</th><th>子域名</th><th>存活</th><th>漏洞</th><th>已提交</th><th>赏金</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== 统计面板 ==================== -->
+<section id="t-stats" class="hidden">
+  <div class="panel">
+    <h2>SRC 挖洞统计</h2>
+    <div class="row">
+      <button onclick="loadStats()">刷新统计</button>
+    </div>
+    <div class="grid" id="stats-cards"></div>
+  </div>
+  <div class="panel">
+    <h2>图表分析</h2>
+    <div class="grid">
+      <div><h3>漏洞严重度分布</h3><canvas id="ch-sev" class="chart-box"></canvas></div>
+      <div><h3>平台分布</h3><canvas id="ch-plat" class="chart-box"></canvas></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+const API = "/api/v1/src-workbench";
+let charts = {};
+
+// Tab switching
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
+    document.getElementById(t.dataset.tab).classList.remove("hidden");
+  };
+});
+
+async function api(path, opts={}){
+  const r = await fetch(API+path, {
+    headers:{"Content-Type":"application/json"},
+    ...opts
+  });
+  return r.json();
+}
+
+// ---------- Tool status ----------
+async function checkTools(){
+  const r = await api("/tools/status");
+  if(r.success){
+    const t = r.data;
+    const items = Object.entries(t).map(([k,v])=>
+      `${k}: ${v.available?'✅':'❌'}`).join(' · ');
+    document.getElementById("tool-status").textContent = items;
+  }
+}
+checkTools();
+
+// ---------- Pipeline ----------
+async function runPipeline(){
+  const body = {
+    domain: document.getElementById("pl-domain").value.trim(),
+    project_name: document.getElementById("pl-name").value.trim()||null,
+    platform: document.getElementById("pl-platform").value,
+    do_port_scan: document.getElementById("pl-port").checked,
+    do_vuln_scan: document.getElementById("pl-vuln").checked,
+    auto_report: document.getElementById("pl-report").checked,
+  };
+  document.getElementById("pl-out").textContent = "⏳ 流水线执行中...（大目标可能需要数分钟）";
+  const r = await api("/pipeline/run",{method:"POST",body:JSON.stringify(body)});
+  document.getElementById("pl-out").textContent = JSON.stringify(r, null, 2);
+  loadPipelines();
+}
+async function loadPipelines(){
+  const r = await api("/pipeline/list");
+  const tb = document.querySelector("#pl-table tbody");
+  tb.innerHTML = "";
+  (r.data||[]).forEach(p=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${p.pipeline_id}</td><td>${p.domain}</td>
+      <td><span class="status-dot dot-${p.status}"></span>${p.status}</td>
+      <td>${p.stage}</td><td>${p.project_id||'-'}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ---------- Recon ----------
+async function startRecon(){
+  const domain = document.getElementById("rc-domain").value.trim();
+  document.getElementById("rc-out").textContent = "⏳ 子域名枚举中...（subfinder/crt.sh）";
+  const r = await api("/recon/start",{method:"POST",body:JSON.stringify({domain})});
+  document.getElementById("rc-out").textContent = JSON.stringify(r, null, 2);
+  if(r.success && r.data){
+    const hosts = r.data.live_hosts||[];
+    const tb = document.querySelector("#rc-table tbody");
+    tb.innerHTML = "";
+    hosts.forEach(h=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${h.subdomain}</td><td>${h.ip||'-'}</td>
+        <td>${h.status_code||'-'}</td><td>${h.title||'-'}</td>
+        <td>${h.url||'-'}</td><td>${h.tech||'-'}</td>`;
+      tb.appendChild(tr);
+    });
+  }
+}
+async function loadReconList(){
+  const r = await api("/recon/list");
+  document.getElementById("rc-out").textContent = JSON.stringify(r, null, 2);
+}
+
+// ---------- Port Scan ----------
+async function runPortScan(){
+  try{
+    const hosts = JSON.parse(document.getElementById("ps-hosts").value);
+    const portsStr = document.getElementById("ps-ports").value.trim();
+    const ports = portsStr ? portsStr.split(",").map(Number) : null;
+    document.getElementById("ps-out").textContent = "⏳ nmap 扫描中...";
+    const r = await api("/portscan/run",{method:"POST",body:JSON.stringify({hosts,ports})});
+    document.getElementById("ps-out").textContent = JSON.stringify(r, null, 2);
+    if(r.success){
+      const results = r.data.results||[];
+      const tb = document.querySelector("#ps-table tbody");
+      tb.innerHTML = "";
+      results.forEach(p=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${p.subdomain||p.target}</td><td>${p.port}</td>
+          <td>${p.protocol}</td><td>${p.state}</td>
+          <td>${p.service}</td><td>${p.version||'-'}</td>
+          <td>${p.is_web?'🌐':'—'}</td>`;
+        tb.appendChild(tr);
+      });
+    }
+  }catch(e){
+    document.getElementById("ps-out").textContent = "错误: "+e.message;
+  }
+}
+async function loadPortList(){
+  const r = await api("/portscan/list");
+  document.getElementById("ps-out").textContent = JSON.stringify(r, null, 2);
+}
+
+// ---------- Vuln Scan ----------
+async function runVulnScan(){
+  const urls = document.getElementById("vs-urls").value.trim().split("\n").filter(Boolean);
+  const cats = [...document.querySelectorAll(".vs-cat:checked")].map(c=>c.value);
+  const sevs = [...document.querySelectorAll(".vs-sev:checked")].map(c=>c.value);
+  document.getElementById("vs-out").textContent = "⏳ nuclei 扫描中...（可能需要较长时间）";
+  const r = await api("/vulnscan/run",{method:"POST",body:JSON.stringify({
+    urls, categories:cats, severity:sevs.length?sevs:null
+  })});
+  document.getElementById("vs-out").textContent = JSON.stringify(r.data?.summary||r, null, 2);
+  if(r.success){
+    const findings = r.data.findings||[];
+    const tb = document.querySelector("#vs-table tbody");
+    tb.innerHTML = "";
+    findings.forEach(f=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td><span class="badge b-${f.severity}">${f.severity}</span></td>
+        <td>${f.name}</td><td>${f.category}</td>
+        <td>${f.url}</td><td>${f.cve_id||'-'}</td><td>${f.cwe||'-'}</td>`;
+      tb.appendChild(tr);
+    });
+  }
+}
+async function loadVulnList(){
+  const r = await api("/vulnscan/list");
+  document.getElementById("vs-out").textContent = JSON.stringify(r, null, 2);
+}
+
+// ---------- Reports ----------
+async function genReport(){
+  try{
+    const finding = JSON.parse(document.getElementById("rp-finding").value);
+    const body = {
+      finding,
+      platform: document.getElementById("rp-platform").value,
+      project_name: document.getElementById("rp-project").value,
+    };
+    const r = await api("/report/generate",{method:"POST",body:JSON.stringify(body)});
+    document.getElementById("rp-out").textContent = JSON.stringify(r, null, 2);
+    loadReports();
+  }catch(e){
+    document.getElementById("rp-out").textContent = "错误: "+e.message;
+  }
+}
+async function loadReports(){
+  const r = await api("/report/list");
+  const tb = document.querySelector("#rp-table tbody");
+  tb.innerHTML = "";
+  (r.data||[]).forEach(rp=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${rp.report_id}</td><td>${rp.vulnerability?.title}</td>
+      <td>${rp.platform}</td>
+      <td><span class="badge b-${rp.vulnerability?.severity}">${rp.vulnerability?.severity}</span></td>
+      <td>${rp.status}</td><td>¥${rp.bounty||0}</td>
+      <td><button class="sec" onclick="viewMd('${rp.report_id}')">MD</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+async function viewMd(id){
+  const r = await api(`/report/${id}/markdown`);
+  document.getElementById("rp-detail").textContent = r.data?.markdown||"未找到";
+}
+
+// ---------- Projects ----------
+async function createProject(){
+  const body = {
+    name: document.getElementById("pj-name").value,
+    domain: document.getElementById("pj-domain").value,
+    platform: document.getElementById("pj-platform").value,
+  };
+  await api("/projects/create",{method:"POST",body:JSON.stringify(body)});
+  loadProjects();
+}
+async function loadProjects(){
+  const r = await api("/projects");
+  const tb = document.querySelector("#pj-table tbody");
+  tb.innerHTML = "";
+  (r.data||[]).forEach(p=>{
+    const tr = document.createElement("tr");
+    const s = p.stats||{};
+    tr.innerHTML = `<td>${p.project_id}</td><td>${p.name}</td><td>${p.domain}</td>
+      <td>${p.platform}</td><td>${p.status}</td>
+      <td>${s.total_subdomains}</td><td>${s.live_hosts}</td>
+      <td>${s.vulns_found}</td><td>${s.reports_submitted}</td>
+      <td>¥${s.bounty_total||0}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ---------- Stats ----------
+async function loadStats(){
+  const r = await api("/stats");
+  if(!r.success) return;
+  const s = r.data;
+  document.getElementById("stats-cards").innerHTML = `
+    <div class="stat-card"><div class="num">${s.total_projects}</div><div class="label">总项目数</div></div>
+    <div class="stat-card"><div class="num">${s.active_projects}</div><div class="label">进行中</div></div>
+    <div class="stat-card"><div class="num">${s.total_submitted}</div><div class="label">已提交</div></div>
+    <div class="stat-card"><div class="num">${s.total_confirmed}</div><div class="label">已确认</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--ok)">¥${s.total_bounty}</div><div class="label">赏金总额</div></div>
+    <div class="stat-card"><div class="num">${s.confirm_rate_pct}%</div><div class="label">确认率</div></div>
+  `;
+  // Charts
+  if(charts.sev) charts.sev.destroy();
+  if(charts.plat) charts.plat.destroy();
+  charts.sev = new Chart(document.getElementById("ch-sev"),{
+    type:"doughnut",
+    data:{labels:Object.keys(s.severity_breakdown||{}),
+      datasets:[{data:Object.values(s.severity_breakdown||{})}]},
+    options:{responsive:true,maintainAspectRatio:false}
+  });
+  charts.plat = new Chart(document.getElementById("ch-plat"),{
+    type:"bar",
+    data:{labels:Object.keys(s.by_platform||{}),
+      datasets:[{label:"项目数",data:Object.values(s.by_platform||{})}]},
+    options:{responsive:true,maintainAspectRatio:false}
+  });
+}
+</script>
+</body>
+</html>

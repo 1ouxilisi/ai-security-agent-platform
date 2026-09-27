@@ -1,0 +1,144 @@
+# Python
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 环境变量（敏感信息，绝对不能提交）
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.p12
+*.pfx
+
+# 数据库
+*.db
+*.sqlite
+*.sqlite3
+data/*.db
+data/*.sqlite
+
+# 日志
+*.log
+logs/
+api_stdout.log
+api_stderr.log
+server_output.log
+server_error.log
+
+# 临时文件
+*.tmp
+*.bak
+*.cache
+*.temp
+
+# 操作系统
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# 测试和覆盖率
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage/
+*.cover
+test_report.html
+
+# 截图和媒体
+screenshots/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+
+# 报告输出
+reports/
+data/backups/
+data/reports/
+data/scans/
+data/logs/
+data/exports/
+
+# 项目特定临时脚本
+scripts/verify_*.py
+scripts/fix_*.py
+scripts/patch_*.py
+scripts/add_*.py
+scripts/test_*.py
+
+# Streamlit
+.streamlit/
+
+# Node.js（如果有前端）
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker
+docker-compose.override.yml
+.docker/
+
+# 其他
+*.pid
+*.seed
+*.pid.lock
+
+# 大型二进制工具（不推GitHub，用户自行下载）
+tools/nuclei/nuclei.exe
+tools/nuclei.zip
+tools/nmap-setup.exe
+tools/*.exe
+tools/*.zip
+tools/*.tar.gz
+tools/*.7z
+
+# 课程视频和大文件
+课程视频/
+*.mp4
+*.avi
+*.mkv
+*.mov
+
+# 大型数据文件
+data/vuln_database.json
+data/*.db.before_rollback
+data/distributed/tasks.json
+scripts/error_audit_report.json
+
+# 宝贝图片和发布素材
+宝贝图片/

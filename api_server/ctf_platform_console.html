@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTF 训练平台 · 运营控制台</title>
+<style>
+:root{
+  --bg:#0b1120; --panel:#111827; --panel2:#1f2937; --border:#1e293b;
+  --fg:#e2e8f0; --muted:#94a3b8; --accent:#22d3ee; --ok:#22c55e;
+  --warn:#eab308; --err:#ef4444; --pri:#3b82f6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:"Segoe UI",Microsoft YaHei,monospace;font-size:13px;line-height:1.5}
+header{padding:14px 22px;background:linear-gradient(90deg,#0b1120,#0f172a);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:18px;color:var(--accent);letter-spacing:1px}
+header .badge{background:var(--panel2);padding:4px 10px;border-radius:12px;color:var(--muted);font-size:12px}
+nav{display:flex;gap:4px;padding:10px 22px;background:#0f172a;border-bottom:1px solid var(--border);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;padding:8px 16px;cursor:pointer;border-radius:6px;font-family:inherit;font-size:13px}
+nav button.active{background:var(--panel2);color:var(--accent);border-color:var(--accent)}
+nav button:hover{color:var(--fg)}
+main{padding:18px 22px;max-width:1500px;margin:0 auto}
+.tab{display:none}
+.tab.active{display:block}
+.grid{display:grid;gap:12px}
+.cols-3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.cols-2{grid-template-columns:repeat(auto-fit,minmax(380px,1fr))}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px}
+.card h3{font-size:13px;color:var(--accent);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px}
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat .num{font-size:22px;color:var(--fg);font-weight:bold}
+.stat .lbl{color:var(--muted);font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:normal}
+tr:hover td{background:var(--panel2)}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;margin-right:4px}
+.tag-web{background:#1e3a8a;color:#93c5fd}
+.tag-pwn{background:#7f1d1d;color:#fca5a5}
+.tag-crypto{background:#064e3b;color:#6ee7b7}
+.tag-misc{background:#78350f;color:#fcd34d}
+.tag-reverse{background:#4c1d95;color:#d8b4fe}
+.tag-easy{background:#14532d;color:#86efac}
+.tag-medium{background:#713f12;color:#fde047}
+.tag-hard{background:#7c2d12;color:#fdba74}
+.tag-expert{background:#7f1d1d;color:#fca5a5}
+button.btn{background:var(--pri);color:#fff;border:0;padding:7px 14px;border-radius:5px;cursor:pointer;font-family:inherit;font-size:12px}
+button.btn:hover{opacity:.9}
+button.btn.danger{background:var(--err)}
+button.btn.ok{background:var(--ok)}
+input,select,textarea{background:var(--panel2);border:1px solid var(--border);color:var(--fg);padding:7px 10px;border-radius:5px;font-family:inherit;font-size:12px;width:100%}
+label{color:var(--muted);font-size:12px;display:block;margin:6px 0 3px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--muted)}
+.ok{color:var(--ok)}
+.err{color:var(--err)}
+.warn{color:var(--warn)}
+.feed-item{padding:6px 0;border-bottom:1px dashed var(--border);font-size:12px}
+pre{background:#020617;padding:10px;border-radius:5px;overflow:auto;max-height:260px;font-size:11px;color:#94a3b8}
+.bar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;margin:4px 0}
+.bar>span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--pri))}
+.pill{padding:2px 8px;border-radius:10px;font-size:11px}
+.pill-running{background:#14532d;color:#86efac}
+.pill-reg{background:#1e3a8a;color:#93c5fd}
+.pill-draft{background:#374151;color:#d1d5db}
+.pill-done{background:#7c2d12;color:#fdba74}
+</style>
+</head>
+<body>
+<header>
+  <h1>▣ CTF 训练平台 · 运营控制台</h1>
+  <span class="badge" id="envBadge">module: ...</span>
+</header>
+<nav id="nav">
+  <button data-tab="challenges" class="active">题目靶场</button>
+  <button data-tab="events">竞赛赛事</button>
+  <button data-tab="solver">解题验证</button>
+  <button data-tab="learning">学习路径</button>
+  <button data-tab="teams">战队管理</button>
+  <button data-tab="dashboard">运营仪表盘</button>
+</nav>
+<main>
+  <!-- ===================== 1. 题目靶场 ===================== -->
+  <section class="tab active" id="tab-challenges">
+    <div class="grid cols-3" id="chalStats"></div>
+    <div class="grid cols-2" style="margin-top:12px">
+      <div class="card">
+        <h3>题目列表（筛选）</h3>
+        <div class="row">
+          <select id="fCat"><option value="">全部分类</option></select>
+          <select id="fDiff"><option value="">全部难度</option></select>
+          <input id="fKw" placeholder="关键词搜索">
+          <button class="btn" onclick="loadChallenges()">查询</button>
+        </div>
+        <div style="max-height:360px;overflow:auto;margin-top:10px">
+          <table id="chalTable"><thead><tr>
+            <th>ID</th><th>标题</th><th>分类</th><th>难度</th><th>分值</th><th>状态</th><th>操作</th>
+          </tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <h3>题目详情 / Flag 提交 / 靶场</h3>
+        <div id="chalDetail" class="muted">点击左侧题目查看详情</div>
+        <hr style="border-color:var(--border);margin:10px 0">
+        <label>Flag</label>
+        <div class="row">
+          <input id="flagInput" placeholder="flag{...}">
+          <button class="btn ok" onclick="submitFlag()">提交</button>
+        </div>
+        <div id="flagResult"></div>
+        <hr style="border-color:var(--border);margin:10px 0">
+        <div class="row">
+          <button class="btn" onclick="startLab()">启动靶场</button>
+          <button class="btn danger" onclick="stopLab()">停止当前靶场</button>
+          <button class="btn" onclick="listContainers()">刷新容器</button>
+        </div>
+        <div id="labInfo" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h3>提示 / Writeup / 讨论</h3>
+      <div class="row">
+        <button class="btn" onclick="unlockHint(1)">解锁提示 1 (-20 分)</button>
+        <button class="btn" onclick="unlockHint(2)">解锁提示 2 (-40 分)</button>
+      </div>
+      <div id="hintBox" style="margin-top:8px"></div>
+      <label>讨论区发言</label>
+      <div class="row">
+        <input id="discInput" placeholder="说点什么...">
+        <button class="btn" onclick="postDiscussion()">发帖</button>
+      </div>
+      <div id="discList" style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <!-- ===================== 2. 竞赛赛事 ===================== -->
+  <section class="tab" id="tab-events">
+    <div class="grid cols-3" id="eventStats"></div>
+    <div class="grid cols-2" style="margin-top:12px">
+      <div class="card">
+        <h3>赛事列表</h3>
+        <div style="max-height:300px;overflow:auto">
+          <table id="eventTable"><thead><tr>
+            <th>ID</th><th>名称</th><th>赛制</th><th>状态</th><th>报名</th><th>操作</th>
+          </tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <h3>实时排名 / 监控</h3>
+        <div id="eventDetail" class="muted">点击赛事查看</div>
+        <div id="lbBox"></div>
+      </div>
+    </div>
+    <div class="grid cols-2" style="margin-top:12px">
+      <div class="card">
+        <h3>报名管理</h3>
+        <div id="regBox"></div>
+      </div>
+      <div class="card">
+        <h3>赛事复盘</h3>
+        <div id="postmortemBox"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 3. 解题验证 ===================== -->
+  <section class="tab" id="tab-solver">
+    <div class="grid cols-3">
+      <div class="card"><h3>我的解题</h3><div id="mySolves"></div></div>
+      <div class="card"><h3>Writeup 列表</h3><div id="wpList" style="max-height:260px;overflow:auto"></div></div>
+      <div class="card"><h3>作弊检测告警</h3><div id="cheatBox"></div></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h3>提交 Writeup</h3>
+      <div class="row">
+        <input id="wpTitle" placeholder="标题">
+        <input id="wpCid" placeholder="challenge_id">
+        <button class="btn" onclick="submitWriteup()">提交</button>
+      </div>
+      <textarea id="wpContent" rows="3" placeholder="Writeup 内容..." style="margin-top:8px"></textarea>
+    </div>
+  </section>
+
+  <!-- ===================== 4. 学习路径 ===================== -->
+  <section class="tab" id="tab-learning">
+    <div class="grid cols-3" id="lpStats"></div>
+    <div class="grid cols-2" style="margin-top:12px">
+      <div class="card">
+        <h3>学习路径</h3><div id="pathList"></div>
+      </div>
+      <div class="card">
+        <h3>课程目录</h3><div id="courseList"></div>
+      </div>
+    </div>
+    <div class="grid cols-2" style="margin-top:12px">
+      <div class="card">
+        <h3>技能雷达</h3><div id="radarBox"><pre id="radarPre"></pre></div>
+      </div>
+      <div class="card">
+        <h3>学习统计</h3><div id="lpStatBox"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 5. 战队管理 ===================== -->
+  <section class="tab" id="tab-teams">
+    <div class="grid cols-3" id="teamStats"></div>
+    <div class="grid cols-2" style="margin-top:12px">
+      <div class="card">
+        <h3>战队列表</h3>
+        <div id="teamList" style="max-height:360px;overflow:auto"></div>
+      </div>
+      <div class="card">
+        <h3>战队详情 / 对抗</h3>
+        <div id="teamDetail" class="muted">点击战队查看</div>
+        <hr style="border-color:var(--border);margin:10px 0">
+        <h3>对抗历史</h3>
+        <div id="duelBox"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 6. 运营仪表盘 ===================== -->
+  <section class="tab" id="tab-dashboard">
+    <div class="grid cols-3" id="dashStats"></div>
+    <div class="grid cols-2" style="margin-top:12px">
+      <div class="card">
+        <h3>实时动态</h3><div id="feedBox" style="max-height:340px;overflow:auto"></div>
+      </div>
+      <div class="card">
+        <h3>题目统计 / 用户统计</h3><div id="statBox"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h3>平台度量（30 天趋势）</h3>
+      <div id="metricBox"></div>
+      <div class="bar" style="margin-top:10px"><span id="trendBar" style="width:60%"></span></div>
+      <div class="muted" id="trendLabel"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const BASE = "/api/v1/ctf-platform";
+let currentCid = null, currentEid = null, currentTid = null;
+
+async function api(path, opts={}){
+  try{
+    const r = await fetch(BASE + path, Object.assign({
+      headers: {"Content-Type":"application/json"}
+    }, opts));
+    const j = await r.json();
+    if(!j.success) throw new Error(j.error || "请求失败");
+    return j.data;
+  }catch(e){ console.error(path, e); return null; }
+}
+function esc(s){return String(s==null?"":s).replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function pill(st){
+  const m={running:"pill-running",registration:"pill-reg",draft:"pill-draft",finished:"pill-done",
+          published:"pill-running",offline:"pill-draft",reviewing:"pill-reg"};
+  return `<span class="pill ${m[st]||'pill-draft'}">${esc(st)}</span>`;
+}
+
+// ---------------- Tabs ----------------
+document.querySelectorAll("#nav button").forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    document.getElementById("tab-"+b.dataset.tab).classList.add("active");
+    TAB_LOAD[b.dataset.tab] && TAB_LOAD[b.dataset.tab]();
+  };
+});
+
+// ---------------- Meta / Enums ----------------
+async function loadMeta(){
+  const m = await api("/meta");
+  if(!m) return;
+  document.getElementById("envBadge").textContent = "module: " + (m.module_available?"ready":"fallback");
+  const fc = document.getElementById("fCat"), fd = document.getElementById("fDiff");
+  (m.categories||[]).forEach(c=>fc.insertAdjacentHTML("beforeend",`<option>${c.key}</option>`));
+  (m.difficulties||[]).forEach(d=>fd.insertAdjacentHTML("beforeend",`<option>${d.key}</option>`));
+}
+
+// ---------------- 1. Challenges ----------------
+async function loadChallenges(){
+  const data = await api("/challenges?" + new URLSearchParams({
+    category: document.getElementById("fCat").value,
+    difficulty: document.getElementById("fDiff").value,
+    keyword: document.getElementById("fKw").value
+  }));
+  if(!data) return;
+  document.getElementById("chalStats").innerHTML = `
+    <div class="card stat"><span class="num">${data.total}</span><span class="lbl">题目总数</span></div>
+    <div class="card stat"><span class="num">${(data.categories||[]).length}</span><span class="lbl">分类数</span></div>
+    <div class="card stat"><span class="num">${(data.difficulties||[]).length}</span><span class="lbl">难度等级</span></div>`;
+  const tb = document.querySelector("#chalTable tbody");
+  tb.innerHTML = data.challenges.map(c=>`<tr>
+    <td>${esc(c.id)}</td><td>${esc(c.title)}</td>
+    <td><span class="tag tag-${(c.category||'').toLowerCase()}">${esc(c.category)}</span></td>
+    <td><span class="tag tag-${c.difficulty}">${esc(c.difficulty)}</span></td>
+    <td>${c.score}</td><td>${pill(c.status)}</td>
+    <td><button class="btn" onclick="viewChallenge('${c.id}')">查看</button></td></tr>`).join("");
+}
+async function viewChallenge(cid){
+  currentCid = cid;
+  const c = await api("/challenges/"+cid);
+  if(!c) return;
+  document.getElementById("chalDetail").innerHTML = `
+    <b>${esc(c.title)}</b> <span class="muted">[${esc(c.category)}/${esc(c.difficulty)}/${c.score}分]</span><br><br>
+    ${esc(c.description)}<br><br>
+    <span class="muted">作者：${esc(c.author)} · 版本：v${c.version} · 已解：${c.solves}/${c.submits}</span><br>
+    标签：${(c.tags||[]).map(t=>`<span class="tag tag-misc">${esc(t)}</span>`).join("")}`;
+  document.getElementById("labInfo").innerHTML = "";
+}
+async function submitFlag(){
+  const flag = document.getElementById("flagInput").value.trim();
+  if(!currentCid){ alert("请先选择题目"); return; }
+  const r = await api("/flag/submit",{method:"POST",body:JSON.stringify({
+    user:"tester", challenge_id:currentCid, flag:flag, client_ip:"127.0.0.1"})});
+  const box = document.getElementById("flagResult");
+  if(!r){ box.innerHTML = "<span class='err'>提交失败</span>"; return; }
+  box.innerHTML = r.ok
+    ? `<span class="ok">✓ 正确！第 ${r.attempts} 次尝试，首次解题：${r.first_solve?"是":"否"}</span>`
+    : `<span class="err">✗ 错误，已尝试 ${r.attempts} 次</span>`;
+}
+async function startLab(){
+  if(!currentCid){ alert("请先选择题目"); return; }
+  const r = await api(`/challenges/${currentCid}/container/start`,{method:"POST",body:JSON.stringify({user:"tester"})});
+  const box = document.getElementById("labInfo");
+  if(!r || r.container && r.container.error){ box.innerHTML = "<span class='err'>启动失败</span>"; return; }
+  const c = r.container;
+  box.innerHTML = `<div class="card">
+    <b class="ok">容器已启动</b><br>
+    <span class="muted">ID: ${esc(c.container_id)}</span><br>
+    访问：<b>${esc(c.access_url)}</b><br>
+    端口映射：host ${c.port_mapping.host} → container ${c.port_mapping.container}<br>
+    过期：${esc(c.expires_at)}</div>`;
+}
+async function stopLab(){ await api("/containers/demo/stop",{method:"POST"}); }
+async function listContainers(){
+  const d = await api("/containers");
+  console.log(d);
+}
+async function unlockHint(ord){
+  const r = await api("/hints/unlock",{method:"POST",body:JSON.stringify({user:"tester",order:ord})});
+  document.getElementById("hintBox").innerHTML = r
+    ? `<div class="card"><b class="warn">提示 ${ord}</b>（-${r.score_penalty} 分）<br>${esc(r.content)}</div>`
+    : "<span class='muted'>已解锁或无法解锁</span>";
+}
+async function postDiscussion(){
+  const txt = document.getElementById("discInput").value.trim();
+  if(!txt) return;
+  await api(`/discussions/${currentCid||'chal_1000'}`,{method:"POST",body:JSON.stringify({author:"tester",content:txt})});
+  document.getElementById("discInput").value="";
+}
+
+// ---------------- 2. Events ----------------
+async function loadEvents(){
+  const data = await api("/events");
+  if(!data) return;
+  document.getElementById("eventStats").innerHTML = `
+    <div class="card stat"><span class="num">${data.total}</span><span class="lbl">赛事总数</span></div>
+    <div class="card stat"><span class="num">${data.formats.length}</span><span class="lbl">赛制类型</span></div>
+    <div class="card stat"><span class="num">${data.statuses.length}</span><span class="lbl">状态机</span></div>`;
+  document.querySelector("#eventTable tbody").innerHTML = data.events.map(e=>`<tr>
+    <td>${esc(e.id)}</td><td>${esc(e.name)}</td><td>${esc(e.format)}</td>
+    <td>${pill(e.status)}</td><td>${e.registered}</td>
+    <td><button class="btn" onclick="viewEvent('${e.id}')">详情</button></td></tr>`).join("");
+}
+async function viewEvent(eid){
+  currentEid = eid;
+  const ev = await api("/events/"+eid);
+  document.getElementById("eventDetail").innerHTML = `<b>${esc(ev.name)}</b><br>
+    <span class="muted">${esc(ev.description)}</span><br>
+    时间：${esc(ev.start_time)} ~ ${esc(ev.end_time)}<br>
+    规则：${(ev.rules||[]).map(esc).join("；")}`;
+  const lb = await api(`/events/${eid}/leaderboard`);
+  document.getElementById("lbBox").innerHTML = "<h3>排行榜</h3>" + (lb.ranking||[]).map(r=>
+    `<div class="feed-item">#${r.rank} ${esc(r.team)} — ${r.score} 分 (${r.solves} 解)</div>`).join("") || "<span class=muted>暂无排名</span>";
+  const reg = await api(`/events/${eid}/registrations`);
+  document.getElementById("regBox").innerHTML = `<b>报名：${reg.approved} 通过 / ${reg.pending} 待审 / 共 ${reg.total}</b>` +
+    (reg.registrations||[]).map(r=>`<div class="feed-item">${esc(r.team)} [${r.status}]</div>`).join("");
+  const pm = await api(`/events/${eid}/postmortem`);
+  document.getElementById("postmortemBox").innerHTML = pm ? `<pre>${JSON.stringify(pm,null,2)}</pre>` : "";
+}
+
+// ---------------- 3. Solver ----------------
+async function loadSolver(){
+  const s = await api("/solves/tester");
+  document.getElementById("mySolves").innerHTML = (s.solves||[]).map(x=>
+    `<div class="feed-item">${esc(x.challenge_id)} · ${esc(x.at)} · ${x.attempts} 次尝试</div>`).join("") || "<span class=muted>暂无解题</span>";
+  const w = await api("/writeups");
+  document.getElementById("wpList").innerHTML = (w.writeups||[]).map(x=>
+    `<div class="feed-item"><b>${esc(x.title)}</b><br><span class=muted>${esc(x.author)} · 评分 ${x.rating} · 浏览 ${x.views}</span></div>`).join("");
+  const c = await api("/cheat/alerts");
+  document.getElementById("cheatBox").innerHTML = c
+    ? `告警数：<b class="warn">${c.total_alerts}</b><br><pre>${JSON.stringify(c.alerts,null,2)}</pre>`
+    : "<span class=ok>无告警</span>";
+}
+async function submitWriteup(){
+  await api("/writeups",{method:"POST",body:JSON.stringify({
+    challenge_id: document.getElementById("wpCid").value,
+    author:"tester", title:document.getElementById("wpTitle").value,
+    content:document.getElementById("wpContent").value})});
+  loadSolver();
+}
+
+// ---------------- 4. Learning ----------------
+async function loadLearning(){
+  const p = await api("/learning/paths");
+  document.getElementById("pathList").innerHTML = (p.paths||[]).map(x=>
+    `<div class="card" style="margin-bottom:8px"><b>${esc(x.name)}</b> <span class="tag tag-${x.level}">${x.level}</span><br>
+    <span class=muted>${esc(x.description)}</b></div>`).join("");
+  const c = await api("/learning/courses");
+  document.getElementById("courseList").innerHTML = (c.courses||[]).map(x=>
+    `<div class="feed-item"><b>${esc(x.title)}</b> <span class=muted>[${x.category}/${x.level}/${x.duration_min}min] ★${x.rating}</span>
+    <button class="btn" style="float:right" onclick="enroll('${x.id}')">选课</button></div>`).join("");
+  const r = await api("/learning/skill-radar/tester");
+  document.getElementById("radarPre").textContent = JSON.stringify(r,null,2);
+  const st = await api("/learning/stats/tester");
+  document.getElementById("lpStatBox").innerHTML = `<pre>${JSON.stringify(st,null,2)}</pre>`;
+}
+async function enroll(cid){ await api("/learning/enroll",{method:"POST",body:JSON.stringify({user:"tester",course_id:cid})}); }
+
+// ---------------- 5. Teams ----------------
+async function loadTeams(){
+  const d = await api("/teams");
+  document.getElementById("teamStats").innerHTML = `
+    <div class="card stat"><span class="num">${(d.teams||[]).length}</span><span class="lbl">战队总数</span></div>
+    <div class="card stat"><span class="num">${Object.keys(d.roles||{}).length}</span><span class="lbl">角色等级</span></div>
+    <div class="card stat"><span class="num">—</span><span class="lbl">实时排名</span></div>`;
+  document.getElementById("teamList").innerHTML = (d.teams||[]).map(t=>
+    `<div class="feed-item">#${t.rank} <b>${esc(t.name)}</b> — ${t.score} 分 (${t.members.length} 人)
+    <button class="btn" style="float:right" onclick="viewTeam('${t.id}')">详情</button></div>`).join("");
+  const du = await api("/duels");
+  document.getElementById("duelBox").innerHTML = (du.duels||[]).map(x=>
+    `<div class="feed-item">${esc(x.team_a)} vs ${esc(x.team_b)} [${x.status}]</div>`).join("") || "<span class=muted>无对抗记录</span>";
+}
+async function viewTeam(tid){
+  currentTid = tid;
+  const t = await api("/teams/"+tid);
+  document.getElementById("teamDetail").innerHTML = `<b>${esc(t.name)}</b> <span class=muted>[${t.type}]</span><br>
+    ${esc(t.description)}<br><br>成员：<br>` +
+    t.members.map(m=>`<div class="feed-item">· ${esc(m.username)} (${m.role}) 贡献 ${m.score}</div>`).join("");
+}
+
+// ---------------- 6. Dashboard ----------------
+async function loadDashboard(){
+  const o = await api("/dashboard/overview");
+  if(o) document.getElementById("dashStats").innerHTML = `
+    <div class="card stat"><span class="num">${o.challenges}</span><span class="lbl">题目</span></div>
+    <div class="card stat"><span class="num">${o.users}</span><span class="lbl">用户</span></div>
+    <div class="card stat"><span class="num">${o.teams}</span><span class="lbl">战队</span></div>
+    <div class="card stat"><span class="num">${o.events}</span><span class="lbl">赛事</span></div>
+    <div class="card stat"><span class="num">${o.total_solves}</span><span class="lbl">总解题</span></div>
+    <div class="card stat"><span class="num">${o.online_now}</span><span class="lbl">在线</span></div>`;
+  const a = await api("/dashboard/activity");
+  if(a) document.getElementById("feedBox").innerHTML = (a.feed||[]).map(f=>
+    `<div class="feed-item">[${esc(f.at||"")}] <span class="ok">${esc(f.type)}</span> ${esc(f.user||f.title||f.name||"")}</div>`).join("");
+  const s = await api("/dashboard/stats");
+  if(s) document.getElementById("statBox").innerHTML = `<pre>${JSON.stringify(s,null,2)}</pre>`;
+  if(s && s.metrics){
+    document.getElementById("metricBox").innerHTML = `<pre>${JSON.stringify(s.metrics,null,2)}</pre>`;
+    document.getElementById("trendLabel").textContent = "WAU 增长 +" + s.metrics.growth_wow + "%，留存 30d " + s.metrics.retention_30d + "%";
+  }
+}
+
+const TAB_LOAD = {
+  challenges: loadChallenges, events: loadEvents, solver: loadSolver,
+  learning: loadLearning, teams: loadTeams, dashboard: loadDashboard
+};
+
+// init
+loadMeta().then(loadChallenges);
+</script>
+</body>
+</html>

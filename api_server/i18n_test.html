@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>i18n 测试 — AI Hacking Agent</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0d1117; color: #c9d1d9;
+  font-family: "Segoe UI", "Microsoft YaHei", sans-serif; font-size: 14px; padding: 20px;
+}
+h1 { color: #58a6ff; font-size: 22px; margin-bottom: 8px; }
+h2 { color: #e6edf3; font-size: 16px; margin: 20px 0 10px; border-bottom: 1px solid #30363d; padding-bottom: 6px; }
+.toolbar { position: sticky; top: 0; background: #0d1117; padding: 10px 0; z-index: 100; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+button {
+  background: #21262d; color: #c9d1d9; border: 1px solid #30363d; border-radius: 4px;
+  padding: 8px 16px; cursor: pointer; min-height: 44px;
+}
+button.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 10px; margin: 10px 0; }
+.stat { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 12px; }
+.stat .v { font-size: 22px; color: #58a6ff; font-weight: 600; }
+.stat .l { color: #8b949e; font-size: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #21262d; vertical-align: top; }
+th { color: #8b949e; font-size: 12px; position: sticky; top: 0; background: #0d1117; }
+td.key { font-family: Consolas, monospace; color: #d29922; font-size: 12px; word-break: break-all; }
+tr:hover td { background: #161b22; }
+.search { background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 8px 12px; border-radius: 4px; min-height: 44px; flex: 1; min-width: 200px; }
+.missing { color: #f85149; }
+.ok { color: #3fb950; }
+</style>
+</head>
+<body>
+
+<h1>多语言 (i18n) 测试台</h1>
+
+<div class="toolbar">
+  <button data-lang="zh-CN" onclick="switchLang('zh-CN')">中文</button>
+  <button data-lang="en-US" onclick="switchLang('en-US')">English</button>
+  <input class="search" id="search" placeholder="过滤 key..." oninput="renderTable()">
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="v" id="stat-total">-</div><div class="l">总 key 数 (zh-CN)</div></div>
+  <div class="stat"><div class="v" id="stat-en">-</div><div class="l">已翻译 (en-US)</div></div>
+  <div class="stat"><div class="v" id="stat-cov">-</div><div class="l">覆盖率</div></div>
+  <div class="stat"><div class="v" id="stat-missing">-</div><div class="l">缺失 key (en-US)</div></div>
+</div>
+
+<h2>翻译示例</h2>
+<div id="demo" class="stat"></div>
+
+<h2>所有 key</h2>
+<table>
+  <thead><tr><th style="width:30%">Key</th><th>中文</th><th>English</th></tr></thead>
+  <tbody id="tbody"></tbody>
+</table>
+
+<h2>缺失的 key</h2>
+<div id="missing-list" class="stat">加载中...</div>
+
+<script src="/static/js/i18n.js"></script>
+<script>
+var allKeys = [];
+
+function switchLang(lang) {
+  window.i18n.setLanguage(lang).then(function(){
+    document.querySelectorAll('button[data-lang]').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-lang') === lang);
+    });
+  });
+}
+
+function renderTable() {
+  var q = document.getElementById('search').value.toLowerCase();
+  var dictZh = window.i18n.catalogs['zh-CN'] || {};
+  var dictEn = window.i18n.catalogs['en-US'] || {};
+  var tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  var keys = allKeys.filter(function(k){ return !q || k.toLowerCase().indexOf(q) !== -1; });
+  keys.slice(0, 500).forEach(function(k){
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td class="key">'+k+'</td><td>'+(dictZh[k]||'')+'</td><td>'+(dictEn[k]||'<span class="missing">MISSING</span>')+'</td>';
+    tbody.appendChild(tr);
+  });
+  if (keys.length > 500) {
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td colspan="3" style="color:#8b949e">... 共 '+keys.length+' 个，仅显示前 500，请用搜索过滤</td>';
+    tbody.appendChild(tr);
+  }
+}
+
+function renderStats() {
+  var dictZh = window.i18n.catalogs['zh-CN'] || {};
+  var dictEn = window.i18n.catalogs['en-US'] || {};
+  allKeys = Object.keys(dictZh).sort();
+  var total = allKeys.length;
+  var present = allKeys.filter(function(k){ return dictEn[k] !== undefined && dictEn[k] !== ''; }).length;
+  var missing = total - present;
+  var cov = total ? ((present/total)*100).toFixed(1) : '0.0';
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-en').textContent = present;
+  document.getElementById('stat-cov').textContent = cov + '%';
+  document.getElementById('stat-missing').textContent = missing;
+  document.getElementById('stat-missing').className = 'v ' + (missing === 0 ? 'ok' : 'missing');
+
+  var missingList = allKeys.filter(function(k){ return dictEn[k] === undefined; });
+  document.getElementById('missing-list').innerHTML = missingList.length === 0
+    ? '<span class="ok">无缺失，全部覆盖</span>'
+    : '缺失 '+missingList.length+' 个: <br><code>'+missingList.slice(0,50).join(', ')+'</code>';
+
+  // demo
+  document.getElementById('demo').innerHTML =
+    '当前语言: <b>'+window.i18n.getLanguage()+'</b><br>'+
+    't("nav.home") = '+window.i18n.t('nav.home')+'<br>'+
+    't("btn.start") = '+window.i18n.t('btn.start')+'<br>'+
+    't("common.total", {count: 42}) = '+window.i18n.t('common.total', {count: 42})+'<br>'+
+    't("vuln.count_one", {count: 1}) = '+window.i18n.t('vuln.count_one', {count: 1})+'<br>'+
+    't("vuln.count_other", {count: 5}) = '+window.i18n.t('vuln.count_other', {count: 5});
+
+  renderTable();
+}
+
+window.addEventListener('i18n:change', renderStats);
+window.i18n.boot().then(renderStats);
+</script>
+</body>
+</html>

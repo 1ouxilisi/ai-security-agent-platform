@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>真实场景验证与误报率优化控制台</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#c9d1d9;
+  --muted:#8b949e; --accent:#58a6ff; --green:#3fb950; --red:#f85149;
+  --yellow:#d29922; --purple:#bc8cff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}
+.header{background:var(--panel);border-bottom:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.header h1{font-size:18px;color:var(--accent)}
+.header .ver{color:var(--muted);font-size:12px}
+.tabs{display:flex;background:var(--panel);border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap}
+.tab-btn{background:transparent;border:none;color:var(--muted);padding:12px 16px;cursor:pointer;white-space:nowrap;font-size:13px;border-bottom:2px solid transparent}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.container{padding:20px;max-width:1500px;margin:0 auto}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.kpi{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px}
+.kpi .label{color:var(--muted);font-size:12px}
+.kpi .value{font-size:24px;font-weight:600;margin-top:4px;color:var(--accent)}
+.kpi .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.panel h3{font-size:15px;color:var(--accent);margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:8px}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+input,select,textarea{background:#0d1117;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;min-width:120px}
+textarea{width:100%;min-height:80px;font-family:monospace}
+button.btn{background:var(--accent);color:#0d1117;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-weight:600;font-size:13px}
+button.btn:hover{opacity:.88}
+button.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+button.btn.danger{background:var(--red);color:#fff}
+button.btn.green{background:var(--green);color:#0d1117}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{border:1px solid var(--border);padding:6px 8px;text-align:left;word-break:break-all}
+th{background:#0d1117;color:var(--accent)}
+tr:nth-child(even){background:#0d1117}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px}
+.badge.high{background:rgba(248,81,73,.15);color:var(--red)}
+.badge.medium{background:rgba(210,153,34,.15);color:var(--yellow)}
+.badge.low{background:rgba(63,185,80,.15);color:var(--green)}
+.badge.info{background:rgba(88,166,255,.15);color:var(--accent)}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:10px;overflow:auto;max-height:300px;font-size:11px;white-space:pre-wrap;word-break:break-all}
+.muted{color:var(--muted);font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.foot{text-align:center;color:var(--muted);font-size:11px;padding:20px}
+.bar{height:8px;background:#0d1117;border-radius:4px;overflow:hidden;margin-top:4px}
+.bar>span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--green))}
+.progress-row{margin-bottom:10px}
+.progress-row .pl{display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px}
+@media(max-width:768px){
+  .grid2,.grid3{grid-template-columns:1fr}
+  .container{padding:10px}
+  .kpi .value{font-size:20px}
+  .header h1{font-size:15px}
+  .tabs{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🛡️ 真实场景验证与误报率优化控制台</h1>
+  <span class="ver">v28.2.0 · AI Hacking Agent · 第28轮升级方向2</span>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="overview">验证总览</button>
+  <button class="tab-btn" data-tab="ranges">靶场管理</button>
+  <button class="tab-btn" data-tab="scans">扫描验证</button>
+  <button class="tab-btn" data-tab="fp">误报优化</button>
+  <button class="tab-btn" data-tab="vulns">漏洞验证</button>
+  <button class="tab-btn" data-tab="framework">验证体系</button>
+  <button class="tab-btn" data-tab="settings">系统设置</button>
+</div>
+
+<div class="container">
+
+<!-- ==================== Tab 1: 验证总览 ==================== -->
+<div class="tab-pane active" id="pane-overview">
+  <div class="kpi-grid" id="overview-kpi"></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>📊 近7天趋势</h3>
+      <div id="overview-trends"></div>
+    </div>
+    <div class="panel">
+      <h3>🩺 系统健康状态</h3>
+      <div id="overview-health"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>📦 模块概览</h3>
+    <div id="overview-modules"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 2: 靶场管理 ==================== -->
+<div class="tab-pane" id="pane-ranges">
+  <div class="row">
+    <button class="btn" onclick="loadRanges()">刷新靶场列表</button>
+    <button class="btn ghost" onclick="loadRangeLibrary()">查看靶场库</button>
+  </div>
+  <div class="panel">
+    <h3>🎯 靶场实例列表</h3>
+    <div id="ranges-table"></div>
+  </div>
+  <div class="panel">
+    <h3>📚 靶场库（内置支持）</h3>
+    <div id="range-library"></div>
+  </div>
+  <div class="panel">
+    <h3>📸 快照管理</h3>
+    <div class="row">
+      <input id="snap-range-id" placeholder="靶场ID">
+      <input id="snap-name" placeholder="快照名称（可选）">
+      <button class="btn" onclick="createSnapshot()">创建快照</button>
+    </div>
+    <div id="snapshots-table"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 3: 扫描验证 ==================== -->
+<div class="tab-pane" id="pane-scans">
+  <div class="panel">
+    <h3>🔍 执行真实扫描</h3>
+    <div class="row">
+      <input id="scan-host" value="127.0.0.1" placeholder="目标主机">
+      <input id="scan-port" type="number" value="80" placeholder="端口">
+      <select id="scan-type">
+        <option value="nmap_port">Nmap端口扫描</option>
+        <option value="nmap_service">Nmap服务识别</option>
+        <option value="nmap_full">全端口扫描</option>
+        <option value="web_spider">Web爬虫扫描</option>
+        <option value="vuln_nuclei">Nuclei漏洞扫描</option>
+      </select>
+      <select id="scan-depth">
+        <option value="quick">快速</option>
+        <option value="normal">常规</option>
+        <option value="deep">深度</option>
+      </select>
+      <button class="btn" onclick="executeScan()">开始扫描</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>📋 扫描历史</h3>
+    <div id="scans-table"></div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>❌ 误报列表</h3>
+      <div id="fp-list"></div>
+    </div>
+    <div class="panel">
+      <h3>📭 漏报列表</h3>
+      <div id="fn-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Tab 4: 误报优化 ==================== -->
+<div class="tab-pane" id="pane-fp">
+  <div class="kpi-grid" id="fp-kpi"></div>
+  <div class="panel">
+    <h3>📏 误报规则库</h3>
+    <div class="row">
+      <button class="btn" onclick="loadFPRules()">刷新规则</button>
+      <button class="btn ghost" onclick="showAddRule()">新增规则</button>
+    </div>
+    <div id="fp-rules-table"></div>
+  </div>
+  <div class="panel" id="add-rule-panel" style="display:none">
+    <h3>➕ 新增误报规则</h3>
+    <div class="row">
+      <input id="rule-name" placeholder="规则名称">
+      <select id="rule-category">
+        <option value="version_exact">版本精确匹配</option>
+        <option value="version_range">版本范围匹配</option>
+        <option value="service_exact">服务精确匹配</option>
+        <option value="cve_exact">CVE精确匹配</option>
+        <option value="banner_match">Banner匹配</option>
+        <option value="response_signature">响应特征匹配</option>
+      </select>
+      <select id="rule-action">
+        <option value="filter">过滤</option>
+        <option value="downgrade">降级</option>
+        <option value="mark_review">标记审核</option>
+        <option value="keep">保留</option>
+      </select>
+      <select id="rule-priority">
+        <option value="P0">P0</option><option value="P1">P1</option>
+        <option value="P2" selected>P2</option><option value="P3">P3</option>
+      </select>
+      <button class="btn green" onclick="addRule()">保存规则</button>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>🤖 ML模型列表</h3>
+      <div id="fp-models"></div>
+    </div>
+    <div class="panel">
+      <h3>👤 人工审核队列</h3>
+      <div id="fp-review"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>⚡ 执行优化对比</h3>
+    <div class="row">
+      <button class="btn" onclick="runOptimization()">运行优化</button>
+    </div>
+    <div id="opt-result"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 5: 漏洞验证 ==================== -->
+<div class="tab-pane" id="pane-vulns">
+  <div class="kpi-grid" id="vuln-kpi"></div>
+  <div class="panel">
+    <h3>🐛 漏洞列表</h3>
+    <div class="row">
+      <select id="vuln-severity">
+        <option value="">全部严重度</option>
+        <option value="critical">严重</option>
+        <option value="high">高危</option>
+        <option value="medium">中危</option>
+        <option value="low">低危</option>
+      </select>
+      <button class="btn" onclick="loadVulns()">筛选</button>
+    </div>
+    <div id="vulns-table"></div>
+  </div>
+  <div class="panel">
+    <h3>📈 漏洞趋势</h3>
+    <div id="vuln-trends"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 6: 验证体系 ==================== -->
+<div class="tab-pane" id="pane-framework">
+  <div class="kpi-grid" id="fw-kpi"></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>📐 验证标准</h3>
+      <div id="fw-standards"></div>
+    </div>
+    <div class="panel">
+      <h3>🏗️ 验证基准</h3>
+      <div id="fw-benchmarks"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>🧪 验证用例库</h3>
+    <div class="row">
+      <button class="btn" onclick="loadTestCases()">刷新用例</button>
+      <button class="btn green" onclick="runRegression()">批量回归测试</button>
+    </div>
+    <div id="test-cases-table"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 7: 系统设置 ==================== -->
+<div class="tab-pane" id="pane-settings">
+  <div class="panel">
+    <h3>⚙️ 系统设置</h3>
+    <div id="settings-form"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" onclick="saveSettings()">保存设置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>📤 导出与历史</h3>
+    <div class="row">
+      <button class="btn" onclick="exportReport()">导出JSON报告</button>
+    </div>
+    <div id="exports-list"></div>
+  </div>
+  <div class="panel">
+    <h3>ℹ️ 模块信息</h3>
+    <div id="module-info"></div>
+  </div>
+</div>
+
+<div class="foot">真实场景验证与误报率优化 · v28.2.0 · AI Hacking Agent</div>
+</div>
+
+<script>
+const API = '/api/v1/real-validation';
+let overviewData = {};
+
+// ---------- 通用工具 ----------
+async function api(path, opts={}) {
+  try {
+    const r = await fetch(API + path, {
+      headers: {'Content-Type':'application/json'}, ...opts
+    });
+    const j = await r.json();
+    return j;
+  } catch(e) {
+    return {success:false, error:e.message};
+  }
+}
+function esc(s){const d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML}
+function badge(sev){
+  const m={critical:'high',high:'high',medium:'medium',low:'low',info:'low'};
+  return `<span class="badge ${m[sev]||'info'}">${esc(sev||'unknown')}</span>`;
+}
+
+// ---------- Tab切换 ----------
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('pane-'+btn.dataset.tab).classList.add('active');
+    loadTab(btn.dataset.tab);
+  });
+});
+function loadTab(t){
+  if(t==='overview') loadOverview();
+  if(t==='ranges'){loadRanges();loadSnapshots();}
+  if(t==='scans'){loadScans();loadFPList();loadFNList();}
+  if(t==='fp'){loadFPRules();loadFPModels();loadReviewQueue();loadFPKPI();}
+  if(t==='vulns'){loadVulns();loadVulnTrends();loadVulnKPI();}
+  if(t==='framework'){loadStandards();loadBenchmarks();loadTestCases();loadFWMetrics();}
+  if(t==='settings'){loadSettings();loadExports();loadModuleInfo();}
+}
+
+// ---------- 总览 ----------
+async function loadOverview(){
+  const j = await api('/overview');
+  if(!j.success) return;
+  overviewData = j.data;
+  const k = j.data.kpi||{};
+  document.getElementById('overview-kpi').innerHTML = [
+    ['靶场总数',k.total_ranges,'运行中 '+k.running_ranges],
+    ['扫描次数',k.total_scans,'次'],
+    ['误报规则',k.total_rules,'条'],
+    ['漏洞总数',k.total_vulns,'已验证 '+k.verified_vulns],
+    ['测试用例',k.total_test_cases,'通过率 '+k.pass_rate+'%'],
+  ].map(([l,v,s])=>`<div class="kpi"><div class="label">${l}</div><div class="value">${v}</div><div class="sub">${s}</div></div>`).join('');
+
+  const tj = await api('/trends?days=7');
+  if(tj.success){
+    document.getElementById('overview-trends').innerHTML = tj.data.daily.map(d=>
+      `<div class="progress-row"><div class="pl"><span>${d.date}</span><span>扫描${d.scans} · FP ${d.false_positives} · 通过率${d.pass_rate}%</span></div><div class="bar"><span style="width:${d.pass_rate}%"></span></div></div>`
+    ).join('');
+  }
+  const hj = await api('/health');
+  if(hj.success){
+    document.getElementById('overview-health').innerHTML = hj.data.checks.map(c=>
+      `<div style="padding:4px 0">● ${c.module} <span class="badge ${c.status==='healthy'?'low':'medium'}">${c.status}</span></div>`
+    ).join('') + `<p class="muted" style="margin-top:8px">整体状态: <b>${hj.data.overall}</b></p>`;
+  }
+  const mods = j.data.modules||{};
+  document.getElementById('overview-modules').innerHTML = '<table><tr><th>模块</th><th>关键指标</th></tr>' +
+    Object.entries(mods).map(([k,v])=>`<tr><td>${k}</td><td><pre style="max-height:100px">${esc(JSON.stringify(v,null,2))}</pre></td></tr>`).join('') + '</table>';
+}
+
+// ---------- 靶场管理 ----------
+async function loadRanges(){
+  const j = await api('/ranges');
+  if(!j.success) return;
+  document.getElementById('ranges-table').innerHTML = '<table><tr><th>ID</th><th>名称</th><th>类别</th><th>难度</th><th>状态</th><th>地址</th><th>操作</th></tr>' +
+    j.data.map(r=>`<tr>
+      <td>${r.range_id}</td><td>${r.name}</td><td>${r.category}</td>
+      <td>${r.difficulty}</td><td><span class="badge ${r.status==='running'?'low':'medium'}">${r.status}</span></td>
+      <td>${r.host}:${r.port}</td>
+      <td>
+        <button class="btn" onclick="rangeAction('${r.range_id}','deploy')">部署</button>
+        <button class="btn ghost" onclick="rangeAction('${r.range_id}','start')">启动</button>
+        <button class="btn ghost" onclick="rangeAction('${r.range_id}','stop')">停止</button>
+        <button class="btn ghost" onclick="rangeAction('${r.range_id}','verify')">验证</button>
+        <button class="btn danger" onclick="rangeAction('${r.range_id}','reset')">重置</button>
+      </td></tr>`).join('') + '</table>';
+}
+async function rangeAction(id,action){
+  const j = await api('/ranges/'+id+'/'+action,{method:'POST'});
+  alert(action+' 结果: '+(j.success?'成功':'失败 '+j.error));
+  loadRanges();
+}
+async function loadRangeLibrary(){
+  const j = await api('/ranges/library');
+  if(!j.success) return;
+  document.getElementById('range-library').innerHTML = '<table><tr><th>Key</th><th>名称</th><th>类别</th><th>难度</th><th>默认端口</th><th>漏洞类型</th></tr>' +
+    j.data.map(r=>`<tr><td>${r.key}</td><td>${r.full_name}</td><td>${r.category}</td><td>${r.difficulty}</td><td>${r.default_port||'多端口'}</td><td>${(r.vuln_types||[]).join(', ')}</td></tr>`).join('') + '</table>';
+}
+async function createSnapshot(){
+  const rid = document.getElementById('snap-range-id').value;
+  const nm = document.getElementById('snap-name').value;
+  const j = await api('/ranges/'+rid+'/snapshot?name='+encodeURIComponent(nm||''),{method:'POST'});
+  alert(j.success?'快照创建成功':j.error);
+  loadSnapshots();
+}
+async function loadSnapshots(){
+  const j = await api('/snapshots');
+  if(!j.success) return;
+  document.getElementById('snapshots-table').innerHTML = '<table><tr><th>快照ID</th><th>靶场</th><th>名称</th><th>大小</th><th>创建时间</th><th>操作</th></tr>' +
+    j.data.map(s=>`<tr><td>${s.snapshot_id}</td><td>${s.range_name}</td><td>${s.name}</td><td>${s.size_mb}MB</td><td>${s.created_at}</td><td><button class="btn ghost" onclick="restoreSnap('${s.snapshot_id}')">恢复</button></td></tr>`).join('') + '</table>';
+}
+async function restoreSnap(id){
+  const j = await api('/snapshots/'+id+'/restore',{method:'POST'});
+  alert(j.success?'恢复成功':j.error);
+}
+
+// ---------- 扫描验证 ----------
+async function executeScan(){
+  const host=document.getElementById('scan-host').value;
+  const port=parseInt(document.getElementById('scan-port').value);
+  const st=document.getElementById('scan-type').value;
+  const sd=document.getElementById('scan-depth').value;
+  const j = await api('/scans/execute',{method:'POST',body:JSON.stringify({target_host:host,target_port:port,scan_type:st,scan_depth:sd})});
+  if(j.success){
+    alert('扫描完成: 发现'+j.data.vuln_count+'个漏洞, '+j.data.port_count+'个端口');
+    loadScans();
+  } else alert(j.error);
+}
+async function loadScans(){
+  const j = await api('/scans?limit=10');
+  if(!j.success) return;
+  document.getElementById('scans-table').innerHTML = '<table><tr><th>扫描ID</th><th>目标</th><th>类型</th><th>端口数</th><th>漏洞数</th><th>耗时</th><th>状态</th></tr>' +
+    j.data.map(s=>`<tr><td>${s.scan_id}</td><td>${s.target_host}:${s.target_port}</td><td>${s.scan_type_name}</td><td>${s.port_count}</td><td>${s.vuln_count}</td><td>${s.elapsed_s}s</td><td><span class="badge low">${s.status}</span></td></tr>`).join('') + '</table>';
+}
+async function loadFPList(){
+  const j = await api('/fp-list?limit=10');
+  if(!j.success) return;
+  document.getElementById('fp-list').innerHTML = j.data.length?
+    '<table><tr><th>CVE</th><th>名称</th><th>原因</th></tr>'+j.data.map(f=>`<tr><td>${f.cve}</td><td>${f.name}</td><td>${f.reason_desc||f.reason}</td></tr>`).join('')+'</table>'
+    : '<p class="muted">暂无误报记录</p>';
+}
+async function loadFNList(){
+  const j = await api('/fn-list?limit=10');
+  if(!j.success) return;
+  document.getElementById('fn-list').innerHTML = j.data.length?
+    '<table><tr><th>漏洞名</th><th>CVE</th><th>原因</th></tr>'+j.data.map(f=>`<tr><td>${f.vuln_name}</td><td>${f.cve||'-'}</td><td>${f.reason_desc}</td></tr>`).join('')+'</table>'
+    : '<p class="muted">暂无漏报记录</p>';
+}
+
+// ---------- 误报优化 ----------
+async function loadFPKPI(){
+  const j = await api('/overview');
+  if(!j.success) return;
+  const mods = j.data.modules||{};
+  const fpm = mods.fp_optimizer||{};
+  document.getElementById('fp-kpi').innerHTML = [
+    ['规则总数',fpm.total_rules,'启用 '+fpm.enabled_rules],
+    ['过滤次数',fpm.total_filters,'次'],
+    ['ML模型',fpm.total_models,'个'],
+    ['待审核',fpm.review_queue_size,'项'],
+    ['优化轮次',fpm.total_optimization_runs,'轮'],
+  ].map(([l,v,s])=>`<div class="kpi"><div class="label">${l}</div><div class="value">${v}</div><div class="sub">${s}</div></div>`).join('');
+}
+async function loadFPRules(){
+  const j = await api('/fp-rules');
+  if(!j.success) return;
+  document.getElementById('fp-rules-table').innerHTML = '<table><tr><th>#</th><th>名称</th><th>分类</th><th>动作</th><th>优先级</th><th>命中率</th><th>启用</th></tr>' +
+    j.data.map(r=>`<tr><td>${r.rule_number}</td><td>${r.name}</td><td>${r.category}</td><td>${r.action}</td><td>${r.priority}</td><td>${r.hit_count}</td><td>${r.enabled?'✅':'❌'}</td></tr>`).join('') + '</table>';
+}
+function showAddRule(){document.getElementById('add-rule-panel').style.display='block';}
+async function addRule(){
+  const body={name:document.getElementById('rule-name').value,
+    category:document.getElementById('rule-category').value,
+    action:document.getElementById('rule-action').value,
+    priority:document.getElementById('rule-priority').value,
+    condition:{},description:'前端新增规则'};
+  const j = await api('/fp-rules',{method:'POST',body:JSON.stringify(body)});
+  alert(j.success?'规则已添加':j.error);
+  loadFPRules();
+}
+async function loadFPModels(){
+  const j = await api('/fp-models');
+  if(!j.success) return;
+  document.getElementById('fp-models').innerHTML = '<table><tr><th>类型</th><th>版本</th><th>准确率</th><th>F1</th><th>状态</th></tr>' +
+    j.data.map(m=>`<tr><td>${m.type}</td><td>${m.version}</td><td>${(m.accuracy*100).toFixed(1)}%</td><td>${(m.f1*100).toFixed(1)}%</td><td><span class="badge low">${m.status}</span></td></tr>`).join('') + '</table>';
+}
+async function loadReviewQueue(){
+  const j = await api('/fp-review-queue');
+  if(!j.success) return;
+  document.getElementById('fp-review').innerHTML = j.data.length?
+    '<table><tr><th>ID</th><th>优先级</th><th>状态</th></tr>'+j.data.map(r=>`<tr><td>${r.review_id}</td><td>${r.priority}</td><td>${r.status}</td></tr>`).join('')+'</table>'
+    : '<p class="muted">审核队列为空</p>';
+}
+async function runOptimization(){
+  const j = await api('/fp-optimize',{method:'POST'});
+  if(j.success){
+    const d=j.data.optimization_run;
+    document.getElementById('opt-result').innerHTML =
+      `<pre>优化前 FP率: ${d.before.false_positive_rate}\n优化后 FP率: ${d.after.false_positive_rate}\n降低: ${d.improvement.fp_rate_reduction}\n准确率提升: +${d.improvement.precision_gain}</pre>`;
+  } else alert(j.error);
+}
+
+// ---------- 漏洞验证 ----------
+async function loadVulnKPI(){
+  const j = await api('/vuln-stats');
+  if(!j.success) return;
+  document.getElementById('vuln-kpi').innerHTML = [
+    ['漏洞总数',j.data.total_vulns,''],
+    ['已验证',j.data.verified,''],
+    ['平均CVSS',j.data.avg_cvss,'分'],
+    ['报告数',j.data.total_reports,'份'],
+  ].map(([l,v,s])=>`<div class="kpi"><div class="label">${l}</div><div class="value">${v}</div><div class="sub">${s}</div></div>`).join('');
+}
+async function loadVulns(){
+  const sev = document.getElementById('vuln-severity').value;
+  const j = await api('/vulns'+(sev?'?severity='+sev:''));
+  if(!j.success) return;
+  document.getElementById('vulns-table').innerHTML = '<table><tr><th>CVE</th><th>名称</th><th>服务</th><th>端口</th><th>严重度</th><th>CVSS</th><th>状态</th><th>操作</th></tr>' +
+    j.data.map(v=>`<tr><td>${v.cve}</td><td>${v.name}</td><td>${v.service}</td><td>${v.port}</td><td>${badge(v.severity)}</td><td>${v.cvss_score}</td><td>${v.verified?'✅已验证':'⏳未验证'}</td><td><button class="btn" onclick="confirmVuln('${v.vuln_id}')">POC验证</button></td></tr>`).join('') + '</table>';
+}
+async function confirmVuln(id){
+  const j = await api('/vulns/'+id+'/confirm',{method:'POST',body:JSON.stringify({method:'poc'})});
+  alert(j.success?(j.data.vuln.verified?'✅ 漏洞验证成功':'❌ 验证失败'):j.error);
+  loadVulns();
+}
+async function loadVulnTrends(){
+  const j = await api('/vuln-trends?days=30');
+  if(!j.success) return;
+  document.getElementById('vuln-trends').innerHTML =
+    '<div class="progress-row"><div class="pl"><span>严重度分布</span><span>总计 '+j.data.total_vulns+'</span></div></div>' +
+    Object.entries(j.data.severity_distribution).map(([k,v])=>
+      `<div class="progress-row"><div class="pl"><span>${k}</span><span>${v}个</span></div><div class="bar"><span style="width:${v/j.data.total_vulns*100}%"></span></div></div>`
+    ).join('') +
+    `<p class="muted" style="margin-top:8px">平均CVSS: ${j.data.avg_cvss} · 已验证: ${j.data.verified_count}/${j.data.total_vulns}</p>`;
+}
+
+// ---------- 验证体系 ----------
+async function loadFWMetrics(){
+  const j = await api('/metrics');
+  if(!j.success) return;
+  document.getElementById('fw-kpi').innerHTML = [
+    ['用例总数',j.data.total_cases,''],
+    ['通过',j.data.passed,'通过率 '+j.data.pass_rate+'%'],
+    ['失败',j.data.failed,''],
+    ['就绪',j.data.ready,''],
+    ['自动化执行',j.data.total_automation_runs,'次'],
+  ].map(([l,v,s])=>`<div class="kpi"><div class="label">${l}</div><div class="value">${v}</div><div class="sub">${s}</div></div>`).join('');
+}
+async function loadStandards(){
+  const j = await api('/standards');
+  if(!j.success) return;
+  document.getElementById('fw-standards').innerHTML = '<table><tr><th>版本</th><th>名称</th><th>准确率阈值</th><th>FP阈值</th></tr>' +
+    Object.entries(j.data).map(([k,v])=>`<tr><td>${k}</td><td>${v.name}</td><td>${(v.accuracy_threshold*100)}%</td><td>${(v.fp_rate_threshold*100)}%</td></tr>`).join('') + '</table>';
+}
+async function loadBenchmarks(){
+  const j = await api('/benchmarks');
+  if(!j.success) return;
+  document.getElementById('fw-benchmarks').innerHTML = '<table><tr><th>ID</th><th>名称</th><th>预期漏洞数</th><th>预期FP率</th></tr>' +
+    Object.entries(j.data).map(([k,v])=>`<tr><td>${k}</td><td>${v.name}</td><td>${v.expected_vulns}</td><td>${(v.expected_fp_rate*100)}%</td></tr>`).join('') + '</table>';
+}
+async function loadTestCases(){
+  const j = await api('/test-cases');
+  if(!j.success) return;
+  document.getElementById('test-cases-table').innerHTML = '<table><tr><th>#</th><th>名称</th><th>分类</th><th>优先级</th><th>目标</th><th>状态</th><th>操作</th></tr>' +
+    j.data.map(c=>`<tr><td>${c.case_number}</td><td>${c.name}</td><td>${c.category}</td><td>${c.priority}</td><td>${c.target}</td><td>${c.status}</td><td><button class="btn" onclick="runCase('${c.case_id}')">执行</button></td></tr>`).join('') + '</table>';
+}
+async function runCase(id){
+  const j = await api('/test-cases/'+id+'/run',{method:'POST'});
+  alert(j.success?(j.data.run.result==='passed'?'✅ 通过':'❌ 失败'):j.error);
+  loadTestCases();
+}
+async function runRegression(){
+  const j = await api('/regression',{method:'POST'});
+  if(j.success) alert('回归测试完成: '+j.data.passed+'/'+j.data.total_cases+' 通过 ('+j.data.pass_rate+'%)');
+  else alert(j.error);
+  loadTestCases();
+}
+
+// ---------- 系统设置 ----------
+async function loadSettings(){
+  const j = await api('/settings');
+  if(!j.success) return;
+  const s = j.data;
+  document.getElementById('settings-form').innerHTML =
+    Object.entries(s).map(([k,v])=>`<div class="row"><label style="min-width:200px">${k}</label><input data-key="${k}" value="${esc(v)}"></div>`).join('');
+}
+async function saveSettings(){
+  const body={};
+  document.querySelectorAll('#settings-form input').forEach(i=>{body[i.dataset.key]=i.value;});
+  const j = await api('/settings',{method:'PUT',body:JSON.stringify(body)});
+  alert(j.success?'设置已保存':j.error);
+}
+async function loadExports(){
+  const j = await api('/exports');
+  if(!j.success) return;
+  document.getElementById('exports-list').innerHTML = j.data.length?
+    '<table><tr><th>导出ID</th><th>格式</th><th>时间</th></tr>'+j.data.map(e=>`<tr><td>${e.export_id}</td><td>${e.format}</td><td>${e.exported_at}</td></tr>`).join('')+'</table>'
+    : '<p class="muted">暂无导出记录</p>';
+}
+async function exportReport(){
+  const j = await api('/export?fmt=json',{method:'POST'});
+  alert(j.success?'导出成功，ID: '+j.data.report.export_id:j.error);
+  loadExports();
+}
+async function loadModuleInfo(){
+  const j = await api('/info');
+  if(!j.success) return;
+  document.getElementById('module-info').innerHTML = '<pre>'+esc(JSON.stringify(j.data,null,2))+'</pre>';
+}
+
+// 初始加载
+loadOverview();
+</script>
+</body>
+</html>

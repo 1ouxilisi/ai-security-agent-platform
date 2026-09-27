@@ -1,0 +1,73 @@
+[
+  {
+    "rule_id": "r-new-vuln",
+    "name": "新高危漏洞",
+    "description": "当扫描发现新的高危/严重漏洞时触发",
+    "condition_type": "new_vuln",
+    "condition_params": {
+      "min_severity": "high"
+    },
+    "severity": "critical",
+    "enabled": true,
+    "channels": [
+      "inapp"
+    ]
+  },
+  {
+    "rule_id": "r-task-failed",
+    "name": "任务失败",
+    "description": "当扫描任务连续失败时触发",
+    "condition_type": "task_failed",
+    "condition_params": {
+      "max_retries": 3
+    },
+    "severity": "high",
+    "enabled": true,
+    "channels": [
+      "inapp",
+      "webhook"
+    ]
+  },
+  {
+    "rule_id": "r-tool-error",
+    "name": "工具异常",
+    "description": "当外部扫描工具报错/不可用时触发",
+    "condition_type": "tool_error",
+    "condition_params": {},
+    "severity": "medium",
+    "enabled": true,
+    "channels": [
+      "inapp"
+    ]
+  },
+  {
+    "rule_id": "r-quota",
+    "name": "配额超限",
+    "description": "当 API/扫描配额超过阈值时触发",
+    "condition_type": "quota_exceeded",
+    "condition_params": {
+      "threshold_percent": 90
+    },
+    "severity": "medium",
+    "enabled": true,
+    "channels": [
+      "inapp",
+      "email"
+    ]
+  },
+  {
+    "rule_id": "r-risk-change",
+    "name": "风险等级变化",
+    "description": "当目标整体风险等级上升时触发",
+    "condition_type": "risk_change",
+    "condition_params": {
+      "direction": "up"
+    },
+    "severity": "high",
+    "enabled": true,
+    "channels": [
+      "inapp",
+      "webhook"
+    ]
+  }
+]

@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Security Training Pro · 安全培训做深</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#121821; --panel2:#18212d; --border:#243040;
+  --fg:#e6edf3; --muted:#8b98a8; --accent:#4fc3f7; --ok:#2ecc71;
+  --warn:#f1c40f; --high:#ff7043; --crit:#ff1744; --ai:#ce93d8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  font-size:13px;line-height:1.5;}
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 18px;background:linear-gradient(90deg,#10161d,#16202c);
+  border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+header h1{font-size:16px;margin:0;color:var(--accent)}
+header .sub{color:var(--muted);font-size:12px;margin-left:10px}
+button{background:#1c2733;color:var(--fg);border:1px solid var(--border);
+  padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px}
+button:hover{background:#243240}
+button.primary{background:#1565c0;border-color:#1976d2}
+button.danger{background:#b71c1c;border-color:#c62828}
+button.ai{background:#4a148c;border-color:#6a1b9a}
+.tabbar{display:flex;gap:2px;padding:8px 18px;background:#0e141b;
+  border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:wrap}
+.tabbar .tab{padding:6px 14px;cursor:pointer;border-radius:4px;
+  color:var(--muted);white-space:nowrap}
+.tabbar .tab.active{background:#1c2733;color:var(--accent)}
+main{padding:14px 18px}
+.page{display:none}
+.page.active{display:block}
+.panel{background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;padding:12px;margin-bottom:12px}
+.panel h3{margin:0 0 8px;font-size:13px;color:var(--accent)}
+.grid{display:grid;gap:12px}
+.grid.c2{grid-template-columns:1fr 1fr}
+.grid.c3{grid-template-columns:1fr 1fr 1fr}
+.grid.c4{grid-template-columns:repeat(4,1fr)}
+.grid.c5{grid-template-columns:repeat(5,1fr)}
+@media(max-width:1100px){.grid.c3,.grid.c4,.grid.c5{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.grid.c2,.grid.c3,.grid.c4,.grid.c5{grid-template-columns:1fr}}
+.kpi{background:var(--panel2);border:1px solid var(--border);
+  border-radius:6px;padding:10px 12px}
+.kpi .v{font-size:22px;font-weight:600}
+.kpi .l{color:var(--muted);font-size:11px}
+.kpi.ok .v{color:var(--ok)} .kpi.ai .v{color:var(--ai)}
+.kpi.warn .v{color:var(--warn)} .kpi.high .v{color:var(--high)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:5px 8px;border-bottom:1px solid var(--border);
+  text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+.badge{display:inline-block;padding:1px 7px;border-radius:10px;
+  font-size:11px;background:#1c2733;color:var(--accent)}
+.bar{height:8px;background:#1c2733;border-radius:4px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent)}
+.stage{display:flex;align-items:center;gap:8px;padding:6px 0;
+  border-bottom:1px dashed var(--border)}
+.stage .dot{width:10px;height:10px;border-radius:50%;
+  background:#2a3441;flex:none}
+.stage.done .dot{background:var(--ok)}
+.stage.active .dot{background:var(--accent);
+  box-shadow:0 0 8px var(--accent)}
+.log{background:#0a0e13;border:1px solid var(--border);
+  border-radius:4px;padding:8px;height:260px;overflow:auto;
+  font-family:Consolas,monospace;font-size:11px;white-space:pre-wrap}
+.thought{background:#1a1425;border-left:3px solid var(--ai);
+  padding:6px 10px;margin:4px 0;border-radius:3px;color:var(--ai);
+  font-style:italic;font-size:12px}
+.muted{color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input,select,textarea{background:#0e141b;color:var(--fg);
+  border:1px solid var(--border);padding:6px 8px;border-radius:4px;
+  font-size:12px}
+pre.out{background:#0a0e13;padding:10px;border-radius:4px;
+  overflow:auto;max-height:340px;font-size:11px;white-space:pre-wrap}
+.ev{padding:5px 0;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Security Training Pro · 安全培训做深</h1>
+    <span class="sub">八阶段 / AI / WebSocket / 大屏 / 报告</span></div>
+  <div class="row">
+    <button class="primary" onclick="startRun()">▶ 启动八阶段全流程</button>
+    <button class="ai" onclick="loadDash()">🔄 刷新大屏</button>
+    <button onclick="genReport()">📄 生成报告</button>
+  </div>
+</header>
+
+<div class="tabbar" id="tabbar">
+  <div class="tab active" data-p="dash">培训大屏</div>
+  <div class="tab" data-p="flow">八阶段流程</div>
+  <div class="tab" data-p="courses">课程管理</div>
+  <div class="tab" data-p="paths">学习路径</div>
+  <div class="tab" data-p="labs">实验环境</div>
+  <div class="tab" data-p="exam">考试系统</div>
+  <div class="tab" data-p="phish">钓鱼演练</div>
+  <div class="tab" data-p="stu">学员管理</div>
+  <div class="tab" data-p="ins">讲师管理</div>
+  <div class="tab" data-p="ana">数据分析</div>
+  <div class="tab" data-p="ai">AI 分析</div>
+  <div class="tab" data-p="report">报告</div>
+</div>
+
+<main>
+  <!-- 大屏 -->
+  <div class="page active" id="p-dash">
+    <div class="grid c5" id="kpi"></div>
+    <div class="grid c2" style="margin-top:12px">
+      <div class="panel"><h3>能力分布（各领域均分）</h3><div id="dashAbility"></div></div>
+      <div class="panel"><h3>实时事件流</h3><div id="dashEvents"></div></div>
+    </div>
+    <div class="grid c2">
+      <div class="panel"><h3>讲师排名</h3><div id="dashIns"></div></div>
+      <div class="panel"><h3>ROI / 通过率</h3><div id="dashRoi"></div></div>
+    </div>
+  </div>
+
+  <!-- 八阶段流程 -->
+  <div class="page" id="p-flow">
+    <div class="panel"><h3>八阶段进度</h3><div id="stages"></div>
+      <div class="row" style="margin-top:8px">
+        <span class="muted">整体进度：</span>
+        <div class="bar" style="flex:1"><i id="overallBar" style="width:0%"></i></div>
+        <span id="overallPct">0%</span>
+      </div>
+    </div>
+    <div class="grid c2">
+      <div class="panel"><h3>日志流</h3><div class="log" id="log"></div></div>
+      <div>
+        <div class="panel"><h3>AI 思考过程</h3><div id="thought"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 课程 -->
+  <div class="page" id="p-courses">
+    <div class="panel"><h3>课程列表</h3><div id="courseList"></div></div>
+  </div>
+  <!-- 路径 -->
+  <div class="page" id="p-paths">
+    <div class="panel"><h3>学习路径</h3><div id="pathList"></div></div>
+  </div>
+  <!-- 实验 -->
+  <div class="page" id="p-labs">
+    <div class="panel"><h3>Docker 状态</h3><div id="dockerStat"></div></div>
+    <div class="panel"><h3>实验环境</h3><div id="labList"></div></div>
+  </div>
+  <!-- 考试 -->
+  <div class="page" id="p-exam">
+    <div class="panel"><h3>题库 / 试卷 / 统计</h3><div id="examStat"></div></div>
+  </div>
+  <!-- 钓鱼 -->
+  <div class="page" id="p-phish">
+    <div class="panel"><h3>钓鱼演练统计</h3><div id="phishStat"></div></div>
+  </div>
+  <!-- 学员 -->
+  <div class="page" id="p-stu">
+    <div class="panel"><h3>学员列表</h3><div id="stuList"></div></div>
+  </div>
+  <!-- 讲师 -->
+  <div class="page" id="p-ins">
+    <div class="panel"><h3>讲师列表</h3><div id="insList"></div></div>
+  </div>
+  <!-- 分析 -->
+  <div class="page" id="p-ana">
+    <div class="panel"><h3>数据分析面板</h3><div id="anaViz"></div></div>
+  </div>
+  <!-- AI -->
+  <div class="page" id="p-ai">
+    <div class="panel"><h3>AI 自动出题 / 生成课程内容 / 能力评估</h3>
+      <div class="row">
+        <input id="aiTopic" value="SQL注入" style="width:160px">
+        <button class="ai" onclick="aiCourse()">生成课程内容</button>
+        <button class="ai" onclick="aiQ()">自动出题</button>
+        <button class="ai" onclick="aiAdvice()">学习建议</button>
+      </div>
+      <pre class="out" id="aiOut"></pre>
+    </div>
+  </div>
+  <!-- 报告 -->
+  <div class="page" id="p-report">
+    <div class="panel"><h3>已生成报告</h3><div id="reportList"></div></div>
+  </div>
+</main>
+
+<script>
+const API="/api/v1/security-training-pro";
+let ws=null, curTask=null;
+
+function esc(s){return (s==null?"":String(s)).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function tab(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('p-'+id).classList.add('active');
+  document.querySelectorAll('.tabbar .tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.tab[data-p="${id}"]`).classList.add('active');
+  if(id==='dash') loadDash();
+}
+document.querySelectorAll('.tabbar .tab').forEach(t=>t.onclick=()=>tab(t.dataset.p));
+
+async function api(path,opt){const r=await fetch(API+path,opt||{});
+  const j=await r.json();return j;}
+
+function renderKpi(k){const el=document.getElementById('kpi');el.innerHTML='';
+  Object.entries(k).forEach(([label,v],i)=>{
+    const colors=['','ok','ai','warn','high'];
+    el.innerHTML+=`<div class="kpi ${colors[i%colors.length]}"><div class="v">${esc(v)}</div><div class="l">${esc(label)}</div></div>`;
+  });}
+
+async function loadDash(){
+  const [kpi,viz,ev,ins]=await Promise.all([
+    api('/dashboard/kpi'),api('/dashboard/full'),
+    api('/dashboard/events'),api('/dashboard/instructors')]);
+  if(kpi.data) renderKpi(kpi.data);
+  if(viz.data){
+    const ab=viz.data.ability&&viz.data.ability.domains||{};
+    document.getElementById('dashAbility').innerHTML=Object.entries(ab).map(([d,v])=>
+      `<div style="margin:4px 0"><div class="muted">${esc(d)}</div>
+       <div class="bar"><i style="width:${v}%"></i></div></div>`).join('')||'<span class="muted">暂无</span>';
+    document.getElementById('dashRoi').innerHTML=
+      `<div>ROI：<b>${viz.data.roi.roi}%</b></div>
+       <div class="muted">投入 ${viz.data.roi.training_cost} / 价值 ${viz.data.roi.estimated_value}</div>`;
+  }
+  if(ev.data) document.getElementById('dashEvents').innerHTML=ev.data.events.map(e=>
+    `<div class="ev"><span>${e.time}</span><span>${esc(e.event)}</span><span class="badge">${e.level}</span></div>`).join('');
+  if(ins.data) document.getElementById('dashIns').innerHTML='<table><tr><th>#</th><th>讲师</th><th>评分</th><th>学员</th></tr>'+
+    ins.data.rank.map(r=>`<tr><td>${r.rank}</td><td>${esc(r.name)}</td><td>${r.rating}</td><td>${r.students}</td></tr>`).join('')+'</table>';
+}
+
+function renderStages(){api('/stages').then(j=>{
+  document.getElementById('stages').innerHTML=j.data.stages.map(s=>
+    `<div class="stage" id="st-${s.key}"><span class="dot"></span>
+     <span>${s.label}</span><span class="muted">目标 ${s.progress}%</span></div>`).join('');
+});}
+
+function appendLog(level,msg,color){
+  const el=document.getElementById('log');
+  const c=color||'#4fc3f7';
+  el.innerHTML+=`<div style="color:${c}">[${level}] ${esc(msg)}</div>`;
+  el.scrollTop=el.scrollHeight;
+}
+function appendThought(t){
+  const el=document.getElementById('thought');
+  el.innerHTML+=`<div class="thought">💭 ${esc(t)}</div>`;
+}
+
+function connectWS(taskId){
+  if(ws) ws.close();
+  const proto=location.protocol==='https:'?'wss':'ws';
+  ws=new WebSocket(`${proto}://${location.host}${API}/ws/${taskId}`);
+  ws.onmessage=e=>{const m=JSON.parse(e.data);
+    if(m.type==='progress'){
+      document.getElementById('overallPct').textContent=m.overall+'%';
+      document.getElementById('overallBar').style.width=m.overall+'%';
+      document.querySelectorAll('.stage').forEach(s=>s.classList.remove('active'));
+      const el=document.getElementById('st-'+m.stage);
+      if(el){el.classList.add('active');
+        if(m.overall>=100){el.classList.remove('active');el.classList.add('done');}}
+    } else if(m.type==='log'){appendLog(m.level,m.message,m.color);}
+    else if(m.type==='thought'){appendThought(m.thought);}
+    else if(m.type==='result'){appendLog('OK','全流程完成', '#2ecc71');}
+  };
+}
+
+async function startRun(){
+  const j=await api('/start',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:'安全培训全流程演练'})});
+  if(!j.data) return;
+  curTask=j.data.task_id;
+  document.getElementById('log').innerHTML='';
+  document.getElementById('thought').innerHTML='';
+  tab('flow');
+  connectWS(curTask);
+}
+
+async function genReport(){
+  const j=await api('/report/generate',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({fmt:'both'})});
+  alert('报告已生成：'+(j.data?j.data.md_path:JSON.stringify(j)));
+  loadReportList();
+}
+async function loadReportList(){
+  const j=await api('/report/latest');
+  document.getElementById('reportList').innerHTML=
+    '<pre class="out">'+esc((j.data.files||[]).join('\n'))+'</pre>';
+}
+
+// 各 Tab 加载
+function loadCourses(){api('/courses?status=%E5%B7%B2%E5%8F%91%E5%B8%83').then(j=>{
+  document.getElementById('courseList').innerHTML='<table><tr><th>名称</th><th>分类</th><th>难度</th><th>学员</th><th>评分</th></tr>'+
+    j.data.courses.map(c=>`<tr><td>${esc(c.name)}</td><td>${c.category}</td><td>${c.difficulty}</td><td>${c.students}</td><td>${c.rating}</td></tr>`).join('')+'</table>';
+});}
+function loadPaths(){api('/paths').then(j=>{
+  document.getElementById('pathList').innerHTML=j.data.paths.map(p=>
+    `<div class="panel"><b>${p.name}</b> <span class="badge">${p.level}</span>
+     <div class="muted">${p.description} · 进度 ${p.progress}%</div>
+     <div class="bar" style="margin-top:4px"><i style="width:${p.progress}%"></i></div></div>`).join('');
+});}
+function loadLabs(){
+  api('/labs/docker/status').then(j=>{document.getElementById('dockerStat').innerHTML=
+    `<pre class="out">${esc(JSON.stringify(j.data,null,2))}</pre>`;});
+  api('/labs').then(j=>{document.getElementById('labList').innerHTML=
+    '<table><tr><th>实验</th><th>分类</th><th>难度</th><th>状态</th></tr>'+
+    j.data.labs.map(l=>`<tr><td>${esc(l.name)}</td><td>${l.category}</td><td>${l.difficulty}</td><td>${l.status}</td></tr>`).join('')+'</table>';});
+}
+function loadExam(){api('/exam/stats/summary').then(j=>{
+  document.getElementById('examStat').innerHTML='<pre class="out">'+esc(JSON.stringify(j.data,null,2))+'</pre>';});}
+function loadPhish(){api('/phishing/stats/summary').then(j=>{
+  document.getElementById('phishStat').innerHTML='<pre class="out">'+esc(JSON.stringify(j.data,null,2))+'</pre>';});}
+function loadStu(){api('/students').then(j=>{
+  document.getElementById('stuList').innerHTML='<table><tr><th>姓名</th><th>组织</th><th>状态</th><th>学习分钟</th></tr>'+
+    j.data.students.map(s=>`<tr><td>${esc(s.name)}</td><td>${esc(s.org)}</td><td>${s.status}</td><td>${s.study_minutes}</td></tr>`).join('')+'</table>';});}
+function loadIns(){api('/instructors').then(j=>{
+  document.getElementById('insList').innerHTML='<table><tr><th>讲师</th><th>领域</th><th>等级</th><th>评分</th></tr>'+
+    j.data.instructors.map(i=>`<tr><td>${esc(i.name)}</td><td>${i.domain}</td><td>${i.level}</td><td>${i.rating}</td></tr>`).join('')+'</table>';});}
+function loadAna(){api('/analysis/visualizations').then(j=>{
+  document.getElementById('anaViz').innerHTML='<pre class="out">'+esc(JSON.stringify(j.data,null,2))+'</pre>';});}
+
+async function aiCourse(){const t=document.getElementById('aiTopic').value;
+  const j=await api('/ai/course-content',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({topic:t,level:'简单'})});
+  document.getElementById('aiOut').textContent=JSON.stringify(j.data,null,2);}
+async function aiQ(){const t=document.getElementById('aiTopic').value;
+  const j=await api('/ai/questions',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({knowledge:t,difficulty:'简单',qtype:'单选题',count:3})});
+  document.getElementById('aiOut').textContent=JSON.stringify(j.data,null,2);}
+async function aiAdvice(){
+  const j=await api('/ai/study-advice',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ability:{"Web安全":60,"密码学":30,"逆向工程":40}})});
+  document.getElementById('aiOut').textContent=JSON.stringify(j.data,null,2);}
+
+// 初始
+renderStages(); loadDash();
+</script>
+</body>
+</html>

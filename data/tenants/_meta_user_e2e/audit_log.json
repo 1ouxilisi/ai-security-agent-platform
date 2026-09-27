@@ -1,0 +1,26 @@
+[
+  {
+    "log_id": "e2646112ca3159ef",
+    "timestamp": 1789196692.0124521,
+    "username": "e2e_analyst",
+    "action": "user:create",
+    "resource": "e2e_analyst",
+    "details": {
+      "role": "security_analyst"
+    },
+    "ip_address": "",
+    "success": true
+  },
+  {
+    "log_id": "bec460a7faf32dfe",
+    "timestamp": 1789196692.5106535,
+    "username": "e2e_analyst",
+    "action": "auth:login",
+    "resource": "e2e_analyst",
+    "details": {
+      "ip": "127.0.0.1"
+    },
+    "ip_address": "",
+    "success": true
+  }
+]

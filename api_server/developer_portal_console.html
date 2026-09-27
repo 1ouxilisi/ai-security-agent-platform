@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>开发者中心 · 开放 API 平台控制台</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg-2: #161a23;
+    --panel: #1b2030;
+    --panel-2: #222840;
+    --border: #2c3350;
+    --text: #e6e9f2;
+    --muted: #8a93b2;
+    --accent: #7c8cff;
+    --accent-2: #a06bff;
+    --ok: #3ddc84;
+    --warn: #ffb454;
+    --err: #ff6b6b;
+    --code-bg: #0c0f18;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); font-size: 14px;
+  }
+  header {
+    padding: 16px 24px; background: linear-gradient(135deg, #1a1f35, #241a3a);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  header h1 { margin: 0; font-size: 18px; }
+  header h1 span { color: var(--accent); }
+  .status-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--ok); margin-right: 6px;
+  }
+  nav.tabs {
+    display: flex; flex-wrap: wrap; gap: 4px; padding: 0 16px;
+    background: var(--bg-2); border-bottom: 1px solid var(--border);
+  }
+  nav.tabs button {
+    background: transparent; color: var(--muted); border: none;
+    padding: 12px 16px; cursor: pointer; font-size: 14px;
+    border-bottom: 2px solid transparent;
+  }
+  nav.tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+  nav.tabs button:hover { color: var(--text); }
+  main { padding: 20px; max-width: 1400px; margin: 0 auto; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+  .cards {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px; margin-bottom: 20px;
+  }
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px;
+  }
+  .card .label { color: var(--muted); font-size: 12px; }
+  .card .value { font-size: 22px; font-weight: 600; margin-top: 4px; color: var(--accent); }
+  table {
+    width: 100%; border-collapse: collapse; background: var(--panel);
+    border-radius: 8px; overflow: hidden; margin-bottom: 16px;
+  }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { background: var(--panel-2); color: var(--muted); font-weight: 500; font-size: 12px; }
+  tr:hover td { background: rgba(124,140,255,0.05); }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 11px; background: var(--panel-2); color: var(--accent);
+  }
+  .badge.ok { background: rgba(61,220,132,0.15); color: var(--ok); }
+  .badge.warn { background: rgba(255,180,84,0.15); color: var(--warn); }
+  .badge.err { background: rgba(255,107,107,0.15); color: var(--err); }
+  button.btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff; border: none; padding: 8px 16px; border-radius: 6px;
+    cursor: pointer; font-size: 13px;
+  }
+  button.btn:hover { opacity: 0.9; }
+  button.btn.ghost {
+    background: transparent; border: 1px solid var(--border); color: var(--text);
+  }
+  input, select, textarea {
+    background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 10px; border-radius: 6px; font-size: 13px; width: 100%;
+  }
+  textarea { font-family: Consolas, monospace; min-height: 80px; }
+  pre.code {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 12px; overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace; font-size: 12px;
+    color: #c8e6c9;
+  }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 200px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px; margin-bottom: 16px;
+  }
+  .panel h3 { margin: 0 0 10px 0; font-size: 14px; color: var(--accent); }
+  .muted { color: var(--muted); font-size: 12px; }
+  .method-GET { color: #61affe; }
+  .method-POST { color: #49cc90; }
+  .method-DELETE { color: #f93e3e; }
+  .method-PATCH { color: #50e3c2; }
+  .search-bar { margin-bottom: 12px; display: flex; gap: 8px; }
+  .toast {
+    position: fixed; bottom: 20px; right: 20px; padding: 10px 16px;
+    border-radius: 6px; background: var(--panel-2); border: 1px solid var(--accent);
+    color: var(--text); z-index: 999; display: none;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛠 开发者中心 <span>· 开放 API 平台</span></h1>
+  <div><span class="status-dot"></span><span class="muted">平台运行正常 · v15.0</span></div>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-tab="docs">📄 API 文档</button>
+  <button data-tab="sdk">📦 SDK 工具</button>
+  <button data-tab="sandbox">🧪 沙箱</button>
+  <button data-tab="keys">🔑 应用密钥</button>
+  <button data-tab="billing">💰 用量计费</button>
+  <button data-tab="community">👥 社区支持</button>
+</nav>
+
+<main>
+  <!-- 总览卡片 -->
+  <div class="cards" id="overview-cards">
+    <div class="card"><div class="label">接口总数</div><div class="value" id="ov-eps">-</div></div>
+    <div class="card"><div class="label">注册应用</div><div class="value" id="ov-apps">-</div></div>
+    <div class="card"><div class="label">活跃密钥</div><div class="value" id="ov-keys">-</div></div>
+    <div class="card"><div class="label">沙箱数</div><div class="value" id="ov-sb">-</div></div>
+    <div class="card"><div class="label">社区成员</div><div class="value" id="ov-members">-</div></div>
+  </div>
+
+  <!-- Tab 1: API 文档 -->
+  <section class="tab-pane active" id="tab-docs">
+    <div class="panel">
+      <h3>接口检索</h3>
+      <div class="search-bar">
+        <select id="doc-category" style="max-width:160px;">
+          <option>全部</option><option>认证</option><option>扫描</option>
+          <option>报告</option><option>情报</option><option>资产</option>
+        </select>
+        <input id="doc-keyword" placeholder="搜索接口名/路径...">
+        <button class="btn" onclick="loadDocs()">查询</button>
+        <button class="btn ghost" onclick="loadOpenapi()">导出 OpenAPI</button>
+      </div>
+      <table>
+        <thead><tr><th>方法</th><th>路径</th><th>分类</th><th>说明</th><th>限流</th></tr></thead>
+        <tbody id="doc-tbody"></tbody>
+      </table>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>示例代码</h3>
+        <div class="row">
+          <input id="ex-ep" placeholder="endpoint id，如 ep_scan_start" value="ep_scan_start">
+          <select id="ex-lang" style="max-width:140px;">
+            <option value="python">Python</option><option value="javascript">JS</option>
+            <option value="curl">cURL</option>
+          </select>
+          <button class="btn" onclick="loadExample()">生成</button>
+        </div>
+        <pre class="code" id="ex-code">// 示例代码将显示在这里</pre>
+      </div>
+      <div class="panel">
+        <h3>错误码文档</h3>
+        <table><thead><tr><th>码</th><th>名称</th><th>HTTP</th><th>说明</th></tr></thead>
+        <tbody id="err-tbody"></tbody></table>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>变更日志</h3>
+      <div id="changelog"></div>
+    </div>
+  </section>
+
+  <!-- Tab 2: SDK 工具 -->
+  <section class="tab-pane" id="tab-sdk">
+    <div class="cards" id="sdk-cards"></div>
+    <div class="panel">
+      <h3>下载 SDK / 集合导出</h3>
+      <div class="row">
+        <button class="btn" onclick="downloadSDK('python')">下载 Python SDK</button>
+        <button class="btn" onclick="downloadSDK('javascript')">下载 JS SDK</button>
+        <button class="btn ghost" onclick="loadPostman()">Postman 集合</button>
+        <button class="btn ghost" onclick="loadInsomnia()">Insomnia 集合</button>
+        <button class="btn ghost" onclick="loadCurl()">cURL 示例</button>
+        <button class="btn ghost" onclick="loadCLI()">CLI 工具</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>SDK 示例代码</h3>
+      <pre class="code" id="sdk-example">// 点击上方按钮加载</pre>
+    </div>
+  </section>
+
+  <!-- Tab 3: 沙箱 -->
+  <section class="tab-pane" id="tab-sandbox">
+    <div class="panel">
+      <h3>创建沙箱</h3>
+      <div class="row">
+        <input id="sb-owner" placeholder="所有者" value="demo_dev">
+        <input id="sb-name" placeholder="沙箱名称" value="demo-sandbox">
+        <button class="btn" onclick="createSandbox()">创建</button>
+        <button class="btn ghost" onclick="listSandboxes()">刷新列表</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>沙箱列表</h3>
+      <table>
+        <thead><tr><th>ID</th><th>名称</th><th>所有者</th><th>状态</th><th>已用调用</th><th>测试 Key</th><th>操作</th></tr></thead>
+        <tbody id="sb-tbody"></tbody>
+      </table>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>交互式 API 调试</h3>
+        <div class="row">
+          <select id="dbg-method" style="max-width:100px;">
+            <option>GET</option><option>POST</option><option>DELETE</option>
+          </select>
+          <input id="dbg-endpoint" placeholder="endpoint" value="/api/v1/ping">
+        </div>
+        <textarea id="dbg-payload" placeholder='JSON payload'>{"hello":"world"}</textarea>
+        <button class="btn" onclick="mockRequest()" style="margin-top:8px;">发送请求</button>
+        <pre class="code" id="dbg-resp" style="margin-top:8px;">// 响应将显示在这里</pre>
+      </div>
+      <div class="panel">
+        <h3>调试日志 / 健康检查</h3>
+        <button class="btn ghost" onclick="sbHealth()">健康检查</button>
+        <button class="btn ghost" onclick="sbLogs()">查看日志</button>
+        <button class="btn ghost" onclick="sbReset()">重置沙箱</button>
+        <pre class="code" id="sb-debug" style="margin-top:8px;">// 调试信息</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab 4: 应用密钥 -->
+  <section class="tab-pane" id="tab-keys">
+    <div class="panel">
+      <h3>注册应用</h3>
+      <div class="row">
+        <input id="app-name" placeholder="应用名称" value="demo-app">
+        <input id="app-owner" placeholder="所有者" value="demo_dev">
+        <input id="app-desc" placeholder="描述" value="演示应用">
+        <button class="btn" onclick="registerApp()">创建应用</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>应用列表</h3>
+      <table>
+        <thead><tr><th>App ID</th><th>名称</th><th>所有者</th><th>状态</th><th>权限</th><th>操作</th></tr></thead>
+        <tbody id="app-tbody"></tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <h3>密钥列表</h3>
+      <table>
+        <thead><tr><th>Key ID</th><th>App</th><th>前缀</th><th>状态</th><th>轮换次数</th><th>操作</th></tr></thead>
+        <tbody id="key-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Tab 5: 用量计费 -->
+  <section class="tab-pane" id="tab-billing">
+    <div class="panel">
+      <h3>套餐</h3>
+      <table><thead><tr><th>ID</th><th>名称</th><th>月费</th><th>月配额</th><th>限流/分</th><th>特性</th></tr></thead>
+      <tbody id="plan-tbody"></tbody></table>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>用量查询 / 记录</h3>
+        <div class="row">
+          <input id="usage-app" placeholder="app_id" value="app_demo">
+          <button class="btn" onclick="loadUsage()">查询用量</button>
+          <button class="btn ghost" onclick="recordUsage()">模拟一次调用</button>
+        </div>
+        <pre class="code" id="usage-out" style="margin-top:8px;">// 用量信息</pre>
+      </div>
+      <div class="panel">
+        <h3>账单</h3>
+        <button class="btn" onclick="genBill()">生成本月账单</button>
+        <table style="margin-top:8px;"><thead><tr><th>Bill ID</th><th>期间</th><th>金额</th><th>状态</th></tr></thead>
+        <tbody id="bill-tbody"></tbody></table>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>用量告警</h3>
+      <div id="alarm-list" class="muted">暂无告警</div>
+    </div>
+  </section>
+
+  <!-- Tab 6: 社区支持 -->
+  <section class="tab-pane" id="tab-community">
+    <div class="grid-2">
+      <div class="panel">
+        <h3>服务状态</h3>
+        <div id="status-page"></div>
+      </div>
+      <div class="panel">
+        <h3>开发者等级</h3>
+        <table><thead><tr><th>等级</th><th>名称</th><th>所需积分</th><th>特权</th></tr></thead>
+        <tbody id="tier-tbody"></tbody></table>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>教程</h3>
+        <div id="tutorial-list"></div>
+      </div>
+      <div class="panel">
+        <h3>常见问题</h3>
+        <div id="faq-list"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>提交反馈</h3>
+      <div class="row">
+        <input id="fb-kind" placeholder="类型 (bug/feature)" value="bug">
+        <input id="fb-author" placeholder="作者" value="demo_dev">
+      </div>
+      <textarea id="fb-body" placeholder="反馈内容" style="margin-top:8px;">发现一个小问题...</textarea>
+      <button class="btn" onclick="submitFeedback()" style="margin-top:8px;">提交</button>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = "/api/v1/developer-portal";
+let currentSbId = null, currentAppId = null, currentKeyId = null;
+
+async function api(path, opts={}) {
+  try {
+    const r = await fetch(BASE + path, {
+      headers: {"Content-Type":"application/json"},
+      ...opts
+    });
+    const j = await r.json();
+    return j;
+  } catch (e) {
+    return {success:false, error:String(e)};
+  }
+}
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.style.display = "block";
+  setTimeout(()=>t.style.display="none", 2500);
+}
+function esc(s) {
+  return String(s==null?"":s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+}
+
+// Tabs
+document.querySelectorAll("nav.tabs button").forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll("nav.tabs button").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".tab-pane").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    document.getElementById("tab-"+b.dataset.tab).classList.add("active");
+  };
+});
+
+// Overview
+async function loadOverview() {
+  const j = await api("/workflow/overview");
+  if (j.success) {
+    document.getElementById("ov-eps").textContent = j.data.docs_endpoints ?? "-";
+    document.getElementById("ov-apps").textContent = j.data.registered_apps ?? "-";
+    document.getElementById("ov-keys").textContent = j.data.active_keys ?? "-";
+    document.getElementById("ov-sb").textContent = j.data.active_sandboxes ?? "-";
+    document.getElementById("ov-members").textContent = j.data.community_members ?? "-";
+  }
+}
+
+// Docs
+async function loadDocs() {
+  const cat = document.getElementById("doc-category").value;
+  const kw = document.getElementById("doc-keyword").value;
+  const j = await api(`/docs/endpoints?category=${encodeURIComponent(cat)}&keyword=${encodeURIComponent(kw)}`);
+  const tb = document.getElementById("doc-tbody");
+  tb.innerHTML = "";
+  if (j.success) j.data.forEach(ep=>{
+    tb.innerHTML += `<tr><td class="method-${esc(ep.method)}">${esc(ep.method)}</td>
+      <td><code>${esc(ep.path)}</code></td><td>${esc(ep.category)}</td>
+      <td>${esc(ep.title)}</td><td>${esc(ep.rate_limit)}</td></tr>`;
+  });
+}
+async function loadOpenapi() {
+  const j = await api("/docs/openapi?version=v1");
+  if (j.success) {
+    document.getElementById("ex-code").textContent = JSON.stringify(j.data.openapi, null, 2);
+    toast("OpenAPI 已生成");
+  }
+}
+async function loadExample() {
+  const ep = document.getElementById("ex-ep").value;
+  const lang = document.getElementById("ex-lang").value;
+  const j = await api(`/docs/example-code?ep_id=${encodeURIComponent(ep)}&language=${encodeURIComponent(lang)}`);
+  if (j.success) document.getElementById("ex-code").textContent = j.data.code;
+}
+async function loadErrorCodes() {
+  const j = await api("/docs/error-codes");
+  const tb = document.getElementById("err-tbody");
+  tb.innerHTML = "";
+  if (j.success) j.data.forEach(e=>{
+    tb.innerHTML += `<tr><td>${e.code}</td><td>${esc(e.name)}</td><td>${e.http}</td><td>${esc(e.message)}</td></tr>`;
+  });
+}
+async function loadChangelog() {
+  const j = await api("/docs/changelog");
+  const box = document.getElementById("changelog");
+  box.innerHTML = "";
+  if (j.success) j.data.forEach(c=>{
+    box.innerHTML += `<div style="margin-bottom:10px;"><b>v${esc(c.version)}</b> <span class="muted">${esc(c.date)}</span><ul>${c.items.map(i=>`<li>${esc(i)}</li>`).join("")}</ul></div>`;
+  });
+}
+
+// SDK
+async function loadSDKList() {
+  const j = await api("/sdk/list");
+  const box = document.getElementById("sdk-cards");
+  box.innerHTML = "";
+  if (j.success) j.data.forEach(s=>{
+    box.innerHTML += `<div class="card"><div class="label">${esc(s.lang)}</div>
+      <div class="value" style="font-size:16px;">${esc(s.package)}</div>
+      <div class="muted">${esc(s.status)} · v${esc(s.latest_version)}</div>
+      <div class="muted">下载 ${s.downloads}</div></div>`;
+  });
+}
+async function downloadSDK(lang) {
+  const j = await api(`/sdk/${lang}/download`, {method:"POST"});
+  if (j.success) {
+    document.getElementById("sdk-example").textContent = JSON.stringify(j, null, 2);
+    toast(`已触发 ${lang} SDK 下载`);
+  }
+}
+async function loadPostman() {
+  const j = await api("/sdk/postman");
+  if (j.success) document.getElementById("sdk-example").textContent = JSON.stringify(j.data, null, 2);
+}
+async function loadInsomnia() {
+  const j = await api("/sdk/insomnia");
+  if (j.success) document.getElementById("sdk-example").textContent = JSON.stringify(j.data, null, 2);
+}
+async function loadCurl() {
+  const j = await api("/sdk/curl-examples");
+  if (j.success) document.getElementById("sdk-example").textContent = j.data.map(c=>c.name+":\n"+c.cmd).join("\n\n");
+}
+async function loadCLI() {
+  const j = await api("/sdk/cli");
+  if (j.success) document.getElementById("sdk-example").textContent = JSON.stringify(j.data, null, 2);
+}
+
+// Sandbox
+async function createSandbox() {
+  const owner = document.getElementById("sb-owner").value;
+  const name = document.getElementById("sb-name").value;
+  const j = await api("/sandbox/create", {method:"POST", body:JSON.stringify({owner,name})});
+  if (j.success) { toast("沙箱已创建"); currentSbId = j.data.sandbox_id; listSandboxes(); }
+}
+async function listSandboxes() {
+  const j = await api("/sandbox/list");
+  const tb = document.getElementById("sb-tbody");
+  tb.innerHTML = "";
+  if (j.success) j.data.forEach(s=>{
+    tb.innerHTML += `<tr><td><code>${esc(s.sandbox_id)}</code></td><td>${esc(s.name)}</td>
+      <td>${esc(s.owner)}</td><td><span class="badge ok">${esc(s.status)}</span></td>
+      <td>${s.calls_used}/${s.rate_limit_per_min}</td>
+      <td><code>${esc(s.test_key)}</code></td>
+      <td><button class="btn ghost" onclick="pickSb('${s.sandbox_id}')">选择</button></td></tr>`;
+  });
+}
+function pickSb(id) { currentSbId = id; toast("已选中 "+id); }
+async function mockRequest() {
+  if (!currentSbId) { toast("请先选择沙箱"); return; }
+  const method = document.getElementById("dbg-method").value;
+  const endpoint = document.getElementById("dbg-endpoint").value;
+  let payload = {};
+  try { payload = JSON.parse(document.getElementById("dbg-payload").value || "{}"); } catch(e) {}
+  const j = await api(`/sandbox/${currentSbId}/mock-request`, {method:"POST", body:JSON.stringify({endpoint, method, payload})});
+  document.getElementById("dbg-resp").textContent = JSON.stringify(j, null, 2);
+}
+async function sbHealth() {
+  if (!currentSbId) { toast("请先选择沙箱"); return; }
+  const j = await api(`/sandbox/${currentSbId}/health`);
+  document.getElementById("sb-debug").textContent = JSON.stringify(j.data, null, 2);
+}
+async function sbLogs() {
+  if (!currentSbId) { toast("请先选择沙箱"); return; }
+  const j = await api(`/sandbox/${currentSbId}/logs?limit=20`);
+  document.getElementById("sb-debug").textContent = JSON.stringify(j.data, null, 2);
+}
+async function sbReset() {
+  if (!currentSbId) { toast("请先选择沙箱"); return; }
+  const j = await api(`/sandbox/${currentSbId}/reset`, {method:"POST"});
+  if (j.success) { toast("沙箱已重置"); listSandboxes(); }
+}
+
+// Apps & Keys
+async function registerApp() {
+  const name = document.getElementById("app-name").value;
+  const owner = document.getElementById("app-owner").value;
+  const description = document.getElementById("app-desc").value;
+  const j = await api("/apps/register", {method:"POST", body:JSON.stringify({name, owner, description, scopes:["scanner:read","scanner:write"]})});
+  if (j.success) { toast("应用已创建"); listApps(); }
+}
+async function listApps() {
+  const j = await api("/apps/list");
+  const tb = document.getElementById("app-tbody");
+  tb.innerHTML = "";
+  if (j.success) j.data.forEach(a=>{
+    tb.innerHTML += `<tr><td><code>${esc(a.app_id)}</code></td><td>${esc(a.name)}</td>
+      <td>${esc(a.owner)}</td><td><span class="badge">${esc(a.status)}</span></td>
+      <td>${(a.scopes||[]).map(esc).join(", ")}</td>
+      <td><button class="btn ghost" onclick="createKey('${a.app_id}')">生成 Key</button>
+      <button class="btn ghost" onclick="reviewApp('${a.app_id}')">通过审核</button></td></tr>`;
+  });
+}
+async function reviewApp(id) {
+  await api(`/apps/${id}/review`, {method:"POST", body:JSON.stringify({approved:true, note:"auto"})});
+  listApps();
+}
+async function createKey(appId) {
+  const j = await api(`/apps/${appId}/keys`, {method:"POST", body:JSON.stringify({name:"default"})});
+  if (j.success) { toast("Key 已生成，请妥善保存"); listKeys(); }
+}
+async function listKeys() {
+  const j = await api("/keys/list");
+  const tb = document.getElementById("key-tbody");
+  tb.innerHTML = "";
+  if (j.success) j.data.forEach(k=>{
+    tb.innerHTML += `<tr><td><code>${esc(k.key_id)}</code></td><td><code>${esc(k.app_id)}</code></td>
+      <td><code>${esc(k.key_hint)}</code></td>
+      <td><span class="badge ${k.status==='active'?'ok':'err'}">${esc(k.status)}</span></td>
+      <td>${k.rotated_count||0}</td>
+      <td><button class="btn ghost" onclick="rotateKey('${k.key_id}')">轮换</button>
+      <button class="btn ghost" onclick="revokeKey('${k.key_id}')">撤销</button></td></tr>`;
+  });
+}
+async function rotateKey(id) {
+  const j = await api(`/keys/${id}/rotate`, {method:"POST"});
+  if (j.success) { toast("Key 已轮换"); listKeys(); }
+}
+async function revokeKey(id) {
+  const j = await api(`/keys/${id}/revoke`, {method:"POST", body:JSON.stringify({reason:"user"})});
+  if (j.success) { toast("Key 已撤销"); listKeys(); }
+}
+
+// Billing
+async function loadPlans() {
+  const j = await api("/plans");
+  const tb = document.getElementById("plan-tbody");
+  tb.innerHTML = "";
+  if (j.success) j.data.forEach(p=>{
+    tb.innerHTML += `<tr><td>${esc(p.plan_id)}</td><td>${esc(p.name)}</td>
+      <td>¥${p.price_per_month}</td><td>${p.quota_calls_month.toLocaleString()}</td>
+      <td>${p.rate_limit_per_min}/min</td><td>${p.features.map(esc).join(" / ")}</td></tr>`;
+  });
+}
+async function loadUsage() {
+  const app = document.getElementById("usage-app").value;
+  const j = await api(`/usage/${encodeURIComponent(app)}`);
+  document.getElementById("usage-out").textContent = JSON.stringify(j.data, null, 2);
+}
+async function recordUsage() {
+  const app = document.getElementById("usage-app").value;
+  await api("/usage/record", {method:"POST", body:JSON.stringify({app_id:app, meter:"scanner.start", cost_units:1})});
+  loadUsage();
+}
+async function genBill() {
+  const app = document.getElementById("usage-app").value;
+  await api("/bills/generate", {method:"POST", body:JSON.stringify({app_id:app, period:"2026-09"})});
+  loadBills();
+}
+async function loadBills() {
+  const j = await api("/bills");
+  const tb = document.getElementById("bill-tbody");
+  tb.innerHTML = "";
+  if (j.success) j.data.forEach(b=>{
+    tb.innerHTML += `<tr><td><code>${esc(b.bill_id)}</code></td><td>${esc(b.period)}</td>
+      <td>¥${b.total_amount}</td><td><span class="badge">${esc(b.status)}</span></td></tr>`;
+  });
+}
+
+// Community
+async function loadStatus() {
+  const j = await api("/community/status");
+  const box = document.getElementById("status-page");
+  box.innerHTML = "";
+  if (j.success) {
+    box.innerHTML = `<div style="margin-bottom:8px;">整体状态：<span class="badge ok">${esc(j.data.overall)}</span></div>`;
+    j.data.services.forEach(s=>{
+      box.innerHTML += `<div>${esc(s.name)}：<span class="badge ${s.status==='operational'?'ok':'warn'}">${esc(s.status)}</span> <span class="muted">${s.uptime_30d}%</span></div>`;
+    });
+  }
+}
+async function loadTiers() {
+  const j = await api("/community/tiers");
+  const tb = document.getElementById("tier-tbody");
+  tb.innerHTML = "";
+  if (j.success) j.data.forEach(t=>{
+    tb.innerHTML += `<tr><td>${esc(t.tier)}</td><td>${esc(t.name)}</td><td>${t.min_points}</td><td>${t.perks.map(esc).join(", ")}</td></tr>`;
+  });
+}
+async function loadTutorials() {
+  const j = await api("/community/tutorials");
+  const box = document.getElementById("tutorial-list");
+  box.innerHTML = "";
+  if (j.success) j.data.forEach(t=>{
+    box.innerHTML += `<div style="margin-bottom:6px;">📘 ${esc(t.title)} <span class="muted">(${t.minutes}min)</span></div>`;
+  });
+}
+async function loadFaq() {
+  const j = await api("/community/faq");
+  const box = document.getElementById("faq-list");
+  box.innerHTML = "";
+  if (j.success) j.data.forEach(f=>{
+    box.innerHTML += `<details style="margin-bottom:6px;"><summary>${esc(f.q)}</summary><div class="muted" style="padding:6px;">${esc(f.a)}</div></details>`;
+  });
+}
+async function submitFeedback() {
+  const kind = document.getElementById("fb-kind").value;
+  const author = document.getElementById("fb-author").value;
+  const body = document.getElementById("fb-body").value;
+  const j = await api("/community/feedback", {method:"POST", body:JSON.stringify({kind, author, body})});
+  if (j.success) toast("反馈已提交");
+}
+
+// Init
+loadOverview(); loadDocs(); loadErrorCodes(); loadChangelog();
+loadSDKList(); loadPlans(); loadStatus(); loadTiers(); loadTutorials(); loadFaq();
+listApps(); listKeys();
+</script>
+</body>
+</html>

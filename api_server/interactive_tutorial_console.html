@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>交互式教程控制台 · Interactive Tutorial Lab</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121822; --panel2:#16202e; --border:#223048;
+    --txt:#d6e2f0; --dim:#7d8ba0; --accent:#2dd4bf; --accent2:#38bdf8;
+    --warn:#f59e0b; --danger:#ef4444; --ok:#22c55e; --mono:"Cascadia Code",Consolas,Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.5}
+  header{background:linear-gradient(90deg,#0f1622,#13202f);border-bottom:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;gap:16px}
+  header h1{font-size:18px;color:var(--accent);font-weight:600}
+  header .sub{color:var(--dim);font-size:12px}
+  nav{display:flex;gap:4px;background:var(--panel);padding:0 18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  nav button{background:none;border:none;color:var(--dim);padding:12px 16px;cursor:pointer;font-size:13px;border-bottom:2px solid transparent}
+  nav button:hover{color:var(--txt)}
+  nav button.active{color:var(--accent);border-bottom-color:var(--accent)}
+  main{padding:18px 22px;max-width:1500px;margin:0 auto}
+  .tab{display:none}.tab.active{display:block}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:980px){.g2,.g3,.g4{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px}
+  .card h3{font-size:14px;color:var(--accent2);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px}
+  .stat{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:14px}
+  .stat .num{font-size:26px;font-weight:700;color:var(--accent)}
+  .stat .lbl{color:var(--dim);font-size:12px;margin-top:4px}
+  input,select,textarea{background:#0d141f;border:1px solid var(--border);color:var(--txt);padding:7px 9px;border-radius:5px;font-size:13px;width:100%}
+  textarea{font-family:var(--mono);min-height:90px;resize:vertical}
+  label{display:block;font-size:12px;color:var(--dim);margin:8px 0 3px}
+  button.btn{background:var(--accent);color:#06251f;border:none;padding:8px 14px;border-radius:5px;cursor:pointer;font-weight:600;font-size:13px}
+  button.btn:hover{filter:brightness(1.1)}
+  button.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  button.btn.danger{background:var(--danger);color:#fff}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{border:1px solid var(--border);padding:6px 8px;text-align:left}
+  th{background:var(--panel2);color:var(--accent2)}
+  tr:nth-child(even) td{background:#0e151f}
+  pre.out{background:#060a10;border:1px solid var(--border);border-radius:6px;padding:10px;font-family:var(--mono);font-size:12px;max-height:340px;overflow:auto;white-space:pre-wrap;color:#9fe8d8}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;background:#1b2b3f;color:var(--accent2);margin-right:4px}
+  .pill.ok{background:#0e2a1c;color:var(--ok)}.pill.warn{background:#2a210e;color:var(--warn)}.pill.bad{background:#2a1010;color:var(--danger)}
+  .muted{color:var(--dim);font-size:12px}
+  .toolbar{margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .toolbar input{width:auto;min-width:140px}
+  .term{background:#05080c;border:1px solid var(--border);border-radius:6px;height:260px;overflow:auto;padding:10px;font-family:var(--mono);font-size:12.5px}
+  .term .line{color:#b8cbe0}.term .ok{color:var(--ok)}.term .err{color:var(--danger)}
+  .kv{display:grid;grid-template-columns:140px 1fr;gap:6px 10px;font-size:12.5px}
+  .kv .k{color:var(--dim)}
+  .badge{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+</style>
+</head>
+<body>
+<header>
+  <h1>◈ 交互式教程控制台</h1>
+  <span class="sub">第21轮升级 · 方向4 · 教程内容 / 交互环境 / 学习路径 / 进度评估 / 场景实战 / 运营</span>
+</header>
+<nav id="nav">
+  <button data-tab="t-content" class="active">教程内容</button>
+  <button data-tab="t-env">交互环境</button>
+  <button data-tab="t-path">学习路径</button>
+  <button data-tab="t-progress">进度评估</button>
+  <button data-tab="t-scene">场景实战</button>
+  <button data-tab="t-admin">运营控制台</button>
+</nav>
+<main>
+
+<!-- ==================== 教程内容 ==================== -->
+<section class="tab active" id="t-content">
+  <div class="grid g2">
+    <div class="card">
+      <h3>新建教程</h3>
+      <label>标题</label><input id="ct-title" placeholder="如：SQL注入入门实战">
+      <label>描述</label><input id="ct-desc" placeholder="一句话描述">
+      <div class="row">
+        <div style="flex:1"><label>分类</label><input id="ct-cat" value="Web安全"></div>
+        <div style="flex:1"><label>难度</label>
+          <select id="ct-diff"><option>入门</option><option>基础</option><option>进阶</option><option>高级</option><option>专家</option></select></div>
+        <div style="flex:1"><label>时长(分)</label><input id="ct-dur" type="number" value="45"></div>
+      </div>
+      <label>标签（逗号分隔）</label><input id="ct-tags" placeholder="Web,注入,入门">
+      <div style="margin-top:10px" class="row"><button class="btn" onclick="createTutorial()">创建教程</button>
+      <button class="btn ghost" onclick="loadTaxonomy()">加载分类字典</button></div>
+      <pre class="out" id="ct-result" style="margin-top:10px"></pre>
+    </div>
+    <div class="card">
+      <h3>教程列表</h3>
+      <div class="toolbar">
+        <input id="ct-search" placeholder="关键字">
+        <button class="btn ghost" onclick="loadTutorials()">搜索/刷新</button>
+        <span class="muted" id="ct-count"></span>
+      </div>
+      <div style="max-height:300px;overflow:auto"><table id="ct-table"><thead><tr><th>标题</th><th>分类</th><th>难度</th><th>状态</th><th>评分</th><th>操作</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card">
+      <h3>章节管理 / 内容块</h3>
+      <label>教程ID</label><input id="ct-tid" placeholder="粘贴教程ID">
+      <div class="row" style="margin:8px 0">
+        <button class="btn ghost" onclick="loadChapters()">加载章节</button>
+        <button class="btn" onclick="addChapter()">+ 添加章节</button>
+      </div>
+      <pre class="out" id="ct-chapters"></pre>
+      <label>内容块类型</label>
+      <select id="ct-btype"><option value="markdown">Markdown</option><option value="code">代码块</option><option value="terminal">终端模拟</option><option value="browser">浏览器模拟</option><option value="interactive">交互组件</option><option value="quiz">测验</option></select>
+      <label>内容</label><textarea id="ct-bcontent"></textarea>
+      <div class="row" style="margin-top:8px"><button class="btn" onclick="addBlock()">添加内容块到首个章节</button></div>
+    </div>
+    <div class="card">
+      <h3>模板 / 版本管理</h3>
+      <div class="row"><button class="btn ghost" onclick="loadTemplates()">模板列表</button>
+      <button class="btn ghost" onclick="loadVersions()">版本历史</button></div>
+      <pre class="out" id="ct-tplout"></pre>
+      <label>新版本号</label><input id="ct-ver" placeholder="1.1.0">
+      <label>变更说明</label><input id="ct-changelog" placeholder="本次改了什么">
+      <div class="row" style="margin-top:8px"><button class="btn" onclick="newVersion()">创建版本</button>
+      <button class="btn ghost" onclick="publishTutorial()">发布教程</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 交互环境 ==================== -->
+<section class="tab" id="t-env">
+  <div class="grid g2">
+    <div class="card">
+      <h3>终端模拟器（教学Shell）</h3>
+      <div class="term" id="term-out"><div class="line">lab-box-01:~$ 输入命令试试（pwd/ls/cat/nmap/demo等）</div></div>
+      <div class="row" style="margin-top:8px">
+        <input id="term-cmd" placeholder="输入命令后回车" onkeydown="if(event.key==='Enter')execTerm()">
+        <button class="btn" onclick="execTerm()">执行</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>代码检查 / SQL / API调试</h3>
+      <label>语言</label>
+      <select id="cd-lang"><option value="python">python</option><option value="javascript">javascript</option><option value="sql">sql</option><option value="bash">bash</option></select>
+      <label>代码</label><textarea id="cd-code" placeholder="print(eval('1+1'))  # 会提示风险"></textarea>
+      <div class="row" style="margin:8px 0"><button class="btn ghost" onclick="runCodeCheck()">静态检查</button></div>
+      <label>SQL（SHOW TABLES / SELECT * FROM users）</label><input id="cd-sql" value="SELECT * FROM users">
+      <div class="row" style="margin:8px 0"><button class="btn ghost" onclick="runSql()">执行SQL</button></div>
+      <pre class="out" id="cd-out"></pre>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card">
+      <h3>浏览器模拟器 / 安全审计</h3>
+      <div class="row"><input id="br-url" value="https://demo.test/app" style="flex:1">
+      <button class="btn ghost" onclick="navBrowser()">导航</button>
+      <button class="btn ghost" onclick="auditBrowser()">安全审计</button></div>
+      <pre class="out" id="br-out"></pre>
+    </div>
+    <div class="card">
+      <h3>API调试器 / 沙箱</h3>
+      <div class="row">
+        <select id="api-method" style="width:90px"><option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option></select>
+        <input id="api-url" value="https://api.demo.test/v1/ping" style="flex:1">
+      </div>
+      <label>Body</label><input id="api-body" placeholder='{"q":"test"}'>
+      <div class="row" style="margin:8px 0"><button class="btn" onclick="sendApi()">发送请求</button>
+      <button class="btn ghost" onclick="createSandbox()">创建沙箱</button>
+      <button class="btn ghost" onclick="listSandbox()">沙箱列表</button></div>
+      <pre class="out" id="api-out"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 学习路径 ==================== -->
+<section class="tab" id="t-path">
+  <div class="grid g2">
+    <div class="card">
+      <h3>学习路径</h3>
+      <div class="row"><input id="lp-name" placeholder="路径名称" style="flex:1"><button class="btn" onclick="createPath()">创建路径</button></div>
+      <pre class="out" id="lp-out" style="margin-top:8px"></pre>
+      <button class="btn ghost" onclick="listPaths()">刷新路径列表</button>
+    </div>
+    <div class="card">
+      <h3>课程管理 / 报名</h3>
+      <div class="row"><input id="co-title" placeholder="课程名称" style="flex:1">
+      <button class="btn" onclick="createCourse()">创建课程</button>
+      <button class="btn ghost" onclick="listCourses()">课程列表</button></div>
+      <pre class="out" id="co-out" style="margin-top:8px"></pre>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card">
+      <h3>练习与测验</h3>
+      <label>测验标题</label><input id="qz-title" value="SQL注入小测">
+      <label>题目内容</label><textarea id="qz-q" placeholder="' OR 1=1-- 是什么类型？"></textarea>
+      <label>答案</label><input id="qz-a" value="布尔盲注">
+      <div class="row" style="margin-top:8px"><button class="btn" onclick="createQuiz()">创建测验</button></div>
+      <pre class="out" id="qz-out" style="margin-top:8px"></pre>
+    </div>
+    <div class="card">
+      <h3>知识点管理</h3>
+      <div class="muted">知识点由后端种子数据 + 进度模块维护，此处展示能力模型入口。</div>
+      <div class="row" style="margin-top:8px"><button class="btn ghost" onclick="loadRadar()">查看能力雷达数据</button></div>
+      <pre class="out" id="kp-out"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 进度评估 ==================== -->
+<section class="tab" id="t-progress">
+  <div class="grid g4">
+    <div class="stat"><div class="num" id="pr-hours">-</div><div class="lbl">学习时长(h)</div></div>
+    <div class="stat"><div class="num" id="pr-chapters">-</div><div class="lbl">完成章节</div></div>
+    <div class="stat"><div class="num" id="pr-streak">-</div><div class="lbl">连续学习(天)</div></div>
+    <div class="stat"><div class="num" id="pr-score">-</div><div class="lbl">平均测验分</div></div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card">
+      <h3>进度追踪</h3>
+      <div class="row">
+        <input id="pr-user" value="learner_demo" style="width:160px">
+        <input id="pr-sec" type="number" value="300" style="width:100px">
+        <button class="btn" onclick="trackStudy()">记录学习5分钟</button>
+        <button class="btn ghost" onclick="loadProgress()">刷新进度</button>
+        <button class="btn ghost" onclick="loadReport()">生成学习报告</button>
+      </div>
+      <pre class="out" id="pr-out" style="margin-top:8px"></pre>
+    </div>
+    <div class="card">
+      <h3>证书 / 徽章</h3>
+      <div class="row">
+        <button class="btn ghost" onclick="issueCert()">签发证书</button>
+        <input id="cv-code" placeholder="证书验证码" style="flex:1">
+        <button class="btn ghost" onclick="verifyCert()">验证</button>
+      </div>
+      <pre class="out" id="cv-out" style="margin-top:8px"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 场景实战 ==================== -->
+<section class="tab" id="t-scene">
+  <div class="grid g2">
+    <div class="card">
+      <h3>场景列表</h3>
+      <div class="row"><button class="btn ghost" onclick="loadScenarios()">加载场景</button></div>
+      <pre class="out" id="sc-list" style="margin-top:8px"></pre>
+    </div>
+    <div class="card">
+      <h3>引导式演练</h3>
+      <label>场景ID</label><input id="sc-sid" placeholder="粘贴场景ID">
+      <div class="row" style="margin:8px 0">
+        <button class="btn" onclick="startSession()">开始演练</button>
+        <button class="btn ghost" onclick="getHint()">获取提示</button>
+        <button class="btn ghost" onclick="evalSession()">提交评估</button>
+      </div>
+      <label>执行步骤名（如：信息收集/漏洞识别/权限提升/获取Flag）</label>
+      <input id="sc-step" value="信息收集">
+      <div class="row" style="margin:8px 0"><button class="btn" onclick="doAction()">提交步骤</button></div>
+      <pre class="out" id="sc-out"></pre>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h3>演练评估排名</h3>
+    <button class="btn ghost" onclick="loadEvals()">刷新评估榜</button>
+    <div style="margin-top:8px;max-height:260px;overflow:auto"><table id="sc-eval"><thead><tr><th>排名</th><th>用户</th><th>得分</th><th>完成步骤</th><th>提示次数</th><th>用时(秒)</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<!-- ==================== 运营控制台 ==================== -->
+<section class="tab" id="t-admin">
+  <div class="grid g4" id="ad-stats"></div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card">
+      <h3>学员列表</h3>
+      <button class="btn ghost" onclick="loadLearners()">刷新学员</button>
+      <div style="margin-top:8px;max-height:260px;overflow:auto"><table id="ad-learners"><thead><tr><th>用户</th><th>学时(h)</th><th>完成章节</th><th>连续天数</th><th>徽章</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <h3>内容库存 / 评估统计</h3>
+      <div class="row"><button class="btn ghost" onclick="loadInv()">内容库存</button>
+      <button class="btn ghost" onclick="loadAssess()">评估统计</button></div>
+      <pre class="out" id="ad-inv" style="margin-top:8px"></pre>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card">
+      <h3>系统设置</h3>
+      <div class="row"><button class="btn ghost" onclick="loadSettings()">查看设置</button>
+      <button class="btn ghost" onclick="loadAudit()">审计日志</button></div>
+      <pre class="out" id="ad-set" style="margin-top:8px"></pre>
+    </div>
+    <div class="card">
+      <h3>热门教程 / 趋势</h3>
+      <pre class="out" id="ad-hot"></pre>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+const BASE = "/api/v1/interactive-tutorial";
+let currentTid = null, currentSess = null;
+
+async function api(method, path, body){
+  try{
+    const opt = {method, headers:{"Content-Type":"application/json"}};
+    if(body!==undefined) opt.body = JSON.stringify(body);
+    const r = await fetch(BASE+path, opt);
+    const j = await r.json();
+    if(!j.success) throw new Error(j.error||"请求失败");
+    return j.data;
+  }catch(e){ console.error(e); throw e; }
+}
+function show(el, data){ document.getElementById(el).textContent = typeof data==="string"?data:JSON.stringify(data,null,2); }
+
+// tab switch
+document.querySelectorAll("#nav button").forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    document.getElementById(b.dataset.tab).classList.add("active");
+  };
+});
+
+// ---------- 教程内容 ----------
+async function loadTaxonomy(){ show("ct-result", await api("GET","/content/taxonomy")); }
+async function createTutorial(){
+  const body={title:v("ct-title"),description:v("ct-desc"),category:v("ct-cat"),
+    difficulty:v("ct-diff"),duration_min:+v("ct-dur"),
+    tags:v("ct-tags").split(",").filter(Boolean)};
+  const t = await api("POST","/content/tutorials",body);
+  currentTid = t.id;
+  show("ct-result", "已创建："+t.id+"\n"+JSON.stringify(t,null,2));
+  document.getElementById("ct-tid").value = t.id;
+  loadTutorials();
+}
+async function loadTutorials(){
+  const kw = document.getElementById("ct-search").value;
+  const list = await api("GET","/content/tutorials"+(kw?("&keyword="+encodeURIComponent(kw)):""));
+  document.getElementById("ct-count").textContent = "共 "+list.length+" 条";
+  const tb = document.querySelector("#ct-table tbody"); tb.innerHTML="";
+  list.forEach(t=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${esc(t.title)}</td><td>${esc(t.category)}</td><td>${esc(t.difficulty)}</td>
+      <td><span class="pill ${t.status==='published'?'ok':''}">${t.status}</span></td>
+      <td>${t.rating}</td>
+      <td><button class="btn ghost" onclick='pickTut("${t.id}")'>选中</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+function pickTut(id){ currentTid=id; document.getElementById("ct-tid").value=id; show("ct-result","已选中教程 "+id); }
+async function loadChapters(){
+  const tid = currentTid||v("ct-tid");
+  show("ct-chapters", await api("GET","/content/tutorials/"+tid+"/chapters"));
+}
+async function addChapter(){
+  const tid = currentTid||v("ct-tid");
+  await api("POST","/content/tutorials/"+tid+"/chapters",{title:"第"+Math.ceil(Math.random()*9)+"章",order:1});
+  loadChapters();
+}
+async function addBlock(){
+  const tid = currentTid||v("ct-tid");
+  const chs = await api("GET","/content/tutorials/"+tid+"/chapters");
+  if(!chs.length){ show("ct-result","请先添加章节"); return; }
+  await api("POST","/content/chapters/"+chs[0].id+"/blocks",
+    {type:v("ct-btype"),content:v("ct-bcontent"),order:1});
+  show("ct-result","已添加内容块到章节 "+chs[0].id);
+}
+async function loadTemplates(){ show("ct-tplout", await api("GET","/content/templates")); }
+async function loadVersions(){
+  const tid = currentTid||v("ct-tid");
+  show("ct-tplout", await api("GET","/content/tutorials/"+tid+"/versions"));
+}
+async function newVersion(){
+  const tid = currentTid||v("ct-tid");
+  await api("POST","/content/tutorials/"+tid+"/versions",{version:v("ct-ver"),changelog:v("ct-changelog")});
+  loadVersions();
+}
+async function publishTutorial(){
+  const tid = currentTid||v("ct-tid");
+  show("ct-result", await api("POST","/content/tutorials/"+tid+"/publish"));
+}
+
+// ---------- 交互环境 ----------
+async function execTerm(){
+  const cmd = v("term-cmd"); if(!cmd) return;
+  const out = document.getElementById("term-out");
+  out.innerHTML += `<div class="line">lab-box-01:~$ ${esc(cmd)}</div>`;
+  try{
+    const r = await api("POST","/env/terminal/exec",{command:cmd});
+    out.innerHTML += `<div class="${r.exit_code===0?'ok':'err'}">${esc(r.output)}</div>`;
+  }catch(e){ out.innerHTML += `<div class="err">${esc(e.message)}</div>`; }
+  document.getElementById("term-cmd").value="";
+  out.scrollTop = out.scrollHeight;
+}
+async function runCodeCheck(){
+  show("cd-out", await api("POST","/env/code/check",{language:v("cd-lang"),content:v("cd-code")}));
+}
+async function runSql(){ show("cd-out", await api("POST","/env/db/query",{sql:v("cd-sql")})); }
+async function navBrowser(){ show("br-out", await api("GET","/env/browser/navigate?url="+encodeURIComponent(v("br-url")))); }
+async function auditBrowser(){ show("br-out", await api("GET","/env/browser/audit?url="+encodeURIComponent(v("br-url")))); }
+async function sendApi(){
+  const r = await api("POST","/env/api/send",{method:v("api-method"),url:v("api-url"),body:v("api-body")});
+  show("api-out", r);
+}
+async function createSandbox(){ show("api-out", await api("POST","/env/sandbox/create",{name:"lab-"+Date.now(),config:{cpu:"1",mem:"512MiB"}})); }
+async function listSandbox(){ show("api-out", await api("GET","/env/sandbox/list")); }
+
+// ---------- 学习路径 ----------
+async function createPath(){ show("lp-out", await api("POST","/learning/paths",{name:v("lp-name"),goal:"完成进阶学习"})); }
+async function listPaths(){ show("lp-out", await api("GET","/learning/paths")); }
+async function createCourse(){ show("co-out", await api("POST","/learning/courses",{title:v("co-title")})); }
+async function listCourses(){ show("co-out", await api("GET","/learning/courses")); }
+async function createQuiz(){
+  const q=v("qz-q"),a=v("qz-a");
+  const r = await api("POST","/learning/quizzes",{title:v("qz-title"),questions:[{type:"short_answer",content:q,answer:a}]});
+  show("qz-out", r);
+}
+async function loadRadar(){ show("kp-out", await api("GET","/progress/learner_demo/radar")); }
+
+// ---------- 进度评估 ----------
+async function trackStudy(){
+  show("pr-out", await api("POST","/progress/track",{user_id:v("pr-user"),seconds:+v("pr-sec"),activity:{type:"study",item:"章节"}}));
+  loadProgress();
+}
+async function loadProgress(){
+  const p = await api("GET","/progress/"+v("pr-user"));
+  document.getElementById("pr-hours").textContent=(p.study_seconds/3600).toFixed(1);
+  document.getElementById("pr-chapters").textContent=p.completed_chapters.length;
+  document.getElementById("pr-streak").textContent=p.streak_days;
+  document.getElementById("pr-score").textContent=(p.quiz_scores.length? p.quiz_scores.reduce((a,b)=>a+(b.score||0),0)/p.quiz_scores.length.toFixed(1):"-");
+  show("pr-out", p);
+}
+async function loadReport(){ show("pr-out", await api("GET","/progress/"+v("pr-user")+"/report")); }
+async function issueCert(){
+  const c = await api("POST","/progress/certificates",{user_id:v("pr-user"),template:"standard",course_id:"demo",score:90});
+  show("cv-out", "证书已签发，验证码："+c.verify_code+"\n"+JSON.stringify(c,null,2));
+}
+async function verifyCert(){ show("cv-out", await api("GET","/progress/certificates/verify/"+v("cv-code"))); }
+
+// ---------- 场景实战 ----------
+async function loadScenarios(){
+  const list = await api("GET","/scenarios");
+  show("sc-list", list);
+  if(list.length) document.getElementById("sc-sid").value = list[0].id;
+}
+async function startSession(){
+  const s = await api("POST","/scenarios/"+v("sc-sid")+"/sessions",{user_id:"learner_demo",mode:"guided"});
+  currentSess = s.id;
+  show("sc-out", "演练已开始："+s.id+"\n"+JSON.stringify(s,null,2));
+}
+async function doAction(){
+  const r = await api("POST","/scenarios/sessions/"+currentSess+"/actions",{step:v("sc-step"),cost_seconds:10});
+  show("sc-out", r);
+}
+async function getHint(){ show("sc-out", await api("GET","/scenarios/sessions/"+currentSess+"/hint")); }
+async function evalSession(){ show("sc-out", await api("POST","/scenarios/sessions/"+currentSess+"/evaluate")); loadEvals(); }
+async function loadEvals(){
+  const list = await api("GET","/scenarios/evaluations");
+  const tb = document.querySelector("#sc-eval tbody"); tb.innerHTML="";
+  list.forEach(e=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${e.rank}</td><td>${esc(e.user_id)}</td><td>${e.score}</td>
+      <td>${e.steps_done.length}/${e.steps_total}</td><td>${e.hints_used}</td><td>${e.time_seconds}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ---------- 运营控制台 ----------
+async function loadOverview(){
+  const o = await api("GET","/dashboard/overview");
+  document.getElementById("ad-stats").innerHTML = `
+    <div class="stat"><div class="num">${o.tutorial_count}</div><div class="lbl">教程总数</div></div>
+    <div class="stat"><div class="num">${o.learner_count}</div><div class="lbl">学习人数</div></div>
+    <div class="stat"><div class="num">${o.average_rating}</div><div class="lbl">平均评分</div></div>
+    <div class="stat"><div class="num">${o.total_study_hours}h</div><div class="lbl">总学习时长</div></div>`;
+  show("ad-hot", o.hot_tutorials);
+}
+async function loadLearners(){
+  const list = await api("GET","/dashboard/learners");
+  const tb = document.querySelector("#ad-learners tbody"); tb.innerHTML="";
+  list.forEach(l=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${esc(l.user_id)}</td><td>${l.study_hours}</td><td>${l.completed_chapters}</td>
+      <td>${l.streak_days}</td><td>${l.badges}</td>`;
+    tb.appendChild(tr);
+  });
+}
+async function loadInv(){ show("ad-inv", await api("GET","/dashboard/content-inventory")); }
+async function loadAssess(){ show("ad-inv", await api("GET","/dashboard/assessment-stats")); }
+async function loadSettings(){ show("ad-set", await api("GET","/dashboard/settings")); }
+async function loadAudit(){ show("ad-set", await api("GET","/dashboard/audit-logs")); }
+
+// helpers
+function v(id){ return document.getElementById(id).value.trim(); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+// init
+loadOverview(); loadTutorials();
+</script>
+</body>
+</html>

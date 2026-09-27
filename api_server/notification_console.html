@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>通知中心</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117; color: #c9d1d9;
+    font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+    font-size: 14px; line-height: 1.5; padding: 20px;
+  }
+  h1 { color: #58a6ff; margin-bottom: 4px; }
+  h2 { color: #79c0ff; margin: 24px 0 12px; border-left: 4px solid #58a6ff; padding-left: 10px; }
+  .sub { color: #8b949e; margin-bottom: 20px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .card {
+    background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px;
+  }
+  .card h3 { color: #e6edf3; font-size: 15px; margin-bottom: 6px; }
+  .card .meta { color: #8b949e; font-size: 12px; margin-bottom: 8px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .badge.on { background: #1f6feb33; color: #58a6ff; }
+  .badge.off { background: #6e768133; color: #8b949e; }
+  button {
+    background: #238636; color: #fff; border: 0; border-radius: 6px;
+    padding: 6px 12px; cursor: pointer; margin-right: 6px; font-size: 12px;
+  }
+  button.test { background: #1f6feb; }
+  button.danger { background: #da3633; }
+  button.ghost { background: #30363d; }
+  button:hover { filter: brightness(1.15); }
+  textarea, input, select {
+    background: #0d1117; color: #c9d1d9; border: 1px solid #30363d;
+    border-radius: 6px; padding: 6px 8px; width: 100%; margin: 4px 0 8px;
+    font-family: inherit; font-size: 13px;
+  }
+  textarea { min-height: 80px; resize: vertical; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th, td { border: 1px solid #30363d; padding: 6px 8px; text-align: left; font-size: 12px; }
+  th { background: #1c2128; color: #79c0ff; }
+  tr:nth-child(even) { background: #161b22; }
+  .pill-ok { color: #3fb950; }
+  .pill-fail { color: #f85149; }
+  .hidden { display: none; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .row > * { flex: 1; min-width: 140px; }
+  .stat-box { display: flex; gap: 16px; flex-wrap: wrap; }
+  .stat { background: #161b22; padding: 12px 16px; border-radius: 8px; border: 1px solid #30363d; }
+  .stat .num { font-size: 22px; color: #58a6ff; font-weight: bold; }
+  .bar { height: 10px; background: #30363d; border-radius: 5px; overflow: hidden; margin: 4px 0; }
+  .bar > span { display: block; height: 100%; background: linear-gradient(90deg,#1f6feb,#3fb950); }
+  .toast {
+    position: fixed; right: 20px; bottom: 20px; background: #1f6feb; color: #fff;
+    padding: 10px 16px; border-radius: 6px; opacity: 0; transition: opacity .3s;
+  }
+  .toast.show { opacity: 1; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+  <h1>通知中心</h1>
+  <div class="sub">AI Hacking Agent · Notification Center · Dark Console</div>
+
+  <h2>渠道管理</h2>
+  <div class="grid" id="channelGrid"></div>
+
+  <h2>通知模板</h2>
+  <button class="ghost" onclick="newTemplate()">+ 新建模板</button>
+  <table id="tplTable">
+    <thead><tr><th>ID</th><th>名称</th><th>变量</th><th>操作</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>事件订阅</h2>
+  <div class="card">
+    <div class="row">
+      <select id="subEvent"></select>
+      <select id="subChannels" multiple size="3"></select>
+      <input id="subFilter" placeholder="过滤条件 (key=value, e.g. severity=high)">
+      <button onclick="addSubscription()">创建订阅</button>
+    </div>
+  </div>
+  <table id="subTable">
+    <thead><tr><th>ID</th><th>事件</th><th>渠道</th><th>过滤</th><th>操作</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>手动发送</h2>
+  <div class="card">
+    <div class="row">
+      <select id="manualChannel"></select>
+      <input id="manualMsg" placeholder="消息内容">
+      <button class="test" onclick="sendManual()">发送</button>
+    </div>
+  </div>
+
+  <h2>统计</h2>
+  <div class="stat-box" id="statBox"></div>
+
+  <h2>通知历史</h2>
+  <div class="row" style="max-width:400px">
+    <select id="histFilter">
+      <option value="">全部状态</option>
+      <option value="ok">成功</option>
+      <option value="fail">失败</option>
+    </select>
+    <button class="ghost" onclick="loadHistory()">刷新</button>
+  </div>
+  <table id="histTable">
+    <thead><tr><th>ID</th><th>时间</th><th>渠道</th><th>事件</th><th>状态</th><th>内容摘要</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const BASE = '/api/v1/notifications';
+async function api(path, opts={}) {
+  const r = await fetch(BASE + path, {
+    headers: {'Content-Type':'application/json'},
+    ...opts
+  });
+  return r.json();
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2000);
+}
+
+async function loadChannels() {
+  const res = await api('/channels');
+  const channels = res.data || [];
+  const grid = document.getElementById('channelGrid');
+  grid.innerHTML = channels.map(c => `
+    <div class="card">
+      <h3>${c.label}</h3>
+      <div class="meta">${c.name}</div>
+      <span class="badge ${c.configured?'on':'off'}">${c.configured?'已配置':'未配置'}</span>
+      <div style="margin-top:8px">
+        <button class="test" onclick="testChannel('${c.name}')">测试</button>
+        <button onclick="toggleCfg('${c.name}')">配置</button>
+      </div>
+      <div id="cfg-${c.name}" class="hidden" style="margin-top:8px">
+        <input id="cfg-url-${c.name}" placeholder="webhook_url / url">
+        <input id="cfg-secret-${c.name}" placeholder="secret / password (可选)">
+        <button onclick="saveConfig('${c.name}')">保存</button>
+      </div>
+    </div>`).join('');
+  // Populate manual channel select.
+  document.getElementById('manualChannel').innerHTML =
+    channels.map(c=>`<option value="${c.name}">${c.label}</option>`).join('');
+}
+
+function toggleCfg(name){ document.getElementById('cfg-'+name).classList.toggle('hidden'); }
+
+async function saveConfig(name) {
+  const url = document.getElementById('cfg-url-'+name).value;
+  const secret = document.getElementById('cfg-secret-'+name).value;
+  const cfg = {webhook_url: url, url: url, secret: secret, password: secret};
+  const res = await api(`/channels/${name}/config`, {method:'POST', body:JSON.stringify(cfg)});
+  toast(res.code===0 ? '已保存' : ('失败: '+res.error));
+  loadChannels();
+}
+
+async function testChannel(name) {
+  const res = await api(`/channels/${name}/test`, {method:'POST', body:JSON.stringify({})});
+  const ok = res.data && res.data.success;
+  toast(ok ? '测试消息已发送' : ('发送失败: ' + (res.data && res.data.error || res.error)));
+}
+
+async function loadTemplates() {
+  const res = await api('/templates');
+  const rows = (res.data||[]).map(t => `
+    <tr>
+      <td>${t.template_id}</td>
+      <td>${t.name}</td>
+      <td>${(t.variables||[]).join(', ')}</td>
+      <td>
+        <button onclick="viewTemplate('${t.template_id}')">查看</button>
+        ${t.custom?`<button class="danger" onclick="delTemplate('${t.template_id}')">删除</button>`:''}
+      </td>
+    </tr>`).join('');
+  document.querySelector('#tplTable tbody').innerHTML = rows;
+}
+
+function viewTemplate(id) { alert('模板: '+id+' (详情见控制台)'); }
+async function delTemplate(id) {
+  await api('/templates/'+id, {method:'DELETE'});
+  loadTemplates();
+}
+function newTemplate() { alert('使用 POST /api/v1/notifications/templates 创建自定义模板'); }
+
+async function loadSubs() {
+  // event types
+  const events = ['scan_completed','high_risk_found','workflow_completed','task_failed','system_alert','periodic_report','vuln_status_changed'];
+  document.getElementById('subEvent').innerHTML = events.map(e=>`<option>${e}</option>`).join('');
+  const chRes = await api('/channels');
+  const chans = chRes.data || [];
+  document.getElementById('subChannels').innerHTML = chans.map(c=>`<option value="${c.name}">${c.label}</option>`).join('');
+
+  const res = await api('/subscriptions');
+  const rows = (res.data||[]).map(s => `
+    <tr>
+      <td>${s.sub_id}</td>
+      <td>${s.event_type}</td>
+      <td>${(s.channels||[]).join(', ')}</td>
+      <td>${JSON.stringify(s.filters||{})}</td>
+      <td><button class="danger" onclick="delSub('${s.sub_id}')">删除</button></td>
+    </tr>`).join('');
+  document.querySelector('#subTable tbody').innerHTML = rows;
+}
+
+async function addSubscription() {
+  const event_type = document.getElementById('subEvent').value;
+  const channels = [...document.getElementById('subChannels').selectedOptions].map(o=>o.value);
+  const f = document.getElementById('subFilter').value.trim();
+  const filters = {};
+  if (f && f.includes('=')) { const [k,v]=f.split('=',2); filters[k]=v; }
+  await api('/subscriptions', {method:'POST', body:JSON.stringify({event_type, channels, filters})});
+  loadSubs();
+}
+async function delSub(id) { await api('/subscriptions/'+id, {method:'DELETE'}); loadSubs(); }
+
+async function sendManual() {
+  const channel = document.getElementById('manualChannel').value;
+  const message = document.getElementById('manualMsg').value;
+  const res = await api('/send', {method:'POST', body:JSON.stringify({channel, message})});
+  toast(res.code===0 ? (res.data.success?'已发送':'发送失败') : res.error);
+  loadHistory();
+}
+
+async function loadStats() {
+  const res = await api('/stats');
+  const s = res.data || {};
+  const rate = s.success_rate || 0;
+  const byCh = s.by_channel || {};
+  const max = Math.max(1, ...Object.values(byCh));
+  document.getElementById('statBox').innerHTML = `
+    <div class="stat"><div class="num">${s.total||0}</div><div>总发送</div></div>
+    <div class="stat"><div class="num pill-ok">${s.success||0}</div><div>成功</div></div>
+    <div class="stat"><div class="num pill-fail">${s.failed||0}</div><div>失败</div></div>
+    <div class="stat"><div class="num">${rate}%</div><div>成功率</div></div>
+    <div style="flex:2;min-width:260px" class="card">
+      <h3>按渠道统计</h3>
+      ${Object.entries(byCh).map(([k,v])=>`
+        <div>${k}<div class="bar"><span style="width:${(v/max*100).toFixed(0)}%"></span></div></div>`).join('') || '暂无数据'}
+    </div>`;
+}
+
+async function loadHistory() {
+  const res = await api('/history?limit=100');
+  const filter = document.getElementById('histFilter').value;
+  let items = res.data || [];
+  if (filter==='ok') items = items.filter(i=>i.success);
+  if (filter==='fail') items = items.filter(i=>!i.success);
+  document.querySelector('#histTable tbody').innerHTML = items.map(i=>`
+    <tr>
+      <td>${i.record_id}</td>
+      <td>${i.time}</td>
+      <td>${i.channel}</td>
+      <td>${i.event_type}</td>
+      <td class="${i.success?'pill-ok':'pill-fail'}">${i.success?'成功':'失败'}</td>
+      <td>${(i.message||'').slice(0,80)}</td>
+    </tr>`).join('');
+}
+
+document.getElementById('histFilter').addEventListener('change', loadHistory);
+
+(async function init(){
+  await loadChannels();
+  await loadTemplates();
+  await loadSubs();
+  await loadStats();
+  await loadHistory();
+  setInterval(loadStats, 15000);
+})();
+</script>
+</body>
+</html>

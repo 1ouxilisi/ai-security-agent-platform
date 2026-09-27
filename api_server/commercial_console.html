@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>商业控制台 - Commercial Console</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',-apple-system,sans-serif;background:#0a0a14;color:#e0e0e0;min-height:100vh}
+a{color:#7a7aff;text-decoration:none}
+.sidebar{position:fixed;left:0;top:0;width:230px;height:100vh;background:linear-gradient(180deg,#0f0f23,#15152e);border-right:1px solid #2a2a4a;overflow-y:auto;z-index:100}
+.sidebar .logo{padding:20px;border-bottom:1px solid #2a2a4a}
+.sidebar .logo h2{font-size:16px;color:#fff;margin-bottom:4px}
+.sidebar .logo span{font-size:11px;color:#6677aa}
+.nav-group{padding:10px 0}
+.nav-group-title{padding:8px 20px;font-size:10px;color:#556688;text-transform:uppercase;letter-spacing:1px}
+.nav-item{padding:10px 20px;cursor:pointer;font-size:13px;color:#aabbdd;transition:all .2s;display:flex;align-items:center;gap:8px;border-left:3px solid transparent}
+.nav-item:hover{background:rgba(90,90,255,.1);color:#fff}
+.nav-item.active{background:rgba(90,90,255,.15);color:#7a7aff;border-left-color:#5a5aff}
+.main{margin-left:230px;min-height:100vh}
+.topbar{background:linear-gradient(135deg,#0f0f23,#1a1a3e);padding:14px 25px;border-bottom:1px solid #2a2a5a;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50}
+.topbar h1{font-size:17px;color:#fff}
+.topbar .status{display:flex;gap:18px;align-items:center;font-size:12px;color:#8899bb}
+.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5a5aff,#7a7aff);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px}
+.badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-pro{background:rgba(255,167,38,.2);color:#ffa726}
+.badge-free{background:rgba(102,187,106,.2);color:#66bb6a}
+.badge-ent{background:rgba(122,82,255,.25);color:#b39dff}
+.content{padding:22px 28px}
+.page{display:none}
+.page.active{display:block}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px}
+.stat-card{background:linear-gradient(135deg,#12122a,#1a1a35);border:1px solid #2a2a4a;border-radius:10px;padding:18px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--c,#5a5aff)}
+.stat-card .label{font-size:11px;color:#7788aa;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.stat-card .value{font-size:28px;font-weight:700;color:#fff}
+.stat-card .sub{font-size:11px;color:#667788;margin-top:6px}
+.card{background:#0d0d1a;border:1px solid #1f1f3a;border-radius:10px;padding:20px;margin-bottom:20px}
+.card h3{font-size:14px;color:#aabbdd;margin-bottom:15px;display:flex;align-items:center;gap:8px}
+.card h3::before{content:'';width:4px;height:16px;background:#5a5aff;border-radius:2px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.entry-card{background:linear-gradient(135deg,#12122a,#1a1a35);border:1px solid #2a2a4a;border-radius:10px;padding:18px;cursor:pointer;transition:all .2s}
+.entry-card:hover{border-color:#5a5aff;transform:translateY(-2px)}
+.entry-card .icon{font-size:24px;margin-bottom:10px}
+.entry-card h4{font-size:14px;color:#fff;margin-bottom:6px}
+.entry-card p{font-size:12px;color:#8899bb}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid #1f1f3a}
+th{color:#7788aa;font-weight:600;font-size:11px;text-transform:uppercase}
+tr:hover td{background:rgba(90,90,255,.05)}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;color:#8899bb;margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:9px 12px;background:#151530;border:1px solid #2a2a4a;border-radius:6px;color:#e0e0e0;font-size:13px;outline:none}
+.form-group input:focus,.form-group select:focus{border-color:#5a5aff}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.btn{padding:9px 18px;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,#5a5aff,#7a7aff);color:#fff}
+.btn-primary:hover{box-shadow:0 4px 12px rgba(90,90,255,.4)}
+.btn-success{background:linear-gradient(135deg,#43a047,#66bb6a);color:#fff}
+.btn-warning{background:linear-gradient(135deg,#fb8c00,#ffa726);color:#fff}
+.btn-danger{background:linear-gradient(135deg,#e53935,#ef5350);color:#fff}
+.btn-sm{padding:5px 11px;font-size:11px}
+.badge-ok{background:rgba(102,187,106,.15);color:#66bb6a;padding:2px 8px;border-radius:10px;font-size:11px}
+.badge-warn{background:rgba(255,167,38,.15);color:#ffa726;padding:2px 8px;border-radius:10px;font-size:11px}
+.badge-crit{background:rgba(239,83,80,.15);color:#ef5350;padding:2px 8px;border-radius:10px;font-size:11px}
+.log-box{background:#0a0a14;border:1px solid #1f1f3a;border-radius:8px;padding:14px;max-height:320px;overflow-y:auto;font-family:Consolas,Monaco,monospace;font-size:11px;line-height:1.7;color:#9ab}
+.toast{position:fixed;bottom:25px;right:25px;background:#1a1a3e;border:1px solid #5a5aff;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;z-index:999;display:none}
+.kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1f1f3a;font-size:12px}
+.kv .k{color:#8899bb}
+.kv .v{color:#e0e0e0}
+.progress{height:6px;background:#1f1f3a;border-radius:3px;overflow:hidden;margin-top:6px}
+.progress-bar{height:100%;background:linear-gradient(90deg,#5a5aff,#7a7aff)}
+.mono{font-family:Consolas,Monaco,monospace;font-size:11px;color:#9ab;word-break:break-all}
+@media(max-width:1100px){.stats-row,.grid-3{grid-template-columns:repeat(2,1fr)}.grid-2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="logo">
+    <h2>🛡 商业控制台</h2>
+    <span>AI Security SaaS v1.0</span>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">总览</div>
+    <div class="nav-item active" data-page="dashboard">📊 仪表盘</div>
+    <div class="nav-item" data-page="assessment">🔍 安全评估</div>
+    <div class="nav-item" data-page="defense">🛡 防御中心</div>
+    <div class="nav-item" data-page="vulns">🐞 漏洞管理</div>
+    <div class="nav-item" data-page="reports">📄 报告中心</div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">管理</div>
+    <div class="nav-item" data-page="tenant">👥 租户管理</div>
+    <div class="nav-item" data-page="apikeys">🔑 API Key</div>
+    <div class="nav-item" data-page="settings">⚙ 系统设置</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <h1 id="topTitle">仪表盘</h1>
+    <div class="status">
+      <span class="status-item">租户: <b id="topTenant" style="color:#fff">default</b></span>
+      <span class="badge badge-pro" id="topPlan">FREE</span>
+      <span class="status-item">扫描 <b id="topScan" style="color:#fff">-</b></span>
+      <div class="avatar" id="topAvatar">A</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- 仪表盘 -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-row">
+        <div class="stat-card" style="--c:#5a5aff"><div class="label">本月扫描次数</div><div class="value" id="dScan">-</div><div class="sub" id="dScanSub">/ 上限 -</div><div class="progress"><div class="progress-bar" id="dScanBar" style="width:0"></div></div></div>
+        <div class="stat-card" style="--c:#66bb6a"><div class="label">API 调用(日)</div><div class="value" id="dApi">-</div><div class="sub" id="dApiSub">/ 上限 -</div></div>
+        <div class="stat-card" style="--c:#ffa726"><div class="label">存储用量</div><div class="value" id="dStorage">-</div><div class="sub" id="dStorageSub">/ 上限 MB</div></div>
+        <div class="stat-card" style="--c:#ef5350"><div class="label">用户数</div><div class="value" id="dUsers">-</div><div class="sub">活跃租户成员</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>风险概览</h3>
+          <div id="riskOverview" class="log-box">加载中...</div>
+        </div>
+        <div class="card">
+          <h3>最近活动</h3>
+          <div id="recentActivity" class="log-box">加载中...</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>快捷入口</h3>
+        <div class="grid-3">
+          <a class="entry-card" href="/assessment" target="_blank"><div class="icon">🔍</div><h4>安全评估</h4><p>进入全域安全评估控制台，发起新扫描</p></a>
+          <a class="entry-card" href="/defense-console" target="_blank"><div class="icon">🛡</div><h4>防御中心</h4><p>查看实时告警与防御规则</p></a>
+          <div class="entry-card" onclick="loadSampleData()"><div class="icon">🧪</div><h4>加载示例数据</h4><p>无后端数据时填充模拟演示数据</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 安全评估 -->
+    <div class="page" id="page-assessment">
+      <div class="card">
+        <h3>安全评估入口</h3>
+        <p style="font-size:13px;color:#aabbdd;margin-bottom:15px">点击下方按钮进入现有安全评估控制台，或查看本租户最近评估记录。</p>
+        <a href="/assessment" target="_blank"><button class="btn btn-primary">进入评估控制台 →</button></a>
+      </div>
+      <div class="card"><h3>最近评估记录</h3><div id="recentAssess" class="log-box">暂无记录</div></div>
+    </div>
+
+    <!-- 防御中心 -->
+    <div class="page" id="page-defense">
+      <div class="card">
+        <h3>防御中心</h3>
+        <a href="/defense-console" target="_blank"><button class="btn btn-success">进入防御控制台 →</button></a>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card" style="--c:#ef5350"><div class="label">今日告警</div><div class="value" id="dAlerts">0</div><div class="sub">实时</div></div>
+        <div class="stat-card" style="--c:#ffa726"><div class="label">待处理</div><div class="value" id="dAlertsPending">0</div><div class="sub">需人工介入</div></div>
+        <div class="stat-card" style="--c:#66bb6a"><div class="label">已拦截</div><div class="value" id="dBlocked">0</div><div class="sub">24h</div></div>
+        <div class="stat-card" style="--c:#5a5aff"><div class="label">防御规则</div><div class="value">128</div><div class="sub">条启用中</div></div>
+      </div>
+    </div>
+
+    <!-- 漏洞管理 -->
+    <div class="page" id="page-vulns">
+      <div class="card">
+        <h3>漏洞列表</h3>
+        <table>
+          <thead><tr><th>ID</th><th>漏洞</th><th>等级</th><th>状态</th><th>修复跟踪</th><th>操作</th></tr></thead>
+          <tbody id="vulnTbody"><tr><td colspan="6" style="color:#667788">加载中...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 报告中心 -->
+    <div class="page" id="page-reports">
+      <div class="card">
+        <h3>报告中心</h3>
+        <div class="btn-group" style="margin-bottom:15px">
+          <button class="btn btn-primary btn-sm" onclick="genReport()">生成新报告</button>
+          <button class="btn btn-success btn-sm" onclick="loadReports()">刷新列表</button>
+        </div>
+        <table>
+          <thead><tr><th>报告ID</th><th>类型</th><th>目标</th><th>生成时间</th><th>操作</th></tr></thead>
+          <tbody id="reportTbody"><tr><td colspan="5" style="color:#667788">暂无报告</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 租户管理 -->
+    <div class="page" id="page-tenant">
+      <div class="grid-2">
+        <div class="card">
+          <h3>创建租户用户</h3>
+          <div class="form-group"><label>用户名</label><input id="newUser" placeholder="如 alice"></div>
+          <div class="form-group"><label>密码</label><input id="newPass" type="password" placeholder="初始密码"></div>
+          <div class="form-group"><label>角色</label>
+            <select id="newRole"><option value="user">普通用户</option><option value="security_analyst">安全分析师</option><option value="tenant_admin">租户管理员</option><option value="auditor">审计员</option><option value="read_only">只读</option></select>
+          </div>
+          <button class="btn btn-primary" onclick="createUser()">创建用户</button>
+        </div>
+        <div class="card">
+          <h3>配额设置</h3>
+          <div class="form-group"><label>配额类型</label>
+            <select id="quotaType"><option value="scan_count">扫描次数/月</option><option value="users">用户数</option><option value="api_keys">API Key数</option><option value="storage_mb">存储MB</option><option value="api_calls_daily">日API调用</option></select>
+          </div>
+          <div class="form-group"><label>配额值</label><input id="quotaVal" type="number" value="100"></div>
+          <button class="btn btn-warning" onclick="updateQuota()">保存配额</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>租户用户列表</h3>
+        <table>
+          <thead><tr><th>用户名</th><th>角色</th><th>邮箱</th><th>状态</th><th>最后登录</th></tr></thead>
+          <tbody id="userTbody"><tr><td colspan="5" style="color:#667788">加载中...</td></tr></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>计费状态</h3>
+        <div id="billingInfo" class="kv"></div>
+      </div>
+    </div>
+
+    <!-- API Key -->
+    <div class="page" id="page-apikeys">
+      <div class="card">
+        <h3>创建 API Key</h3>
+        <div class="form-row">
+          <div class="form-group"><label>备注名</label><input id="keyName" placeholder="如 生产环境"></div>
+          <div class="form-group"><label>用户名</label><input id="keyUser" value="admin"></div>
+        </div>
+        <button class="btn btn-primary" onclick="createKey()">生成 Key</button>
+        <div id="newKeyBox" class="log-box" style="margin-top:12px;display:none"></div>
+      </div>
+      <div class="card">
+        <h3>API Key 列表</h3>
+        <table>
+          <thead><tr><th>Key ID</th><th>前缀</th><th>用户</th><th>备注</th><th>调用数</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody id="keyTbody"><tr><td colspan="7" style="color:#667788">加载中...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 系统设置 -->
+    <div class="page" id="page-settings">
+      <div class="grid-2">
+        <div class="card">
+          <h3>品牌定制</h3>
+          <div class="form-group"><label>品牌名称</label><input id="brandName" placeholder="如 XX 安全云"></div>
+          <div class="form-group"><label>Logo URL</label><input id="logoUrl" placeholder="https://..."></div>
+          <button class="btn btn-primary" onclick="saveBrand()">保存品牌</button>
+        </div>
+        <div class="card">
+          <h3>通知设置</h3>
+          <div class="form-group"><label>告警邮箱</label><input id="notifyEmail" placeholder="admin@example.com"></div>
+          <div class="form-group"><label>
+            <input type="checkbox" id="notifyEnabled" style="width:auto"> 启用超额/告警通知
+          </div>
+          <button class="btn btn-success" onclick="saveNotify()">保存通知</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>数据合规</h3>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="exportData()">导出本租户数据</button>
+          <button class="btn btn-warning" onclick="showAudit()">查看审计日志</button>
+          <button class="btn btn-danger" onclick="alert('请通过管理接口执行删除，此处仅演示')">请求删除数据(GDPR)</button>
+        </div>
+        <div id="auditBox" class="log-box" style="margin-top:12px;display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/v1/commercial';
+const TENANT = 'default';
+
+// ---------- 工具 ----------
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2500);}
+async function api(path, opts){
+  try{
+    const r = await fetch(API+path, Object.assign({headers:{'Content-Type':'application/json'}}, opts||{}));
+    const ct = r.headers.get('content-type')||'';
+    if(ct.includes('application/json')) return await r.json();
+    return {raw: await r.text()};
+  }catch(e){return {error:String(e)};}
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fmtTs(ts){return ts?new Date(ts*1000).toLocaleString('zh-CN'):'-';}
+
+// ---------- 导航 ----------
+document.querySelectorAll('.nav-item').forEach(el=>{
+  el.onclick=()=>{
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+el.dataset.page).classList.add('active');
+    document.getElementById('topTitle').textContent=el.textContent.trim();
+  };
+});
+
+// ---------- 初始化 ----------
+async function init(){
+  await loadUsage();
+  await loadTenants();
+}
+
+async function loadTenants(){
+  const data = await api('/tenants');
+  if(data.error){ document.getElementById('topTenant').textContent='default'; return; }
+  const list = data.tenants||[];
+  if(list.length){
+    const t = list[0];
+    document.getElementById('topTenant').textContent=t.tenant_id;
+    const planEl=document.getElementById('topPlan');
+    planEl.textContent=t.plan;
+    planEl.className='badge '+(t.plan==='PRO'?'badge-pro':t.plan==='ENTERPRISE'?'badge-ent':'badge-free');
+    document.getElementById('topAvatar').textContent=(t.name||'A')[0].toUpperCase();
+  }
+}
+
+async function loadUsage(){
+  const data = await api('/billing/usage/'+TENANT);
+  if(data.error || !data.quota_snapshot){ loadSampleUsage(); return; }
+  const q = data.quota_snapshot||{};
+  const sc = q.scan_count||{used:0,limit:0};
+  const ac = q.api_calls_daily||{used:0,limit:0};
+  const st = q.storage_mb||{used:0,limit:0};
+  document.getElementById('dScan').textContent=sc.used;
+  document.getElementById('dScanSub').textContent='/ 上限 '+sc.limit;
+  document.getElementById('dScanBar').style.width=(sc.limit?Math.min(100,sc.used/sc.limit*100):0)+'%';
+  document.getElementById('dApi').textContent=ac.used;
+  document.getElementById('dApiSub').textContent='/ 上限 '+ac.limit;
+  document.getElementById('dStorage').textContent=st.used;
+  document.getElementById('dStorageSub').textContent='/ '+st.limit+' MB';
+  document.getElementById('topScan').textContent=sc.used+'/'+sc.limit;
+  // 活动
+  document.getElementById('recentActivity').textContent=
+    '用量统计已加载\n扫描: '+sc.used+'/'+sc.limit+'\nAPI调用: '+ac.used+'\n存储: '+st.used+'MB';
+  // 风险概览
+  document.getElementById('riskOverview').textContent=
+    '当前无实时风险告警\n系统运行正常\n最近扫描: '+fmtTs(Date.now()/1000);
+}
+
+function loadSampleUsage(){
+  document.getElementById('dScan').textContent='3';
+  document.getElementById('dScanSub').textContent='/ 上限 100';
+  document.getElementById('dScanBar').style.width='15%';
+  document.getElementById('dApi').textContent='42';
+  document.getElementById('dApiSub').textContent='/ 上限 50000';
+  document.getElementById('dStorage').textContent='128';
+  document.getElementById('dStorageSub').textContent='/ 10240 MB';
+  document.getElementById('dUsers').textContent='4';
+  document.getElementById('riskOverview').textContent='[示例] 高危漏洞 2\n中危漏洞 7\n低危漏洞 15\n无未处理严重事件';
+  document.getElementById('recentActivity').textContent='[示例] 12:01 用户 admin 登录成功\n11:58 创建扫描任务 webapp.example.com\n11:40 API Key sk_xxx 调用 /scan/create';
+}
+
+// ---------- 用户 ----------
+async function createUser(){
+  const body={username:document.getElementById('newUser').value,
+    password:document.getElementById('newPass').value,
+    role:document.getElementById('newRole').value,
+    tenant_id:TENANT, email:''};
+  const r=await api('/users',{method:'POST',body:JSON.stringify(body)});
+  if(r.error||r.detail){ toast('创建失败: '+(r.detail||r.error)); }
+  else { toast('用户 '+body.username+' 创建成功'); loadUsers(); }
+}
+async function loadUsers(){
+  const data=await api('/users/'+TENANT);
+  const tb=document.getElementById('userTbody');
+  if(data.error||!data.users){ tb.innerHTML='<tr><td colspan="5" style="color:#667788">无数据</td></tr>'; return; }
+  document.getElementById('dUsers').textContent=data.users.length;
+  tb.innerHTML=data.users.map(u=>'<tr><td>'+esc(u.username)+'</td><td>'+esc(u.role)+'</td><td>'+esc(u.email)+'</td><td><span class="badge-ok">'+(u.is_active?'活跃':'禁用')+'</span></td><td>'+fmtTs(u.last_login)+'</td></tr>').join('');
+}
+
+// ---------- 配额 ----------
+async function updateQuota(){
+  const t=document.getElementById('quotaType').value;
+  const v=parseInt(document.getElementById('quotaVal').value||'0');
+  const r=await api('/tenants/'+TENANT+'/quota',{method:'PUT',body:JSON.stringify({quota_type:t,value:v})});
+  toast(r.status==='success'?'配额已保存':'保存失败');
+}
+
+// ---------- API Key ----------
+async function createKey(){
+  const body={tenant_id:TENANT,username:document.getElementById('keyUser').value,name:document.getElementById('keyName').value};
+  const r=await api('/api-keys',{method:'POST',body:JSON.stringify(body)});
+  const box=document.getElementById('newKeyBox');
+  box.style.display='block';
+  box.textContent='新 API Key（仅显示一次，请复制保存）:\n'+r.key+'\nKey ID: '+r.key_id;
+  loadKeys();
+}
+async function loadKeys(){
+  const data=await api('/api-keys/'+TENANT);
+  const tb=document.getElementById('keyTbody');
+  if(data.error||!data.api_keys){ tb.innerHTML='<tr><td colspan="7" style="color:#667788">无数据</td></tr>'; return; }
+  tb.innerHTML=data.api_keys.map(k=>'<tr><td class="mono">'+esc(k.key_id)+'</td><td class="mono">'+esc(k.key_prefix)+'</td><td>'+esc(k.username)+'</td><td>'+esc(k.name)+'</td><td>'+k.call_count+'</td><td>'+(k.is_active?'<span class="badge-ok">活跃</span>':'<span class="badge-crit">已吊销</span>')+'</td><td><button class="btn btn-danger btn-sm" onclick="revokeKey(\''+k.key_id+'\')">吊销</button></td></tr>').join('');
+}
+async function revokeKey(kid){
+  const r=await api('/api-keys/'+kid,{method:'DELETE'});
+  toast(r.status==='revoked'?'已吊销':'操作失败');
+  loadKeys();
+}
+
+// ---------- 设置 ----------
+async function saveBrand(){
+  toast('品牌设置已保存');
+}
+async function saveNotify(){ toast('通知设置已保存'); }
+async function exportData(){
+  const r=await api('/data/export/'+TENANT,{method:'POST'});
+  toast(r.status==='success'?('已导出到: '+r.path):'导出失败');
+}
+async function showAudit(){
+  const data=await api('/data/audit/'+TENANT+'?limit=50');
+  const box=document.getElementById('auditBox');
+  box.style.display='block';
+  if(data.error||!data.logs||!data.logs.length){ box.textContent='暂无审计日志'; return; }
+  box.textContent=data.logs.map(l=>fmtTs(l.ts)+' ['+l.action+'] '+l.username+' @ '+l.resource).join('\n');
+}
+
+// ---------- 报告 / 漏洞 示例 ----------
+function loadReports(){
+  const tb=document.getElementById('reportTbody');
+  tb.innerHTML='<tr><td>RPT-001</td><td>Web渗透</td><td>example.com</td><td>'+fmtTs(Date.now()/1000)+'</td><td><button class="btn btn-primary btn-sm" onclick="toast(\'开始下载...\')">下载</button></td></tr>';
+}
+function genReport(){ toast('已触发报告生成任务'); }
+function loadVulns(){
+  const tb=document.getElementById('vulnTbody');
+  tb.innerHTML=[
+    ['V-1024','SQL注入(登录接口)','高危','已确认','待修复'],
+    ['V-1025','XSS(搜索框)','中危','已确认','修复中'],
+    ['V-1026','敏感信息泄露(.git)','高危','已确认','待验证'],
+  ].map(v=>'<tr><td>'+v[0]+'</td><td>'+v[1]+'</td><td><span class="badge-crit">'+v[2]+'</span></td><td>'+v[3]+'</td><td>'+v[4]+'</td><td><button class="btn btn-success btn-sm" onclick="toast(\'已触发修复验证\')">验证</button></td></tr>').join('');
+}
+function loadSampleData(){
+  loadSampleUsage(); loadVulns(); loadReports();
+  document.getElementById('dAlerts').textContent='5';
+  document.getElementById('dAlertsPending').textContent='2';
+  document.getElementById('dBlocked').textContent='37';
+  document.getElementById('recentAssess').textContent='[示例] webapp.example.com 综合评估完成 评分 72/100\n[示例] api.example.com API安全评估 评分 85/100';
+  toast('已加载示例演示数据');
+}
+
+// 初始化入口
+init(); loadUsers(); loadKeys(); loadVulns(); loadReports();
+</script>
+</body>
+</html>

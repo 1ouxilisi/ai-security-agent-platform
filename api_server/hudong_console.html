@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>护网行动控制台</title>
+<!-- 可选外部资源（缺失时页面仍可独立运行） -->
+<link rel="stylesheet" href="/static/css/responsive.css" onerror="this.remove()">
+<script src="/static/js/i18n.js" onerror="this.remove()"></script>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--border:#30363d;--primary:#58a6ff;--text:#c9d1d9;--muted:#8b949e;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei",Arial,sans-serif;font-size:14px;}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;}
+.header h1{font-size:18px;color:var(--primary);}
+.tabs{display:flex;flex-wrap:wrap;background:var(--card);border-bottom:1px solid var(--border);padding:0 10px;}
+.tab{padding:12px 16px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+.container{padding:20px;max-width:1400px;margin:0 auto;}
+.panel{display:none;}
+.panel.active{display:block;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.card .num{font-size:30px;font-weight:bold;color:var(--primary);}
+.card .label{color:var(--muted);margin-top:4px;}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:8px;overflow:hidden;margin-bottom:12px;}
+th,td{border:1px solid var(--border);padding:8px 10px;text-align:left;font-size:13px;}
+th{background:#1c2129;color:var(--primary);}
+tr:hover td{background:#1c2129;}
+button{background:var(--primary);color:#0d1117;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-weight:bold;}
+button:hover{opacity:.85;}
+button.ghost{background:transparent;border:1px solid var(--border);color:var(--text);}
+button.danger{background:var(--red);color:#fff;}
+select,input,textarea{background:#0d1117;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;}
+.badge{padding:2px 8px;border-radius:10px;font-size:12px;display:inline-block;}
+.b-critical{background:rgba(248,81,73,.15);color:var(--red);}
+.b-high{background:rgba(210,153,34,.15);color:var(--yellow);}
+.b-medium{background:rgba(88,166,255,.15);color:var(--primary);}
+.b-low{background:rgba(139,148,158,.15);color:var(--muted);}
+.b-ok{background:rgba(63,185,80,.15);color:var(--green);}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+.section{margin-bottom:24px;}
+.section h3{color:var(--primary);margin-bottom:10px;border-left:3px solid var(--primary);padding-left:8px;}
+.muted{color:var(--muted);}
+.flow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0;}
+.flow .step{padding:8px 14px;border:1px solid var(--border);border-radius:20px;background:var(--card);color:var(--muted);}
+.flow .step.done{border-color:var(--green);color:var(--green);}
+.flow .step.cur{border-color:var(--primary);color:var(--primary);}
+.flow .arrow{color:var(--muted);}
+.progress{height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+.progress>div{height:100%;background:var(--green);transition:width .4s;}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:10px;overflow:auto;font-size:12px;white-space:pre-wrap;}
+@media(max-width:768px){.container{padding:10px;}.header h1{font-size:15px;}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🛡 护网行动控制台</h1>
+  <span class="muted" id="clock"></span>
+</div>
+<div class="tabs">
+  <div class="tab active" data-tab="overview">护网总览</div>
+  <div class="tab" data-tab="prep">准备阶段</div>
+  <div class="tab" data-tab="monitor">监控阶段</div>
+  <div class="tab" data-tab="emergency">应急阶段</div>
+  <div class="tab" data-tab="summary">总结阶段</div>
+</div>
+<div class="container">
+
+  <!-- ============ 护网总览 ============ -->
+  <div class="panel active" id="panel-overview">
+    <div class="card">
+      <h3 style="color:var(--primary);margin-bottom:10px;">护网阶段指示器</h3>
+      <div class="flow" id="phase-flow">
+        <span class="step" id="ph-prep">① 准备</span><span class="arrow">→</span>
+        <span class="step" id="ph-mon">② 监控</span><span class="arrow">→</span>
+        <span class="step" id="ph-emg">③ 应急</span><span class="arrow">→</span>
+        <span class="step" id="ph-sum">④ 总结</span>
+      </div>
+      <div class="row"><span class="muted">整体进度：</span></div>
+      <div class="progress"><div id="ov-progress" style="width:0%"></div></div>
+      <p class="muted" id="ov-progress-text"></p>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="num" id="ov-assets">-</div><div class="label">资产总数</div></div>
+      <div class="card"><div class="num" id="ov-vulns">-</div><div class="label">漏洞数</div></div>
+      <div class="card"><div class="num" id="ov-alerts">-</div><div class="label">告警数</div></div>
+      <div class="card"><div class="num" id="ov-events">-</div><div class="label">事件数</div></div>
+      <div class="card"><div class="num" id="ov-rate">-</div><div class="label">处置率(%)</div></div>
+    </div>
+    <div class="card">
+      <h3>整体态势</h3>
+      <p id="ov-posture" class="muted">尚未启动护网，请在「准备阶段」启动准备任务。</p>
+    </div>
+  </div>
+
+  <!-- ============ 准备阶段 ============ -->
+  <div class="panel" id="panel-prep">
+    <div class="section">
+      <h3>启动护网准备</h3>
+      <div class="row">
+        <input id="prep-name" placeholder="准备任务名称" style="width:220px">
+        <button onclick="startPreparation()">启动准备</button>
+        <span class="muted" id="prep-id-label">当前准备ID：未启动</span>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="num" id="pr-assets">-</div><div class="label">资产数</div></div>
+      <div class="card"><div class="num" id="pr-surface">-</div><div class="label">暴露面</div></div>
+      <div class="card"><div class="num" id="pr-vulns">-</div><div class="label">漏洞数</div></div>
+      <div class="card"><div class="num" id="pr-highrisk">-</div><div class="label">高风险资产</div></div>
+    </div>
+    <div class="section">
+      <h3>资产梳理（重要性评级/责任人）</h3>
+      <table><thead><tr><th>资产</th><th>IP/域名</th><th>类型</th><th>重要性</th><th>风险</th><th>责任人</th></tr></thead>
+      <tbody id="prep-assets-tbody"></tbody></table>
+    </div>
+    <div class="section">
+      <h3>攻击面（端口/服务/Web应用）</h3>
+      <table><thead><tr><th>资产</th><th>暴露类型</th><th>开放端口</th><th>运行服务</th><th>远程管理</th><th>风险</th></tr></thead>
+      <tbody id="prep-surface-tbody"></tbody></table>
+    </div>
+    <div class="section">
+      <h3>漏洞扫描（按严重程度）</h3>
+      <div id="prep-sev-dist" class="muted" style="margin-bottom:8px;"></div>
+      <table><thead><tr><th>漏洞</th><th>资产</th><th>类型</th><th>严重</th><th>CVE</th><th>已验证</th></tr></thead>
+      <tbody id="prep-vulns-tbody"></tbody></table>
+    </div>
+    <div class="section">
+      <h3>风险评估（风险矩阵）</h3>
+      <div id="prep-risk"></div>
+    </div>
+    <div class="section">
+      <h3>加固建议与加固执行</h3>
+      <div class="row"><button class="ghost" onclick="loadHardening()">刷新加固任务</button>
+        <button onclick="genPrepReport()">生成准备报告</button></div>
+      <table><thead><tr><th>加固任务</th><th>优先级</th><th>状态</th><th>责任人</th><th>操作</th></tr></thead>
+      <tbody id="prep-hard-tbody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- ============ 监控阶段 ============ -->
+  <div class="panel" id="panel-monitor">
+    <div class="section">
+      <h3>启动持续监控</h3>
+      <div class="row">
+        <input id="mon-name" placeholder="监控任务名称" style="width:220px">
+        <button onclick="startMonitoring()">启动监控</button>
+        <button class="ghost" onclick="runDetect()">触发一轮攻击监测</button>
+        <button onclick="genMonReport()">生成监控日报</button>
+        <span class="muted" id="mon-id-label">当前监控ID：未启动</span>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="num" id="mn-alerts">-</div><div class="label">告警总数</div></div>
+      <div class="card"><div class="num" id="mn-active">-</div><div class="label">待确认</div></div>
+      <div class="card"><div class="num" id="mn-resolved">-</div><div class="label">已处置</div></div>
+      <div class="card"><div class="num" id="mn-rate">-</div><div class="label">处置率(%)</div></div>
+    </div>
+    <div class="section">
+      <h3>告警管理（类型/严重/状态）</h3>
+      <div class="row">
+        <select id="al-filter-type"><option value="">全部类型</option>
+          <option value="ddos">DDoS</option><option value="scan">扫描</option>
+          <option value="brute_force">暴力破解</option><option value="anomaly_login">异常登录</option>
+          <option value="web_attack">Web攻击</option></select>
+        <select id="al-filter-status"><option value="">全部状态</option>
+          <option value="active">活跃</option><option value="acknowledged">已确认</option>
+          <option value="resolved">已处置</option></select>
+        <button class="ghost" onclick="loadAlerts()">筛选</button>
+      </div>
+      <table><thead><tr><th>时间</th><th>类型</th><th>严重</th><th>标题</th><th>源IP</th><th>状态</th><th>操作</th></tr></thead>
+      <tbody id="mon-alerts-tbody"></tbody></table>
+    </div>
+    <div class="section">
+      <h3>威胁检测（IOC/威胁情报）</h3>
+      <table><thead><tr><th>威胁类型</th><th>IOC</th><th>值</th><th>严重</th><th>状态</th><th>最近发现</th></tr></thead>
+      <tbody id="mon-threats-tbody"></tbody></table>
+    </div>
+    <div class="section">
+      <h3>态势感知（攻击趋势/威胁分布）</h3>
+      <div id="mon-situation"></div>
+    </div>
+  </div>
+
+  <!-- ============ 应急阶段 ============ -->
+  <div class="panel" id="panel-emergency">
+    <div class="section">
+      <h3>事件上报（按分级）</h3>
+      <div class="row">
+        <input id="em-title" placeholder="事件标题" style="width:220px">
+        <select id="em-level">
+          <option value="general">一般</option>
+          <option value="large">较大</option>
+          <option value="major">重大</option>
+          <option value="extremely_major">特别重大</option>
+        </select>
+        <input id="em-asset" placeholder="受影响资产" style="width:140px">
+        <button onclick="reportEmergency()">上报事件</button>
+      </div>
+    </div>
+    <div class="section">
+      <h3>事件列表与应急处置（遏制→根除→恢复）</h3>
+      <table><thead><tr><th>事件</th><th>分级</th><th>状态</th><th>上报时间</th><th>操作</th></tr></thead>
+      <tbody id="emg-tbody"></tbody></table>
+    </div>
+    <div class="section">
+      <h3>溯源分析与信息上报</h3>
+      <div class="row">
+        <button class="ghost" onclick="loadTrace()">查看当前事件溯源</button>
+        <select id="em-report-type">
+          <option value="internal">内部通报</option>
+          <option value="external">外部通报</option>
+          <option value="regulatory">监管报送</option>
+          <option value="customer">客户告知</option>
+        </select>
+        <button onclick="submitReport()">信息上报</button>
+        <button onclick="genEmergencyReport()">生成应急报告</button>
+      </div>
+      <div id="emg-trace" class="muted"></div>
+    </div>
+  </div>
+
+  <!-- ============ 总结阶段 ============ -->
+  <div class="panel" id="panel-summary">
+    <div class="section">
+      <h3>生成护网总结</h3>
+      <div class="row">
+        <button onclick="genSummary()">生成总结</button>
+        <button onclick="genSumReport()">生成总结报告</button>
+        <span class="muted" id="sum-id-label">当前总结ID：未生成</span>
+      </div>
+    </div>
+    <div class="cards" id="sum-cards">
+      <div class="card"><div class="num" id="sm-scans">-</div><div class="label">漏洞/资产</div></div>
+      <div class="card"><div class="num" id="sm-alerts">-</div><div class="label">告警数</div></div>
+      <div class="card"><div class="num" id="sm-events">-</div><div class="label">事件数</div></div>
+      <div class="card"><div class="num" id="sm-detect">-</div><div class="label">平均检测率(%)</div></div>
+    </div>
+    <div class="section">
+      <h3>攻防复盘（攻击手法 vs 防御效果）</h3>
+      <table><thead><tr><th>攻击手法</th><th>防御效果</th><th>检测率</th><th>阻断率</th><th>改进空间</th></tr></thead>
+      <tbody id="sum-review-tbody"></tbody></table>
+    </div>
+    <div class="section">
+      <h3>成果亮点 / 不足改进</h3>
+      <div class="row">
+        <div class="card" style="flex:1;min-width:280px;"><h3 style="color:var(--green)">成果亮点</h3>
+          <div id="sum-achieve"></div></div>
+        <div class="card" style="flex:1;min-width:280px;"><h3 style="color:var(--yellow)">不足与改进</h3>
+          <div id="sum-short"></div></div>
+      </div>
+    </div>
+    <div class="section">
+      <h3>改进计划</h3>
+      <div class="row">
+        <input id="plan-title" placeholder="改进项标题" style="width:200px">
+        <select id="plan-cat">
+          <option value="technical">技术</option><option value="process">流程</option>
+          <option value="personnel">人员</option><option value="management">管理</option>
+        </select>
+        <button onclick="createPlan()">创建改进计划</button>
+      </div>
+      <table><thead><tr><th>标题</th><th>类别</th><th>优先级</th><th>状态</th></tr></thead>
+      <tbody id="sum-plans-tbody"></tbody></table>
+    </div>
+    <div class="section">
+      <h3>报告预览</h3>
+      <pre id="report-preview">（生成报告后此处展示JSON结果）</pre>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API="/api/v1/hudong";
+let prepId="", monId="", emgId="", sumId="";
+
+async function api(path, opts){
+  try{
+    const r = await fetch(API+path,{headers:{"Content-Type":"application/json"},...opts});
+    const j = await r.json();
+    if(j.code!==0){console.error(j);return null;}
+    return j.data;
+  }catch(e){console.error("API错误",path,e);return null;}
+}
+function b(s){
+  const m={critical:"b-critical",high:"b-high",medium:"b-medium",low:"b-low",
+    active:"b-high",acknowledged:"b-medium",resolved:"b-ok",
+    completed:"b-ok",in_progress:"b-medium",pending:"b-low",
+    extremely_major:"b-critical",major:"b-critical",large:"b-high",general:"b-medium"};
+  return `<span class="badge ${m[s]||'b-low'}">${s}</span>`;
+}
+function esc(x){return String(x==null?"":x).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+// Tab切换
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    document.getElementById("panel-"+t.dataset.tab).classList.add("active");
+  };
+});
+
+// ============ 准备阶段 ============
+async function startPreparation(){
+  const name=document.getElementById("prep-name").value||"护网准备";
+  const r=await api("/preparation/start",{method:"POST",body:JSON.stringify({name:name})});
+  if(r){prepId=r.id;document.getElementById("prep-id-label").textContent="当前准备ID："+prepId;
+    alert("准备任务已启动");loadOverview();}
+}
+async function loadPrep(){
+  if(!prepId)return;
+  const st=await api(`/preparation/${prepId}/status`);
+  if(st){
+    document.getElementById("pr-assets").textContent=st.asset_count||0;
+    document.getElementById("pr-surface").textContent=st.attack_surface_count||0;
+    document.getElementById("pr-vulns").textContent=st.vuln_count||0;
+    document.getElementById("pr-highrisk").textContent=st.high_risk_asset_count||0;
+  }
+  const inv=await api(`/preparation/${prepId}/assets`);
+  let html="";
+  (inv?.assets||[]).forEach(a=>{
+    html+=`<tr><td>${esc(a.name)}</td><td>${esc(a.ip)} ${esc(a.domain)}</td><td>${esc(a.type)}</td>
+      <td>${b(a.importance)}</td><td>${b(a.risk_level)}</td><td>${esc(a.owner)}</td></tr>`;
+  });
+  document.getElementById("prep-assets-tbody").innerHTML=html;
+
+  const sf=await api(`/preparation/${prepId}/attack-surface`);
+  html="";
+  (sf?.all_surfaces||[]).forEach(s=>{
+    html+=`<tr><td>${esc(s.asset_name)}</td><td>${esc(s.exposure_type)}</td>
+      <td>${(s.open_ports||[]).join(",")}</td><td>${(s.running_services||[]).join(",")}</td>
+      <td>${(s.remote_management||[]).join(",")||"-"}</td><td>${b(s.risk_level)}</td></tr>`;
+  });
+  document.getElementById("prep-surface-tbody").innerHTML=html;
+
+  const vu=await api(`/preparation/${prepId}/vulnerabilities`);
+  document.getElementById("prep-sev-dist").textContent="严重程度分布："+JSON.stringify(vu?.by_severity||{});
+  html="";
+  (vu?.vulnerabilities||[]).forEach(v=>{
+    html+=`<tr><td>${esc(v.title)}</td><td>${esc(v.asset_name)}</td><td>${esc(v.type)}</td>
+      <td>${b(v.severity)}</td><td>${esc(v.cve_id)}</td><td>${v.verified?"是":"否"}</td></tr>`;
+  });
+  document.getElementById("prep-vulns-tbody").innerHTML=html;
+
+  const rk=await api(`/preparation/${prepId}/risk-assessment`);
+  document.getElementById("prep-risk").innerHTML=
+    `<p class="muted">整体风险：<b style="color:var(--yellow)">${rk?.overall_risk_level||"-"}</b> ｜ 风险矩阵：${JSON.stringify(rk?.risk_matrix||{})}</p>`;
+}
+async function loadHardening(){
+  if(!prepId)return;
+  const d=await api(`/preparation/${prepId}/hardening`);
+  let html="";
+  (d?.tasks||[]).forEach(t=>{
+    html+=`<tr><td>${esc(t.title)}</td><td>${b(t.priority)}</td><td>${b(t.status)}</td>
+      <td>${esc(t.assignee)||"-"}</td>
+      <td><button class="ghost" onclick="verifyHard('${t.id}')">验证</button></td></tr>`;
+  });
+  document.getElementById("prep-hard-tbody").innerHTML=html||'<tr><td colspan="5" class="muted">暂无加固任务，可由建议自动生成</td></tr>';
+}
+async function verifyHard(tid){
+  await api(`/preparation/hardening/${tid}/verify`,{method:"POST",body:JSON.stringify({passed:true,verification_result:"复测通过"})});
+  loadHardening();
+}
+async function genPrepReport(){
+  if(!prepId){alert("请先启动准备");return;}
+  const r=await api(`/preparation/${prepId}/report`,{method:"POST"});
+  document.getElementById("report-preview").textContent=JSON.stringify(r,null,2);
+}
+
+// ============ 监控阶段 ============
+async function startMonitoring(){
+  const name=document.getElementById("mon-name").value||"护网监控";
+  const r=await api("/monitoring/start",{method:"POST",body:JSON.stringify({name:name,preparation_id:prepId})});
+  if(r){monId=r.id;document.getElementById("mon-id-label").textContent="当前监控ID："+monId;alert("监控已启动");loadMonitor();}
+}
+async function loadMonitor(){
+  if(!monId)return;
+  await loadAlerts();
+  const th=await api(`/monitoring/${monId}/threats`);
+  let html="";
+  (th||[]).forEach(t=>{
+    html+=`<tr><td>${esc(t.threat_type)}</td><td>${esc(t.ioc)}</td><td>${esc(t.value)}</td>
+      <td>${b(t.severity)}</td><td>${esc(t.status)}</td><td>${esc(t.last_seen)}</td></tr>`;
+  });
+  document.getElementById("mon-threats-tbody").innerHTML=html;
+  const sz=await api(`/monitoring/${monId}/situation`);
+  if(sz){
+    document.getElementById("mn-alerts").textContent=sz.total_alerts||0;
+    document.getElementById("mn-active").textContent=sz.by_status?.active||0;
+    document.getElementById("mn-resolved").textContent=sz.by_status?.resolved||0;
+    document.getElementById("mn-rate").textContent=sz.handle_rate||0;
+    document.getElementById("mon-situation").innerHTML=
+      `<p class="muted">整体态势：<b style="color:var(--yellow)">${sz.overall_posture}</b> ｜ 威胁分布：${JSON.stringify(sz.threat_distribution)}</p>`;
+  }
+}
+async function loadAlerts(){
+  if(!monId)return;
+  const type=document.getElementById("al-filter-type").value;
+  const stt=document.getElementById("al-filter-status").value;
+  let q=`?page=1&page_size=100`;
+  if(type)q+=`&alert_type=${type}`;
+  if(stt)q+=`&status=${stt}`;
+  const d=await api(`/monitoring/${monId}/alerts${q}`);
+  let html="";
+  (d?.items||[]).forEach(a=>{
+    const src=a.details?.source_ip||"-";
+    html+=`<tr><td>${esc((a.detected_at||"").slice(0,19))}</td><td>${esc(a.alert_type)}</td>
+      <td>${b(a.severity)}</td><td>${esc(a.title)}</td><td>${esc(src)}</td><td>${b(a.status)}</td>
+      <td><button class="ghost" onclick="ackAlert('${a.id}')">确认</button>
+      <button onclick="resAlert('${a.id}')">处置</button></td></tr>`;
+  });
+  document.getElementById("mon-alerts-tbody").innerHTML=html;
+}
+async function ackAlert(aid){await api(`/monitoring/${monId}/alerts/acknowledge`,{method:"POST",body:JSON.stringify({alert_id:aid})});loadMonitor();}
+async function resAlert(aid){await api(`/monitoring/${monId}/alerts/resolve`,{method:"POST",body:JSON.stringify({alert_id:aid,result:"已处置"})});loadMonitor();}
+async function runDetect(){if(!monId){alert("请先启动监控");return;}await api(`/monitoring/${monId}/detect?round_no=${Math.ceil(Math.random()*99)}`,{method:"POST"});loadMonitor();}
+async function genMonReport(){
+  if(!monId){alert("请先启动监控");return;}
+  const r=await api(`/monitoring/${monId}/report`,{method:"POST"});
+  document.getElementById("report-preview").textContent=JSON.stringify(r,null,2);
+}
+
+// ============ 应急阶段 ============
+async function reportEmergency(){
+  const title=document.getElementById("em-title").value;
+  if(!title){alert("请输入事件标题");return;}
+  const level=document.getElementById("em-level").value;
+  const asset=document.getElementById("em-asset").value;
+  const r=await api("/emergency/report",{method:"POST",body:JSON.stringify({
+    title:title,level:level,asset_id:asset,monitoring_id:monId,
+    description:"护网期间监测到安全事件"})});
+  if(r){emgId=r.id;alert("事件已上报："+emgId);loadEmergencies();}
+}
+async function loadEmergencies(){
+  // 复用 status 接口需已知id；此处用事件列表——直接尝试当前emgId
+  let html="";
+  if(emgId){
+    const e=await api(`/emergency/${emgId}/status`);
+    if(e){
+      html=`<tr><td>${esc(e.title)}</td><td>${b(e.level)}</td><td>${b(e.status)}</td>
+        <td>${esc((e.reported_at||"").slice(0,19))}</td>
+        <td>
+        <button class="ghost" onclick="emgAction('contain')">遏制</button>
+        <button class="ghost" onclick="emgAction('eradicate')">根除</button>
+        <button onclick="emgAction('recover')">恢复</button></td></tr>`;
+    }
+  }
+  document.getElementById("emg-tbody").innerHTML=html||'<tr><td colspan="5" class="muted">尚未上报事件</td></tr>';
+}
+async function emgAction(act){
+  if(!emgId){alert("请先上报事件");return;}
+  const body = act==="recover"?{close:true}:{};
+  await api(`/emergency/${emgId}/${act}`,{method:"POST",body:JSON.stringify(body)});
+  loadEmergencies();loadTrace();
+}
+async function loadTrace(){
+  if(!emgId){document.getElementById("emg-trace").textContent="请先上报事件";return;}
+  const t=await api(`/emergency/${emgId}/trace`);
+  document.getElementById("emg-trace").innerHTML="<pre>"+esc(JSON.stringify(t,null,2))+"</pre>";
+}
+async function submitReport(){
+  if(!emgId){alert("请先上报事件");return;}
+  const rt=document.getElementById("em-report-type").value;
+  await api(`/emergency/${emgId}/report`,{method:"POST",body:JSON.stringify({report_type:rt})});
+  alert("信息已上报");
+}
+async function genEmergencyReport(){
+  if(!emgId){alert("请先上报事件");return;}
+  const r=await api(`/emergency/${emgId}/final-report`,{method:"POST"});
+  document.getElementById("report-preview").textContent=JSON.stringify(r,null,2);
+}
+
+// ============ 总结阶段 ============
+async function genSummary(){
+  const r=await api("/summary/generate",{method:"POST",body:JSON.stringify({
+    preparation_id:prepId,monitoring_id:monId,name:"护网总结"})});
+  if(r){sumId=r.id;document.getElementById("sum-id-label").textContent="当前总结ID："+sumId;loadSummary();}
+}
+async function loadSummary(){
+  if(!sumId)return;
+  const st=await api(`/summary/${sumId}/stats`);
+  document.getElementById("sm-alerts").textContent=(st?.by_category?.监控||[]).find(x=>x.name==="告警数量")?.value||0;
+  document.getElementById("sm-events").textContent=(st?.by_category?.应急||[]).find(x=>x.name==="事件数量")?.value||0;
+  const rv=await api(`/summary/${sumId}/review`);
+  document.getElementById("sm-detect").textContent=rv?.avg_detection_rate||0;
+  let html="";
+  (rv?.reviews||[]).forEach(x=>{
+    html+=`<tr><td>${esc(x.attack_method)}</td><td>${esc(x.defense_effect)}</td>
+      <td>${(x.detection_rate*100).toFixed(0)}%</td><td>${(x.block_rate*100).toFixed(0)}%</td>
+      <td>${esc(x.improvement_space)}</td></tr>`;
+  });
+  document.getElementById("sum-review-tbody").innerHTML=html;
+
+  const im=await api(`/summary/${sumId}/improvements`);
+  document.getElementById("sum-achieve").innerHTML=(im?.achievements||[]).map(a=>`<p>· ${esc(a.content)}</p>`).join("");
+  document.getElementById("sum-short").innerHTML=(im?.shortcomings||[]).map(s=>`<p>· [${esc(s.category)}] ${esc(s.content)}</p>`).join("");
+  html="";
+  (im?.plans||[]).forEach(p=>{
+    html+=`<tr><td>${esc(p.title)}</td><td>${esc(p.category)}</td><td>${b(p.priority)}</td><td>${b(p.status)}</td></tr>`;
+  });
+  document.getElementById("sum-plans-tbody").innerHTML=html;
+}
+async function createPlan(){
+  if(!sumId){alert("请先生成总结");return;}
+  const title=document.getElementById("plan-title").value;
+  if(!title){alert("请输入标题");return;}
+  await api(`/summary/${sumId}/improvements`,{method:"POST",body:JSON.stringify({
+    title:title,category:document.getElementById("plan-cat").value})});
+  loadSummary();
+}
+async function genSumReport(){
+  if(!sumId){alert("请先生成总结");return;}
+  const r=await api(`/summary/${sumId}/report`,{method:"POST"});
+  document.getElementById("report-preview").textContent=JSON.stringify(r,null,2);
+}
+
+// ============ 总览 ============
+async function loadOverview(){
+  let total=0;
+  if(prepId){
+    const st=await api(`/preparation/${prepId}/status`);
+    if(st){
+      document.getElementById("ov-assets").textContent=st.asset_count||0;
+      document.getElementById("ov-vulns").textContent=st.vuln_count||0;
+      document.getElementById("ph-prep").classList.add("done");
+    }
+  }
+  if(monId){
+    const sz=await api(`/monitoring/${monId}/situation`);
+    if(sz){
+      document.getElementById("ov-alerts").textContent=sz.total_alerts||0;
+      document.getElementById("ov-rate").textContent=sz.handle_rate||0;
+      document.getElementById("ov-posture").textContent="整体态势："+sz.overall_posture;
+      document.getElementById("ph-mon").classList.add("done");
+    }
+  }
+  if(emgId){
+    document.getElementById("ov-events").textContent=1;
+    document.getElementById("ph-emg").classList.add("done");
+  }
+  if(sumId){document.getElementById("ph-sum").classList.add("done");}
+  const done=document.querySelectorAll("#phase-flow .step.done").length;
+  const pct=Math.round(done/4*100);
+  document.getElementById("ov-progress").style.width=pct+"%";
+  document.getElementById("ov-progress-text").textContent=`已完成 ${done}/4 阶段`;
+}
+
+// 初始化
+setInterval(()=>{document.getElementById("clock").textContent=new Date().toLocaleString();},1000);
+loadOverview();
+</script>
+</body>
+</html>

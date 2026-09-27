@@ -1,0 +1,62 @@
+[
+  {
+    "app_id": "1456a48f-954b-4548-8e3f-4545a89c2963",
+    "name": "测试应用_e481e650",
+    "description": "测试",
+    "owner_id": "user1",
+    "status": "development",
+    "plan_id": "free",
+    "website": "",
+    "callback_url": "",
+    "logo_url": "",
+    "created_at": 1788168299.1850905,
+    "updated_at": 1788168299.1850915,
+    "approved_at": null,
+    "settings": {}
+  },
+  {
+    "app_id": "33e46dc0-20ec-4ef8-8b65-fdf56647c98c",
+    "name": "测试_6d8c8aaf",
+    "description": "",
+    "owner_id": "user1",
+    "status": "development",
+    "plan_id": "free",
+    "website": "",
+    "callback_url": "",
+    "logo_url": "",
+    "created_at": 1788168299.2658446,
+    "updated_at": 1788168299.2658453,
+    "approved_at": null,
+    "settings": {}
+  },
+  {
+    "app_id": "2eda9c19-5054-4bdd-8c4b-786826415b78",
+    "name": "测试应用_30c3f53f",
+    "description": "测试",
+    "owner_id": "user1",
+    "status": "development",
+    "plan_id": "free",
+    "website": "",
+    "callback_url": "",
+    "logo_url": "",
+    "created_at": 1788168315.8748415,
+    "updated_at": 1788168315.8748417,
+    "approved_at": null,
+    "settings": {}
+  },
+  {
+    "app_id": "039ad5df-c043-4ae8-a828-65c4b2b1ce05",
+    "name": "测试_f06af9b3",
+    "description": "",
+    "owner_id": "user1",
+    "status": "development",
+    "plan_id": "free",
+    "website": "",
+    "callback_url": "",
+    "logo_url": "",
+    "created_at": 1788168315.8804524,
+    "updated_at": 1788168315.8804524,
+    "approved_at": null,
+    "settings": {}
+  }
+]

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI大模型安全评估控制台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e1a;color:#e0e6f0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+.header{background:linear-gradient(135deg,#0d1b2a,#1b263b);padding:20px 30px;border-bottom:2px solid #00d4ff;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:22px;color:#00d4ff}
+.header .badge{background:#00d4ff;color:#0a0e1a;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:bold}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.card{background:#111827;border:1px solid #1f2937;border-radius:12px;padding:20px}
+.card h3{color:#00d4ff;margin-bottom:15px;font-size:16px;border-bottom:1px solid #1f2937;padding-bottom:10px}
+.form-group{margin-bottom:15px}
+.form-group label{display:block;margin-bottom:6px;color:#9ca3af;font-size:13px}
+.form-group input,.form-group select{width:100%;padding:10px 14px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#e0e6f0;font-size:14px}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:#00d4ff}
+.btn{padding:12px 24px;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;transition:all .3s}
+.btn-primary{background:linear-gradient(135deg,#00d4ff,#0099cc);color:#0a0e1a}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 5px 20px rgba(0,212,255,.4)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-secondary{background:#374151;color:#e0e6f0}
+.btn-sm{padding:6px 14px;font-size:12px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px}
+.metric{background:#111827;border:1px solid #1f2937;border-radius:12px;padding:18px;text-align:center}
+.metric .value{font-size:28px;font-weight:bold;color:#00d4ff}
+.metric .label{font-size:12px;color:#6b7280;margin-top:5px}
+.metric.critical .value{color:#ef4444}
+.metric.high .value{color:#f97316}
+.metric.medium .value{color:#eab308}
+.metric.low .value{color:#22c55e}
+.vuln-list{max-height:500px;overflow-y:auto}
+.vuln-item{background:#1f2937;border-radius:8px;padding:14px;margin-bottom:10px;border-left:4px solid #6b7280}
+.vuln-item.critical{border-left-color:#ef4444}
+.vuln-item.high{border-left-color:#f97316}
+.vuln-item.medium{border-left-color:#eab308}
+.vuln-item.low{border-left-color:#22c55e}
+.vuln-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.vuln-title{font-weight:bold;font-size:14px}
+.vuln-sev{padding:2px 10px;border-radius:12px;font-size:11px;font-weight:bold}
+.sev-critical{background:#ef4444;color:#fff}
+.sev-high{background:#f97316;color:#fff}
+.sev-medium{background:#eab308;color:#000}
+.sev-low{background:#22c55e;color:#000}
+.vuln-meta{font-size:12px;color:#9ca3af;margin-bottom:6px}
+.vuln-evidence{font-size:13px;color:#e0e6f0;background:#111827;padding:8px 12px;border-radius:6px;margin-top:8px}
+.vuln-actions{margin-top:10px;display:flex;gap:8px}
+.log-box{background:#0a0e1a;border:1px solid #1f2937;border-radius:8px;padding:15px;font-family:'Consolas',monospace;font-size:12px;max-height:300px;overflow-y:auto;line-height:1.8}
+.log-box .info{color:#00d4ff}
+.log-box .success{color:#22c55e}
+.log-box .warn{color:#eab308}
+.log-box .error{color:#ef4444}
+.risk-bar{height:12px;background:#1f2937;border-radius:6px;overflow:hidden;margin:10px 0}
+.risk-fill{height:100%;background:linear-gradient(90deg,#22c55e,#eab308,#f97316,#ef4444);transition:width .5s}
+.tabs{display:flex;gap:10px;margin-bottom:20px}
+.tab{padding:10px 20px;background:#1f2937;border-radius:8px;cursor:pointer;font-size:14px;transition:all .3s}
+.tab.active{background:#00d4ff;color:#0a0e1a;font-weight:bold}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.payload-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.payload-cat{background:#1f2937;border-radius:8px;padding:14px}
+.payload-cat h4{color:#00d4ff;font-size:14px;margin-bottom:8px}
+.payload-cat ul{list-style:none;font-size:12px;color:#9ca3af}
+.payload-cat li{padding:3px 0}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);z-index:1000;justify-content:center;align-items:center}
+.modal.active{display:flex}
+.modal-content{background:#111827;border:1px solid #00d4ff;border-radius:12px;padding:30px;max-width:800px;width:90%;max-height:80vh;overflow-y:auto}
+.modal-content h3{color:#00d4ff;margin-bottom:15px}
+.modal-content pre{background:#1f2937;padding:15px;border-radius:8px;font-size:12px;white-space:pre-wrap;word-break:break-all}
+.close-btn{float:right;background:#374151;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🤖 AI大模型安全评估控制台</h1>
+  <span class="badge">v4.6 AI Security Assessment</span>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('assess')">🎯 安全评估</div>
+    <div class="tab" onclick="switchTab('payloads')">📋 Payload库</div>
+    <div class="tab" onclick="switchTab('bounty')">💰 漏洞赏金</div>
+  </div>
+
+  <!-- 评估面板 -->
+  <div id="tab-assess" class="tab-content active">
+    <div class="grid">
+      <div class="card">
+        <h3>目标配置</h3>
+        <div class="form-group">
+          <label>目标LLM API URL</label>
+          <input type="text" id="target" placeholder="https://api.example.com/v1/chat" value="">
+        </div>
+        <div class="form-group">
+          <label>API Key（可选）</label>
+          <input type="password" id="apiKey" placeholder="sk-...">
+        </div>
+        <div class="form-group">
+          <label>模型名称（可选）</label>
+          <input type="text" id="model" placeholder="gpt-3.5-turbo">
+        </div>
+        <div class="form-group">
+          <label>评估模式</label>
+          <select id="mode">
+            <option value="scan">快速扫描（3类18项）</option>
+            <option value="deep">深度评估（5类26项）</option>
+            <option value="full">完整评估（全部）</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="runBtn" onclick="runAssessment()">🚀 开始评估</button>
+      </div>
+
+      <div class="card">
+        <h3>执行日志</h3>
+        <div class="log-box" id="logBox">
+          <div class="info">[系统] AI大模型安全评估引擎已就绪</div>
+          <div class="info">[系统] 26个测试Payload加载完成</div>
+          <div class="info">[系统] 支持模式: scan / deep / full</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="resultsSection" style="display:none">
+      <div class="metrics">
+        <div class="metric"><div class="value" id="mTotal">0</div><div class="label">测试项</div></div>
+        <div class="metric critical"><div class="value" id="mVuln">0</div><div class="label">发现漏洞</div></div>
+        <div class="metric" id="riskMetric"><div class="value" id="mRisk">0</div><div class="label">风险评分</div></div>
+        <div class="metric"><div class="value" id="mLevel">-</div><div class="label">风险等级</div></div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px">
+        <h3>风险概览</h3>
+        <div class="risk-bar"><div class="risk-fill" id="riskFill" style="width:0%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#6b7280">
+          <span>Low</span><span>Medium</span><span>High</span><span>Critical</span>
+        </div>
+        <div id="severityDist" style="margin-top:15px;display:flex;gap:20px;flex-wrap:wrap"></div>
+      </div>
+
+      <div class="card">
+        <h3>漏洞详情 <span id="vulnCount" style="color:#6b7280;font-size:13px"></span></h3>
+        <div class="vuln-list" id="vulnList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payload库 -->
+  <div id="tab-payloads" class="tab-content">
+    <div class="card">
+      <h3>测试Payload库（共26个）</h3>
+      <div class="payload-grid" id="payloadGrid"></div>
+    </div>
+  </div>
+
+  <!-- 漏洞赏金 -->
+  <div id="tab-bounty" class="tab-content">
+    <div class="card">
+      <h3>漏洞赏金报告生成</h3>
+      <p style="color:#9ca3af;margin-bottom:15px;font-size:14px">
+        选择已发现的漏洞，一键生成 Bugcrowd / HackerOne 格式的漏洞报告，直接复制提交。
+      </p>
+      <div class="form-group">
+        <label>选择漏洞</label>
+        <select id="bountyVuln"><option value="">先运行评估，然后选择漏洞</option></select>
+      </div>
+      <div class="form-group">
+        <label>平台</label>
+        <select id="bountyPlatform">
+          <option value="bugcrowd">Bugcrowd</option>
+          <option value="hackerone">HackerOne</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="generateBountyReport()">📄 生成报告</button>
+    </div>
+  </div>
+</div>
+
+<!-- 报告弹窗 -->
+<div class="modal" id="reportModal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeModal()">关闭</button>
+    <h3 id="modalTitle">漏洞报告</h3>
+    <pre id="modalContent"></pre>
+  </div>
+</div>
+
+<script>
+let currentResultId = null;
+let currentVulns = [];
+
+function log(msg, type='info') {
+  const box = document.getElementById('logBox');
+  const time = new Date().toLocaleTimeString();
+  box.innerHTML += `<div class="${type}">[${time}] ${msg}</div>`;
+  box.scrollTop = box.scrollHeight;
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+async function runAssessment() {
+  const target = document.getElementById('target').value.trim();
+  if (!target) { alert('请输入目标URL'); return; }
+
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 评估中...';
+  log('开始评估目标: ' + target, 'info');
+
+  try {
+    const resp = await fetch('/api/v1/ai-assessment/run', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        target: target,
+        mode: document.getElementById('mode').value,
+        api_key: document.getElementById('apiKey').value,
+        model: document.getElementById('model').value,
+      })
+    });
+    const data = await resp.json();
+
+    if (data.success) {
+      const d = data.data;
+      currentResultId = d.result_id;
+      currentVulns = d.vulnerabilities;
+
+      log(`评估完成: ${d.total_tests}项测试, 发现${d.vulnerabilities_found}个漏洞`, 'success');
+      log(`风险评分: ${d.risk_score}/100 (${d.risk_level})`, d.risk_level === 'Critical' ? 'error' : d.risk_level === 'High' ? 'warn' : 'success');
+
+      document.getElementById('resultsSection').style.display = 'block';
+      document.getElementById('mTotal').textContent = d.total_tests;
+      document.getElementById('mVuln').textContent = d.vulnerabilities_found;
+      document.getElementById('mRisk').textContent = d.risk_score;
+      document.getElementById('mLevel').textContent = d.risk_level;
+      document.getElementById('riskFill').style.width = d.risk_score + '%';
+
+      const rm = document.getElementById('riskMetric');
+      rm.className = 'metric ' + d.risk_level.toLowerCase();
+
+      let dist = '';
+      for (const [sev, count] of Object.entries(d.by_severity)) {
+        dist += `<span class="vuln-sev sev-${sev}">${sev.toUpperCase()}: ${count}</span>`;
+      }
+      document.getElementById('severityDist').innerHTML = dist;
+
+      renderVulns(d.vulnerabilities);
+      updateBountySelect(d.vulnerabilities);
+    }
+  } catch (e) {
+    log('评估失败: ' + e.message, 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = '🚀 开始评估';
+}
+
+function renderVulns(vulns) {
+  const list = document.getElementById('vulnList');
+  document.getElementById('vulnCount').textContent = `(${vulns.length}个)`;
+  if (vulns.length === 0) {
+    list.innerHTML = '<div style="color:#22c55e;padding:20px;text-align:center">✅ 未发现漏洞，安全状况良好</div>';
+    return;
+  }
+  list.innerHTML = vulns.map(v => `
+    <div class="vuln-item ${v.severity}">
+      <div class="vuln-header">
+        <span class="vuln-title">[${v.id}] ${v.name}</span>
+        <span class="vuln-sev sev-${v.severity}">${v.severity.toUpperCase()}</span>
+      </div>
+      <div class="vuln-meta">${v.category} | ${v.cwe} | CVSS ${v.cvss}</div>
+      <div class="vuln-evidence">🔍 ${v.evidence}</div>
+      <div class="vuln-actions">
+        <button class="btn btn-secondary btn-sm" onclick='showVulnDetail(${JSON.stringify(v).replace(/'/g,"&#39;")})'>查看详情</button>
+        <button class="btn btn-secondary btn-sm" onclick="quickBounty('${v.id}')">生成赏金报告</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showVulnDetail(v) {
+  document.getElementById('modalTitle').textContent = v.name + ' (' + v.id + ')';
+  document.getElementById('modalContent').textContent =
+    `类别: ${v.category}\nCWE: ${v.cwe}\nCVSS: ${v.cvss}\n严重度: ${v.severity}\n\n` +
+    `描述: ${v.description || ''}\n\n证据: ${v.evidence}\n\nPayload: ${v.payload}\n\n` +
+    `修复建议: ${v.recommendation}`;
+  document.getElementById('reportModal').classList.add('active');
+}
+
+function updateBountySelect(vulns) {
+  const sel = document.getElementById('bountyVuln');
+  sel.innerHTML = '<option value="">选择漏洞...</option>' +
+    vulns.map(v => `<option value="${v.id}">[${v.severity.toUpperCase()}] ${v.name}</option>`).join('');
+}
+
+async function generateBountyReport() {
+  const vulnId = document.getElementById('bountyVuln').value;
+  if (!vulnId || !currentResultId) { alert('请先运行评估并选择漏洞'); return; }
+
+  try {
+    const resp = await fetch('/api/v1/ai-assessment/bounty-report', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        vuln_id: vulnId,
+        result_id: currentResultId,
+        platform: document.getElementById('bountyPlatform').value,
+      })
+    });
+    const data = await resp.json();
+    if (data.success) {
+      const r = data.data;
+      document.getElementById('modalTitle').textContent = '💰 ' + (r.title || '漏洞赏金报告');
+      document.getElementById('modalContent').textContent = r.description || JSON.stringify(r, null, 2);
+      document.getElementById('reportModal').classList.add('active');
+      log('赏金报告已生成', 'success');
+    }
+  } catch (e) {
+    log('生成失败: ' + e.message, 'error');
+  }
+}
+
+function quickBounty(vulnId) {
+  document.getElementById('bountyVuln').value = vulnId;
+  switchTab('bounty');
+  document.querySelector('.tab:nth-child(3)').click();
+  generateBountyReport();
+}
+
+function closeModal() {
+  document.getElementById('reportModal').classList.remove('active');
+}
+
+// 加载Payload库
+async function loadPayloads() {
+  try {
+    const resp = await fetch('/api/v1/ai-assessment/payloads');
+    const data = await resp.json();
+    if (data.success) {
+      const grid = document.getElementById('payloadGrid');
+      grid.innerHTML = '';
+      for (const [cat, count] of Object.entries(data.data.by_category)) {
+        const resp2 = await fetch('/api/v1/ai-assessment/payloads?category=' + cat);
+        const d2 = await resp2.json();
+        grid.innerHTML += `
+          <div class="payload-cat">
+            <h4>${cat} (${count})</h4>
+            <ul>${d2.data.payloads.map(p => `<li>• [${p.severity}] ${p.name}</li>`).join('')}</ul>
+          </div>`;
+      }
+    }
+  } catch (e) { console.error(e); }
+}
+loadPayloads();
+</script>
+</body>
+</html>

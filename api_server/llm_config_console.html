@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM 配置中心 · AI Hacking Agent</title>
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --border:#2d3646;
+    --text:#e6edf3; --muted:#8b949e; --accent:#3b82f6; --accent2:#22c55e;
+    --warn:#eab308; --danger:#ef4444; --mono:"Cascadia Code",Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",sans-serif;
+       line-height:1.6;padding:24px;max-width:1180px;margin:0 auto}
+  h1{font-size:22px;margin-bottom:4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:18px}
+  .card h2{font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600}
+  .badge.ok{background:rgba(34,197,94,.15);color:var(--accent2)}
+  .badge.off{background:rgba(234,179,8,.15);color:var(--warn)}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+  input,select,textarea{width:100%;background:var(--bg3);border:1px solid var(--border);
+    color:var(--text);padding:9px 11px;border-radius:7px;font-size:13px;font-family:inherit}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+  input.mono{font-family:var(--mono);font-size:12px}
+  .row{display:flex;gap:10px}
+  .row>div{flex:1}
+  button{background:var(--accent);color:#fff;border:none;padding:9px 16px;border-radius:7px;
+    cursor:pointer;font-size:13px;font-weight:600;transition:.15s}
+  button:hover{filter:brightness(1.1)}
+  button.ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+  button.green{background:var(--accent2)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .providers{display:flex;flex-direction:column;gap:8px}
+  .prov{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;
+    background:var(--bg3);border:1px solid var(--border);border-radius:7px;cursor:pointer;transition:.15s}
+  .prov:hover{border-color:var(--accent)}
+  .prov.active{border-color:var(--accent);background:rgba(59,130,246,.1)}
+  .prov .name{font-size:13px;font-weight:600}
+  .prov .desc{font-size:11px;color:var(--muted)}
+  .guide{font-size:12px;color:var(--muted)}
+  .guide ol{margin:6px 0 0 18px}
+  .guide li{margin:3px 0}
+  .guide a{color:var(--accent)}
+  pre.out{background:#0a0e14;border:1px solid var(--border);border-radius:7px;padding:12px;
+    font-family:var(--mono);font-size:12px;white-space:pre-wrap;word-break:break-all;
+    max-height:280px;overflow:auto;margin-top:8px}
+  .result-ok{color:var(--accent2)} .result-err{color:var(--danger)}
+  .full{grid-column:1/-1}
+  .status-line{font-size:13px;margin:4px 0}
+  .status-line b{color:var(--text)} .status-line span{color:var(--muted)}
+  .spin{display:inline-block;width:12px;height:12px;border:2px solid #fff3;border-top-color:#fff;
+    border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .hint{font-size:11px;color:var(--muted);margin-top:6px}
+</style>
+</head>
+<body>
+  <h1>LLM 配置中心</h1>
+  <div class="sub">P1-2 · 真实大模型接入 · 统一 OpenAI 兼容协议 · 未配置时自动降级为规则化模式</div>
+
+  <!-- 状态卡片 -->
+  <div class="card">
+    <h2>📡 当前配置状态 <span id="status-badge" class="badge off">加载中…</span></h2>
+    <div class="row">
+      <div class="status-line"><span>提供商：</span><b id="st-provider">—</b></div>
+      <div class="status-line"><span>Base URL：</span><b id="st-base" class="mono">—</b></div>
+    </div>
+    <div class="row">
+      <div class="status-line"><span>模型：</span><b id="st-model">—</b></div>
+      <div class="status-line"><span>API Key：</span><b id="st-key">—</b></div>
+    </div>
+    <div class="status-line"><span>说明：</span><span id="st-msg">—</span></div>
+  </div>
+
+  <div class="grid">
+    <!-- 提供商选择 -->
+    <div class="card">
+      <h2>🏢 选择提供商（点击一键预填）</h2>
+      <div class="providers" id="providers-list"></div>
+    </div>
+
+    <!-- 快速配置引导 -->
+    <div class="card guide">
+      <h2>📖 如何获取 API Key</h2>
+      <div id="guide-body">选择左侧提供商后，这里会显示申请步骤。</div>
+    </div>
+
+    <!-- 配置表单 -->
+    <div class="card full">
+      <h2>⚙️ 配置表单</h2>
+      <div class="row">
+        <div>
+          <label>API Key</label>
+          <input class="mono" id="f-key" type="password" placeholder="sk-... 或智谱的密钥">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Base URL</label>
+          <input class="mono" id="f-base" placeholder="https://open.bigmodel.cn/api/paas/v4">
+        </div>
+        <div style="max-width:220px">
+          <label>模型 Model</label>
+          <input class="mono" id="f-model" placeholder="glm-4-flash">
+        </div>
+      </div>
+      <div class="row">
+        <div style="max-width:160px">
+          <label>Temperature</label>
+          <input id="f-temp" type="number" step="0.1" min="0" max="2" value="0.1">
+        </div>
+        <div style="max-width:160px">
+          <label>Max Tokens</label>
+          <input id="f-tokens" type="number" step="256" min="256" max="16384" value="4096">
+        </div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:10px">
+        <button class="green" id="btn-save">💾 保存配置</button>
+        <button class="ghost" id="btn-test">🔌 测试连接</button>
+      </div>
+      <div class="hint">保存后立即热生效，无需重启服务。Key 仅写入本地 .env 文件。</div>
+      <pre class="out" id="out-action" style="display:none"></pre>
+    </div>
+
+    <!-- 三个核心功能测试 -->
+    <div class="card full">
+      <h2>🧪 核心功能实测</h2>
+      <div class="row">
+        <div>
+          <label>① AI 助手对话 · 输入问题</label>
+          <textarea id="t-chat" rows="2">什么是 SQL 注入？怎么修复？</textarea>
+        </div>
+        <div style="max-width:160px;display:flex;align-items:flex-end">
+          <button id="btn-chat">运行对话测试</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label>② 漏洞智能分析 · 漏洞描述</label>
+          <textarea id="t-vuln" rows="2">登录接口 password 参数存在 SQL 注入，可报错回显数据库信息</textarea>
+        </div>
+        <div style="max-width:160px;display:flex;align-items:flex-end">
+          <button id="btn-vuln">运行分析测试</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label>③ 修复方案生成 · 漏洞类型</label>
+          <input id="t-remed" value="sql_injection">
+        </div>
+        <div style="max-width:160px;display:flex;align-items:flex-end">
+          <button id="btn-remed">运行修复测试</button>
+        </div>
+      </div>
+      <pre class="out" id="out-test" style="display:none"></pre>
+    </div>
+  </div>
+
+<script>
+const $ = id => document.getElementById(id);
+const API = "/api/v1/llm-config";
+let providers = [];
+
+async function api(path, method="GET", body=null){
+  const opt = {method, headers:{"Content-Type":"application/json"}};
+  if(body) opt.body = JSON.stringify(body);
+  const r = await fetch(API+path, opt);
+  return r.json();
+}
+function showPre(el, obj){
+  el.style.display="block";
+  const ok = obj.success !== false;
+  el.innerHTML = (ok?"<span class='result-ok'>✔ 成功</span>\n":"<span class='result-err'>✘ 失败</span>\n")
+    + (obj.error ? obj.error+"\n\n" : "")
+    + JSON.stringify(obj.data, null, 2);
+}
+function setLoading(btn, on, text){
+  btn.disabled = on;
+  btn.innerHTML = on ? `<span class="spin"></span> ${text||"处理中…"}` : text;
+}
+
+// ---- 状态 ----
+async function loadStatus(){
+  const s = await api("/status");
+  const d = s.data || {};
+  const b = $("status-badge");
+  if(d.configured){ b.textContent="已配置"; b.className="badge ok"; }
+  else { b.textContent="未配置(降级模式)"; b.className="badge off"; }
+  $("st-provider").textContent = d.provider_hint||"—";
+  $("st-base").textContent = d.base_url||"—";
+  $("st-model").textContent = d.model||"—";
+  $("st-key").textContent = d.api_key_masked||"(空)";
+  $("st-msg").textContent = d.message||"";
+  if(d.base_url) $("f-base").value = d.base_url;
+  if(d.model) $("f-model").value = d.model;
+}
+
+// ---- 提供商 ----
+async function loadProviders(){
+  const r = await api("/providers");
+  providers = (r.data && r.data.providers) || [];
+  const box = $("providers-list");
+  box.innerHTML = "";
+  providers.forEach(p=>{
+    const div = document.createElement("div");
+    div.className="prov"; div.dataset.id=p.id;
+    div.innerHTML = `<div><div class="name">${p.name}</div><div class="desc">${p.desc}</div></div>`;
+    div.onclick = ()=>selectProvider(p.id);
+    box.appendChild(div);
+  });
+}
+function selectProvider(id){
+  document.querySelectorAll(".prov").forEach(e=>e.classList.toggle("active", e.dataset.id===id));
+  const p = providers.find(x=>x.id===id); if(!p) return;
+  $("f-base").value = p.base_url;
+  $("f-model").value = p.default_model;
+  $("guide-body").innerHTML =
+    `<ol>${p.get_key_steps.map(s=>`<li>${s}</li>`).join("")}</ol>
+     <div style="margin-top:8px">申请地址：<a href="${p.api_key_url}" target="_blank">${p.api_key_url}</a></div>`;
+}
+
+// ---- 保存 ----
+$("btn-save").onclick = async e=>{
+  const btn=e.target; setLoading(btn,true,"保存中…");
+  const r = await api("/save","POST",{
+    api_key:$("f-key").value.trim()||null,
+    base_url:$("f-base").value.trim()||null,
+    model:$("f-model").value.trim()||null,
+    temperature:parseFloat($("f-temp").value),
+    max_tokens:parseInt($("f-tokens").value),
+  });
+  setLoading(btn,false,"💾 保存配置");
+  showPre($("out-action"), r);
+  loadStatus();
+};
+
+// ---- 测试连接 ----
+$("btn-test").onclick = async e=>{
+  const btn=e.target; setLoading(btn,true,"连接中…");
+  const r = await api("/test","POST",{
+    api_key:$("f-key").value.trim()||null,
+    base_url:$("f-base").value.trim()||null,
+    model:$("f-model").value.trim()||null,
+  });
+  setLoading(btn,false,"🔌 测试连接");
+  showPre($("out-action"), r);
+};
+
+// ---- 三个功能 ----
+$("btn-chat").onclick = async e=>{
+  const btn=e.target; setLoading(btn,true,"AI 回复中…");
+  const r = await api("/test/chat","POST",{message:$("t-chat").value});
+  setLoading(btn,false,"运行对话测试"); showPre($("out-test"), r);
+};
+$("btn-vuln").onclick = async e=>{
+  const btn=e.target; setLoading(btn,true,"分析中…");
+  const r = await api("/test/vuln-analysis","POST",{vuln_description:$("t-vuln").value, target:"http://example.com/login"});
+  setLoading(btn,false,"运行分析测试"); showPre($("out-test"), r);
+};
+$("btn-remed").onclick = async e=>{
+  const btn=e.target; setLoading(btn,true,"生成中…");
+  const r = await api("/test/remediation","POST",{vuln_description:$("t-remed").value, vuln_type:$("t-remed").value});
+  setLoading(btn,false,"运行修复测试"); showPre($("out-test"), r);
+};
+
+loadStatus(); loadProviders();
+</script>
+</body>
+</html>

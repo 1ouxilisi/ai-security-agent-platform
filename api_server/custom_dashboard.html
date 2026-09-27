@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自定义仪表盘编辑器</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0a0e17; color:#e6f1ff; font-family:"Microsoft YaHei",sans-serif;
+    height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+  /* 顶部工具栏 */
+  #toolbar { height:52px; background:#111827; border-bottom:1px solid #1e3a5f;
+    display:flex; align-items:center; gap:10px; padding:0 14px; }
+  #toolbar input[name=name] { background:#0d1b3a; border:1px solid #1e3a5f; color:#e6f1ff;
+    border-radius:4px; padding:6px 10px; font-size:14px; width:220px; }
+  .btn { background:#1e3a5f; color:#e6f1ff; border:none; border-radius:4px;
+    padding:6px 14px; cursor:pointer; font-size:13px; }
+  .btn:hover { background:#00e5ff; color:#0a0e17; }
+  .btn.primary { background:#00e5ff; color:#0a0e17; font-weight:bold; }
+  #toolbar select { background:#0d1b3a; color:#e6f1ff; border:1px solid #1e3a5f;
+    border-radius:4px; padding:6px; }
+  #mode-badge { margin-left:auto; color:#7a8ba6; font-size:13px; }
+  /* 主体三栏 */
+  #body { flex:1; display:grid; grid-template-columns:220px 1fr 280px; min-height:0; }
+  /* 左侧组件库 */
+  #palette { background:#0d1420; border-right:1px solid #1e3a5f; padding:10px; overflow-y:auto; }
+  #palette h3 { font-size:13px; color:#00e5ff; margin-bottom:8px; }
+  .comp-item { background:#111827; border:1px solid #1e3a5f; border-radius:5px;
+    padding:8px; margin-bottom:6px; cursor:grab; font-size:13px; }
+  .comp-item:hover { border-color:#00e5ff; }
+  .comp-item .ic { margin-right:6px; }
+  /* 中间画布 */
+  #canvas-wrap { overflow:auto; padding:14px; background:#080c14; }
+  #canvas { display:grid; grid-template-columns:repeat(12,1fr); gap:8px;
+    grid-auto-rows:60px; min-height:400px; }
+  .widget { background:#111827; border:1px solid #1e3a5f; border-radius:6px;
+    padding:8px; position:relative; overflow:hidden; cursor:move; }
+  .widget.selected { border:2px solid #00e5ff; box-shadow:0 0 10px #00e5ff; }
+  .widget .w-title { font-size:13px; color:#00e5ff; margin-bottom:4px; }
+  .widget .w-val { font-size:22px; color:#fff; }
+  .widget .w-del { position:absolute; top:4px; right:4px; background:#ff3b3b; color:#fff;
+    border:none; border-radius:3px; width:18px; height:18px; line-height:18px;
+    text-align:center; cursor:pointer; font-size:12px; display:none; }
+  .widget.selected .w-del { display:block; }
+  .placeholder { border:2px dashed #1e3a5f; border-radius:6px; color:#3a4a66;
+    display:flex; align-items:center; justify-content:center; font-size:13px; }
+  /* 右侧配置 */
+  #config { background:#0d1420; border-left:1px solid #1e3a5f; padding:10px; overflow-y:auto; }
+  #config h3 { font-size:13px; color:#00e5ff; margin-bottom:8px; }
+  .cfg-row { margin-bottom:10px; }
+  .cfg-row label { display:block; font-size:12px; color:#7a8ba6; margin-bottom:3px; }
+  .cfg-row input, .cfg-row select, .cfg-row textarea {
+    width:100%; background:#0d1b3a; border:1px solid #1e3a5f; color:#e6f1ff;
+    border-radius:4px; padding:5px; font-size:13px; }
+  #empty-cfg { color:#3a4a66; font-size:13px; text-align:center; margin-top:30px; }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <input name="name" value="未命名仪表盘">
+  <select id="tpl-select">
+    <option value="">-- 选择模板 --</option>
+    <option value="安全运营">安全运营</option>
+    <option value="漏洞管理">漏洞管理</option>
+    <option value="资产管理">资产管理</option>
+    <option value="合规审计">合规审计</option>
+    <option value="管理层汇报">管理层汇报</option>
+  </select>
+  <button class="btn primary" id="btn-save">保存</button>
+  <button class="btn" id="btn-preview">预览</button>
+  <button class="btn" id="btn-share">分享</button>
+  <button class="btn" id="btn-export">导出</button>
+  <button class="btn" id="btn-new">新建</button>
+  <span id="mode-badge">编辑模式</span>
+</div>
+
+<div id="body">
+  <div id="palette">
+    <h3>组件库（拖拽或点击添加）</h3>
+    <div id="comp-list"></div>
+  </div>
+
+  <div id="canvas-wrap">
+    <div id="canvas"></div>
+  </div>
+
+  <div id="config">
+    <h3>组件配置</h3>
+    <div id="config-body"><div id="empty-cfg">选中画布中的组件进行配置<br><br>或从左侧拖入新组件</div></div>
+    <h3 style="margin-top:16px">全局设置</h3>
+    <div class="cfg-row"><label>权限</label>
+      <select id="g-perm"><option>private</option><option>tenant</option><option>public</option></select></div>
+    <div class="cfg-row"><label>自动刷新(秒)</label><input id="g-refresh" type="number" value="30"></div>
+    <div class="cfg-row"><label>主题</label>
+      <select id="g-theme"><option>dark</option><option>light</option></select></div>
+  </div>
+</div>
+
+<script>
+const API = "/api/v1/visualization-v2";
+let widgets = [];          // 当前组件数组
+let selectedId = null;      // 选中组件 id
+let editing = true;
+let dashId = null;
+
+// 组件库定义
+const COMP_TYPES = [
+  {type:"metric_card", name:"指标卡片", icon:"1️⃣"},
+  {type:"line_chart",  name:"折线图",   icon:"📈"},
+  {type:"bar_chart",   name:"柱状图",   icon:"📊"},
+  {type:"pie_chart",   name:"饼图",     icon:"🥧"},
+  {type:"heatmap",     name:"热力图",   icon:"🔥"},
+  {type:"table",       name:"表格",     icon:"📋"},
+  {type:"list",        name:"列表",     icon:"📝"},
+  {type:"map",         name:"地图",     icon:"🗺️"},
+  {type:"text",        name:"文本",     icon:"📄"},
+  {type:"image",       name:"图片",     icon:"🖼️"},
+  {type:"progress",    name:"进度条",   icon:"📏"},
+  {type:"gauge",       name:"仪表盘",   icon:"⏲️"},
+];
+
+// 渲染组件库
+function renderPalette(){
+  const box = document.getElementById('comp-list');
+  box.innerHTML = COMP_TYPES.map(c=>
+    `<div class="comp-item" draggable="true" data-type="${c.type}">
+       <span class="ic">${c.icon}</span>${c.name}</div>`).join('');
+  box.querySelectorAll('.comp-item').forEach(el=>{
+    el.addEventListener('dragstart', e=> e.dataTransfer.setData('type', el.dataset.type));
+    el.addEventListener('click', ()=> addWidget(el.dataset.type));
+  });
+}
+
+// 添加组件
+function addWidget(type){
+  const meta = COMP_TYPES.find(c=>c.type===type) || {name:type};
+  widgets.push({
+    id:'w'+Date.now()+Math.floor(Math.random()*100),
+    type, x:0, y:0, w:3, h:2,
+    props:{ title:meta.name, value:Math.floor(Math.random()*1000) }
+  });
+  renderCanvas();
+}
+
+// 渲染画布
+function renderCanvas(){
+  const cv = document.getElementById('canvas');
+  cv.innerHTML='';
+  if(!widgets.length){
+    cv.innerHTML='<div class="placeholder" style="grid-column:span 12;grid-row:span 6">从左侧拖拽组件到此处，或选择顶部模板快速生成</div>';
+  }
+  widgets.forEach(w=>{
+    const el = document.createElement('div');
+    el.className = 'widget'+(w.id===selectedId?' selected':'');
+    el.style.gridColumn = `span ${w.w}`;
+    el.style.gridRow = `span ${w.h}`;
+    el.innerHTML = `<div class="w-title">${w.props.title||w.type}</div>
+      ${w.props.value!==undefined?`<div class="w-val">${w.props.value}</div>`:''}
+      <button class="w-del" data-id="${w.id}">×</button>`;
+    el.onclick = ()=>{ selectedId = w.id; renderCanvas(); renderCfg(w); };
+    cv.appendChild(el);
+  });
+  cv.querySelectorAll('.w-del').forEach(b=>{
+    b.onclick = e=>{ e.stopPropagation();
+      widgets = widgets.filter(x=>x.id!==b.dataset.id); renderCanvas(); };
+  });
+}
+
+// 配置面板
+function renderCfg(w){
+  const body = document.getElementById('config-body');
+  if(!w){ body.innerHTML='<div id="empty-cfg">选中组件进行配置</div>'; return; }
+  body.innerHTML = `
+    <div class="cfg-row"><label>标题</label><input id="c-title" value="${w.props.title||''}"></div>
+    <div class="cfg-row"><label>数值</label><input id="c-value" type="number" value="${w.props.value||0}"></div>
+    <div class="cfg-row"><label>占宽(1-12)</label><input id="c-w" type="number" min="1" max="12" value="${w.w}"></div>
+    <div class="cfg-row"><label>占高(行)</label><input id="c-h" type="number" min="1" value="${w.h}"></div>
+    <div class="cfg-row"><label>数据源</label>
+      <select id="c-ds"><option>realtime</option><option>static</option><option>api</option></select></div>
+    <div class="cfg-row"><label>刷新间隔(秒)</label><input id="c-refresh" type="number" value="30"></div>
+    <button class="btn primary" id="c-apply">应用配置</button>`;
+  document.getElementById('c-apply').onclick = ()=>{
+    w.props.title = document.getElementById('c-title').value;
+    w.props.value = +document.getElementById('c-value').value;
+    w.w = Math.max(1,Math.min(12,+document.getElementById('c-w').value));
+    w.h = Math.max(1,+document.getElementById('c-h').value);
+    renderCanvas();
+  };
+}
+
+// 画布拖放接收
+const canvas = document.getElementById('canvas');
+canvas.addEventListener('dragover', e=> e.preventDefault());
+canvas.addEventListener('drop', e=>{
+  e.preventDefault();
+  const t = e.dataTransfer.getData('type');
+  if(t) addWidget(t);
+});
+
+// 模板加载
+document.getElementById('tpl-select').onchange = async e=>{
+  const tpl = e.target.value;
+  if(!tpl) return;
+  await save();
+  const r = await fetch(API+'/dashboards',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:document.querySelector('input[name=name]').value, template:tpl})});
+  const j = await r.json();
+  if(j.success){ dashId = j.data.id; loadFromDash(j.data); }
+};
+
+function loadFromDash(d){
+  widgets = (d.components||[]).map((c,i)=>({id:'w'+i+'_'+Date.now(), type:c.type,
+    x:c.x||0, y:c.y||0, w:c.w||3, h:c.h||2, props:c.props||{}}));
+  document.querySelector('input[name=name]').value = d.name;
+  renderCanvas();
+}
+
+// 保存
+async function save(){
+  const cfg = { name:document.querySelector('input[name=name]').value,
+    components:widgets.map(w=>({type:w.type,x:w.x,y:w.y,w:w.w,h:w.h,props:w.props})),
+    permission:document.getElementById('g-perm').value,
+    global_settings:{columns:12,auto_refresh:+document.getElementById('g-refresh').value,
+                    theme:document.getElementById('g-theme').value} };
+  if(dashId){
+    await fetch(API+'/dashboards/'+dashId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});
+  } else {
+    const r = await fetch(API+'/dashboards',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:cfg.name, config:cfg})});
+    const j = await r.json(); if(j.success) dashId = j.data.id;
+  }
+  document.getElementById('mode-badge').textContent = '已保存 · '+new Date().toLocaleTimeString('zh-CN');
+}
+document.getElementById('btn-save').onclick = save;
+document.getElementById('btn-new').onclick = ()=>{ widgets=[]; dashId=null; renderCanvas(); };
+
+// 预览
+document.getElementById('btn-preview').onclick = ()=>{
+  editing = !editing;
+  document.getElementById('mode-badge').textContent = editing?'编辑模式':'预览模式';
+  document.getElementById('palette').style.display = editing?'block':'none';
+  document.getElementById('config').style.display = editing?'block':'none';
+  renderCanvas();
+};
+
+// 分享
+document.getElementById('btn-share').onclick = async ()=>{
+  if(!dashId){ alert('请先保存'); return; }
+  const r = await fetch(API+'/dashboards/'+dashId+'/share',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({expires_in_days:7})});
+  const j = await r.json();
+  alert(j.success?('分享链接 token: '+j.data.share_token):j.error);
+};
+
+// 导出
+document.getElementById('btn-export').onclick = async ()=>{
+  if(!dashId){ alert('请先保存'); return; }
+  const blob = new Blob([JSON.stringify({name:document.querySelector('input[name=name]').value,components:widgets},null,2)],
+    {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'dashboard.json'; a.click();
+};
+
+renderPalette(); renderCanvas();
+</script>
+</body>
+</html>

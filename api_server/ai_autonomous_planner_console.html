@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>AI 自主规划控制台</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --border:#30363d; --fg:#e6edf3;
+  --muted:#8b949e; --accent:#a371f7; --ok:#3fb950; --warn:#d29922;
+  --bad:#f85149; --crit:#ff7b72; --info:#58a6ff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:"Microsoft YaHei","Segoe UI",Arial,sans-serif;font-size:13px}
+header{padding:14px 22px;background:linear-gradient(90deg,#a371f733,#a371f700);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+header h1{font-size:18px;margin:0}
+header .sub{color:var(--muted);font-size:12px}
+.tabs{display:flex;gap:4px;padding:0 22px;background:var(--panel);
+  border-bottom:1px solid var(--border);flex-wrap:wrap}
+.tab{padding:10px 16px;cursor:pointer;border:none;background:transparent;
+  color:var(--muted);font-size:13px;border-bottom:2px solid transparent}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover{color:var(--fg)}
+main{padding:18px 22px;max-width:1600px;margin:0 auto}
+.panel{background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;padding:14px;margin-bottom:14px}
+.panel h2{margin:0 0 10px;font-size:15px;color:var(--accent)}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+input,select,textarea{background:#0d1117;border:1px solid var(--border);
+  color:var(--fg);padding:7px 10px;border-radius:4px;font-size:13px;min-width:160px}
+textarea{width:100%;min-height:60px;font-family:Consolas,monospace}
+button{background:#6e40c9;color:#fff;border:none;padding:7px 14px;
+  border-radius:4px;cursor:pointer;font-size:13px}
+button:hover{background:#8250df}
+button.sec{background:#30363d}
+button.sec:hover{background:#444c56}
+button.warn{background:#9e6a03}
+button.warn:hover{background:#bb8009}
+pre{background:#0d1117;border:1px solid var(--border);padding:10px;
+  border-radius:4px;overflow:auto;max-height:380px;
+  font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap;margin:0}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{border:1px solid var(--border);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#21262d}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px}
+.hidden{display:none}
+.kv{color:var(--muted)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px}
+.b-done{background:#3fb95022;color:var(--ok)}
+.b-run{background:#58a6ff22;color:var(--info)}
+.b-fail{background:#f8514922;color:var(--bad)}
+.b-pend{background:#8b949e22;color:var(--muted)}
+.b-adj{background:#d2992222;color:var(--warn)}
+.progress{height:10px;background:#21262d;border-radius:5px;overflow:hidden;margin-top:6px}
+.progress>div{height:100%;background:linear-gradient(90deg,#6e40c9,#a371f7);transition:width .4s}
+.stagebar{display:flex;gap:6px;margin:10px 0}
+.stage{flex:1;text-align:center;padding:8px 4px;border:1px solid var(--border);
+  border-radius:6px;background:#0d1117;color:var(--moted);font-size:12px}
+.stage.active{border-color:var(--accent);color:var(--accent);box-shadow:0 0 10px #a371f744}
+.stage.done{border-color:var(--ok);color:var(--ok)}
+.thought{border-left:3px solid var(--accent);padding:8px 10px;margin-bottom:8px;
+  background:#0d1117;border-radius:0 6px 6px 0}
+.thought .obs{color:var(--fg)}
+.thought .reason{color:var(--muted);font-size:12px;margin-top:3px}
+.thought .dec{color:var(--ok);font-size:12px;margin-top:3px}
+.thought.concerned{border-left-color:var(--warn)}
+.thought.confident{border-left-color:var(--ok)}
+.dep{font-size:11px;color:var(--muted)}
+.mono{font-family:Consolas,monospace}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.dot.g{background:var(--ok)}.dot.r{background:var(--bad)}.dot.b{background:var(--info)}
+</style>
+</head>
+<body>
+<header>
+  <h1>AI 自主规划控制台</h1>
+  <span class="sub">Direction 1 · 自主规划完整流程 / 思考可视化 / 失败换策略 / 任务拆解</span>
+  <span style="flex:1"></span>
+  <span class="kv">scope: 仅授权目标 · 全自动闭环</span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-tab="t-auto">自主渗透</button>
+  <button class="tab" data-tab="t-decomp">任务拆解</button>
+  <button class="tab" data-tab="t-think">AI 思考</button>
+  <button class="tab" data-tab="t-adjust">动态调整</button>
+  <button class="tab" data-tab="t-find">发现/报告</button>
+</div>
+
+<main>
+<!-- ================= 自主渗透 ================= -->
+<section id="t-auto">
+  <div class="panel">
+    <h2>一键启动 AI 自主渗透</h2>
+    <div class="row">
+      <input id="goal" placeholder="帮我渗透这个网站" style="flex:2">
+      <input id="target" placeholder="http://target.example.com" style="flex:1">
+      <select id="tpl">
+        <option value="">自动识别</option>
+        <option value="web">Web 渗透</option>
+        <option value="host">主机渗透</option>
+        <option value="api">API 测试</option>
+      </select>
+      <button onclick="startAuto()">启动自主规划</button>
+      <button class="sec" onclick="refreshAll()">刷新</button>
+      <button class="warn" onclick="pauseCur()">暂停</button>
+      <button class="sec" onclick="resumeCur()">继续</button>
+    </div>
+    <div class="stagebar" id="stagebar"></div>
+    <div class="progress"><div id="pfill" style="width:0%"></div></div>
+    <div class="row" style="margin-top:8px">
+      <span class="kv">状态:</span><span id="st-status" class="badge b-pend">idle</span>
+      <span class="kv">进度:</span><span id="st-prog" class="mono">0%</span>
+      <span class="kv">步骤:</span><span id="st-steps" class="mono">0</span>
+      <span class="kv">发现:</span><span id="st-find" class="mono">0</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>执行步骤流</h2>
+    <table><thead><tr><th>#</th><th>阶段</th><th>动作</th><th>方向</th>
+    <th>状态</th><th>结果</th></tr></thead>
+    <tbody id="step-rows"></tbody></table>
+  </div>
+
+  <div class="panel">
+    <h2>智能体事件流</h2>
+    <pre id="event-log">—</pre>
+  </div>
+</section>
+
+<!-- ================= 任务拆解 ================= -->
+<section id="t-decomp" class="hidden">
+  <div class="panel">
+    <h2>任务拆解（子任务 DAG）</h2>
+    <div class="row">
+      <input id="dg-goal" placeholder="帮我全面测试这个网站" style="flex:2">
+      <input id="dg-target" placeholder="目标（可空）" style="flex:1">
+      <button onclick="decompose()">拆解</button>
+      <button class="sec" onclick="detectTpl()">仅识别意图</button>
+    </div>
+    <div id="dg-detect" class="kv"></div>
+    <table><thead><tr><th>子任务</th><th>类别</th><th>依赖</th>
+    <th>优先级</th><th>状态</th><th>预期产出</th></tr></thead>
+    <tbody id="dg-rows"></tbody></table>
+  </div>
+</section>
+
+<!-- ================= AI 思考 ================= -->
+<section id="t-think" class="hidden">
+  <div class="panel">
+    <h2>AI 思考过程（观察 → 推理 → 决策 → 依据）</h2>
+    <div id="think-list"><div class="kv">启动自主渗透后，这里会实时展示 AI 的思考步骤。</div></div>
+  </div>
+</section>
+
+<!-- ================= 动态调整 ================= -->
+<section id="t-adjust" class="hidden">
+  <div class="panel">
+    <h2>失败换策略记录</h2>
+    <div id="adj-list"><div class="kv">当某一步失败时，AI 会自动记录原因并切换到替代策略。</div></div>
+  </div>
+  <div class="panel">
+    <h2>失败降级链速查</h2>
+    <div class="row">
+      <input id="chain-dir" placeholder="如 sql_injection">
+      <button onclick="showChain()">查看降级链</button>
+    </div>
+    <pre id="chain-out">—</pre>
+  </div>
+</section>
+
+<!-- ================= 发现/报告 ================= -->
+<section id="t-find" class="hidden">
+  <div class="panel">
+    <h2>发现的漏洞 / 结论</h2>
+    <pre id="find-out">—</pre>
+  </div>
+  <div class="panel">
+    <h2>全局统计</h2>
+    <pre id="stats-out">—</pre>
+  </div>
+</section>
+</main>
+
+<script>
+const BASE = "/api/v1/ai-autonomous-planner";
+let curSid = null, pollTimer = null;
+
+async function api(path, opts={}){
+  const r = await fetch(BASE+path, Object.assign({headers:{'Content-Type':'application/json'}}, opts));
+  return r.json();
+}
+async function post(path, body){
+  return api(path, {method:'POST', body: JSON.stringify(body||{})});
+}
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));
+    document.getElementById(t.dataset.tab).classList.remove('hidden');
+  };
+});
+
+const STAGES = ['recon','enum','vuln','analysis','report'];
+const STAGE_LABEL = {recon:'探测', enum:'资产枚举', vuln:'漏洞检测', analysis:'AI分析', report:'报告'};
+
+async function startAuto(){
+  const goal = document.getElementById('goal').value.trim() || '帮我渗透这个网站';
+  const target = document.getElementById('target').value.trim();
+  const tpl = document.getElementById('tpl').value;
+  const r = await post('/start', {goal, target, template:tpl, auto:true});
+  if(!r.success){ alert(r.error); return; }
+  curSid = r.data.session_id;
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(refreshDetail, 700);
+  refreshDetail();
+}
+
+async function refreshAll(){
+  const r = await api('/dashboard/overview');
+  if(r.success) document.getElementById('stats-out').textContent = JSON.stringify(r.data,null,2);
+}
+
+async function pauseCur(){ if(curSid) await post('/sessions/'+curSid+'/pause'); }
+async function resumeCur(){ if(curSid) await post('/sessions/'+curSid+'/resume'); }
+
+async function refreshDetail(){
+  if(!curSid) return;
+  const r = await api('/dashboard/'+curSid);
+  if(!r.success) return;
+  const d = r.data;
+  // status
+  document.getElementById('st-status').textContent = d.status;
+  document.getElementById('st-prog').textContent = Math.round((d.progress||0)*100)+'%';
+  document.getElementById('pfill').style.width = Math.round((d.progress||0)*100)+'%';
+  document.getElementById('st-steps').textContent = d.step_count;
+  document.getElementById('st-find').textContent = d.findings_count;
+  // stage bar
+  const sb = document.getElementById('stagebar');
+  sb.innerHTML = STAGES.map((s,i)=>{
+    const cls = i < d.stage_index ? 'stage done' : (i===d.stage_index?'stage active':'stage');
+    return `<div class="${cls}">${i+1}. ${STAGE_LABEL[s]}</div>`;
+  }).join('');
+  // steps
+  document.getElementById('step-rows').innerHTML = (d.steps||[]).map(s=>{
+    const bcls = s.status==='done'?'b-done':s.status==='failed'?'b-fail':s.status==='adjusted'?'b-adj':'b-run';
+    return `<tr><td>${s.step_no}</td><td>${s.stage}</td><td>${s.action}</td>
+      <td>${s.direction}</td><td><span class="badge ${bcls}">${s.status}</span></td>
+      <td>${(s.result||'').slice(0,80)}</td></tr>`;
+  }).join('');
+  // events
+  document.getElementById('event-log').textContent =
+    (d.agent_events||[]).map(e=>`[${new Date(e.timestamp*1000).toLocaleTimeString()}] ${e.event_type} :: ${JSON.stringify(e.payload).slice(0,160)}`).join('\n');
+  // thinking
+  const tl = d.think_timeline||[];
+  document.getElementById('think-list').innerHTML = tl.map(t=>`
+    <div class="thought ${t.emotion||''}">
+      <div><b>#${t.seq} [${t.phase}]</b> <span class="kv">conf ${Math.round(t.confidence*100)}%</span></div>
+      <div class="obs">观察：${t.observation}</div>
+      <div class="reason">推理：${t.reason}</div>
+      <div class="dec">决策：${t.decision}　→ 预期：${t.expectation}</div>
+      ${(t.evidence&&t.evidence.length)?`<div class="dep">依据：${t.evidence.join(' / ')}</div>`:''}
+    </div>`).join('') || '<div class="kv">暂无思考记录</div>';
+  // adjustments
+  const aj = d.adjustments||[];
+  document.getElementById('adj-list').innerHTML = aj.length ? aj.map(a=>`
+    <div class="thought concerned">
+      <div>失败：<b>${a.failed_direction}</b> — ${a.failure_reason}</div>
+      <div class="dec">第${a.round_no}轮切换 → <b>${a.chosen}</b></div>
+      <div class="dep">降级链：${a.fallback_chain.join(' → ')}</div>
+    </div>`).join('') : '<div class="kv">暂无失败调整记录</div>';
+  // findings
+  document.getElementById('find-out').textContent =
+    (d.steps||[]).filter(s=>s.status==='done').map(s=>`[${s.stage}] ${s.action}: ${s.result}`).join('\n') || '—';
+  if(d.status==='completed' || d.status==='failed'){ clearInterval(pollTimer); }
+}
+
+async function decompose(){
+  const goal = document.getElementById('dg-goal').value.trim() || '帮我全面测试这个网站';
+  const target = document.getElementById('dg-target').value.trim();
+  const r = await post('/decompose', {goal, target});
+  if(!r.success){ alert(r.error); return; }
+  const dg = r.data;
+  document.getElementById('dg-detect').textContent = `模板=${dg.template} 目标=${dg.target}`;
+  document.getElementById('dg-rows').innerHTML = dg.subtasks.map(s=>`
+    <tr><td>${s.name}</td><td>${s.category}</td>
+    <td class="dep">${(s.depends_on||[]).map(d=>d.split('_').pop()).join(', ')||'无'}</td>
+    <td>${s.priority}</td><td>${s.status}</td><td>${s.expected_output}</td></tr>`).join('');
+}
+async function detectTpl(){
+  const goal = document.getElementById('dg-goal').value.trim();
+  if(!goal) return;
+  const r = await post('/decompose/detect', {goal});
+  if(r.success) document.getElementById('dg-detect').textContent =
+    `识别模板=${r.data.template} 提取目标=${r.data.target||'(无)'}`;
+}
+async function showChain(){
+  const dir = document.getElementById('chain-dir').value.trim() || 'sql_injection';
+  const r = await api('/adjust/chain/'+dir);
+  document.getElementById('chain-out').textContent = r.success ?
+    r.data.map(x=>`${x.direction}  [${x.label}]  收益: ${x.benefit}`).join('\n') : '—';
+}
+
+refreshAll();
+</script>
+</body>
+</html>

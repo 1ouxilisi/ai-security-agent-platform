@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>暗网监控与DRP控制台 — 第13轮升级</title>
+<style>
+:root {
+  --bg-primary: #0b0f14;
+  --bg-secondary: #131a22;
+  --bg-tertiary: #1c2630;
+  --border-color: #2b3947;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b98a5;
+  --accent: #f0883e;
+  --green: #3fb950;
+  --yellow: #d29922;
+  --red: #f85149;
+  --blue: #58a6ff;
+  --purple: #bc8cff;
+  --radius: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; min-height: 100vh;
+}
+.header {
+  background: linear-gradient(135deg, #1a1408 0%, #0b0f14 100%);
+  border-bottom: 1px solid var(--border-color);
+  padding: 18px 28px; display: flex; align-items: center; justify-content: space-between;
+}
+.header h1 { font-size: 21px; color: var(--accent); }
+.header .badge {
+  background: var(--bg-tertiary); border: 1px solid var(--border-color);
+  padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--text-secondary);
+}
+.tabs {
+  background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);
+  display: flex; overflow-x: auto; padding: 0 18px;
+}
+.tab-btn {
+  background: none; border: none; color: var(--text-secondary);
+  padding: 13px 18px; cursor: pointer; font-size: 14px;
+  border-bottom: 2px solid transparent; white-space: nowrap; transition: all .2s;
+}
+.tab-btn:hover { color: var(--text-primary); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-content { display: none; padding: 22px; max-width: 1400px; margin: 0 auto; }
+.tab-content.active { display: block; }
+.card {
+  background: var(--bg-secondary); border: 1px solid var(--border-color);
+  border-radius: var(--radius); padding: 18px; margin-bottom: 14px;
+}
+.card h3 { font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.form-group { flex: 1; min-width: 180px; }
+.form-group label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+.form-group input, .form-group select {
+  width: 100%; background: var(--bg-tertiary); border: 1px solid var(--border-color);
+  color: var(--text-primary); padding: 8px 12px; border-radius: 6px; font-size: 14px;
+}
+.btn {
+  background: var(--accent); color: #fff; border: none; padding: 9px 18px;
+  border-radius: 6px; cursor: pointer; font-size: 14px;
+}
+.btn:hover { filter: brightness(1.1); }
+.btn-secondary { background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 10px 0; }
+.stat-card {
+  background: var(--bg-tertiary); border: 1px solid var(--border-color);
+  border-radius: 6px; padding: 14px; text-align: center;
+}
+.stat-card .value { font-size: 26px; font-weight: 700; color: var(--accent); }
+.stat-card .label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+.status-pill { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin: 6px 0; }
+.status-running { background: #1f3a52; color: var(--blue); }
+.status-success { background: #12331f; color: var(--green); }
+.status-failed { background: #3d1414; color: var(--red); }
+.empty-state { color: var(--text-secondary); font-size: 13px; padding: 14px; text-align: center; }
+pre {
+  background: #0a0e12; border: 1px solid var(--border-color); border-radius: 6px;
+  padding: 12px; overflow: auto; font-size: 12px; max-height: 420px;
+  white-space: pre-wrap; word-break: break-all;
+}
+.risk-critical { color: var(--red); font-weight: 700; }
+.risk-high { color: #ff7b72; font-weight: 600; }
+.risk-medium { color: var(--yellow); }
+.risk-low { color: var(--green); }
+.footer { text-align: center; color: var(--text-secondary); font-size: 12px; padding: 18px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
+th, td { border: 1px solid var(--border-color); padding: 6px 10px; text-align: left; }
+th { background: var(--bg-tertiary); color: var(--text-secondary); }
+.bar { height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--accent); }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🕵️ 暗网监控与数字风险保护(DRP)控制台</h1>
+  <span class="badge">第13轮升级 · 防御/监控/保护视角</span>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="intel">🌐 暗网情报</button>
+  <button class="tab-btn" data-tab="credential">🔑 凭证泄露</button>
+  <button class="tab-btn" data-tab="brand">🛡️ 品牌保护</button>
+  <button class="tab-btn" data-tab="breach">📊 数据泄露分析</button>
+  <button class="tab-btn" data-tab="actor">👤 威胁Actor</button>
+  <button class="tab-btn" data-tab="ops">🎛️ 综合运营</button>
+</div>
+
+<!-- Tab1 暗网情报 -->
+<div class="tab-content active" id="tab-intel">
+  <div class="card">
+    <h3>🌐 暗网情报监控</h3>
+    <div class="form-row">
+      <div class="form-group"><label>品牌</label><input id="intel-brand" value="ExampleCorp"></div>
+      <div class="form-group"><label>域名</label><input id="intel-domain" value="example.com"></div>
+      <div class="form-group"><label>&nbsp;</label><button class="btn" onclick="startIntel()">启动监控</button></div>
+    </div>
+    <div id="intel-status"></div>
+  </div>
+  <div class="card">
+    <h3>📡 情报源 / 告警 / 关键词</h3>
+    <button class="btn btn-secondary" onclick="loadIntelSources()">加载情报源</button>
+    <button class="btn btn-secondary" onclick="loadIntelAlerts()">加载告警</button>
+    <button class="btn btn-secondary" onclick="loadIntelKeywords()">关键词</button>
+    <div id="intel-sources" class="empty-state">点击上方按钮加载</div>
+  </div>
+  <div class="card"><h3>📋 情报结果</h3><div id="intel-result" class="empty-state">暂无监控结果</div></div>
+</div>
+
+<!-- Tab2 凭证泄露 -->
+<div class="tab-content" id="tab-credential">
+  <div class="card">
+    <h3>🔑 凭证泄露检测</h3>
+    <div class="form-row">
+      <div class="form-group"><label>企业域名</label><input id="cred-domain" value="example.com"></div>
+      <div class="form-group"><label>&nbsp;</label><button class="btn" onclick="startCredential()">开始检测</button></div>
+    </div>
+    <div id="cred-status"></div>
+  </div>
+  <div class="card">
+    <h3>🗃️ 泄露凭证库 / API密钥 / 重置建议</h3>
+    <button class="btn btn-secondary" onclick="loadLeakedDB()">泄露库</button>
+    <button class="btn btn-secondary" onclick="loadApiKeys()">API/Token/私钥</button>
+    <button class="btn btn-secondary" onclick="loadReset()">重置建议</button>
+    <div id="cred-side" class="empty-state">点击按钮加载</div>
+  </div>
+  <div class="card"><h3>📋 检测结果</h3><div id="cred-result" class="empty-state">暂无检测结果</div></div>
+</div>
+
+<!-- Tab3 品牌保护 -->
+<div class="tab-content" id="tab-brand">
+  <div class="card">
+    <h3>🛡️ 品牌保护监控</h3>
+    <div class="form-row">
+      <div class="form-group"><label>品牌</label><input id="brand-name" value="ExampleCorp"></div>
+      <div class="form-group"><label>域名</label><input id="brand-domain" value="example.com"></div>
+      <div class="form-group"><label>&nbsp;</label><button class="btn" onclick="startBrand()">启动监控</button></div>
+    </div>
+    <div id="brand-status"></div>
+  </div>
+  <div class="card">
+    <h3>🔍 仿冒/钓鱼/假冒App/风险分</h3>
+    <button class="btn btn-secondary" onclick="loadTyposquat()">仿冒域名</button>
+    <button class="btn btn-secondary" onclick="loadPhishing()">钓鱼</button>
+    <button class="btn btn-secondary" onclick="loadFakeApps()">假冒App</button>
+    <button class="btn btn-secondary" onclick="loadBrandScore()">风险评分</button>
+    <div id="brand-side" class="empty-state">点击按钮加载</div>
+  </div>
+  <div class="card"><h3>📋 品牌监控结果</h3><div id="brand-result" class="empty-state">暂无结果</div></div>
+</div>
+
+<!-- Tab4 数据泄露分析 -->
+<div class="tab-content" id="tab-breach">
+  <div class="card">
+    <h3>📊 数据泄露分析</h3>
+    <div class="form-row">
+      <div class="form-group"><label>品牌</label><input id="breach-brand" value="ExampleCorp"></div>
+      <div class="form-group"><label>&nbsp;</label><button class="btn" onclick="startBreach()">开始分析</button></div>
+    </div>
+    <div id="breach-status"></div>
+  </div>
+  <div class="card">
+    <h3>⏱️ 时间线 / 影响 / 合规</h3>
+    <button class="btn btn-secondary" onclick="loadTimeline()">泄露时间线</button>
+    <button class="btn btn-secondary" onclick="loadImpact()">影响范围</button>
+    <button class="btn btn-secondary" onclick="loadCompliance()">合规通知</button>
+    <div id="breach-side" class="empty-state">点击按钮加载</div>
+  </div>
+  <div class="card"><h3>📋 分析结果</h3><div id="breach-result" class="empty-state">暂无分析结果</div></div>
+</div>
+
+<!-- Tab5 威胁Actor -->
+<div class="tab-content" id="tab-actor">
+  <div class="card">
+    <h3>👤 威胁Actor分析</h3>
+    <div class="form-row">
+      <div class="form-group"><label>Actor ID</label>
+        <select id="actor-id">
+          <option value="TA-APT001">TA-APT001 LockBit团伙</option>
+          <option value="TA-APT002">TA-APT002 Scattered Spider</option>
+          <option value="TA-APT003">TA-APT003 LAPSUS$</option>
+          <option value="TA-APT005">TA-APT005 信息窃取者联盟</option>
+        </select></div>
+      <div class="form-group"><label>&nbsp;</label><button class="btn" onclick="startActor()">开始分析</button></div>
+    </div>
+    <div id="actor-status"></div>
+  </div>
+  <div class="card">
+    <h3>📇 Actor库 / TTPs / 画像</h3>
+    <button class="btn btn-secondary" onclick="loadActorList()">Actor列表</button>
+    <button class="btn btn-secondary" onclick="loadTTPs()">TTPs</button>
+    <button class="btn btn-secondary" onclick="loadProfile()">当前画像</button>
+    <div id="actor-side" class="empty-state">点击按钮加载</div>
+  </div>
+  <div class="card"><h3>📋 Actor分析结果</h3><div id="actor-result" class="empty-state">暂无分析结果</div></div>
+</div>
+
+<!-- Tab6 综合运营 -->
+<div class="tab-content" id="tab-ops">
+  <div class="card">
+    <h3>🎛️ DRP综合评估</h3>
+    <div class="form-row">
+      <div class="form-group"><label>品牌</label><input id="ops-brand" value="ExampleCorp"></div>
+      <div class="form-group"><label>&nbsp;</label><button class="btn" onclick="startOps()">启动综合评估</button></div>
+    </div>
+    <div id="ops-status"></div>
+  </div>
+  <div class="card">
+    <h3>📈 仪表盘 / 历史</h3>
+    <button class="btn btn-secondary" onclick="loadDashboard()">风险仪表盘</button>
+    <button class="btn btn-secondary" onclick="loadOpsHistory()">评估历史</button>
+    <div id="ops-side" class="empty-state">点击按钮加载</div>
+  </div>
+  <div class="card"><h3>📋 综合评估结果</h3><div id="ops-result" class="empty-state">暂无评估结果</div></div>
+</div>
+
+<div class="footer">
+  暗网监控与DRP控制台 · 第13轮升级 · 仅监控公开可访问信息源 · 不参与非法交易 · 情报仅用于防御与保护
+</div>
+
+<script>
+const API = '/api/v1/darkweb-monitor';
+
+// Tab切换
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+async function apiCall(path, method='GET', body=null) {
+  const opts = { method, headers: {'Content-Type': 'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const resp = await fetch(API + path, opts);
+  return await resp.json();
+}
+function showStatus(elId, taskId) {
+  document.getElementById(elId).innerHTML =
+    '<span class="status-pill status-running">任务 ' + taskId + ' 运行中...</span>';
+}
+function render(elId, data) {
+  document.getElementById(elId).innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+}
+function fail(elId, msg) {
+  document.getElementById(elId).innerHTML =
+    '<span class="status-pill status-failed">' + msg + '</span>';
+}
+
+async function pollTask(base, statusEl, resultEl) {
+  const check = async () => {
+    try {
+      const s = await apiCall(base + '/status');
+      if (s.success) {
+        const st = s.data.status;
+        if (st === 'success') {
+          const r = await apiCall(base + '/results');
+          document.getElementById(statusEl).innerHTML = '<span class="status-pill status-success">完成</span>';
+          render(resultEl, r.data);
+          return;
+        } else if (st === 'failed') {
+          fail(statusEl, '失败: ' + (s.data.error || ''));
+          return;
+        }
+      }
+      setTimeout(check, 1500);
+    } catch(e) { console.error(e); }
+  };
+  check();
+}
+
+// 1. 暗网情报
+async function startIntel() {
+  try {
+    const r = await apiCall('/intel/monitor', 'POST', {
+      brand: document.getElementById('intel-brand').value,
+      domain: document.getElementById('intel-domain').value,
+      keywords: []
+    });
+    if (r.success) { showStatus('intel-status', r.data.task_id); pollTask('/intel/'+r.data.task_id, 'intel-status', 'intel-result'); }
+    else fail('intel-status', r.error);
+  } catch(e) { fail('intel-status', '请求失败: '+e); }
+}
+async function loadIntelSources() {
+  const r = await apiCall('/intel/sources');
+  render('intel-sources', r.success ? r.data : r.error);
+}
+async function loadIntelAlerts() {
+  const r = await apiCall('/intel/alerts');
+  render('intel-sources', r.success ? r.data : r.error);
+}
+async function loadIntelKeywords() {
+  const r = await apiCall('/intel/keywords');
+  render('intel-sources', r.success ? r.data : r.error);
+}
+
+// 2. 凭证泄露
+async function startCredential() {
+  try {
+    const r = await apiCall('/credential/check', 'POST', {
+      domain: document.getElementById('cred-domain').value, emails: [], phones: [], text: ''
+    });
+    if (r.success) { showStatus('cred-status', r.data.task_id); pollTask('/credential/'+r.data.task_id, 'cred-status', 'cred-result'); }
+    else fail('cred-status', r.error);
+  } catch(e) { fail('cred-status', '请求失败: '+e); }
+}
+async function loadLeakedDB() { render('cred-side', (await apiCall('/credential/leaked')).data); }
+async function loadApiKeys() { render('cred-side', (await apiCall('/credential/api-keys')).data); }
+async function loadReset() { render('cred-side', (await apiCall('/credential/reset-suggestions')).data); }
+
+// 3. 品牌保护
+async function startBrand() {
+  try {
+    const r = await apiCall('/brand/monitor', 'POST', {
+      brand: document.getElementById('brand-name').value,
+      domain: document.getElementById('brand-domain').value
+    });
+    if (r.success) { showStatus('brand-status', r.data.task_id); pollTask('/brand/'+r.data.task_id, 'brand-status', 'brand-result'); }
+    else fail('brand-status', r.error);
+  } catch(e) { fail('brand-status', '请求失败: '+e); }
+}
+async function loadTyposquat() { render('brand-side', (await apiCall('/brand/typosquatting?domain='+document.getElementById('brand-domain').value)).data); }
+async function loadPhishing() { render('brand-side', (await apiCall('/brand/phishing?brand='+document.getElementById('brand-name').value)).data); }
+async function loadFakeApps() { render('brand-side', (await apiCall('/brand/fake-apps?brand='+document.getElementById('brand-name').value)).data); }
+async function loadBrandScore() { render('brand-side', (await apiCall('/brand/risk-score?brand='+document.getElementById('brand-name').value)).data); }
+
+// 4. 数据泄露分析
+async function startBreach() {
+  try {
+    const r = await apiCall('/breach/analyze', 'POST', {
+      brand: document.getElementById('breach-brand').value, text: ''
+    });
+    if (r.success) { showStatus('breach-status', r.data.task_id); pollTask('/breach/'+r.data.task_id, 'breach-status', 'breach-result'); }
+    else fail('breach-status', r.error);
+  } catch(e) { fail('breach-status', '请求失败: '+e); }
+}
+async function loadTimeline() { render('breach-side', (await apiCall('/breach/timeline')).data); }
+async function loadImpact() { render('breach-side', (await apiCall('/breach/impact?brand='+document.getElementById('breach-brand').value)).data); }
+async function loadCompliance() { render('breach-side', (await apiCall('/breach/compliance')).data); }
+
+// 5. 威胁Actor
+async function startActor() {
+  try {
+    const r = await apiCall('/actor/analyze', 'POST', {
+      actor_id: document.getElementById('actor-id').value, overlap: false
+    });
+    if (r.success) { showStatus('actor-status', r.data.task_id); pollTask('/actor/'+r.data.task_id, 'actor-status', 'actor-result'); }
+    else fail('actor-status', r.error);
+  } catch(e) { fail('actor-status', '请求失败: '+e); }
+}
+async function loadActorList() { render('actor-side', (await apiCall('/actor/list')).data); }
+async function loadTTPs() { render('actor-side', (await apiCall('/actor/ttps')).data); }
+async function loadProfile() {
+  const id = document.getElementById('actor-id').value;
+  render('actor-side', (await apiCall('/actor/'+id+'/profile')).data);
+}
+
+// 6. 综合运营
+async function startOps() {
+  try {
+    const r = await apiCall('/operations/assess', 'POST', {
+      brand: document.getElementById('ops-brand').value, targets: []
+    });
+    if (r.success) { showStatus('ops-status', r.data.task_id); pollTask('/operations/'+r.data.task_id, 'ops-status', 'ops-result'); }
+    else fail('ops-status', r.error);
+  } catch(e) { fail('ops-status', '请求失败: '+e); }
+}
+async function loadDashboard() { render('ops-side', (await apiCall('/operations/dashboard?brand='+document.getElementById('ops-brand').value)).data); }
+async function loadOpsHistory() { render('ops-side', (await apiCall('/operations/history')).data); }
+</script>
+</body>
+</html>

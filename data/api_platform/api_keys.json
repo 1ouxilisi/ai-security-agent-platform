@@ -1,0 +1,40 @@
+[
+  {
+    "key_id": "f12f1451-148b-449e-97a4-a3045c6e0e69",
+    "app_id": "33e46dc0-20ec-4ef8-8b65-fdf56647c98c",
+    "name": "测试密钥",
+    "key": "sk-c0cd1...ce9b",
+    "status": "active",
+    "created_at": 1788168299.2682643,
+    "expires_at": null,
+    "last_used_at": null,
+    "ip_whitelist": [],
+    "referer_whitelist": [],
+    "scopes": [
+      "read",
+      "write"
+    ],
+    "usage_today": 0,
+    "usage_month": 0,
+    "usage_total": 0
+  },
+  {
+    "key_id": "eeb9bece-7830-4c41-8504-0f3506f74716",
+    "app_id": "039ad5df-c043-4ae8-a828-65c4b2b1ce05",
+    "name": "测试密钥",
+    "key": "sk-36d09...deaa",
+    "status": "active",
+    "created_at": 1788168315.8827918,
+    "expires_at": null,
+    "last_used_at": null,
+    "ip_whitelist": [],
+    "referer_whitelist": [],
+    "scopes": [
+      "read",
+      "write"
+    ],
+    "usage_today": 0,
+    "usage_month": 0,
+    "usage_total": 0
+  }
+]

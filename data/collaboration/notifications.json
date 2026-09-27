@@ -1,0 +1,116 @@
+{
+  "ntf-20260912162145-9bd757": {
+    "notification_id": "ntf-20260912162145-9bd757",
+    "user": "bob",
+    "type": "task_assigned",
+    "title": "你被分配了新任务: 测试任务",
+    "content": "任务 task-20260912162145-e4f19c 由 admin 分配给你。",
+    "severity": "warning",
+    "status": "unread",
+    "created_at": "2026-09-12T16:21:45.579693",
+    "read_at": null,
+    "metadata": {
+      "task_id": "task-20260912162145-e4f19c"
+    }
+  },
+  "ntf-20260912162145-792b00": {
+    "notification_id": "ntf-20260912162145-792b00",
+    "user": "bob",
+    "type": "comment_mentioned",
+    "title": "carol 在任务中提到了你",
+    "content": "任务 task-20260912162145-e4f19c: 看看 @bob 和 @dave 这边",
+    "severity": "info",
+    "status": "unread",
+    "created_at": "2026-09-12T16:21:45.772165",
+    "read_at": null,
+    "metadata": {
+      "task_id": "task-20260912162145-e4f19c",
+      "comment_id": "cmt-20260912162145-325f98"
+    }
+  },
+  "ntf-20260912162145-11d1b9": {
+    "notification_id": "ntf-20260912162145-11d1b9",
+    "user": "dave",
+    "type": "comment_mentioned",
+    "title": "carol 在任务中提到了你",
+    "content": "任务 task-20260912162145-e4f19c: 看看 @bob 和 @dave 这边",
+    "severity": "info",
+    "status": "unread",
+    "created_at": "2026-09-12T16:21:45.774266",
+    "read_at": null,
+    "metadata": {
+      "task_id": "task-20260912162145-e4f19c",
+      "comment_id": "cmt-20260912162145-325f98"
+    }
+  },
+  "ntf-20260912162145-c6f44a": {
+    "notification_id": "ntf-20260912162145-c6f44a",
+    "user": "bob",
+    "type": "task_completed",
+    "title": "任务已完成: 测试任务",
+    "content": "任务 task-20260912162145-e4f19c 已被标记为完成。",
+    "severity": "info",
+    "status": "unread",
+    "created_at": "2026-09-12T16:21:45.778636",
+    "read_at": null,
+    "metadata": {}
+  },
+  "ntf-20260912162208-08e2dd": {
+    "notification_id": "ntf-20260912162208-08e2dd",
+    "user": "frank",
+    "type": "task_assigned",
+    "title": "你被分配了新任务: API测试",
+    "content": "任务 task-20260912162208-e3ae75 由 api 分配给你。",
+    "severity": "warning",
+    "status": "unread",
+    "created_at": "2026-09-12T16:22:08.255331",
+    "read_at": null,
+    "metadata": {
+      "task_id": "task-20260912162208-e3ae75"
+    }
+  },
+  "ntf-20260912162208-6c7313": {
+    "notification_id": "ntf-20260912162208-6c7313",
+    "user": "frank",
+    "type": "comment_mentioned",
+    "title": "grace 在任务中提到了你",
+    "content": "任务 task-20260912162208-e3ae75: hi @frank",
+    "severity": "info",
+    "status": "unread",
+    "created_at": "2026-09-12T16:22:08.266218",
+    "read_at": null,
+    "metadata": {
+      "task_id": "task-20260912162208-e3ae75",
+      "comment_id": "cmt-20260912162208-b25cc5"
+    }
+  },
+  "ntf-20260912162258-272f37": {
+    "notification_id": "ntf-20260912162258-272f37",
+    "user": "judy",
+    "type": "task_assigned",
+    "title": "你被分配了新任务: 联动测试",
+    "content": "任务 task-20260912162257-d2a736 由 admin 分配给你。",
+    "severity": "warning",
+    "status": "read",
+    "created_at": "2026-09-12T16:22:58.007983",
+    "read_at": "2026-09-12T16:22:58.028945",
+    "metadata": {
+      "task_id": "task-20260912162257-d2a736"
+    }
+  },
+  "ntf-20260912162258-5ff59e": {
+    "notification_id": "ntf-20260912162258-5ff59e",
+    "user": "judy",
+    "type": "comment_mentioned",
+    "title": "mallory 在任务中提到了你",
+    "content": "任务 task-20260912162257-d2a736: @judy 看这个",
+    "severity": "info",
+    "status": "read",
+    "created_at": "2026-09-12T16:22:58.018833",
+    "read_at": "2026-09-12T16:22:58.028957",
+    "metadata": {
+      "task_id": "task-20260912162257-d2a736",
+      "comment_id": "cmt-20260912162258-ddf307"
+    }
+  }
+}

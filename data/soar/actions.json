@@ -1,0 +1,236 @@
+{
+  "act-223f8751": {
+    "action_id": "act-223f8751",
+    "action_type": "ip_block",
+    "name": "封禁IP地址",
+    "description": "在防火墙/安全设备上封禁指定IP地址",
+    "parameters": {
+      "ip": "",
+      "duration": 3600,
+      "reason": ""
+    },
+    "timeout": 60,
+    "require_approval": false,
+    "enabled": true,
+    "execution_count": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "tags": []
+  },
+  "act-e7fa041c": {
+    "action_id": "act-e7fa041c",
+    "action_type": "ip_unblock",
+    "name": "解封IP地址",
+    "description": "解除对指定IP地址的封禁",
+    "parameters": {
+      "ip": "",
+      "reason": ""
+    },
+    "timeout": 60,
+    "require_approval": false,
+    "enabled": true,
+    "execution_count": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "tags": []
+  },
+  "act-255ca1b1": {
+    "action_id": "act-255ca1b1",
+    "action_type": "account_disable",
+    "name": "禁用用户账号",
+    "description": "禁用指定用户账号，禁止登录",
+    "parameters": {
+      "username": "",
+      "reason": ""
+    },
+    "timeout": 60,
+    "require_approval": true,
+    "enabled": true,
+    "execution_count": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "tags": []
+  },
+  "act-44e39d36": {
+    "action_id": "act-44e39d36",
+    "action_type": "account_lock",
+    "name": "锁定用户账号",
+    "description": "临时锁定用户账号，需要解锁才能登录",
+    "parameters": {
+      "username": "",
+      "duration": 1800,
+      "reason": ""
+    },
+    "timeout": 60,
+    "require_approval": false,
+    "enabled": true,
+    "execution_count": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "tags": []
+  },
+  "act-3cb9613f": {
+    "action_id": "act-3cb9613f",
+    "action_type": "password_reset",
+    "name": "重置用户密码",
+    "description": "强制重置指定用户的密码",
+    "parameters": {
+      "username": "",
+      "reason": ""
+    },
+    "timeout": 60,
+    "require_approval": true,
+    "enabled": true,
+    "execution_count": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "tags": []
+  },
+  "act-04be9aab": {
+    "action_id": "act-04be9aab",
+    "action_type": "process_terminate",
+    "name": "终止恶意进程",
+    "description": "终止指定主机上的恶意进程",
+    "parameters": {
+      "hostname": "",
+      "pid": "",
+      "process_name": "",
+      "reason": ""
+    },
+    "timeout": 120,
+    "require_approval": true,
+    "enabled": true,
+    "execution_count": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "tags": []
+  },
+  "act-cddcb036": {
+    "action_id": "act-cddcb036",
+    "action_type": "file_quarantine",
+    "name": "隔离恶意文件",
+    "description": "将恶意文件移动到隔离区",
+    "parameters": {
+      "hostname": "",
+      "file_path": "",
+      "reason": ""
+    },
+    "timeout": 120,
+    "require_approval": true,
+    "enabled": true,
+    "execution_count": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "tags": []
+  },
+  "act-45947212": {
+    "action_id": "act-45947212",
+    "action_type": "host_isolate",
+    "name": "隔离受感染主机",
+    "description": "将受感染主机从网络中隔离",
+    "parameters": {
+      "hostname": "",
+      "ip": "",
+      "reason": ""
+    },
+    "timeout": 120,
+    "require_approval": true,
+    "enabled": true,
+    "execution_count": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "tags": []
+  },
+  "act-daa3b2f3": {
+    "action_id": "act-daa3b2f3",
+    "action_type": "alert_escalate",
+    "name": "升级告警",
+    "description": "将告警升级到更高优先级，通知高级安全人员",
+    "parameters": {
+      "alert_id": "",
+      "new_severity": "critical",
+      "reason": ""
+    },
+    "timeout": 30,
+    "require_approval": false,
+    "enabled": true,
+    "execution_count": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "tags": []
+  },
+  "act-e14ce9f6": {
+    "action_id": "act-e14ce9f6",
+    "action_type": "ticket_create",
+    "name": "创建工单",
+    "description": "在工单系统中创建安全事件工单",
+    "parameters": {
+      "title": "",
+      "description": "",
+      "priority": "high",
+      "assignee": ""
+    },
+    "timeout": 30,
+    "require_approval": false,
+    "enabled": true,
+    "execution_count": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "tags": []
+  },
+  "act-4e6ac129": {
+    "action_id": "act-4e6ac129",
+    "action_type": "notification_send",
+    "name": "发送通知",
+    "description": "发送安全事件通知（邮件/短信/即时消息）",
+    "parameters": {
+      "channel": "email",
+      "recipient": "",
+      "subject": "",
+      "message": ""
+    },
+    "timeout": 30,
+    "require_approval": false,
+    "enabled": true,
+    "execution_count": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "tags": []
+  },
+  "act-dfcd902d": {
+    "action_id": "act-dfcd902d",
+    "action_type": "evidence_collect",
+    "name": "收集证据",
+    "description": "收集安全事件相关的证据（日志/文件/内存镜像）",
+    "parameters": {
+      "hostname": "",
+      "evidence_type": "logs",
+      "duration": 3600
+    },
+    "timeout": 300,
+    "require_approval": false,
+    "enabled": true,
+    "execution_count": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "tags": []
+  },
+  "act-c608660e": {
+    "action_id": "act-c608660e",
+    "action_type": "scan_trigger",
+    "name": "触发漏洞扫描",
+    "description": "对指定目标触发漏洞扫描",
+    "parameters": {
+      "target": "",
+      "scan_type": "full",
+      "reason": ""
+    },
+    "timeout": 600,
+    "require_approval": false,
+    "enabled": true,
+    "execution_count": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "tags": []
+  }
+}

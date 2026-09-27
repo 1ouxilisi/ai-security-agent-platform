@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>统一报告中心 · AI Hacking Agent</title>
+<style>
+:root{--bg:#0f1419;--panel:#161d26;--border:#263140;--txt:#e6e6e6;--mut:#8a97a8;--blue:#4fc3f7;--green:#66bb6a;--orange:#ffa726;--red:#ef5350;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft YaHei",Segoe UI,sans-serif;background:var(--bg);color:var(--txt);padding:18px;font-size:14px}
+h1{font-size:20px;color:var(--blue);margin-bottom:4px}
+.sub{color:var(--mut);font-size:12px;margin-bottom:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px}
+.card .n{font-size:24px;font-weight:700;color:var(--blue)}
+.card .l{color:var(--mut);font-size:12px;margin-top:4px}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+.box{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+.box h2{font-size:15px;color:var(--blue);margin-bottom:10px;border-left:4px solid var(--blue);padding-left:8px}
+button{background:#0b5394;color:#fff;border:0;border-radius:6px;padding:7px 12px;cursor:pointer;font-size:13px;margin:2px}
+button:hover{background:#0d66b5}
+button.alt{background:#2a3441}
+button.danger{background:#7a2a2a}
+input,select{background:#0d131a;border:1px solid var(--border);color:var(--txt);border-radius:6px;padding:6px 8px;font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{background:#0b5394;color:#fff;padding:7px;text-align:left}
+td{padding:6px 7px;border-bottom:1px solid var(--border)}
+tr:hover td{background:#1b2530}
+.tag{padding:2px 8px;border-radius:10px;font-size:11px}
+.t-ok{background:#1b3a1b;color:var(--green)}
+.t-pdf{background:#1b2a3a;color:var(--blue)}
+.muted{color:var(--mut);font-size:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+#detail{white-space:pre-wrap;background:#0d131a;border:1px solid var(--border);border-radius:6px;padding:10px;max-height:340px;overflow:auto;font-size:12px}
+</style>
+</head>
+<body>
+<h1>统一报告中心</h1>
+<div class="sub">方向3 · 全领域报告管理 / MD·HTML·PDF 导出 / 批量打包 / 报告对比</div>
+
+<div class="cards">
+  <div class="card"><div class="n" id="cTotal">-</div><div class="l">总报告数</div></div>
+  <div class="card"><div class="n" id="cReady">-</div><div class="l">已生成PDF</div></div>
+  <div class="card"><div class="n" id="cDomain">-</div><div class="l">覆盖领域</div></div>
+  <div class="card"><div class="n" id="cSize">-</div><div class="l">总大小(KB)</div></div>
+</div>
+
+<div class="row">
+  <button onclick="loadAll()">刷新</button>
+  <input id="kw" placeholder="搜索标题/任务ID">
+  <select id="flt"><option value="">全部领域</option></select>
+  <button class="alt" onclick="filterReports()">筛选</button>
+  <select id="genDomain"></select>
+  <button onclick="genDomainPdf()">生成领域PDF</button>
+  <button onclick="loadTemplates()">模板管理</button>
+  <button onclick="loadEngine()">引擎信息</button>
+</div>
+
+<div class="layout">
+  <div class="box">
+    <h2>报告列表</h2>
+    <table><thead><tr><th><input type="checkbox" onclick="toggleAll(this)"></th><th>标题</th><th>领域</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody id="rptBody"></tbody></table>
+  </div>
+  <div>
+    <div class="box"><h2>详情 / 对比结果</h2><div id="detail">点击左侧「详情」查看</div></div>
+    <div class="box"><h2>引擎 & 模板</h2><div id="engInfo" class="muted">未加载</div></div>
+  </div>
+</div>
+
+<script>
+const B='/api/v1/pdf-report';
+let reports=[], checked=new Set();
+async function j(u,o){const r=await fetch(B+u,o);return r.json();}
+async function loadEngine(){const d=await j('/engine/info');document.getElementById('engInfo').textContent=JSON.stringify(d.data,null,2);}
+async function loadTemplates(){const d=await j('/templates');show(JSON.stringify(d.data,null,2));}
+async function loadStats(){const d=await j('/reports/stats');const s=d.data;
+  document.getElementById('cTotal').textContent=s.total;
+  document.getElementById('cReady').textContent=s.ready;
+  document.getElementById('cSize').textContent=s.total_size_kb;
+  document.getElementById('cDomain').textContent=Object.keys(s.by_domain||{}).length;}
+async function loadDomains(){const d=await j('/domains');const f=document.getElementById('flt'),g=document.getElementById('genDomain');
+  d.data.domains.forEach(x=>{f.innerHTML+=`<option value="${x.key}">${x.name}</option>`;g.innerHTML+=`<option value="${x.key}">${x.name}</option>`;});}
+async function loadReports(){const d=await j('/reports');reports=d.data.reports;render();}
+async function filterReports(){const d=await j('/reports?keyword='+encodeURIComponent(document.getElementById('kw').value)+'&domain='+document.getElementById('flt').value);reports=d.data.reports;render();}
+function render(){const tb=document.getElementById('rptBody');tb.innerHTML='';
+  reports.forEach(r=>{const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input type="checkbox" data-id="${r.id}" onchange="chk(this)"></td>
+      <td>${r.title}</td><td>${r.domain_name}</td>
+      <td><span class="tag ${r.status==='ready'?'t-ok':'t-pdf'}">${r.status}</span></td>
+      <td><button onclick="detail('${r.id}')">详情</button>
+      <button class="alt" onclick="regen('${r.id}')">重新生成</button>
+      <a href="${B}/reports/${r.id}/download?fmt=pdf" target="_blank"><button class="alt">PDF</button></a>
+      <a href="${B}/reports/${r.id}/download?fmt=md" target="_blank"><button class="alt">MD</button></a>
+      <button class="danger" onclick="delR('${r.id}')">删</button></td>`;
+    tb.appendChild(tr);});}
+function chk(el){el.checked?checked.add(el.dataset.id):checked.delete(el.dataset.id);}
+function toggleAll(el){document.querySelectorAll('#rptBody input[type=checkbox]').forEach(c=>{c.checked=el.checked;el.checked?checked.add(c.dataset.id):checked.delete(c.dataset.id);});}
+async function detail(id){const d=await j('/reports/'+id);show(JSON.stringify(d.data,null,2));}
+async function regen(id){const d=await j('/reports/'+id+'/regenerate',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});show('重新生成：'+JSON.stringify(d.data,null,2));loadStats();}
+async function delR(id){await j('/reports/'+id,{method:'DELETE'});loadReports();}
+async function genDomainPdf(){const dom=document.getElementById('genDomain').value;const d=await j('/domain/'+dom+'/generate-pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task_id:'web',tpl_id:'',save:true})});show('已生成：'+JSON.stringify(d.data,null,2));}
+function show(t){document.getElementById('detail').textContent=t;}
+async function loadAll(){await loadEngine();await loadStats();await loadReports();}
+loadDomains().then(loadAll);
+</script>
+</body>
+</html>

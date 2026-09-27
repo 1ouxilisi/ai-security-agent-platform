@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>内网渗透深度控制台 · 方向2</title>
+<style>
+  body{font-family:"Segoe UI",sans-serif;margin:0;background:#0d1117;color:#e6edf3}
+  header{padding:16px 24px;background:#161b22;border-bottom:1px solid #30363d}
+  h1{margin:0;font-size:20px}
+  .wrap{padding:20px 24px;max-width:1400px;margin:0 auto}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:16px 0}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px;margin-bottom:14px}
+  .ok{color:#3fb950}.bad{color:#f85149}.warn{color:#d29922}
+  table{border-collapse:collapse;width:100%;margin-top:8px;font-size:13px}
+  th,td{border:1px solid #30363d;padding:6px 10px;text-align:left;vertical-align:top}
+  button{background:#238636;color:#fff;border:0;border-radius:6px;padding:8px 16px;cursor:pointer;margin-right:6px}
+  button.sec{background:#30363d}
+  button:disabled{opacity:.5}
+  input{background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:6px;width:200px}
+  .muted{color:#8b949e;font-size:12px}
+  pre{background:#0d1117;padding:10px;border-radius:6px;overflow:auto;font-size:12px;max-height:260px}
+  .chain{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .stage{flex:1;min-width:140px;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:10px;text-align:center}
+  .stage .n{font-size:18px;font-weight:bold}
+  .stage.done{border-color:#3fb950}
+  .stage.fail{border-color:#f85149}
+</style>
+</head>
+<body>
+<header>
+  <h1>内网渗透深度控制台 <span class="muted">方向2 · 发现→枚举→凭据→横向→提权 完整攻击链</span></h1>
+</header>
+<div class="wrap">
+
+  <div class="card">
+    <b>工具可用性</b>
+    <pre id="tools">加载中…</pre>
+  </div>
+
+  <div class="card">
+    <b>攻击链参数</b>
+    <p class="muted">target=目标主机/IP，dc=AD 域名 base（如 dc=contoso,dc=local），user/password 为已获取凭据。</p>
+    target: <input id="target" value="192.168.56.103">
+    dc: <input id="dc" value="">
+    user: <input id="user" value="">
+    password: <input id="password" type="password" value="">
+    <button onclick="runChain()">▶ 跑完整攻击链</button>
+    <span id="chainState" class="muted"></span>
+  </div>
+
+  <div class="card">
+    <b>攻击链时间线</b>
+    <div class="chain" id="chain">
+      <div class="stage" id="st-discovery"><div class="n">1</div><div>发现 Discovery</div></div>
+      <div class="stage" id="st-enumeration"><div class="n">2</div><div>枚举 Enum</div></div>
+      <div class="stage" id="st-credential"><div class="n">3</div><div>凭据 Creds</div></div>
+      <div class="stage" id="st-lateral"><div class="n">4</div><div>横向 Lateral</div></div>
+      <div class="stage" id="st-privesc"><div class="n">5</div><div>提权 PrivEsc</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <b>攻击链详细输出</b>
+    <pre id="chainOut">尚未运行</pre>
+  </div>
+
+  <div class="grid">
+    <div class="card"><b>SMB 枚举</b>
+      <button class="sec" onclick="smb('shares')">共享</button>
+      <button class="sec" onclick="smb('users')">用户</button>
+      <button class="sec" onclick="smb('groups')">组</button>
+      <pre id="smbOut">—</pre>
+    </div>
+    <div class="card"><b>AD 查询</b>
+      <button class="sec" onclick="ad('users')">用户</button>
+      <button class="sec" onclick="ad('groups')">组</button>
+      <button class="sec" onclick="ad('computers')">计算机</button>
+      <button class="sec" onclick="ad('ous')">OU</button>
+      <pre id="adOut">—</pre>
+    </div>
+    <div class="card"><b>凭据获取</b>
+      <button class="sec" onclick="cred('hashes')">Hash Dump</button>
+      <button class="sec" onclick="cred('passwords')">抓密码</button>
+      <button class="sec" onclick="cred('cached')">缓存</button>
+      <pre id="credOut">—</pre>
+    </div>
+    <div class="card"><b>横向移动</b>
+      <button class="sec" onclick="move('smb')">SMB</button>
+      <button class="sec" onclick="move('wmi')">WMI</button>
+      <button class="sec" onclick="move('winrm')">WinRM</button>
+      <pre id="moveOut">—</pre>
+    </div>
+    <div class="card"><b>提权检测</b>
+      <button class="sec" onclick="priv('cves')">CVE</button>
+      <button class="sec" onclick="priv('suid')">SUID</button>
+      <button class="sec" onclick="priv('services')">服务</button>
+      <button class="sec" onclick="priv('sudo')">Sudo</button>
+      <pre id="privOut">—</pre>
+    </div>
+  </div>
+
+</div>
+<script>
+const B = "/api/v1/internal-deep";
+async function j(u, o){ const r = await fetch(u, o); return r.json(); }
+function post(u, body){ return j(u, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body||{})}); }
+function val(id){ return document.getElementById(id).value; }
+
+async function loadTools(){
+  const d = await j(B+"/tools-status");
+  document.getElementById("tools").textContent = JSON.stringify(d.data, null, 2);
+}
+
+function mark(stage, ok){
+  const el = document.getElementById("st-"+stage);
+  el.classList.remove("done","fail");
+  el.classList.add(ok?"done":"fail");
+}
+
+async function runChain(){
+  document.getElementById("chainState").textContent = "执行中…";
+  const d = await post(B+"/chain/run", {
+    target: val("target"), dc: val("dc"),
+    user: val("user"), password: val("password"), timeout: 300
+  });
+  if(d.success){
+    (d.data.chain||[]).forEach(s => mark(s.stage, (s.output||{}).ok !== false));
+    document.getElementById("chainOut").textContent = JSON.stringify(d.data, null, 2);
+    document.getElementById("chainState").textContent = "✓ 完成";
+  } else {
+    document.getElementById("chainState").textContent = "✗ "+d.error;
+  }
+}
+
+async function smb(kind){
+  const d = await post(B+"/smb/"+kind, {host: val("target"), user: val("user"), password: val("password"), timeout: 300});
+  document.getElementById("smbOut").textContent = JSON.stringify(d.data, null, 2);
+}
+async function ad(kind){
+  const d = await post(B+"/ad/"+kind, {dc: val("dc"), user: val("user"), password: val("password"), timeout: 300});
+  document.getElementById("adOut").textContent = JSON.stringify(d.data, null, 2);
+}
+async function cred(kind){
+  const d = await post(B+"/cred/"+kind, {target: val("target"), user: val("user"), password: val("password"), timeout: 300});
+  document.getElementById("credOut").textContent = JSON.stringify(d.data, null, 2);
+}
+async function move(kind){
+  const d = await post(B+"/lateral/"+kind, {target: val("target"), user: val("user"), password: val("password"), command: "whoami", timeout: 300});
+  document.getElementById("moveOut").textContent = JSON.stringify(d.data, null, 2);
+}
+async function priv(kind){
+  const d = await j(B+"/privesc/"+kind+"?timeout=300");
+  document.getElementById("privOut").textContent = JSON.stringify(d.data, null, 2);
+}
+
+loadTools();
+</script>
+</body>
+</html>

@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>红蓝对抗 Pro 控制台 · 方向1</title>
+<style>
+:root{
+  --bg:#0f1115; --panel:#171a21; --panel2:#1f232c; --border:#2a2f3a;
+  --text:#e6e8ee; --muted:#8a90a0; --accent:#e74c3c; --ok:#2ecc71;
+  --warn:#f1c40f; --high:#e67e22; --crit:#e74c3c; --info:#4fc3f7;
+  --blue:#4fc3f7; --purple:#9b59b6;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+header{padding:16px 24px;background:linear-gradient(90deg,#2a1418,#171a21);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:8px}
+header h1{margin:0;font-size:18px}
+header .badge{background:var(--crit);color:#fff;padding:2px 10px;
+  border-radius:999px;font-size:12px;font-weight:bold}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.col{flex:1;min-width:320px}
+.card{background:var(--panel);border:1px solid var(--border);
+  border-radius:10px;padding:16px;margin-bottom:16px}
+.card h2{margin:0 0 12px;font-size:15px;color:var(--accent);
+  border-bottom:1px solid var(--border);padding-bottom:8px}
+input,select,button,textarea{background:var(--panel2);border:1px solid var(--border);
+  color:var(--text);padding:8px 12px;border-radius:6px;font-size:14px;
+  font-family:inherit}
+input[type=text]{flex:1;min-width:180px}
+button{cursor:pointer;background:var(--crit);color:#fff;border:none;
+  font-weight:bold}
+button:hover{opacity:.85}
+button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.stages{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.stage{flex:1;min-width:110px;background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:10px;text-align:center}
+.stage.red{border-top:3px solid var(--crit)}
+.stage.blue{border-top:3px solid var(--blue)}
+.stage.purple{border-top:3px solid var(--purple)}
+.stage.active{border-color:var(--accent);box-shadow:0 0 12px rgba(231,76,60,.3)}
+.stage.done{border-color:var(--ok)}
+.stage .num{display:inline-block;width:26px;height:26px;line-height:26px;
+  border-radius:50%;background:var(--border);font-weight:bold;margin-bottom:6px}
+.stage.active .num{background:var(--accent);color:#fff}
+.stage.done .num{background:var(--ok);color:#000}
+.stage .label{font-size:12px;font-weight:bold}
+.stage .prog{font-size:10px;color:var(--muted);margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:normal}
+tr:hover td{background:var(--panel2)}
+.sev{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;
+  font-weight:bold;color:#000}
+.sev.critical{background:var(--crit)} .sev.high{background:var(--high)}
+.sev.medium{background:var(--warn)} .sev.low{background:var(--info)}
+.sev.info{background:var(--muted);color:#fff}
+code,pre{background:#0a0c10;padding:2px 6px;border-radius:4px;
+  font-family:Consolas,Monaco,monospace;font-size:12px}
+pre{padding:12px;overflow-x:auto;max-height:340px;white-space:pre-wrap}
+.muted{color:var(--muted)}
+.stat{display:inline-block;margin-right:16px}
+.stat b{font-size:22px;display:block}
+.log{background:#0a0c10;padding:10px;border-radius:6px;max-height:260px;
+  overflow-y:auto;font-family:Consolas,monospace;font-size:12px;
+  white-space:pre-wrap}
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.progress-bar{height:10px;background:var(--border);border-radius:4px;
+  overflow:hidden;margin-top:8px}
+.progress-bar > div{height:100%;background:linear-gradient(90deg,#e74c3c,#e67e22,#f1c40f);
+  transition:width .4s}
+.tab-row{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.tab{padding:6px 14px;border-radius:6px;cursor:pointer;background:var(--panel2);
+  border:1px solid var(--border)}
+.tab.active{background:var(--crit);color:#fff;font-weight:bold}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.tag{display:inline-block;background:var(--panel2);border:1px solid var(--border);
+  padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}
+.log .L-TRACE{color:#6c7a89} .log .L-DEBUG{color:#95a5a6}
+.log .L-INFO{color:#e6e8ee} .log .L-SUCCESS{color:#2ecc71}
+.log .L-WARN{color:#f1c40f} .log .L-ERROR{color:#e67e22}
+.log .L-CRITICAL{color:#e74c3c} .log .L-FATAL{color:#e74c3c;font-weight:bold}
+.log .side-red::before{content:"[红] "} .log .side-blue::before{content:"[蓝] "}
+.log .side-purple::before{content:"[紫] "}
+.thinking{background:linear-gradient(90deg,#2a1a22,#171a21);
+  border-left:3px solid var(--purple);padding:8px 12px;border-radius:6px;
+  margin-bottom:8px;font-style:italic;color:#d0a}
+.ws-dot{display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:var(--crit);margin-right:6px}
+.ws-dot.on{background:var(--ok)}
+.chain-svg text{font-size:11px}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚔️ 红蓝对抗 Pro 控制台 <span class="badge">方向1 · 6红+3蓝+紫 · 5.5→9.0</span></h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span><span class="ws-dot" id="wsDot"></span><span id="wsState" class="muted">未连接 WS</span></span>
+    <span class="muted" id="clock"></span>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>对抗流程（红6阶段 → 蓝3阶段 → 紫复盘）</h2>
+    <div class="stages" id="stages">
+      <div class="stage red" data-k="recon"><span class="num">1</span><div class="label">红·侦察</div><div class="prog">OSINT/子域/邮箱</div></div>
+      <div class="stage red" data-k="initial_access"><span class="num">2</span><div class="label">红·初始访问</div><div class="prog">钓鱼/Exploit</div></div>
+      <div class="stage red" data-k="execution"><span class="num">3</span><div class="label">红·执行</div><div class="prog">命令/持久化</div></div>
+      <div class="stage red" data-k="privesc"><span class="num">4</span><div class="label">红·提权</div><div class="prog">CVE/配置</div></div>
+      <div class="stage red" data-k="lateral"><span class="num">5</span><div class="label">红·横向</div><div class="prog">SMB/WMI/PtH</div></div>
+      <div class="stage red" data-k="objective"><span class="num">6</span><div class="label">红·目标</div><div class="prog">窃取/清理</div></div>
+      <div class="stage blue" data-k="detection"><span class="num">7</span><div class="label">蓝·检测</div><div class="prog">规则/日志/IOC</div></div>
+      <div class="stage blue" data-k="response"><span class="num">8</span><div class="label">蓝·响应</div><div class="prog">IR六步</div></div>
+      <div class="stage blue" data-k="attribution"><span class="num">9</span><div class="label">蓝·溯源</div><div class="prog">时间线/画像</div></div>
+      <div class="stage purple" data-k="purple"><span class="num">10</span><div class="label">紫·复盘</div><div class="prog">差距/成熟度</div></div>
+      <div class="stage purple" data-k="report"><span class="num">11</span><div class="label">报告</div><div class="prog">MD/HTML</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="target" value="target.com"
+             placeholder="输入目标域名/IP，如 target.com">
+      <button id="btnStart">⚔️ 启动红蓝对抗</button>
+      <button class="secondary" id="btnRefresh">🔄 概览</button>
+      <button class="secondary" id="btnTools">🧰 工具矩阵</button>
+    </div>
+    <div class="progress-bar"><div id="progBar" style="width:0%"></div></div>
+    <div class="muted" id="progText" style="margin-top:6px">就绪</div>
+  </div>
+
+  <div class="card"><h2>概览</h2><div id="overview"><span class="stat muted">加载中...</span></div></div>
+
+  <div class="tab-row">
+    <div class="tab active" data-tab="red">🔴 红队</div>
+    <div class="tab" data-tab="blue">🔵 蓝队</div>
+    <div class="tab" data-tab="purple">🟣 紫队复盘</div>
+    <div class="tab" data-tab="ai">🤖 AI 分析</div>
+    <div class="tab" data-tab="report">📄 报告</div>
+    <div class="tab" data-tab="tools">🧰 工具</div>
+    <div class="tab" data-tab="think">🧠 思考</div>
+    <div class="tab" data-tab="log">📋 日志</div>
+  </div>
+
+  <div class="tab-pane active" id="tab-red">
+    <div class="card"><h2>红队六阶段结果</h2><div id="redBody" class="muted">未运行</div></div>
+  </div>
+  <div class="tab-pane" id="tab-blue">
+    <div class="card"><h2>蓝队三阶段结果</h2><div id="blueBody" class="muted">未运行</div></div>
+  </div>
+  <div class="tab-pane" id="tab-purple">
+    <div class="card"><h2>紫队复盘 / 差距分析</h2><div id="purpleBody" class="muted">未运行</div></div>
+  </div>
+  <div class="tab-pane" id="tab-ai">
+    <div class="card"><h2>AI 风险评级</h2><div id="aiBody" class="muted">-</div></div>
+    <div class="card"><h2>攻击链图</h2><div id="chainBody" class="muted">-</div></div>
+  </div>
+  <div class="tab-pane" id="tab-report">
+    <div class="card"><h2>报告</h2>
+      <div class="toolbar">
+        <button id="btnMd">📄 查看 Markdown</button>
+        <button id="btnHtml">🌐 查看 HTML</button>
+      </div>
+      <pre id="reportBody" class="muted">未生成</pre>
+    </div>
+  </div>
+  <div class="tab-pane" id="tab-tools">
+    <div class="card"><h2>工具可用性矩阵</h2><div id="toolsBody" class="muted">点击「工具矩阵」加载</div></div>
+  </div>
+  <div class="tab-pane" id="tab-think">
+    <div class="card"><h2>AI 思考过程</h2><div id="thinkBody" class="muted">等待任务...</div></div>
+  </div>
+  <div class="tab-pane" id="tab-log">
+    <div class="card"><h2>实时日志流（8 级 · 红/蓝/紫分色）</h2><div class="log" id="logBody">暂无</div></div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1/red-blue-pro';
+let currentTaskId = null, pollTimer = null, ws = null;
+
+async function api(path, opts){
+  opts = opts||{};
+  opts.headers = Object.assign({'Content-Type':'application/json'}, opts.headers);
+  if(opts.body && typeof opts.body !== 'string') opts.body = JSON.stringify(opts.body);
+  const r = await fetch(API + path, opts);
+  return r.json();
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function sevBadge(s){return `<span class="sev ${s||'info'}">${String(s||'info').toUpperCase()}</span>`;}
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-'+t.dataset.tab).classList.add('active');
+  };
+});
+function setStage(key, active, done){
+  document.querySelectorAll('.stage').forEach(s=>{
+    s.classList.remove('active','done');
+    if(s.dataset.k===key){ if(done) s.classList.add('done'); if(active) s.classList.add('active'); }
+  });
+}
+
+async function loadOverview(){
+  const r = await api('/dashboard/overview');
+  if(!r.success) return;
+  const d = r.data;
+  document.getElementById('overview').innerHTML = `
+    <span class="stat"><b>${d.task_total}</b>任务总数</span>
+    <span class="stat"><b style="color:var(--accent)">${d.task_running}</b>进行中</span>
+    <span class="stat"><b style="color:var(--ok)">${d.task_done}</b>已完成</span>
+    <span class="stat"><b style="color:var(--crit)">${d.task_error}</b>异常</span>`;
+}
+
+async function start(){
+  const target = document.getElementById('target').value.trim();
+  if(!target) return alert('请输入目标');
+  document.getElementById('btnStart').disabled = true;
+  const r = await api('/start', {method:'POST', body:{target}});
+  document.getElementById('btnStart').disabled = false;
+  if(!r.success) return alert(r.error);
+  currentTaskId = r.data.task_id;
+  logLine('SUCCESS', `任务已启动: ${currentTaskId} -> ${r.data.target}`, 'red');
+  connectWS(currentTaskId);
+  pollTask(); pollTimer = setInterval(pollTask, 2000);
+}
+
+async function pollTask(){
+  if(!currentTaskId) return;
+  const r = await api('/task/'+currentTaskId+'/status');
+  if(!r.success) return;
+  const d = r.data;
+  document.getElementById('progBar').style.width = d.progress+'%';
+  document.getElementById('progText').textContent =
+    `阶段: ${d.stage}  进度: ${d.progress}%  状态: ${d.status}`;
+  setStage(d.stage, true, d.status==='done');
+  if(d.status==='done'||d.status==='error'||d.status==='cancelled'){
+    clearInterval(pollTimer);
+    loadResults();
+  }
+}
+
+function connectWS(taskId){
+  try{ if(ws) ws.close(); }catch(e){}
+  const proto = location.protocol==='https:'?'wss':'ws';
+  ws = new WebSocket(`${proto}://${location.host}${API}/ws/${taskId}`);
+  ws.onopen = ()=>{ document.getElementById('wsDot').classList.add('on');
+    document.getElementById('wsState').textContent='实时推送已连接'; };
+  ws.onclose = ()=>{ document.getElementById('wsDot').classList.remove('on');
+    document.getElementById('wsState').textContent='WS 已断开(轮询兜底)'; };
+  ws.onmessage = (ev)=>{
+    let m; try{ m = JSON.parse(ev.data); }catch(e){ return; }
+    if(m.type==='log'){ logLine(m.level, m.message, m.side||'red'); }
+    else if(m.type==='progress'){
+      document.getElementById('progBar').style.width = m.overall+'%';
+      document.getElementById('progText').textContent =
+        `阶段: ${m.step}  整体: ${m.overall}%  ETA: ${m.eta_seconds}s`;
+    } else if(m.type==='thinking'){
+      const el = document.getElementById('thinkBody');
+      el.innerHTML = `<div class="thinking">💭 ${esc(m.thought)}</div>` + el.innerHTML;
+    } else if(m.type==='stage'){ setStage(m.stage, true, m.status==='done'); }
+    else if(m.type==='done'){ loadResults(); }
+  };
+}
+
+function logLine(level, msg, side){
+  const el = document.getElementById('logBody');
+  const d = document.createElement('div');
+  d.className = 'L-'+(level||'INFO')+' side-'+(side||'red');
+  d.textContent = `[${new Date().toLocaleTimeString()}] [${level||'INFO'}] ${msg}`;
+  el.appendChild(d); el.scrollTop = el.scrollHeight;
+}
+
+function renderChainSVG(chain){
+  const nodes = (chain&&chain.nodes)||[], edges = (chain&&chain.edges)||[];
+  if(!nodes.length) return '<span class="muted">无</span>';
+  const n = nodes.length, w = Math.max(900, n*160), h = 180;
+  const xs = nodes.map((_,i)=>60+i*Math.max(150, w/n));
+  let s = `<svg class="chain-svg" width="100%" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
+  nodes.forEach((nd,i)=>{
+    const color = nd.side==='red'?'#e74c3c':(nd.side==='blue'?'#4fc3f7':'#9b59b6');
+    s += `<rect x='${xs[i]}' y='70' width='140' height='46' rx='8' fill='#1f232c' stroke='${color}' stroke-width='2'/>`;
+    s += `<text x='${xs[i]+70}' y='98' fill='#e6e8ee' text-anchor='middle'>${esc(nd.label)}</text>`;
+  });
+  edges.forEach(e=>{
+    const si = nodes.findIndex(n=>n.id===e.src), di = nodes.findIndex(n=>n.id===e.dst);
+    if(si<0||di<0) return;
+    s += `<line x1='${xs[si]+140}' y1='93' x2='${xs[di]}' y2='93' stroke='#8a90a0' stroke-width='2' marker-end='url(#ar)'/>`;
+  });
+  s += `<defs><marker id='ar' markerWidth='10' markerHeight='10' refX='8' refY='3' orient='auto'><path d='M0,0 L0,6 L9,3 z' fill='#8a90a0'/></marker></defs>`;
+  s += '</svg>';
+  return s;
+}
+
+async function loadResults(){
+  if(!currentTaskId) return;
+  const r = await api('/task/'+currentTaskId+'/results');
+  if(!r.success) return;
+  const d = r.data;
+  const red = d.red||{}, blue = d.blue||{}, purple = d.purple||{}, ai = d.analysis||{};
+  // red
+  let redHtml = '';
+  const redMap = [['recon','侦察'],['initial_access','初始访问'],['execution','执行'],
+    ['privesc','提权'],['lateral','横向'],['objective','目标']];
+  redMap.forEach(([k,label])=>{
+    const v = red[k]||{};
+    redHtml += `<h3 style="font-size:13px;color:var(--crit)">红·${label}</h3>
+      <table><tr><th>字段</th><th>值</th></tr>
+      <tr><td>子域名</td><td>${v.subdomain_count||'-'}</td></tr>
+      <tr><td>邮箱</td><td>${v.email_count||'-'}</td></tr>
+      <tr><td>发现数</td><td>${v.finding_count||'-'}</td></tr>
+      <tr><td>错误</td><td>${esc(v.error||'')}</td></tr></table>`;
+  });
+  document.getElementById('redBody').innerHTML = redHtml;
+  // blue
+  const det = blue.detection||{};
+  document.getElementById('blueBody').innerHTML =
+    `<p>蓝队检测告警 <b style="color:var(--blue)">${det.alert_count||0}</b> · IOC 命中 ${det.ioc_hit_count||0}</p>
+     <p class="muted">IR 流程 / 时间线已生成（见紫队复盘与 AI 攻击链）</p>`;
+  // purple
+  document.getElementById('purpleBody').innerHTML =
+    `<p>红队得分 <b style="color:var(--crit)">${purple.red_score||0}</b> · 蓝队得分 <b style="color:var(--blue)">${purple.blue_score||0}</b> · 覆盖率 <b>${purple.coverage||0}%</b></p>
+     <h3 class="muted" style="font-size:13px">差距分析（${purple.gap_count||0}）</h3>
+     <table><tr><th>等级</th><th>攻击动作</th><th>建议</th></tr>
+     ${(purple.gaps||[]).map(g=>`<tr><td>${sevBadge(g.severity)}</td><td>${esc(g.attack)}</td><td>${esc(g.recommendation)}</td></tr>`).join('')||'<tr><td colspan=3 class=muted>无差距</td></tr>'}</table>
+     <h3 class="muted" style="font-size:13px">改进建议</h3>
+     <ul>${(purple.recommendations||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+  // ai
+  const sc = ai.severity_counts||{};
+  document.getElementById('aiBody').innerHTML =
+    `<p>整体风险: ${sevBadge(ai.overall_risk)} · 严重 ${sc.critical||0}/高 ${sc.high||0}/中 ${sc.medium||0}</p>
+     <ul>${(ai.fix_advice||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+  document.getElementById('chainBody').innerHTML = renderChainSVG(ai.attack_chain);
+  if(d.report_path) document.getElementById('reportBody').textContent = '报告已生成: '+d.report_path;
+}
+
+document.getElementById('btnMd').onclick = async ()=>{
+  if(!currentTaskId) return alert('先启动任务');
+  const r = await api('/report/'+currentTaskId+'?fmt=md');
+  if(r.success) document.getElementById('reportBody').textContent = r.data.markdown||'(空)';
+};
+document.getElementById('btnHtml').onclick = async ()=>{
+  if(!currentTaskId) return alert('先启动任务');
+  const r = await api('/report/'+currentTaskId+'?fmt=html');
+  if(r.success){ const w=window.open('','_blank'); w.document.write(r.data.html); }
+};
+
+async function loadTools(){
+  const r = await api('/dashboard/tools');
+  if(!r.success) return;
+  document.getElementById('toolsBody').innerHTML = Object.entries(r.data).map(([phase,info])=>`
+    <h3 style="font-size:13px;color:var(--crit)">${phase}</h3>
+    <table>${Object.entries(info).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${typeof v==='boolean'?(v?'✅ 已安装':'⚠️ 未安装'):esc(String(v))}</td></tr>`).join('')}</table>`).join('');
+}
+
+document.getElementById('btnStart').onclick = start;
+document.getElementById('btnRefresh').onclick = loadOverview;
+document.getElementById('btnTools').onclick = loadTools;
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleString();},1000);
+loadOverview();
+</script>
+</body>
+</html>

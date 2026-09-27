@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>国际化与全球部署 · 控制台</title>
+<style>
+:root{
+  --bg:#0d1117; --bg2:#161b22; --bg3:#1f2630; --border:#2d333b;
+  --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950;
+  --red:#f85149; --orange:#d29922; --purple:#bc8cff; --cyan:#39d2c0; --pink:#f778ba;
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:230px;background:var(--bg2);border-right:1px solid var(--border);padding:18px 0;position:fixed;top:0;bottom:0;left:0;overflow-y:auto;z-index:100}
+.sidebar .brand{padding:0 20px 16px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.sidebar .brand h1{font-size:16px;color:var(--accent)}
+.sidebar .brand small{color:var(--muted);font-size:11px}
+.nav-btn{display:block;width:100%;text-align:left;padding:10px 20px;background:none;border:none;color:var(--text);cursor:pointer;font-size:13px;border-left:3px solid transparent;transition:all .15s}
+.nav-btn:hover{background:var(--bg3)}
+.nav-btn.active{background:var(--bg3);border-left-color:var(--accent);color:var(--accent)}
+.nav-group{padding:8px 20px 4px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.main{flex:1;margin-left:230px;padding:22px;min-width:0}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.topbar h2{font-size:20px}
+.badge{background:var(--bg3);border:1px solid var(--border);padding:3px 10px;border-radius:20px;font-size:12px;color:var(--muted)}
+.page{display:none}.page.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:18px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.card h3{font-size:13px;color:var(--muted);font-weight:normal;margin-bottom:6px}
+.card .num{font-size:26px;font-weight:bold;color:var(--accent)}
+.card.green .num{color:var(--green)}.card.red .num{color:var(--red)}.card.orange .num{color:var(--orange)}.card.purple .num{color:var(--purple)}.card.cyan .num{color:var(--cyan)}.card.pink .num{color:var(--pink)}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.panel h3{margin-bottom:12px;font-size:15px;color:var(--accent)}
+label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;font-size:13px;font-family:inherit}
+textarea{min-height:80px;resize:vertical}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+button.btn{background:var(--accent);color:#fff;border:none;padding:9px 18px;border-radius:6px;cursor:pointer;font-size:13px;margin-top:12px;transition:opacity .15s}
+button.btn:hover{opacity:.88}
+button.btn.ghost{background:var(--bg3);color:var(--text)}
+button.btn.green{background:var(--green)}
+button.btn.red{background:var(--red)}
+button.btn.purple{background:var(--purple)}
+pre.out{background:#0a0d12;border:1px solid var(--border);border-radius:6px;padding:12px;overflow:auto;max-height:340px;font-size:12px;color:#a5d6ff;margin-top:10px;white-space:pre-wrap;word-break:break-all}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+th,td{border:1px solid var(--border);padding:7px 10px;text-align:left}
+th{background:var(--bg3);color:var(--muted);font-weight:normal}
+tr:hover td{background:var(--bg3)}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;margin-right:4px}
+.tag.crit{background:#3d1418;color:var(--red)}.tag.high{background:#3d2414;color:var(--orange)}
+.tag.med{background:#3d3a14;color:#e3b341}.tag.low{background:#143d24;color:var(--green)}
+.tag.info{background:#14243d;color:var(--accent)}.tag.purple{background:#2d1f3d;color:var(--purple)}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px;flex-wrap:wrap}
+.tab-btn{padding:8px 16px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;border-bottom:2px solid transparent}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.progress-bar{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;background:var(--green);border-radius:4px;transition:width .3s}
+.flag{font-size:18px;margin-right:4px}
+@media(max-width:768px){
+  .sidebar{width:60px}.sidebar .brand h1,.sidebar .brand small,.nav-btn span{display:none}
+  .nav-btn{padding:10px;text-align:center}.main{margin-left:60px;padding:12px}
+  .grid{grid-template-columns:1fr 1fr}.row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<!-- ====== 侧边栏 ====== -->
+<aside class="sidebar">
+  <div class="brand">
+    <h1>🌐 国际化中心</h1>
+    <small>Globalization Console v25.4.0</small>
+  </div>
+  <div class="nav-group">总览</div>
+  <button class="nav-btn active" onclick="showPage('overview',this)">📊 <span>总览面板</span></button>
+  <div class="nav-group">多语言</div>
+  <button class="nav-btn" onclick="showPage('i18n',this)">🌍 <span>多语言管理</span></button>
+  <button class="nav-btn" onclick="showPage('translate',this)">🔤 <span>翻译工具</span></button>
+  <div class="nav-group">合规</div>
+  <button class="nav-btn" onclick="showPage('compliance',this)">⚖️ <span>区域合规</span></button>
+  <button class="nav-btn" onclick="showPage('crossborder',this)">🔗 <span>跨境数据</span></button>
+  <div class="nav-group">支付</div>
+  <button class="nav-btn" onclick="showPage('payment',this)">💳 <span>国际支付</span></button>
+  <button class="nav-btn" onclick="showPage('subscription',this)">📋 <span>订阅计费</span></button>
+  <div class="nav-group">部署</div>
+  <button class="nav-btn" onclick="showPage('deployment',this)">🚀 <span>全球部署</span></button>
+  <button class="nav-btn" onclick="showPage('cdn',this)">📡 <span>CDN加速</span></button>
+  <button class="nav-btn" onclick="showPage('edge',this)">⚡ <span>边缘计算</span></button>
+  <div class="nav-group">本地化</div>
+  <button class="nav-btn" onclick="showPage('localization',this)">📍 <span>本地化</span></button>
+  <button class="nav-btn" onclick="showPage('marketing',this)">📢 <span>区域营销</span></button>
+  <div class="nav-group">系统</div>
+  <button class="nav-btn" onclick="showPage('settings',this)">⚙️ <span>系统设置</span></button>
+</aside>
+
+<!-- ====== 主内容 ====== -->
+<main class="main">
+
+<!-- ========== 总览面板 ========== -->
+<div class="page active" id="page-overview">
+  <div class="topbar">
+    <h2>🌐 国际化总览</h2>
+    <span class="badge" id="ov-time">加载中...</span>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>支持语言</h3><div class="num" id="ov-langs">-</div></div>
+    <div class="card green"><h3>支持区域</h3><div class="num" id="ov-regions">-</div></div>
+    <div class="card purple"><h3>合规框架</h3><div class="num" id="ov-fw">-</div></div>
+    <div class="card cyan"><h3>支付方式</h3><div class="num" id="ov-pay">-</div></div>
+    <div class="card"><h3>支持货币</h3><div class="num" id="ov-cur">-</div></div>
+    <div class="card orange"><h3>部署区域</h3><div class="num" id="ov-deploy">-</div></div>
+    <div class="card red"><h3>CDN节点</h3><div class="num" id="ov-cdn">-</div></div>
+    <div class="card green"><h3>全球用户</h3><div class="num" id="ov-users">-</div></div>
+  </div>
+  <div class="panel">
+    <h3>系统健康状态</h3>
+    <div id="ov-health"></div>
+  </div>
+  <div class="panel">
+    <h3>活跃告警</h3>
+    <div id="ov-alerts"></div>
+  </div>
+  <div class="panel">
+    <h3>全球用户分布</h3>
+    <table id="ov-users-table"><thead><tr><th>区域</th><th>用户数</th><th>占比</th></tr></thead><tbody></tbody></table>
+  </div>
+</div>
+
+<!-- ========== 多语言管理 ========== -->
+<div class="page" id="page-i18n">
+  <div class="topbar"><h2>🌍 多语言管理</h2><button class="btn ghost" onclick="loadLanguages()">刷新</button></div>
+  <div class="grid">
+    <div class="card"><h3>翻译记忆条目</h3><div class="num" id="i18n-tm">-</div></div>
+    <div class="card purple"><h3>术语库条目</h3><div class="num" id="i18n-terms">-</div></div>
+    <div class="card green"><h3>UI文本键</h3><div class="num" id="i18n-ui">-</div></div>
+    <div class="card cyan"><h3>内容模板</h3><div class="num" id="i18n-tpl">-</div></div>
+  </div>
+  <div class="panel">
+    <h3>支持的语言列表</h3>
+    <table id="i18n-lang-table"><thead><tr><th>代码</th><th>名称</th><th>母语名</th><th>RTL</th><th>使用人数</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="panel">
+    <h3>翻译进度</h3>
+    <div id="i18n-progress"></div>
+  </div>
+</div>
+
+<!-- ========== 翻译工具 ========== -->
+<div class="page" id="page-translate">
+  <div class="topbar"><h2>🔤 翻译工具</h2></div>
+  <div class="panel">
+    <h3>在线翻译</h3>
+    <div class="row">
+      <div><label>源文本</label><textarea id="tr-source" placeholder="输入要翻译的文本...">欢迎使用AI黑客助手</textarea></div>
+      <div><label>目标语言</label><select id="tr-target">
+        <option value="en">English</option><option value="ja">日本語</option><option value="ko">한국어</option>
+        <option value="fr">Français</option><option value="de">Deutsch</option><option value="es">Español</option>
+        <option value="pt">Português</option><option value="ru">Русский</option><option value="ar">العربية</option>
+      </select></div>
+    </div>
+    <button class="btn" onclick="doTranslate()">翻译</button>
+    <pre class="out" id="tr-result">翻译结果将显示在这里...</pre>
+  </div>
+  <div class="panel">
+    <h3>语言自动检测</h3>
+    <div class="row">
+      <div><label>输入文本</label><input id="det-text" placeholder="输入任意文本检测语言..."></div>
+    </div>
+    <button class="btn purple" onclick="doDetect()">检测语言</button>
+    <pre class="out" id="det-result">检测结果将显示在这里...</pre>
+  </div>
+  <div class="panel">
+    <h3>翻译质量评分</h3>
+    <div class="row">
+      <div><label>源文本</label><textarea id="qa-source">Welcome to our security platform</textarea></div>
+      <div><label>翻译文本</label><textarea id="qa-trans">欢迎使用我们的安全平台</textarea></div>
+    </div>
+    <button class="btn orange" onclick="doQA()">质量评分</button>
+    <pre class="out" id="qa-result">评分结果将显示在这里...</pre>
+  </div>
+</div>
+
+<!-- ========== 区域合规 ========== -->
+<div class="page" id="page-compliance">
+  <div class="topbar"><h2>⚖️ 区域合规管理</h2><button class="btn ghost" onclick="loadCompliance()">刷新</button></div>
+  <div class="grid">
+    <div class="card"><h3>合规框架</h3><div class="num" id="comp-fw">-</div></div>
+    <div class="card green"><h3>已实现控制项</h3><div class="num" id="comp-implemented">-</div></div>
+    <div class="card red"><h3>合规差距</h3><div class="num" id="comp-gaps">-</div></div>
+    <div class="card orange"><h3>合规覆盖率</h3><div class="num" id="comp-coverage">-</div></div>
+  </div>
+  <div class="panel">
+    <h3>合规框架库</h3>
+    <table id="comp-table"><thead><tr><th>代码</th><th>名称</th><th>区域</th><th>生效日期</th><th>最高罚款</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="panel">
+    <h3>合规差距分析</h3>
+    <div id="comp-gap"></div>
+  </div>
+  <div class="panel">
+    <h3>法规变更监控</h3>
+    <table id="comp-reg-changes"><thead><tr><th>ID</th><th>框架</th><th>变更内容</th><th>影响</th><th>日期</th></tr></thead><tbody></tbody></table>
+  </div>
+</div>
+
+<!-- ========== 跨境数据 ========== -->
+<div class="page" id="page-crossborder">
+  <div class="topbar"><h2>🔗 跨境数据管理</h2></div>
+  <div class="panel">
+    <h3>跨境传输评估</h3>
+    <div class="row">
+      <div><label>源区域</label><select id="cb-src"><option value="CN">中国</option><option value="US-CA">美国加州</option><option value="EU">欧盟</option><option value="JP">日本</option><option value="KR">韩国</option><option value="BR">巴西</option><option value="SG">新加坡</option></select></div>
+      <div><label>目标区域</label><select id="cb-dst"><option value="US-CA">美国加州</option><option value="EU">欧盟</option><option value="JP">日本</option><option value="CN">中国</option><option value="BR">巴西</option><option value="SG">新加坡</option></select></div>
+      <div><label>数据类型</label><input id="cb-type" value="用户数据"></div>
+      <div><label>数据量(GB)</label><input id="cb-volume" type="number" value="10"></div>
+    </div>
+    <button class="btn" onclick="doCrossBorder()">评估</button>
+    <pre class="out" id="cb-result">评估结果将显示在这里...</pre>
+  </div>
+  <div class="panel">
+    <h3>跨境传输记录</h3>
+    <table id="cb-table"><thead><tr><th>ID</th><th>源</th><th>目标</th><th>数据类型</th><th>机制</th><th>状态</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="panel">
+    <h3>数据主体权利请求</h3>
+    <div class="row">
+      <div><label>请求人</label><input id="rt-subject" placeholder="user@example.com"></div>
+      <div><label>权利类型</label><select id="rt-type"><option value="access">访问权</option><option value="rectification">更正权</option><option value="erasure">删除权</option><option value="portability">可携权</option></select></div>
+      <div><label>区域</label><select id="rt-region"><option value="CN">中国</option><option value="US-CA">美国加州</option><option value="EU">欧盟</option><option value="JP">日本</option></select></div>
+    </div>
+    <button class="btn green" onclick="submitRights()">提交请求</button>
+    <pre class="out" id="rt-result">请求结果将显示在这里...</pre>
+  </div>
+</div>
+
+<!-- ========== 国际支付 ========== -->
+<div class="page" id="page-payment">
+  <div class="topbar"><h2>💳 国际支付与计费</h2><button class="btn ghost" onclick="loadPayment()">刷新</button></div>
+  <div class="grid">
+    <div class="card"><h3>支付方式</h3><div class="num" id="pay-methods">-</div></div>
+    <div class="card green"><h3>支持货币</h3><div class="num" id="pay-currencies">-</div></div>
+    <div class="card purple"><h3>活跃订阅</h3><div class="num" id="pay-subs">-</div></div>
+    <div class="card cyan"><h3>月经常性收入(MRR)</h3><div class="num" id="pay-mrr">-</div></div>
+  </div>
+  <div class="panel">
+    <h3>支付方式</h3>
+    <table id="pay-method-table"><thead><tr><th>ID</th><th>名称</th><th>类型</th><th>费率</th><th>结算</th><th>验证</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="panel">
+    <h3>实时汇率(vs USD)</h3>
+    <table id="pay-rates-table"><thead><tr><th>货币</th><th>汇率</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="panel">
+    <h3>货币兑换</h3>
+    <div class="row">
+      <div><label>金额</label><input id="cc-amount" type="number" value="100"></div>
+      <div><label>从</label><select id="cc-from"><option value="USD">美元</option><option value="CNY">人民币</option><option value="EUR">欧元</option><option value="JPY">日元</option><option value="GBP">英镑</option></select></div>
+      <div><label>到</label><select id="cc-to"><option value="CNY">人民币</option><option value="USD">美元</option><option value="EUR">欧元</option><option value="JPY">日元</option><option value="KRW">韩元</option></select></div>
+    </div>
+    <button class="btn" onclick="doConvert()">兑换</button>
+    <pre class="out" id="cc-result">兑换结果将显示在这里...</pre>
+  </div>
+</div>
+
+<!-- ========== 订阅计费 ========== -->
+<div class="page" id="page-subscription">
+  <div class="topbar"><h2>📋 订阅计费</h2></div>
+  <div class="panel">
+    <h3>订阅套餐</h3>
+    <div id="sub-plans"></div>
+  </div>
+  <div class="panel">
+    <h3>创建订阅</h3>
+    <div class="row">
+      <div><label>用户邮箱</label><input id="sub-email" placeholder="user@example.com"></div>
+      <div><label>套餐</label><select id="sub-plan"><option value="free">免费版</option><option value="basic">基础版 $29/月</option><option value="pro">专业版 $99/月</option><option value="enterprise">企业版 $499/月</option></select></div>
+      <div><label>计费周期</label><select id="sub-cycle"><option value="monthly">按月</option><option value="yearly">按年(省2个月)</option></select></div>
+      <div><label>优惠码</label><input id="sub-coupon" placeholder="可选"></div>
+    </div>
+    <button class="btn green" onclick="doSubscribe()">创建订阅</button>
+    <pre class="out" id="sub-result">订阅结果将显示在这里...</pre>
+  </div>
+  <div class="panel">
+    <h3>财务报告</h3>
+    <div id="fin-report"></div>
+  </div>
+</div>
+
+<!-- ========== 全球部署 ========== -->
+<div class="page" id="page-deployment">
+  <div class="topbar"><h2>🚀 全球部署</h2><button class="btn ghost" onclick="loadDeployment()">刷新</button></div>
+  <div class="grid">
+    <div class="card"><h3>部署区域</h3><div class="num" id="dep-regions">-</div></div>
+    <div class="card green"><h3>健康区域</h3><div class="num" id="dep-healthy">-</div></div>
+    <div class="card orange"><h3>平均延迟</h3><div class="num" id="dep-latency">-</div></div>
+    <div class="card cyan"><h3>可用性</h3><div class="num" id="dep-uptime">-</div></div>
+  </div>
+  <div class="panel">
+    <h3>区域列表</h3>
+    <table id="dep-table"><thead><tr><th>区域ID</th><th>名称</th><th>国家</th><th>状态</th><th>CPU%</th><th>内存%</th><th>版本</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="panel">
+    <h3>区域故障转移</h3>
+    <div class="row">
+      <div><label>从区域</label><input id="fo-from" value="us-east"></div>
+      <div><label>到区域</label><input id="fo-to" value="eu-frankfurt"></div>
+    </div>
+    <button class="btn red" onclick="doFailover()">执行故障转移</button>
+    <pre class="out" id="fo-result">故障转移结果将显示在这里...</pre>
+  </div>
+</div>
+
+<!-- ========== CDN加速 ========== -->
+<div class="page" id="page-cdn">
+  <div class="topbar"><h2>📡 CDN加速</h2><button class="btn ghost" onclick="loadCDN()">刷新</button></div>
+  <div class="grid">
+    <div class="card"><h3>CDN节点</h3><div class="num" id="cdn-nodes">-</div></div>
+    <div class="card green"><h3>活跃节点</h3><div class="num" id="cdn-active">-</div></div>
+    <div class="card cyan"><h3>缓存命中率</h3><div class="num" id="cdn-hit">-</div></div>
+    <div class="card purple"><h3>总带宽(Gbps)</h3><div class="num" id="cdn-bw">-</div></div>
+  </div>
+  <div class="panel">
+    <h3>CDN节点详情</h3>
+    <table id="cdn-table"><thead><tr><th>节点ID</th><th>城市</th><th>状态</th><th>QPS</th><th>缓存命中率</th><th>带宽</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="panel">
+    <h3>清除CDN缓存</h3>
+    <div class="row">
+      <div><label>URL(留空清除全部)</label><input id="cdn-url" placeholder="https://cdn.example.com/assets/*"></div>
+    </div>
+    <button class="btn orange" onclick="doPurge()">清除缓存</button>
+    <pre class="out" id="cdn-purge-result">清除结果将显示在这里...</pre>
+  </div>
+</div>
+
+<!-- ========== 边缘计算 ========== -->
+<div class="page" id="page-edge">
+  <div class="topbar"><h2>⚡ 边缘计算</h2><button class="btn ghost" onclick="loadEdge()">刷新</button></div>
+  <div class="grid">
+    <div class="card"><h3>边缘函数</h3><div class="num" id="edge-funcs">-</div></div>
+    <div class="card green"><h3>总调用次数</h3><div class="num" id="edge-invoc">-</div></div>
+    <div class="card cyan"><h3>平均执行(ms)</h3><div class="num" id="edge-exec">-</div></div>
+    <div class="card purple"><h3>覆盖区域</h3><div class="num" id="edge-regions">-</div></div>
+  </div>
+  <div class="panel">
+    <h3>边缘函数列表</h3>
+    <table id="edge-table"><thead><tr><th>函数ID</th><th>名称</th><th>区域</th><th>调用次数</th><th>平均执行(ms)</th><th>状态</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="panel">
+    <h3>部署新边缘函数</h3>
+    <div class="row">
+      <div><label>函数名称</label><input id="edge-name" placeholder="my-function"></div>
+      <div><label>部署区域</label><select id="edge-region"><option value="global">全球</option><option value="us-east">美东</option><option value="eu-frankfurt">法兰克福</option><option value="ap-sg">新加坡</option></select></div>
+    </div>
+    <button class="btn purple" onclick="deployEdge()">部署</button>
+    <pre class="out" id="edge-deploy-result">部署结果将显示在这里...</pre>
+  </div>
+</div>
+
+<!-- ========== 本地化 ========== -->
+<div class="page" id="page-localization">
+  <div class="topbar"><h2>📍 本地化与文化适配</h2><button class="btn ghost" onclick="loadLocalization()">刷新</button></div>
+  <div class="panel">
+    <h3>区域设置</h3>
+    <table id="loc-settings-table"><thead><tr><th>区域</th><th>Locale</th><th>时区</th><th>度量衡</th><th>纸张</th><th>工作日</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="panel">
+    <h3>文化适配偏好</h3>
+    <div id="loc-culture"></div>
+  </div>
+  <div class="panel">
+    <h3>区域法律文档</h3>
+    <div id="loc-legal"></div>
+  </div>
+</div>
+
+<!-- ========== 区域营销 ========== -->
+<div class="page" id="page-marketing">
+  <div class="topbar"><h2>📢 区域营销</h2></div>
+  <div class="grid">
+    <div class="card"><h3>营销活动</h3><div class="num" id="mkt-camps">-</div></div>
+    <div class="card green"><h3>总预算</h3><div class="num" id="mkt-budget">-</div></div>
+    <div class="card cyan"><h3>总花费</h3><div class="num" id="mkt-spent">-</div></div>
+    <div class="card purple"><h3>获客线索</h3><div class="num" id="mkt-leads">-</div></div>
+  </div>
+  <div class="panel">
+    <h3>营销活动列表</h3>
+    <table id="mkt-table"><thead><tr><th>ID</th><th>区域</th><th>渠道</th><th>预算</th><th>已花费</th><th>线索数</th><th>状态</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="panel">
+    <h3>创建支持工单</h3>
+    <div class="row">
+      <div><label>问题描述</label><input id="tk-subject" placeholder="描述您的问题..."></div>
+      <div><label>区域</label><select id="tk-region"><option value="CN">中国</option><option value="US">美国</option><option value="JP">日本</option><option value="DE">德国</option><option value="SG">新加坡</option></select></div>
+      <div><label>优先级</label><select id="tk-priority"><option value="low">低</option><option value="medium" selected>中</option><option value="high">高</option><option value="critical">紧急</option></select></div>
+    </div>
+    <button class="btn" onclick="createTicket()">提交工单</button>
+    <pre class="out" id="tk-result">工单结果将显示在这里...</pre>
+  </div>
+</div>
+
+<!-- ========== 系统设置 ========== -->
+<div class="page" id="page-settings">
+  <div class="topbar"><h2>⚙️ 系统设置</h2><button class="btn ghost" onclick="loadSettings()">刷新</button></div>
+  <div class="panel">
+    <h3>语言配置</h3>
+    <div id="cfg-language"></div>
+  </div>
+  <div class="panel">
+    <h3>支付配置</h3>
+    <div id="cfg-payment"></div>
+  </div>
+  <div class="panel">
+    <h3>部署配置</h3>
+    <div id="cfg-deployment"></div>
+  </div>
+  <div class="panel">
+    <h3>更新配置项</h3>
+    <div class="row">
+      <div><label>配置类别</label><select id="cfg-cat"><option value="language">语言</option><option value="payment">支付</option><option value="deployment">部署</option><option value="cdn">CDN</option><option value="notification">通知</option></select></div>
+      <div><label>配置键</label><input id="cfg-key" placeholder="如 default_language"></div>
+      <div><label>配置值</label><input id="cfg-val" placeholder="新值"></div>
+    </div>
+    <button class="btn green" onclick="updateSetting()">保存设置</button>
+    <pre class="out" id="cfg-result">更新结果将显示在这里...</pre>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+const API = '/api/v1/globalization';
+async function api(path, opts={}) {
+  try {
+    const r = await fetch(API + path, {
+      headers: {'Content-Type':'application/json'},
+      ...opts
+    });
+    const j = await r.json();
+    return j;
+  } catch(e) {
+    return {success:false, error:e.message};
+  }
+}
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadPageData(name);
+}
+function loadPageData(name) {
+  const map = {overview:loadOverview,i18n:loadI18n,translate:()=>{},compliance:loadCompliance,crossborder:loadCrossborder,payment:loadPayment,subscription:loadSubscription,deployment:loadDeployment,cdn:loadCDN,edge:loadEdge,localization:loadLocalization,marketing:loadMarketing,settings:loadSettings};
+  if(map[name]) map[name]();
+}
+function row(cells) { return '<tr>'+cells.map(c=>'<td>'+c+'</td>').join('')+'</tr>'; }
+function tag(s, cls) { return '<span class="tag '+cls+'">'+s+'</span>'; }
+
+async function loadOverview() {
+  const d = await api('/overview');
+  if(!d.success) return;
+  const k = d.data.kpi;
+  document.getElementById('ov-langs').textContent = k.supported_languages;
+  document.getElementById('ov-regions').textContent = k.supported_regions;
+  document.getElementById('ov-fw').textContent = k.compliance_frameworks;
+  document.getElementById('ov-pay').textContent = k.payment_methods;
+  document.getElementById('ov-cur').textContent = k.supported_currencies;
+  document.getElementById('ov-deploy').textContent = k.deployment_regions;
+  document.getElementById('ov-cdn').textContent = k.cdn_nodes;
+  document.getElementById('ov-users').textContent = k.global_users.toLocaleString();
+  document.getElementById('ov-time').textContent = new Date().toLocaleString('zh-CN');
+  // health
+  let h = '<table><tr><th>模块</th><th>状态</th></tr>';
+  for(const [mod, st] of Object.entries(d.data.health)) {
+    h += row([mod, st==='healthy'?tag('正常','low'):tag('降级','high')]);
+  }
+  document.getElementById('ov-health').innerHTML = h+'</table>';
+  // alerts
+  let a = '<table><tr><th>级别</th><th>内容</th><th>模块</th><th>时间</th></tr>';
+  d.data.alerts.forEach(al=>{
+    const cls = al.level==='warning'?'high':al.level==='critical'?'crit':'info';
+    a += row([tag(al.level,cls), al.message, al.module, al.time]);
+  });
+  document.getElementById('ov-alerts').innerHTML = a+'</table>';
+  // users
+  let ut = '';
+  d.data.user_distribution.forEach(u=>{
+    ut += row([u.region, u.users.toLocaleString(), u.percentage+'%']);
+  });
+  document.querySelector('#ov-users-table tbody').innerHTML = ut;
+}
+
+async function loadLanguages() {
+  const d = await api('/i18n/languages');
+  if(!d.success) return;
+  let t = '';
+  d.data.languages.forEach(l=>{
+    t += row([l.code, l.name, l.native, l.rtl?'RTL':'LTR', (l.speakers/1e6).toFixed(0)+'M']);
+  });
+  document.querySelector('#i18n-lang-table tbody').innerHTML = t;
+}
+async function loadI18n() {
+  const d = await api('/dashboard/i18n');
+  if(!d.success) return;
+  document.getElementById('i18n-tm').textContent = d.data.tm_entries;
+  document.getElementById('i18n-terms').textContent = d.data.terms;
+  document.getElementById('i18n-ui').textContent = d.data.ui_keys;
+  document.getElementById('i18n-tpl').textContent = d.data.content_templates;
+  loadLanguages();
+  const p = d.data.translation_progress;
+  let pb = '<div>总翻译: '+p.total+' | 已审核: '+p.approved+' | 审核中: '+p.in_review+' | 草稿: '+p.draft+' | 拒绝: '+p.rejected+'</div>';
+  pb += '<div class="progress-bar"><div class="progress-fill" style="width:'+p.completion_rate+'%"></div></div>';
+  pb += '<div style="margin-top:4px;color:var(--muted);font-size:12px">完成率: '+p.completion_rate+'%</div>';
+  document.getElementById('i18n-progress').innerHTML = pb;
+}
+
+async function doTranslate() {
+  const text = document.getElementById('tr-source').value;
+  const target = document.getElementById('tr-target').value;
+  const d = await api('/i18n/translate',{method:'POST',body:JSON.stringify({text,target_lang:target,source_lang:'auto'})});
+  document.getElementById('tr-result').textContent = JSON.stringify(d.data||d.error,null,2);
+}
+async function doDetect() {
+  const text = document.getElementById('det-text').value;
+  const d = await api('/i18n/detect',{method:'POST',body:JSON.stringify({text})});
+  document.getElementById('det-result').textContent = JSON.stringify(d.data||d.error,null,2);
+}
+async function doQA() {
+  const source = document.getElementById('qa-source').value;
+  const translated = document.getElementById('qa-trans').value;
+  const d = await api('/i18n/qa/score',{method:'POST',body:JSON.stringify({source,translated,lang:'en'})});
+  document.getElementById('qa-result').textContent = JSON.stringify(d.data||d.error,null,2);
+}
+
+async function loadCompliance() {
+  const d = await api('/compliance/frameworks');
+  if(d.success) {
+    let t = '';
+    d.data.frameworks.forEach(f=>{
+      t += row([f.code, f.name, f.region, f.enforcement_date, (f.max_fine||'').substring(0,30)]);
+    });
+    document.querySelector('#comp-table tbody').innerHTML = t;
+    document.getElementById('comp-fw').textContent = d.data.total;
+  }
+  const ga = await api('/compliance/gap-analysis');
+  if(ga.success) {
+    document.getElementById('comp-implemented').textContent = ga.data.implemented;
+    document.getElementById('comp-gaps').textContent = ga.data.gaps;
+    document.getElementById('comp-coverage').textContent = ga.data.coverage_rate+'%';
+    let g = '<p>总控制项: '+ga.data.total_controls+' | 已实现: '+ga.data.implemented+' | 进行中: '+ga.data.in_progress+' | 差距: '+ga.data.gaps+'</p>';
+    g += '<div class="progress-bar"><div class="progress-fill" style="width:'+ga.data.coverage_rate+'%"></div></div>';
+    g += '<h4 style="margin-top:10px">差距项详情:</h4>';
+    g += '<table><tr><th>控制项</th><th>框架</th><th>要求</th><th>负责人</th></tr>';
+    ga.data.gap_details.forEach(x=>{ g += row([x.control_id, x.framework, x.requirement, x.owner]); });
+    document.getElementById('comp-gap').innerHTML = g+'</table>';
+  }
+  const rc = await api('/compliance/regulation-changes');
+  if(rc.success) {
+    let t = '';
+    rc.data.changes.forEach(c=>{
+      const cls = c.impact==='high'?'high':c.impact==='medium'?'med':'low';
+      t += row([c.id, c.framework, c.change, tag(c.impact,cls), c.date]);
+    });
+    document.querySelector('#comp-reg-changes tbody').innerHTML = t;
+  }
+}
+
+async function loadCrossborder() {
+  const d = await api('/compliance/cross-border/transfers');
+  if(d.success) {
+    let t = '';
+    d.data.transfers.forEach(x=>{
+      const cls = x.status==='已批准'?'low':x.status==='审批中'?'med':'high';
+      t += row([x.transfer_id, x.source_region, x.dest_region, x.data_type, x.mechanism, tag(x.status,cls)]);
+    });
+    document.querySelector('#cb-table tbody').innerHTML = t;
+  }
+}
+async function doCrossBorder() {
+  const body = {
+    source_region: document.getElementById('cb-src').value,
+    dest_region: document.getElementById('cb-dst').value,
+    data_type: document.getElementById('cb-type').value,
+    volume_gb: parseFloat(document.getElementById('cb-volume').value)
+  };
+  const d = await api('/compliance/cross-border/assess',{method:'POST',body:JSON.stringify(body)});
+  document.getElementById('cb-result').textContent = JSON.stringify(d.data||d.error,null,2);
+}
+async function submitRights() {
+  const body = {
+    data_subject: document.getElementById('rt-subject').value,
+    right_type: document.getElementById('rt-type').value,
+    region: document.getElementById('rt-region').value
+  };
+  const d = await api('/compliance/rights/submit',{method:'POST',body:JSON.stringify(body)});
+  document.getElementById('rt-result').textContent = JSON.stringify(d.data||d.error,null,2);
+}
+
+async function loadPayment() {
+  const d = await api('/payment/methods');
+  if(d.success) {
+    document.getElementById('pay-methods').textContent = d.data.total;
+    let t = '';
+    d.data.methods.forEach(m=>{
+      t += row([m.id, m.name, m.type, m.fees, m.settlement, m.verified?tag('已验证','low'):tag('待验证','med')]);
+    });
+    document.querySelector('#pay-method-table tbody').innerHTML = t;
+  }
+  const c = await api('/payment/currencies');
+  if(c.success) document.getElementById('pay-currencies').textContent = c.data.total;
+  const r = await api('/payment/rates?base=USD');
+  if(r.success) {
+    let t = '';
+    Object.entries(r.data.rates).forEach(([cur,rate])=>{ t += row([cur, rate]); });
+    document.querySelector('#pay-rates-table tbody').innerHTML = t;
+  }
+  const s = await api('/payment/subscriptions');
+  if(s.success) {
+    document.getElementById('pay-subs').textContent = s.data.stats.active;
+    document.getElementById('pay-mrr').textContent = '$'+s.data.stats.mrr_usd.toLocaleString();
+  }
+}
+async function doConvert() {
+  const body = {
+    amount: parseFloat(document.getElementById('cc-amount').value),
+    from_currency: document.getElementById('cc-from').value,
+    to_currency: document.getElementById('cc-to').value
+  };
+  const d = await api('/payment/convert',{method:'POST',body:JSON.stringify(body)});
+  document.getElementById('cc-result').textContent = JSON.stringify(d.data||d.error,null,2);
+}
+
+async function loadSubscription() {
+  const d = await api('/payment/plans');
+  if(d.success) {
+    let html = '<div class="grid">';
+    for(const [id,p] of Object.entries(d.data.plans)) {
+      html += '<div class="card"><h3>'+p.name+'</h3>';
+      html += '<div class="num">$'+p.price_monthly+'<small style="font-size:12px;color:var(--muted)">/月</small></div>';
+      html += '<ul style="margin-top:8px;font-size:12px;color:var(--muted)">';
+      p.features.forEach(f=>{ html += '<li>'+f+'</li>'; });
+      html += '</ul></div>';
+    }
+    document.getElementById('sub-plans').innerHTML = html+'</div>';
+  }
+  const f = await api('/payment/financial/income');
+  if(f.success) {
+    const s = f.data;
+    document.getElementById('fin-report').innerHTML =
+      '<p>期间: '+s.period+' | 总收入: $'+s.total_revenue.toLocaleString()+' | 总支出: $'+s.total_expenses.toLocaleString()+' | 净利润: $'+s.net_profit.toLocaleString()+' | 利润率: '+s.profit_margin+'%</p>';
+  }
+}
+async function doSubscribe() {
+  const body = {
+    customer_email: document.getElementById('sub-email').value,
+    plan: document.getElementById('sub-plan').value,
+    billing_cycle: document.getElementById('sub-cycle').value,
+    coupon: document.getElementById('sub-coupon').value
+  };
+  const d = await api('/payment/subscribe',{method:'POST',body:JSON.stringify(body)});
+  document.getElementById('sub-result').textContent = JSON.stringify(d.data||d.error,null,2);
+}
+
+async function loadDeployment() {
+  const d = await api('/deployment/regions');
+  if(d.success) {
+    document.getElementById('dep-regions').textContent = d.data.total;
+    let t = '';
+    d.data.regions.forEach(r=>{
+      const cls = r.status==='active'?'low':r.status==='standby'?'med':'high';
+      t += row([r.region_id, r.name, r.country, tag(r.status,cls), r.cpu_utilization+'%', r.memory_utilization+'%', r.deployed_version]);
+    });
+    document.querySelector('#dep-table tbody').innerHTML = t;
+  }
+  const p = await api('/deployment/performance');
+  if(p.success) {
+    document.getElementById('dep-latency').textContent = p.data.global_avg_latency_ms+'ms';
+    document.getElementById('dep-uptime').textContent = p.data.global_availability_pct+'%';
+  }
+  const h = await api('/deployment/loadbalancer/health');
+  if(h.success) document.getElementById('dep-healthy').textContent = h.data.healthy;
+}
+async function doFailover() {
+  const body = {from_region: document.getElementById('fo-from').value, to_region: document.getElementById('fo-to').value};
+  const d = await api('/deployment/failover',{method:'POST',body:JSON.stringify(body)});
+  document.getElementById('fo-result').textContent = JSON.stringify(d.data||d.error,null,2);
+}
+
+async function loadCDN() {
+  const s = await api('/deployment/cdn/stats');
+  if(s.success) {
+    document.getElementById('cdn-nodes').textContent = s.data.total_nodes;
+    document.getElementById('cdn-active').textContent = s.data.active;
+    document.getElementById('cdn-hit').textContent = s.data.avg_cache_hit_ratio+'%';
+    document.getElementById('cdn-bw').textContent = s.data.total_bandwidth_gbps;
+  }
+  const n = await api('/deployment/cdn/nodes');
+  if(n.success) {
+    let t = '';
+    n.data.nodes.forEach(nd=>{
+      const cls = nd.status==='active'?'low':'high';
+      t += row([nd.node_id, nd.city, tag(nd.status,cls), nd.qps.toLocaleString(), nd.cache_hit_ratio+'%', nd.bandwidth_gbps+'Gbps']);
+    });
+    document.querySelector('#cdn-table tbody').innerHTML = t;
+  }
+}
+async function doPurge() {
+  const url = document.getElementById('cdn-url').value;
+  const d = await api('/deployment/cdn/purge',{method:'POST',body:JSON.stringify({url})});
+  document.getElementById('cdn-purge-result').textContent = JSON.stringify(d.data||d.error,null,2);
+}
+
+async function loadEdge() {
+  const d = await api('/deployment/edge/functions');
+  if(d.success) {
+    document.getElementById('edge-funcs').textContent = d.data.stats.total_functions;
+    document.getElementById('edge-invoc').textContent = (d.data.stats.total_invocations/1e6).toFixed(1)+'M';
+    document.getElementById('edge-exec').textContent = d.data.stats.avg_execution_ms;
+    document.getElementById('edge-regions').textContent = d.data.stats.regions_covered;
+    let t = '';
+    d.data.functions.forEach(f=>{
+      t += row([f.func_id, f.name, f.region, f.invocations.toLocaleString(), f.avg_exec_ms+'ms', tag(f.status,'low')]);
+    });
+    document.querySelector('#edge-table tbody').innerHTML = t;
+  }
+}
+async function deployEdge() {
+  const body = {name: document.getElementById('edge-name').value, region: document.getElementById('edge-region').value, code: 'export default {}'};
+  const d = await api('/deployment/edge/deploy',{method:'POST',body:JSON.stringify(body)});
+  document.getElementById('edge-deploy-result').textContent = JSON.stringify(d.data||d.error,null,2);
+}
+
+async function loadLocalization() {
+  const d = await api('/localization/settings');
+  if(d.success) {
+    let t = '';
+    for(const [code,s] of Object.entries(d.data.settings)) {
+      t += row([code, s.locale, s.timezone, s.measurement, s.paper_size, s.weekend_days.join(',')]);
+    }
+    document.querySelector('#loc-settings-table tbody').innerHTML = t;
+  }
+  const c = await api('/localization/culture');
+  if(c.success) {
+    let html = '<table><tr><th>区域</th><th>主色</th><th>营销风格</th><th>沟通正式度</th><th>禁忌话题</th></tr>';
+    for(const [code,p] of Object.entries(c.data.cultures)) {
+      html += row([code, p.colors.preferred, p.marketing.style, p.communication.formality, p.marketing.taboo_topics.join('; ')]);
+    }
+    document.getElementById('loc-culture').innerHTML = html+'</table>';
+  }
+  const l = await api('/localization/legal/documents');
+  if(l.success) {
+    let html = '<table><tr><th>类别</th><th>区域数</th></tr>';
+    for(const [cat, docs] of Object.entries(l.data.documents)) {
+      html += row([cat, Object.keys(docs).length]);
+    }
+    document.getElementById('loc-legal').innerHTML = html+'</table>';
+  }
+}
+
+async function loadMarketing() {
+  const d = await api('/localization/marketing/campaigns');
+  if(d.success) {
+    document.getElementById('mkt-camps').textContent = d.data.total_campaigns;
+    document.getElementById('mkt-budget').textContent = '$'+d.data.total_budget.toLocaleString();
+    document.getElementById('mkt-spent').textContent = '$'+d.data.total_spent.toLocaleString();
+    document.getElementById('mkt-leads').textContent = d.data.total_leads;
+    let t = '';
+    d.data.campaigns.forEach(c=>{
+      t += row([c.id, c.region, c.channel, '$'+c.budget, '$'+c.spent, c.leads, tag(c.status,'low')]);
+    });
+    document.querySelector('#mkt-table tbody').innerHTML = t;
+  }
+}
+async function createTicket() {
+  const body = {
+    subject: document.getElementById('tk-subject').value,
+    region: document.getElementById('tk-region').value,
+    priority: document.getElementById('tk-priority').value
+  };
+  const d = await api('/localization/support/tickets',{method:'POST',body:JSON.stringify(body)});
+  document.getElementById('tk-result').textContent = JSON.stringify(d.data||d.error,null,2);
+}
+
+async function loadSettings() {
+  const d = await api('/settings');
+  if(!d.success) return;
+  const s = d.data;
+  const show = (el, obj) => {
+    let html = '<table>';
+    for(const [k,v] of Object.entries(obj)) {
+      html += '<tr><td style="color:var(--muted)">'+k+'</td><td>'+(typeof v==='object'?JSON.stringify(v):v)+'</td></tr>';
+    }
+    document.getElementById(el).innerHTML = html+'</table>';
+  };
+  show('cfg-language', s.language);
+  show('cfg-payment', s.payment);
+  show('cfg-deployment', s.deployment);
+}
+async function updateSetting() {
+  const cat = document.getElementById('cfg-cat').value;
+  const key = document.getElementById('cfg-key').value;
+  const val = document.getElementById('cfg-val').value;
+  const d = await api('/settings/'+cat+'/'+key,{method:'PUT',body:JSON.stringify({value:val})});
+  document.getElementById('cfg-result').textContent = JSON.stringify(d.data||d.error,null,2);
+}
+
+// 初始化加载总览
+loadOverview();
+</script>
+</body>
+</html>

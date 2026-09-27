@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UX 升级控制台</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--border:#30363d;--fg:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--orange:#ff9800;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:"Segoe UI",system-ui,sans-serif;padding:24px}
+h1{font-size:26px;margin-bottom:4px}h2{font-size:18px;margin:22px 0 10px;color:var(--accent)}
+.sub{color:var(--muted);margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.big-btn{background:var(--accent);color:#0d1117;border:none;padding:22px;border-radius:12px;font-size:20px;font-weight:700;cursor:pointer;width:100%}
+.btn2{background:#21262d;color:var(--fg);border:1px solid var(--border);padding:12px;border-radius:8px;cursor:pointer;font-size:14px;width:100%}
+.stat{font-size:34px;font-weight:800}
+.label{color:var(--muted);font-size:12px;margin-top:4px}
+button{cursor:pointer}
+input{background:#0d1117;color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:10px;width:100%}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:12px;overflow:auto;max-height:260px;font-size:12px;white-space:pre-wrap}
+.chip{display:inline-block;background:#21262d;border:1px solid var(--border);border-radius:16px;padding:4px 12px;margin:3px;font-size:12px;cursor:pointer}
+#searchOverlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-start;justify-content:center;padding-top:80px;z-index:99}
+#searchBox{background:var(--card);border:1px solid var(--accent);border-radius:12px;width:min(560px,90vw);padding:16px}
+.kbd{background:#21262d;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-family:monospace;font-size:12px}
+@media(max-width:768px){body{padding:14px}.grid{grid-template-columns:1fr}.big-btn{font-size:17px;padding:16px}}
+</style>
+</head>
+<body>
+<h1>🎨 用户体验大升级控制台</h1>
+<div class="sub">超级首页 · 智能引导 · 暗色主题 · 全局搜索(Ctrl+K) · 移动端适配(768px)</div>
+
+<h2>① 暗色主题状态</h2>
+<div class="card" id="themeCard">
+  <div id="themeInfo" class="sub">检测中…</div>
+  <button class="btn2" onclick="toggleTheme()">切换 暗色/亮色</button>
+</div>
+
+<h2>② 超级首页 V2（大按钮）</h2>
+<div class="grid">
+  <button class="big-btn" onclick="quick('quick_scan')">🚀 一键扫描</button>
+  <button class="big-btn" onclick="quick('quick_report')">📄 一键报告</button>
+  <button class="big-btn" onclick="quick('quick_dashboard')">📊 一键仪表盘</button>
+</div>
+<div class="grid" id="stats"></div>
+
+<h2>③ 智能引导</h2>
+<div class="card">
+  <div id="guideInfo" class="sub">…</div>
+  <button class="btn2" onclick="startGuide()">开始新手引导</button>
+  <button class="btn2" onclick="nextGuide()">下一步</button>
+  <button class="btn2" onclick="completeGuide()">完成引导</button>
+  <div style="margin-top:10px" id="tooltips"></div>
+</div>
+
+<h2>④ 全局搜索 <span class="kbd">Ctrl+K</span></h2>
+<div class="card">
+  <input id="sq" placeholder="搜功能 / 漏洞 / 报告，如：SQL注入、报告、主题">
+  <div id="sres" style="margin-top:8px"></div>
+</div>
+
+<h2>⑤ 移动端适配（768px 断点）</h2>
+<div class="card">
+  <input id="vw" value="375" placeholder="视口宽度 px">
+  <button class="btn2" onclick="detectMobile()">检测布局</button>
+  <pre id="mout">调整窗口宽度，或输入 375 测试手机布局…</pre>
+</div>
+
+<div id="searchOverlay">
+  <div id="searchBox">
+    <input id="gq" placeholder="全局搜索… (Ctrl+K)" style="font-size:16px">
+    <div id="gres" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<script>
+const B="/api/v1/ux-upgrade";
+async function j(u,opt){const r=await fetch(B+u,opt);return r.json();}
+function show(id,d){document.getElementById(id).textContent=JSON.stringify(d,null,2);}
+
+async function init(){
+  const o=await j("/overview");const d=o.data||{};
+  document.getElementById('themeInfo').innerHTML='主题模式：<b>'+d.theme_mode+'</b> ｜ 搜索索引：'+d.search_index_size+' 条 ｜ 移动端断点：'+d.mobile_breakpoint+'px';
+  const h=await j("/homepage");
+  const s=(h.data?.stats)||{};
+  document.getElementById('stats').innerHTML=[
+    ['今日扫描',s.scans_today],['发现漏洞',s.vulns_found],['严重',s.critical],['报告',s.reports]
+  ].map(x=>`<div class="card"><div class="stat">${x[1]}</div><div class="label">${x[0]}</div></div>`).join('');
+  const g=await j("/guide/should-start?user_id=default");
+  document.getElementById('guideInfo').textContent=g.data.should_start?'首次进入：建议开始引导':'引导已完成，可随时重看';
+  const t=await j("/guide/tooltips");
+  document.getElementById('tooltips').innerHTML=Object.entries(t.data.tooltips).map(([k,v])=>`<span class="chip" title="${v}">${k}</span>`).join('');
+}
+async function toggleTheme(){const r=await j("/theme/toggle",{method:"POST"});document.getElementById('themeInfo').innerHTML='主题模式：<b>'+r.data.mode+'</b>';}
+async function quick(id){const r=await j("/homepage/quick-action",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({action_id:id})});alert(r.data.message);}
+async function startGuide(){const r=await j("/guide/start",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:"default"})});show('guideInfo',r.data);}
+async function nextGuide(){const r=await j("/guide/next",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:"default"})});show('guideInfo',r.data);}
+async function completeGuide(){const r=await j("/guide/complete",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:"default"})});show('guideInfo',r.data);}
+async function detectMobile(){const r=await j("/mobile/detect",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({width:Number(vw.value)})});show('mout',r.data);}
+async function doSearch(q,target){
+  const r=await j("/search?q="+encodeURIComponent(q));
+  const el=document.getElementById(target);
+  el.innerHTML=(r.data.results||[]).map(x=>`<div class="chip">[${x.kind}] ${x.title} → ${x.path}</div>`).join('')||'<span class="sub">无结果</span>';
+}
+document.getElementById('sq').addEventListener('input',e=>doSearch(e.target.value,'sres'));
+
+// Ctrl+K
+const ov=document.getElementById('searchOverlay'),gq=document.getElementById('gq');
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();ov.style.display='flex';gq.value='';gq.focus();}
+  if(e.key==='Escape'){ov.style.display='none';}
+});
+ov.addEventListener('click',e=>{if(e.target===ov)ov.style.display='none';});
+gq.addEventListener('input',e=>doSearch(e.target.value,'gres'));
+init();
+</script>
+</body>
+</html>

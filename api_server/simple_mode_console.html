@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>极简控制台 · AI Hacking Agent</title>
+<style>
+  :root{
+    --bg:#0d1117; --card:#161b22; --inset:#010409; --border:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --accent:#2ea043; --warn:#d29922; --danger:#f85149;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Segoe UI","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--fg);font-size:18px;
+    height:100vh;display:flex;flex-direction:column;overflow:hidden;
+  }
+  /* 顶部导航 */
+  .topbar{
+    height:60px;flex:0 0 60px;background:var(--card);border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:18px;padding:0 22px;
+  }
+  .topbar .logo{font-size:20px;font-weight:700;color:var(--accent)}
+  .topbar .cur{color:var(--muted);font-size:16px;flex:1}
+  .topbar button{
+    background:transparent;color:var(--fg);border:1px solid var(--border);
+    padding:9px 16px;border-radius:10px;font-size:15px;cursor:pointer;
+  }
+  .topbar button:hover{border-color:var(--accent);color:var(--accent)}
+  /* 三栏 */
+  .layout{flex:1;display:grid;grid-template-columns:26% 42% 32%;gap:12px;padding:12px;overflow:hidden}
+  .col{background:var(--card);border:1px solid var(--border);border-radius:14px;
+       display:flex;flex-direction:column;overflow:hidden}
+  .col h2{font-size:18px;padding:14px 18px;border-bottom:1px solid var(--border);color:var(--muted);font-weight:600}
+  .col .body{flex:1;overflow:auto;padding:16px}
+  /* 左侧 */
+  #btn-new-task{
+    width:100%;height:52px;background:var(--accent);color:#04260d;border:none;
+    border-radius:12px;font-size:19px;font-weight:700;cursor:pointer;margin-bottom:14px;
+  }
+  #btn-new-task:hover{background:#3fb950;transform:translateY(-1px)}
+  .task-item{
+    padding:12px 14px;border:1px solid var(--border);border-radius:10px;
+    margin-bottom:10px;cursor:pointer;font-size:16px;
+  }
+  .task-item:hover{border-color:var(--accent)}
+  .task-item.active{border-color:var(--accent);background:#2ea04318}
+  .task-item .tname{font-weight:600;margin-bottom:4px}
+  .task-item .tmeta{color:var(--muted);font-size:13px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:12px}
+  .badge.running{background:#1f6feb33;color:#79b8ff}
+  .badge.done{background:#2ea04333;color:#3fb950}
+  .badge.queued{background:#8b949e33;color:#8b949e}
+  .badge.failed{background:#f8514933;color:#ff7b72}
+  /* 中间 */
+  #feed-panel .progress-wrap{margin-bottom:16px}
+  .stagebar{display:flex;gap:6px;margin-bottom:10px}
+  .stage{flex:1;text-align:center;padding:8px 4px;border-radius:8px;background:var(--inset);
+         border:1px solid var(--border);font-size:12px;color:var(--muted)}
+  .stage.cur{border-color:var(--accent);color:var(--accent);background:#2ea04322}
+  .stage.done{color:var(--accent)}
+  .progress{height:14px;background:var(--inset);border-radius:7px;overflow:hidden}
+  .progress>div{height:100%;background:var(--accent);width:0;transition:width .4s}
+  .logbox{background:var(--inset);border:1px solid var(--border);border-radius:10px;
+          padding:12px;font-family:Consolas,monospace;font-size:13px;height:calc(100% - 90px);
+          overflow:auto;white-space:pre-wrap}
+  .logbox .l-info{color:#8b949e}
+  .logbox .l-success{color:#3fb950}
+  .logbox .l-warn{color:#d29922}
+  /* 右侧 */
+  .kv{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--border);font-size:15px}
+  .kv .k{color:var(--muted)}
+  .vuln-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+  .vuln-grid .v{background:var(--inset);border:1px solid var(--border);border-radius:10px;
+                text-align:center;padding:12px 4px}
+  .vuln-grid .v b{font-size:22px;display:block}
+  .big-btn{
+    width:100%;height:52px;background:var(--accent);color:#04260d;border:none;
+    border-radius:12px;font-size:18px;font-weight:700;cursor:pointer;margin-top:14px;
+  }
+  .big-btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--border)}
+  /* 引导遮罩 */
+  .guide-mask{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;
+              align-items:center;justify-content:center}
+  .guide-card{background:var(--card);border:1px solid var(--accent);border-radius:16px;
+              padding:28px;width:min(460px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .guide-card .step{color:var(--accent);font-size:14px;margin-bottom:6px}
+  .guide-card h3{font-size:22px;margin-bottom:10px}
+  .guide-card p{color:var(--muted);margin-bottom:18px;line-height:1.6}
+  .guide-card .row{display:flex;gap:10px;justify-content:flex-end}
+  .guide-card .row button{padding:10px 18px;border-radius:10px;border:none;cursor:pointer;font-size:15px}
+  .gnext{background:var(--accent);color:#04260d;font-weight:700}
+  .gskip{background:transparent;color:var(--muted);border:1px solid var(--border)!important}
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--accent);
+         padding:12px 18px;border-radius:10px;z-index:300;opacity:0;transition:.3s}
+  @media(max-width:900px){
+    .layout{grid-template-columns:1fr;overflow:auto}
+    .col{min-height:200px}
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <span class="logo">🛡️ AI 极简控制台</span>
+    <span class="cur" id="curTask">未选择任务</span>
+    <button onclick="location.href='/target-lab'">🎯 本地靶场</button>
+    <button onclick="location.href='/'">返回完整版</button>
+    <button onclick="replayGuide()">帮助</button>
+  </div>
+
+  <div class="layout">
+    <!-- 左：任务列表 -->
+    <div class="col" id="col-left">
+      <h2>📋 任务列表</h2>
+      <div class="body">
+        <button id="btn-new-task" onclick="openNewTask()">➕ 新建任务</button>
+        <div id="taskList"></div>
+      </div>
+    </div>
+
+    <!-- 中：实时动态 -->
+    <div class="col" id="feed-panel">
+      <h2>📡 实时动态</h2>
+      <div class="body">
+        <div class="progress-wrap">
+          <div class="stagebar" id="stagebar"></div>
+          <div class="progress"><div id="progBar"></div></div>
+        </div>
+        <div class="logbox" id="logbox">等待选择任务…</div>
+      </div>
+    </div>
+
+    <!-- 右：详情 -->
+    <div class="col" id="detail-panel">
+      <h2>🔍 详情</h2>
+      <div class="body" id="detailBody">选择左侧任务查看详情</div>
+    </div>
+  </div>
+
+  <!-- 新手引导遮罩 -->
+  <div class="guide-mask" id="guideMask">
+    <div class="guide-card">
+      <div class="step" id="gStep">第 1 步 / 共 3 步</div>
+      <h3 id="gTitle"></h3>
+      <p id="gBody"></p>
+      <div class="row">
+        <button class="gskip" onclick="skipGuide()">跳过</button>
+        <button class="gnext" id="gNext" onclick="nextGuide()">下一步</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/v1/simple';
+const SESSION = localStorage.getItem('simple_sid') || ('sid-' + Math.random().toString(36).slice(2,10));
+localStorage.setItem('simple_sid', SESSION);
+let curTaskId = null;
+let guideSteps = [];
+let guideIdx = 0;
+let pollTimer = null;
+
+async function jget(p){ const r = await fetch(API+p); return r.json(); }
+async function jpost(p, body){
+  const r = await fetch(API+p, {method:'POST', headers:{'Content-Type':'application/json'},
+    body: body?JSON.stringify(body):undefined});
+  return r.json();
+}
+async function jdel(p){ const r = await fetch(API+p, {method:'DELETE'}); return r.json(); }
+function toast(t){ const e=document.getElementById('toast'); e.textContent=t; e.style.opacity=1;
+  setTimeout(()=>e.style.opacity=0, 2200); }
+
+// ---------- 任务 ----------
+async function loadTasks(){
+  const d = await jget('/tasks');
+  const box = document.getElementById('taskList');
+  const tasks = (d.data && d.data.tasks) || [];
+  if(!tasks.length){ box.innerHTML = '<div style="color:var(--muted)">暂无任务，点上方新建</div>'; return; }
+  box.innerHTML = tasks.map(t=>`
+    <div class="task-item ${t.id===curTaskId?'active':''}" onclick="selectTask('${t.id}')">
+      <div class="tname">${t.name}</div>
+      <div class="tmeta">${t.target} · ${t.progress}%</div>
+      <span class="badge ${t.status}">${t.status}</span>
+    </div>`).join('');
+}
+
+async function openNewTask(){
+  const target = prompt('请输入测试目标 URL（仅限授权目标）：', 'http://127.0.0.1:8080');
+  if(!target) return;
+  const r = await jpost('/tasks', {target});
+  if(r.success){ toast('任务已创建'); selectTask(r.data.id); }
+  else toast('创建失败：' + r.error);
+}
+
+async function selectTask(id){
+  curTaskId = id;
+  document.getElementById('curTask').textContent = '当前任务 ' + id;
+  refreshDetail();
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(tickPoll, 1500);
+}
+
+async function tickPoll(){
+  if(!curTaskId) return;
+  const full = await jget('/tasks/' + curTaskId + '/detail');
+  if(!full.success){ return; }
+  const d = full.data;
+  renderDetail(d);
+  renderLogs(d.logs || []);
+  if(d.task.status === 'done' || d.task.status === 'failed'){
+    clearInterval(pollTimer); pollTimer = null;
+  }
+  loadTasks();
+}
+
+function renderDetail(d){
+  const t = d.task;
+  document.getElementById('progBar').style.width = (t.progress||0) + '%';
+  // stage bar
+  const stages = ['recon','fingerprint','dirscan','vuln','report'];
+  const names = ['信息收集','指纹','目录','漏洞','报告'];
+  document.getElementById('stagebar').innerHTML = stages.map((s,i)=>{
+    const cls = i < t.stage_index ? 'stage done' : (s===t.stage?'stage cur':'stage');
+    return `<div class="${cls}">${names[i]}</div>`;
+  }).join('');
+  // right panel
+  const vc = t.vuln_count || {};
+  document.getElementById('detailBody').innerHTML = `
+    <div class="kv"><span class="k">任务名</span><span>${t.name}</span></div>
+    <div class="kv"><span class="k">目标</span><span>${t.target}</span></div>
+    <div class="kv"><span class="k">状态</span><span class="badge ${t.status}">${t.status}</span></div>
+    <div class="kv"><span class="k">进度</span><span>${t.progress}%</span></div>
+    <div class="vuln-grid">
+      <div class="v"><b style="color:var(--danger)">${vc.high||0}</b>高</div>
+      <div class="v"><b style="color:var(--warn)">${vc.medium||0}</b>中</div>
+      <div class="v"><b style="color:#58a6ff">${vc.low||0}</b>低</div>
+      <div class="v"><b>${vc.info||0}</b>信息</div>
+    </div>
+    <button class="big-btn" onclick="downloadReport('${t.id}')">📄 下载报告</button>
+    <button class="big-btn ghost" onclick="cancelTask('${t.id}')">取消任务</button>
+  `;
+}
+
+function renderLogs(logs){
+  const box = document.getElementById('logbox');
+  box.innerHTML = logs.map(l=>`<div class="l-${l.level}">[${l.time}] ${l.message}</div>`).join('') || '暂无日志';
+  box.scrollTop = box.scrollHeight;
+}
+
+async function downloadReport(id){
+  const r = await jget('/tasks/' + id + '/report');
+  if(!r.success){ toast('报告未就绪'); return; }
+  const blob = new Blob([JSON.stringify(r.data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'report-' + id + '.json';
+  a.click();
+  toast('报告已下载');
+}
+
+async function cancelTask(id){
+  const r = await jpost('/tasks/' + id + '/cancel');
+  if(r.success){ toast('任务已取消'); loadTasks(); }
+}
+
+// ---------- 新手引导 ----------
+async function loadGuide(){
+  const d = await jget('/onboarding/steps');
+  guideSteps = (d.data && d.data.steps) || [];
+  const st = await jget('/onboarding/state?session_id=' + SESSION);
+  if(st.data && st.data.should_start){
+    guideIdx = (st.data.state.current_step || 1) - 1;
+    showGuide();
+  }
+}
+function showGuide(){
+  const s = guideSteps[Math.min(guideIdx, guideSteps.length-1)];
+  if(!s) return;
+  document.getElementById('guideMask').style.display = 'flex';
+  document.getElementById('gStep').textContent = `第 ${s.order} 步 / 共 ${guideSteps.length} 步`;
+  document.getElementById('gTitle').textContent = s.title;
+  document.getElementById('gBody').textContent = s.body;
+  document.getElementById('gNext').textContent = (s.order >= guideSteps.length) ? '完成' : '下一步';
+}
+async function nextGuide(){
+  await jpost('/onboarding/advance?session_id=' + SESSION);
+  if(guideIdx >= guideSteps.length - 1){
+    document.getElementById('guideMask').style.display = 'none';
+    toast('引导完成，开始使用吧！');
+  } else {
+    guideIdx++;
+    showGuide();
+  }
+}
+async function skipGuide(){
+  await jpost('/onboarding/finish?session_id=' + SESSION);
+  document.getElementById('guideMask').style.display = 'none';
+}
+async function replayGuide(){
+  await jpost('/onboarding/reset?session_id=' + SESSION);
+  guideIdx = 0;
+  showGuide();
+}
+
+// ---------- init ----------
+(async function(){
+  await loadTasks();
+  await loadGuide();
+})();
+</script>
+</body>
+</html>

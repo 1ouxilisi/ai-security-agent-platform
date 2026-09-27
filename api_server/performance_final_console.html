@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>性能最终优化控制台 · Round22-方向3</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --border:#2d333b; --fg:#e6edf3;
+    --muted:#8b949e; --accent:#2ea043; --warn:#d29922; --danger:#f85149;
+    --blue:#388bfd; --cyan:#39d353; --purple:#a371f7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--fg);font-family:"Segoe UI",Microsoft YaHei,monospace;
+       font-size:13px;line-height:1.5}
+  header{padding:14px 20px;background:linear-gradient(90deg,#161b22,#0d1117);
+         border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  header h1{font-size:17px;color:var(--cyan)}
+  header .sub{color:var(--muted);font-size:12px}
+  .badge{background:var(--danger);color:#fff;padding:2px 10px;border-radius:10px;font-size:11px}
+  nav{display:flex;flex-wrap:wrap;gap:6px;padding:10px 20px;border-bottom:1px solid var(--border);
+      background:#0a0e14;position:sticky;top:0;z-index:10}
+  nav button{background:var(--panel);color:var(--fg);border:1px solid var(--border);
+      padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px}
+  nav button.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+  nav button:hover{border-color:var(--blue)}
+  main{padding:18px 20px;max-width:1400px;margin:0 auto}
+  .tab{display:none}
+  .tab.active{display:block}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:14px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px}
+  .card h3{font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+  .kpi{font-size:24px;font-weight:700;color:var(--cyan)}
+  .kpi.warn{color:var(--warn)} .kpi.danger{color:var(--danger)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  button.act{background:#21262d;color:var(--fg);border:1px solid var(--border);padding:6px 12px;
+      border-radius:6px;cursor:pointer;font-size:12px}
+  button.act:hover{border-color:var(--cyan);color:var(--cyan)}
+  input,select{background:#0d1117;color:var(--fg);border:1px solid var(--border);
+      padding:6px 8px;border-radius:5px;font-size:12px}
+  textarea{width:100%;min-height:60px;background:#0d1117;color:var(--fg);border:1px solid var(--border);
+      border-radius:5px;padding:8px;font-family:monospace;font-size:12px}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+  th,td{border:1px solid var(--border);padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:#21262d;color:var(--muted)}
+  tr:nth-child(even){background:#11161d}
+  .bar{height:8px;background:#21262d;border-radius:4px;overflow:hidden;margin-top:4px}
+  .bar>i{display:block;height:100%;background:var(--cyan)}
+  pre{background:#0a0e14;border:1px solid var(--border);border-radius:6px;padding:10px;
+      overflow:auto;max-height:340px;font-size:11px;white-space:pre-wrap;word-break:break-all}
+  .muted{color:var(--muted)} .ok{color:var(--accent)} .warn{color:var(--warn)} .danger{color:var(--danger)}
+  .tag{display:inline-block;padding:1px 7px;border-radius:9px;font-size:11px;margin:1px}
+  .tag.g{background:#123} .tag.y{background:#3a2e12;color:var(--warn)} .tag.r{background:#3a1215;color:var(--danger)}
+  footer{padding:14px 20px;color:var(--muted);border-top:1px solid var(--border);font-size:11px;text-align:center}
+  @media(max-width:640px){ .grid{grid-template-columns:1fr} main{padding:10px} }
+</style>
+</head>
+<body>
+<header>
+  <h1>🚀 性能最终优化控制台</h1>
+  <span class="sub">Round22 · 方向3 · 压测 / 瓶颈 / 启动 / API / 内存 / 监控告警</span>
+  <span class="badge" id="statusBadge">离线</span>
+</header>
+<nav id="nav">
+  <button data-tab="t-ov" class="active">总览</button>
+  <button data-tab="t-load">全链路压测</button>
+  <button data-tab="t-bn">瓶颈定位</button>
+  <button data-tab="t-start">启动优化</button>
+  <button data-tab="t-api">API优化</button>
+  <button data-tab="t-mem">内存资源</button>
+  <button data-tab="t-dash">监控告警</button>
+</nav>
+<main>
+
+<!-- ===================== 总览 ===================== -->
+<section class="tab active" id="t-ov">
+  <div class="row">
+    <button class="act" onclick="ovLoad()">刷新总览</button>
+    <button class="act" onclick="ovPoll()">实时采样</button>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>CPU</h3><div id="ovCpu" class="kpi">—</div></div>
+    <div class="card"><h3>内存 RSS</h3><div id="ovMem" class="kpi">—</div></div>
+    <div class="card"><h3>QPS</h3><div id="ovQps" class="kpi">—</div></div>
+    <div class="card"><h3>P95 延迟</h3><div id="ovP95" class="kpi warn">—</div></div>
+  </div>
+  <div class="card">
+    <h3>模块清单 / SLO</h3>
+    <div id="ovMod" class="muted">点击「刷新总览」加载</div>
+  </div>
+</section>
+
+<!-- ===================== 全链路压测 ===================== -->
+<section class="tab" id="t-load">
+  <div class="row">
+    <button class="act" onclick="ldScenarios()">压测场景</button>
+    <button class="act" onclick="ldConfig()">默认配置</button>
+    <button class="act" onclick="ldRun()">执行压测</button>
+    <button class="act" onclick="ldReport()">压测报告</button>
+    <button class="act" onclick="ldHistory()">历史趋势</button>
+    <button class="act" onclick="ldGate()">CI 门禁</button>
+    <button class="act" onclick="ldAuto()">自动化配置</button>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>并发用户</h3><input id="ldUsers" type="number" value="30" style="width:100%"></div>
+    <div class="card"><h3>持续秒</h3><input id="ldDur" type="number" value="5" style="width:100%"></div>
+    <div class="card"><h3>请求速率</h3><input id="ldRps" type="number" value="100" style="width:100%"></div>
+  </div>
+  <div class="card"><h3>压测结果</h3><div id="ldResult" class="muted">—</div></div>
+  <div class="card"><h3>明细</h3><div id="ldTable"></div></div>
+</section>
+
+<!-- ===================== 瓶颈定位 ===================== -->
+<section class="tab" id="t-bn">
+  <div class="row">
+    <button class="act" onclick="bnDetect()">资源瓶颈</button>
+    <button class="act" onclick="bnScan()">扫描源码</button>
+    <button class="act" onclick="bnMethods()">定位方法</button>
+    <button class="act" onclick="bnFlame()">火焰图</button>
+    <button class="act" onclick="bnFix()">修复方案</button>
+    <button class="act" onclick="bnVerify()">修复验证</button>
+    <button class="act" onclick="bnTune()">调优指南</button>
+    <button class="act" onclick="bnPractice()">最佳实践</button>
+  </div>
+  <div class="card"><h3>资源采样</h3><div id="bnDetect" class="muted">—</div></div>
+  <div class="card"><h3>源码命中 / 火焰图 / 修复</h3><div id="bnTable"></div></div>
+</section>
+
+<!-- ===================== 启动优化 ===================== -->
+<section class="tab" id="t-start">
+  <div class="row">
+    <button class="act" onclick="stAnalyze()">启动分析</button>
+    <button class="act" onclick="stLazy()">懒加载建议</button>
+    <button class="act" onclick="stWarmup()">执行预热</button>
+    <button class="act" onclick="stDeps()">依赖优化</button>
+    <button class="act" onclick="stConfig()">配置目标</button>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>运行时长</h3><div id="stUptime" class="kpi">—</div></div>
+    <div class="card"><h3>已加载模块</h3><div id="stMods" class="kpi">—</div></div>
+    <div class="card"><h3>瓶颈阶段</h3><div id="stBn" class="kpi warn">—</div></div>
+  </div>
+  <div class="card"><h3>明细</h3><div id="stTable"></div></div>
+</section>
+
+<!-- ===================== API 优化 ===================== -->
+<section class="tab" id="t-api">
+  <div class="row">
+    <button class="act" onclick="apLatency()">延迟分布</button>
+    <button class="act" onclick="apSlow()">慢端点</button>
+    <button class="act" onclick="apThroughput()">吞吐/并发</button>
+    <button class="act" onclick="apCache()">缓存统计</button>
+    <button class="act" onclick="apCacheGet()">读缓存</button>
+    <button class="act" onclick="apCacheInv()">清缓存</button>
+    <button class="act" onclick="apDb()">DB建议</button>
+    <button class="act" onclick="apCompress()">压缩实测</button>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>P95 延迟</h3><div id="apP95" class="kpi">—</div></div>
+    <div class="card"><h3>缓存命中率</h3><div id="apHit" class="kpi">—</div></div>
+    <div class="card"><h3>Gzip 节省</h3><div id="apGzip" class="kpi ok">—</div></div>
+  </div>
+  <div class="card"><h3>明细</h3><div id="apTable"></div></div>
+</section>
+
+<!-- ===================== 内存资源 ===================== -->
+<section class="tab" id="t-mem">
+  <div class="row">
+    <button class="act" onclick="mmSnap()">内存快照</button>
+    <button class="act" onclick="mmTrend()">内存趋势</button>
+    <button class="act" onclick="mmLeak()">泄漏检测</button>
+    <button class="act" onclick="mmTips()">优化建议</button>
+    <button class="act" onclick="mmPool()">对象池</button>
+    <button class="act" onclick="mmGc()">GC 状态</button>
+    <button class="act" onclick="mmUsage()">资源使用</button>
+    <button class="act" onclick="mmLimits()">资源限制</button>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>RSS</h3><div id="mmRss" class="kpi">—</div></div>
+    <div class="card"><h3>线程数</h3><div id="mmThreads" class="kpi">—</div></div>
+    <div class="card"><h3>GC 对象</h3><div id="mmGcObj" class="kpi">—</div></div>
+  </div>
+  <div class="card"><h3>明细</h3><div id="mmTable"></div></div>
+</section>
+
+<!-- ===================== 监控告警 ===================== -->
+<section class="tab" id="t-dash">
+  <div class="row">
+    <button class="act" onclick="dhRealtime()">实时采样</button>
+    <button class="act" onclick="dhMetrics()">指标体系</button>
+    <button class="act" onclick="dhAlerts()">告警列表</button>
+    <button class="act" onclick="dhViews()">仪表盘视图</button>
+    <button class="act" onclick="dhLogs()">性能日志</button>
+    <button class="act" onclick="dhReport()">性能报告</button>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>实时 CPU</h3><div id="dhCpu" class="kpi">—</div></div>
+    <div class="card"><h3>实时 P95</h3><div id="dhP95" class="kpi warn">—</div></div>
+    <div class="card"><h3>错误率</h3><div id="dhErr" class="kpi">—</div></div>
+  </div>
+  <div class="card"><h3>告警 / 报告</h3><div id="dhTable"></div></div>
+</section>
+
+</main>
+<footer>性能最终优化 · Round22 方向3 · 统一响应 {success,data,error} · 真实 psutil 采样 / 源码扫描 / 压测执行</footer>
+
+<script>
+const BASE = "/api/v1/performance-final";
+function setBadge(ok){
+  const b=document.getElementById("statusBadge");
+  b.textContent = ok?"已连接":"离线";
+  b.style.background = ok?"var(--accent)":"var(--danger)";
+}
+async function api(path, opts){
+  try{
+    const r = await fetch(BASE+path, Object.assign({headers:{"Content-Type":"application/json"}}, opts||{}));
+    const j = await r.json();
+    setBadge(j.success);
+    if(!j.success) throw new Error(j.error||"error");
+    return j.data;
+  }catch(e){
+    setBadge(false);
+    console.error(e);
+    return {__error:String(e)};
+  }
+}
+function table(rows, cols){
+  if(!rows||!rows.length) return '<div class="muted">无数据</div>';
+  let h='<table><tr>'+cols.map(c=>'<th>'+c.k+'</th>').join('')+'</tr>';
+  rows.slice(0,40).forEach(r=>{
+    h+='<tr>'+cols.map(c=>'<td>'+esc(r[c.k])+'</td>').join('')+'</tr>';
+  });
+  return h+'</table>';
+}
+function esc(v){ if(v===null||v===undefined)return'';
+  if(typeof v==='object') return JSON.stringify(v).slice(0,200);
+  return String(v).replace(/[<>]/g,c=>({'<':'&lt;','>':'&gt;'}[c])); }
+
+document.getElementById("nav").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b)return;
+  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  document.getElementById(b.dataset.tab).classList.add("active");
+});
+
+// ---------- 总览 ----------
+async function ovLoad(){
+  const d=await api("/overview"); const m=d.realtime||{};
+  document.getElementById("ovCpu").textContent=(m.cpu_pct??m.cpu??'—')+'%';
+  document.getElementById("ovMem").textContent=(m.mem_mb??'—')+'MB';
+  document.getElementById("ovQps").textContent=m.qps??'—';
+  document.getElementById("ovP95").textContent=(m.p95_ms??'—')+'ms';
+  document.getElementById("ovMod").innerHTML =
+    '模块: '+(d.modules||[]).join(', ')+'<br>psutil: '+d.psutil+
+    '<br>SLO 可用率: '+(d.slo&&d.slo.availability);
+}
+async function ovPoll(){ for(let i=0;i<3;i++){ await ovLoad(); await new Promise(r=>setTimeout(r,400)); } }
+
+// ---------- 压测 ----------
+async function ldScenarios(){
+  const d=await api("/load/scenarios");
+  document.getElementById("ldTable").innerHTML=table(d.scenarios,
+    [{k:'id'},{k:'name'},{k:'desc'}]);
+}
+async function ldConfig(){
+  const d=await api("/load/config?scenario=api");
+  document.getElementById("ldResult").innerHTML='<pre>'+esc(d)+'</pre>';
+}
+async function ldRun(){
+  const users=+document.getElementById("ldUsers").value||30;
+  const dur=+document.getElementById("ldDur").value||5;
+  const rps=+document.getElementById("ldRps").value||100;
+  const d=await api("/load/run",{method:"POST",
+    body:JSON.stringify({scenario:"api",concurrent_users:users,duration_sec:dur,requests_per_sec:rps})});
+  const r=d.result||d; const l=r.latency_ms||{};
+  document.getElementById("ldResult").innerHTML=
+    '吞吐 <b class="kpi">'+r.throughput_rps+' rps</b><br>'+
+    'P50 '+l.p50+' · P95 <b>'+l.p95+'</b> · P99 '+l.p99+'<br>'+
+    '错误率 '+r.error_rate+' · 耗时 '+r.elapsed_sec+'s<br>'+
+    '<span class="warn">瓶颈: '+esc(r.bottleneck)+'</span>';
+}
+async function ldReport(){
+  const d=await api("/load/report");
+  document.getElementById("ldTable").innerHTML=
+    '<pre>'+esc(d)+'</pre>';
+}
+async function ldHistory(){
+  const d=await api("/load/history");
+  document.getElementById("ldTable").innerHTML=table(d.series,
+    [{k:'run_id'},{k:'scenario'},{k:'throughput'},{k:'p95_ms'},{k:'error_rate'}]);
+}
+async function ldGate(){
+  const d=await api("/load/ci-gate");
+  document.getElementById("ldResult").innerHTML=
+    '门禁: '+(d.passed?'<span class="ok">通过</span>':'<span class="danger">未过</span>')+
+    '<br><pre>'+esc(d.checks)+'</pre>';
+}
+async function ldAuto(){
+  const d=await api("/load/automation");
+  document.getElementById("ldTable").innerHTML='<pre>'+esc(d)+'</pre>';
+}
+
+// ---------- 瓶颈 ----------
+async function bnDetect(){
+  const d=await api("/bottleneck/detect");
+  document.getElementById("bnDetect").innerHTML=table(d.findings,
+    [{k:'type'},{k:'value_pct'},{k:'value_mb'},{k:'level'},{k:'risk'},{k:'error'}]);
+}
+async function bnScan(){
+  const d=await api("/bottleneck/scan-source?max_files=200");
+  const r=d.result||d;
+  document.getElementById("bnTable").innerHTML=
+    '扫描 '+r.files_scanned+' 文件，命中 '+r.total_hits+'<br>'+
+    table(r.hits,[{k:'file'},{k:'line'},{k:'pattern'},{k:'issue'}]);
+}
+async function bnMethods(){
+  const d=await api("/bottleneck/methods");
+  document.getElementById("bnTable").innerHTML=table(d.methods,
+    [{k:'id'},{k:'name'},{k:'tool'}]);
+}
+async function bnFlame(){
+  const d=await api("/bottleneck/flame?top=10");
+  document.getElementById("bnTable").innerHTML=
+    '热点: <b class="danger">'+esc(d.hotspot)+'</b><br>'+
+    (d.frames||[]).map(f=>'<div style="margin:3px 0"><span class="muted">'+f.fn+'</span>'+
+    '<div class="bar"><i style="width:'+f.pct+'%"></i></div></div>').join('');
+}
+async function bnFix(){
+  const d=await api("/bottleneck/fix-suggestions");
+  document.getElementById("bnTable").innerHTML=table(d.fixes,
+    [{k:'area'},{k:'action'},{k:'impact'}]);
+}
+async function bnVerify(){
+  const d=await api("/bottleneck/verify?baseline=22&optimized=9",{method:"POST"});
+  document.getElementById("bnTable").innerHTML=
+    '基线 '+d.baseline_ms+'ms → 优化 '+d.optimized_ms+'ms<br>'+
+    '提升 <b class="ok">'+d.improvement_pct+'%</b><br>'+
+    '回归检查: '+d.regression_check;
+}
+async function bnTune(){
+  const d=await api("/bottleneck/tuning-guide");
+  document.getElementById("bnTable").innerHTML='<pre>'+esc(d)+'</pre>';
+}
+async function bnPractice(){
+  const d=await api("/bottleneck/best-practices");
+  document.getElementById("bnTable").innerHTML=table(d.practices,
+    [{k:'domain'},{k:'rule'}]);
+}
+
+// ---------- 启动 ----------
+async function stAnalyze(){
+  const d=await api("/startup/analyze");
+  document.getElementById("stUptime").textContent=(d.uptime_sec??'—')+'s';
+  document.getElementById("stMods").textContent=d.imported_modules??'—';
+  document.getElementById("stBn").textContent=d.bottleneck??'—';
+  document.getElementById("stTable").innerHTML=
+    '估算导入 '+d.total_estimated_import_total_ms+'ms · psutil '+d.psutil+
+    '<br>阶段:<pre>'+esc(d.stages)+'</pre>';
+}
+async function stLazy(){
+  const d=await api("/startup/lazy-advice");
+  document.getElementById("stTable").innerHTML='<pre>'+esc(d)+'</pre>';
+}
+async function stWarmup(){
+  const d=await api("/startup/warmup",{method:"POST"});
+  document.getElementById("stTable").innerHTML='预热耗时 '+d.elapsed_ms+'ms<br><pre>'+esc(d)+'</pre>';
+}
+async function stDeps(){
+  const d=await api("/startup/deps");
+  document.getElementById("stTable").innerHTML=
+    '第三方依赖 '+d.loaded_third_party+'<br><pre>'+esc(d.actions)+'</pre>';
+}
+async function stConfig(){
+  const d=await api("/startup/config");
+  document.getElementById("stTable").innerHTML='<pre>'+esc(d)+'</pre>';
+}
+
+// ---------- API ----------
+async function apLatency(){
+  const d=await api("/api/latency"); const o=d.overall||{};
+  document.getElementById("apP95").textContent=(o.p95??'—')+'ms';
+  document.getElementById("apTable").innerHTML=
+    'P50 '+o.p50+' · P90 '+o.p90+' · P95 '+o.p95+' · P99 '+o.p99+
+    '<br>平均 '+o.avg+' · 最大 '+o.max+' · 样本 '+o.count;
+}
+async function apSlow(){
+  const d=await api("/api/slow-endpoints");
+  document.getElementById("apTable").innerHTML=table(d.slow_endpoints,
+    [{k:'endpoint'},{k:'calls'},{k:'p95'},{k:'p99'}]);
+}
+async function apThroughput(){
+  const d=await api("/api/throughput");
+  document.getElementById("apTable").innerHTML=
+    '单节点 '+d.qps_single_node+' · 峰值 '+d.qps_peak+
+    '<br>持续 '+d.qps_sustained+' · 当前并发 '+d.current_concurrency;
+}
+async function apCache(){
+  const d=await api("/api/cache/stats");
+  document.getElementById("apHit").textContent=(d.hit_rate*100).toFixed(1)+'%';
+  document.getElementById("apTable").innerHTML=
+    '命中 '+d.hits+' / 未命中 '+d.misses+' · 大小 '+d.size+
+    '<br>目标 '+((d.target*100).toFixed(0))+'% → '+(d.ok?'达标':'未达标');
+}
+async function apCacheGet(){
+  const d=await api("/api/cache/get?key=demo-"+Date.now());
+  document.getElementById("apTable").innerHTML='<pre>'+esc(d)+'</pre>';
+  apCache();
+}
+async function apCacheInv(){
+  await api("/api/cache/invalidate?namespace=",{method:"POST"});
+  apCache();
+}
+async function apDb(){
+  const d=await api("/api/db-advice");
+  document.getElementById("apTable").innerHTML='<pre>'+esc(d)+'</pre>';
+}
+async function apCompress(){
+  const d=await api("/api/compress?level=6");
+  document.getElementById("apGzip").textContent=d.saved_pct+'%';
+  document.getElementById("apTable").innerHTML=
+    '原始 '+d.raw_bytes+'B → Gzip '+d.gzip_bytes+'B<br>'+esc(d.note);
+}
+
+// ---------- 内存 ----------
+async function mmSnap(){
+  const d=await api("/memory/snapshot");
+  document.getElementById("mmRss").textContent=(d.rss_mb??'—')+'MB';
+  document.getElementById("mmThreads").textContent=d.threads??'—';
+  document.getElementById("mmGcObj").textContent=d.py_objects??'—';
+}
+async function mmTrend(){
+  const d=await api("/memory/trend");
+  document.getElementById("mmTable").innerHTML='<pre>'+esc(d.samples.slice(-10))+'</pre>';
+}
+async function mmLeak(){
+  const d=await api("/memory/leak"); const r=d.result||d;
+  document.getElementById("mmTable").innerHTML=table(r.issues,
+    [{k:'type'},{k:'value'},{k:'reclaimed'},{k:'risk'},{k:'before'},{k:'after'}]);
+}
+async function mmTips(){
+  const d=await api("/memory/tips");
+  document.getElementById("mmTable").innerHTML='<pre>'+esc(d)+'</pre>';
+}
+async function mmPool(){
+  const d=await api("/memory/pool?n=200",{method:"POST"});
+  document.getElementById("mmTable").innerHTML='对象池大小 '+d.pool_size+'<br>'+esc(d.tip);
+}
+async function mmGc(){
+  const d=await api("/memory/gc");
+  document.getElementById("mmTable").innerHTML='<pre>'+esc(d)+'</pre>';
+}
+async function mmUsage(){
+  const d=await api("/memory/usage");
+  document.getElementById("mmTable").innerHTML='<pre>'+esc(d)+'</pre>';
+}
+async function mmLimits(){
+  const d=await api("/memory/limits");
+  document.getElementById("mmTable").innerHTML='<pre>'+esc(d)+'</pre>';
+}
+
+// ---------- 监控 ----------
+async function dhRealtime(){
+  const d=await api("/dashboard/realtime"); const m=d.metrics||{};
+  document.getElementById("dhCpu").textContent=(m.cpu_pct??'—')+'%';
+  document.getElementById("dhP95").textContent=(m.p95_ms??'—')+'ms';
+  document.getElementById("dhErr").textContent=(m.error_rate??'—');
+}
+async function dhMetrics(){
+  const d=await api("/dashboard/metrics");
+  document.getElementById("dhTable").innerHTML='<pre>'+esc(d)+'</pre>';
+}
+async function dhAlerts(){
+  const d=await api("/dashboard/alerts");
+  document.getElementById("dhTable").innerHTML=table(d.alerts,
+    [{k:'key'},{k:'level'},{k:'msg'},{k:'t'}]);
+}
+async function dhViews(){
+  const d=await api("/dashboard/views");
+  document.getElementById("dhTable").innerHTML='视图: '+(d.views||[]).join(' · ');
+}
+async function dhLogs(){
+  const d=await api("/dashboard/logs");
+  document.getElementById("dhTable").innerHTML=table(d.logs,
+    [{k:'type'},{k:'sample'},{k:'volume'}]);
+}
+async function dhReport(){
+  const d=await api("/dashboard/report");
+  document.getElementById("dhTable").innerHTML=
+    '<b>'+esc(d.summary)+'</b><br>P95 均值 '+d.p95_avg+'ms<br>'+
+    '瓶颈: '+esc(d.bottlenecks)+'<br>'+
+    '<pre>'+esc(d.improvement_tracking)+'</pre>';
+}
+
+// 初始
+ovLoad();
+</script>
+</body>
+</html>

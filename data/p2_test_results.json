@@ -1,0 +1,36 @@
+{
+  "stage": "P2",
+  "total": 5,
+  "passed": 5,
+  "failed": 0,
+  "pass_rate": "100.0%",
+  "duration": "4.81s",
+  "results": [
+    {
+      "module": "Web UI管理后台",
+      "status": "passed",
+      "description": "8个管理页面+3个数据可视化图表"
+    },
+    {
+      "module": "通知系统",
+      "status": "passed",
+      "description": "4种通知渠道+告警规则+快捷通知"
+    },
+    {
+      "module": "扫描工具集成",
+      "status": "passed",
+      "description": "15种安全扫描工具+统一结果解析"
+    },
+    {
+      "module": "API网关",
+      "status": "passed",
+      "description": "密钥管理+权限控制+限流+日志+缓存"
+    },
+    {
+      "module": "项目结构完整性",
+      "status": "passed",
+      "description": "P2目录结构+P1模块保留验证"
+    }
+  ],
+  "timestamp": "2026-08-29 22:24:19"
+}

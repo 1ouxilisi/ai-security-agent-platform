@@ -1,0 +1,61 @@
+# =============================================================================
+# Kubernetes Ingress - SecurityAI Platform
+# Nginx Ingress Controller 配置，含 TLS 终止 + 限流 + 超时
+# 使用方式: kubectl apply -f ingress.yaml
+# 前置条件: 集群已安装 ingress-nginx controller
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: security-platform-ingress
+  namespace: security-platform
+  labels:
+    app: security-platform
+  annotations:
+    # === Ingress Controller 类型 ===
+    kubernetes.io/ingress.class: "nginx"
+
+    # === 限流配置 ===
+    # 客户端请求体最大 50MB (适配大文件上传/扫描报告)
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    # 按 IP 限流: 10 请求/秒，突发 20
+    nginx.ingress.kubernetes.io/limit-connections: "50"
+    nginx.ingress.kubernetes.io/limit-rps: "10"
+
+    # === 超时配置 (适配长扫描任务) ===
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+
+    # === 缓冲配置 ===
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+
+    # === 重写配置 ===
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
+    # === CORS 跨域配置 ===
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+
+spec:
+  # === TLS 配置 ===
+  tls:
+    - hosts:
+        - security.example.com           # 替换为实际域名
+      secretName: security-platform-tls   # TLS 证书 Secret (需提前创建)
+
+  # === 路由规则 ===
+  rules:
+    - host: security.example.com          # 替换为实际域名
+      http:
+        paths:
+          # 所有路径路由到后端 Service
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: security-platform-service
+                port:
+                  number: 8000

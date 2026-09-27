@@ -1,0 +1,2807 @@
+{
+  "audit-af84ec0c28": {
+    "audit_id": "audit-af84ec0c28",
+    "framework": "mlps2",
+    "framework_label": "网络安全等级保护2.0",
+    "created_at": 1789205663.539106,
+    "target": "",
+    "results": [
+      {
+        "check_id": "ML-PH-01",
+        "name": "机房选址与防震防风防水",
+        "category": "物理安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "机房应避开危险区域，采取防水防潮措施"
+      },
+      {
+        "check_id": "ML-PH-02",
+        "name": "物理访问控制",
+        "category": "物理安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "机房出入口应配置电子门禁系统，控制、鉴别和记录进入人员"
+      },
+      {
+        "check_id": "ML-PH-03",
+        "name": "防盗防破坏与媒体保护",
+        "category": "物理安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.3",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "设备应固定并加锁，存储介质应有物理保护"
+      },
+      {
+        "check_id": "ML-NW-01",
+        "name": "网络架构与带宽",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.4",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应保证网络设备的业务处理能力满足业务高峰需要"
+      },
+      {
+        "check_id": "ML-NW-02",
+        "name": "网络访问控制",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.5",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在网络边界部署访问控制设备，启用访问控制功能"
+      },
+      {
+        "check_id": "ML-NW-03",
+        "name": "入侵防范",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.6",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在网络边界处监视攻击行为并告警"
+      },
+      {
+        "check_id": "ML-NW-04",
+        "name": "恶意代码防范",
+        "category": "网络安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.7",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在关键节点对恶意代码进行检测和清除"
+      },
+      {
+        "check_id": "ML-NW-05",
+        "name": "安全审计",
+        "category": "网络安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.8",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对网络系统运行状态和用户行为进行审计，留存不少于6个月"
+      },
+      {
+        "check_id": "ML-HS-01",
+        "name": "身份鉴别",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.9",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对登录用户进行身份标识和鉴别，口令复杂度达标"
+      },
+      {
+        "check_id": "ML-HS-02",
+        "name": "访问控制",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.10",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应授予管理用户所需的最小权限"
+      },
+      {
+        "check_id": "ML-HS-03",
+        "name": "安全审计",
+        "category": "主机安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.11",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应启用安全审计功能，覆盖每个用户"
+      },
+      {
+        "check_id": "ML-HS-04",
+        "name": "入侵防范",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.12",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应遵循最小安装原则，关闭不需要的端口和服务"
+      },
+      {
+        "check_id": "ML-HS-05",
+        "name": "资源控制",
+        "category": "主机安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.13",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对资源使用限额进行控制"
+      },
+      {
+        "check_id": "ML-AP-01",
+        "name": "身份鉴别",
+        "category": "应用安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.14",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用口令、密码技术等两种或以上组合技术进行身份鉴别"
+      },
+      {
+        "check_id": "ML-AP-02",
+        "name": "访问控制",
+        "category": "应用安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.15",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应由授权主体配置访问控制策略"
+      },
+      {
+        "check_id": "ML-AP-03",
+        "name": "通信安全",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.16",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证通信过程中数据的完整性和保密性"
+      },
+      {
+        "check_id": "ML-AP-04",
+        "name": "软件容错",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.17",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应提供数据有效性检验功能"
+      },
+      {
+        "check_id": "ML-AP-05",
+        "name": "资源控制",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.18",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应限制用户终端超时锁定和并发会话数"
+      },
+      {
+        "check_id": "ML-DS-01",
+        "name": "数据完整性",
+        "category": "数据安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.19",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证重要数据传输和存储完整性"
+      },
+      {
+        "check_id": "ML-DS-02",
+        "name": "数据保密性",
+        "category": "数据安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.20",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证重要数据存储保密性"
+      },
+      {
+        "check_id": "ML-DS-03",
+        "name": "数据备份恢复",
+        "category": "数据安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.21",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应提供本地数据备份与恢复功能，完全备份至少每天一次"
+      },
+      {
+        "check_id": "ML-MG-01",
+        "name": "安全管理制度制定",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.2.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应制定信息安全工作的总体方针和安全策略"
+      },
+      {
+        "check_id": "ML-MG-02",
+        "name": "安全制度发布评审",
+        "category": "安全管理",
+        "risk_level": "低",
+        "standard_clause": "8.2.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应定期对制度进行评审和更新"
+      },
+      {
+        "check_id": "ML-MG-03",
+        "name": "安全管理机构设置",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.3.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应成立指导和管理信息安全工作的委员会"
+      },
+      {
+        "check_id": "ML-MG-04",
+        "name": "人员录用与离岗管理",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.3.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应及时终止离岗人员所有访问权限"
+      },
+      {
+        "check_id": "ML-MG-05",
+        "name": "人员安全意识培训",
+        "category": "安全管理",
+        "risk_level": "低",
+        "standard_clause": "8.4.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对各类人员进行安全意识教育培训"
+      },
+      {
+        "check_id": "ML-MG-06",
+        "name": "外部人员访问管理",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.4.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对外部人员访问机房等区域进行审批"
+      },
+      {
+        "check_id": "ML-MG-07",
+        "name": "系统建设方案审批",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.5.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "保证建设过程同步考虑安全"
+      },
+      {
+        "check_id": "ML-MG-08",
+        "name": "上线前安全测评",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.5.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "上线前应进行安全性测试和验收"
+      },
+      {
+        "check_id": "ML-MG-09",
+        "name": "运维漏洞与风险管理",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.6.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应定期进行漏洞扫描和风险评估"
+      },
+      {
+        "check_id": "ML-MG-10",
+        "name": "应急预案与演练",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.6.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应制定应急预案并定期演练"
+      }
+    ],
+    "report": {
+      "total_items": 31,
+      "applicable_items": 0,
+      "passed": 0,
+      "failed": 0,
+      "not_applicable": 31,
+      "compliance_rate": 0.0,
+      "by_category": {
+        "物理安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 3
+        },
+        "网络安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "主机安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "应用安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "数据安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 3
+        },
+        "安全管理": {
+          "pass": 0,
+          "fail": 0,
+          "na": 10
+        }
+      },
+      "non_compliant_items": [],
+      "risk_summary": {},
+      "remediation_plan": []
+    }
+  },
+  "audit-2438e582bc": {
+    "audit_id": "audit-2438e582bc",
+    "framework": "mlps2",
+    "framework_label": "网络安全等级保护2.0",
+    "created_at": 1789205842.3120017,
+    "target": "测试系统",
+    "results": [
+      {
+        "check_id": "ML-PH-01",
+        "name": "机房选址与防震防风防水",
+        "category": "物理安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.1",
+        "status": "pass",
+        "evidence": "已部署防火墙",
+        "notes": "",
+        "remediation": "机房应避开危险区域，采取防水防潮措施"
+      },
+      {
+        "check_id": "ML-PH-02",
+        "name": "物理访问控制",
+        "category": "物理安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.2",
+        "status": "pass",
+        "evidence": "已配置访问控制",
+        "notes": "",
+        "remediation": "机房出入口应配置电子门禁系统，控制、鉴别和记录进入人员"
+      },
+      {
+        "check_id": "ML-PH-03",
+        "name": "防盗防破坏与媒体保护",
+        "category": "物理安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.3",
+        "status": "fail",
+        "evidence": "未部署入侵检测",
+        "notes": "",
+        "remediation": "设备应固定并加锁，存储介质应有物理保护"
+      },
+      {
+        "check_id": "ML-NW-01",
+        "name": "网络架构与带宽",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.4",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应保证网络设备的业务处理能力满足业务高峰需要"
+      },
+      {
+        "check_id": "ML-NW-02",
+        "name": "网络访问控制",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.5",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在网络边界部署访问控制设备，启用访问控制功能"
+      },
+      {
+        "check_id": "ML-NW-03",
+        "name": "入侵防范",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.6",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在网络边界处监视攻击行为并告警"
+      },
+      {
+        "check_id": "ML-NW-04",
+        "name": "恶意代码防范",
+        "category": "网络安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.7",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在关键节点对恶意代码进行检测和清除"
+      },
+      {
+        "check_id": "ML-NW-05",
+        "name": "安全审计",
+        "category": "网络安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.8",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对网络系统运行状态和用户行为进行审计，留存不少于6个月"
+      },
+      {
+        "check_id": "ML-HS-01",
+        "name": "身份鉴别",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.9",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对登录用户进行身份标识和鉴别，口令复杂度达标"
+      },
+      {
+        "check_id": "ML-HS-02",
+        "name": "访问控制",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.10",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应授予管理用户所需的最小权限"
+      },
+      {
+        "check_id": "ML-HS-03",
+        "name": "安全审计",
+        "category": "主机安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.11",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应启用安全审计功能，覆盖每个用户"
+      },
+      {
+        "check_id": "ML-HS-04",
+        "name": "入侵防范",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.12",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应遵循最小安装原则，关闭不需要的端口和服务"
+      },
+      {
+        "check_id": "ML-HS-05",
+        "name": "资源控制",
+        "category": "主机安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.13",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对资源使用限额进行控制"
+      },
+      {
+        "check_id": "ML-AP-01",
+        "name": "身份鉴别",
+        "category": "应用安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.14",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用口令、密码技术等两种或以上组合技术进行身份鉴别"
+      },
+      {
+        "check_id": "ML-AP-02",
+        "name": "访问控制",
+        "category": "应用安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.15",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应由授权主体配置访问控制策略"
+      },
+      {
+        "check_id": "ML-AP-03",
+        "name": "通信安全",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.16",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证通信过程中数据的完整性和保密性"
+      },
+      {
+        "check_id": "ML-AP-04",
+        "name": "软件容错",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.17",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应提供数据有效性检验功能"
+      },
+      {
+        "check_id": "ML-AP-05",
+        "name": "资源控制",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.18",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应限制用户终端超时锁定和并发会话数"
+      },
+      {
+        "check_id": "ML-DS-01",
+        "name": "数据完整性",
+        "category": "数据安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.19",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证重要数据传输和存储完整性"
+      },
+      {
+        "check_id": "ML-DS-02",
+        "name": "数据保密性",
+        "category": "数据安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.20",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证重要数据存储保密性"
+      },
+      {
+        "check_id": "ML-DS-03",
+        "name": "数据备份恢复",
+        "category": "数据安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.21",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应提供本地数据备份与恢复功能，完全备份至少每天一次"
+      },
+      {
+        "check_id": "ML-MG-01",
+        "name": "安全管理制度制定",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.2.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应制定信息安全工作的总体方针和安全策略"
+      },
+      {
+        "check_id": "ML-MG-02",
+        "name": "安全制度发布评审",
+        "category": "安全管理",
+        "risk_level": "低",
+        "standard_clause": "8.2.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应定期对制度进行评审和更新"
+      },
+      {
+        "check_id": "ML-MG-03",
+        "name": "安全管理机构设置",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.3.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应成立指导和管理信息安全工作的委员会"
+      },
+      {
+        "check_id": "ML-MG-04",
+        "name": "人员录用与离岗管理",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.3.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应及时终止离岗人员所有访问权限"
+      },
+      {
+        "check_id": "ML-MG-05",
+        "name": "人员安全意识培训",
+        "category": "安全管理",
+        "risk_level": "低",
+        "standard_clause": "8.4.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对各类人员进行安全意识教育培训"
+      },
+      {
+        "check_id": "ML-MG-06",
+        "name": "外部人员访问管理",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.4.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对外部人员访问机房等区域进行审批"
+      },
+      {
+        "check_id": "ML-MG-07",
+        "name": "系统建设方案审批",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.5.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "保证建设过程同步考虑安全"
+      },
+      {
+        "check_id": "ML-MG-08",
+        "name": "上线前安全测评",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.5.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "上线前应进行安全性测试和验收"
+      },
+      {
+        "check_id": "ML-MG-09",
+        "name": "运维漏洞与风险管理",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.6.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应定期进行漏洞扫描和风险评估"
+      },
+      {
+        "check_id": "ML-MG-10",
+        "name": "应急预案与演练",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.6.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应制定应急预案并定期演练"
+      }
+    ],
+    "report": {
+      "total_items": 31,
+      "applicable_items": 3,
+      "passed": 2,
+      "failed": 1,
+      "not_applicable": 28,
+      "compliance_rate": 0.6667,
+      "by_category": {
+        "物理安全": {
+          "pass": 2,
+          "fail": 1,
+          "na": 0
+        },
+        "网络安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "主机安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "应用安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "数据安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 3
+        },
+        "安全管理": {
+          "pass": 0,
+          "fail": 0,
+          "na": 10
+        }
+      },
+      "non_compliant_items": [
+        {
+          "check_id": "ML-PH-03",
+          "name": "防盗防破坏与媒体保护",
+          "category": "物理安全",
+          "risk_level": "中",
+          "standard_clause": "8.1.3",
+          "remediation": "设备应固定并加锁，存储介质应有物理保护"
+        }
+      ],
+      "risk_summary": {
+        "中": 1
+      },
+      "remediation_plan": [
+        {
+          "check_id": "ML-PH-03",
+          "name": "防盗防破坏与媒体保护",
+          "risk_level": "中",
+          "action": "设备应固定并加锁，存储介质应有物理保护"
+        }
+      ]
+    }
+  },
+  "audit-11b1cebd50": {
+    "audit_id": "audit-11b1cebd50",
+    "framework": "mlps2",
+    "framework_label": "网络安全等级保护2.0",
+    "created_at": 1789205909.180593,
+    "target": "测试系统",
+    "results": [
+      {
+        "check_id": "ML-PH-01",
+        "name": "机房选址与防震防风防水",
+        "category": "物理安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.1",
+        "status": "pass",
+        "evidence": "已部署防火墙",
+        "notes": "",
+        "remediation": "机房应避开危险区域，采取防水防潮措施"
+      },
+      {
+        "check_id": "ML-PH-02",
+        "name": "物理访问控制",
+        "category": "物理安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.2",
+        "status": "pass",
+        "evidence": "已配置访问控制",
+        "notes": "",
+        "remediation": "机房出入口应配置电子门禁系统，控制、鉴别和记录进入人员"
+      },
+      {
+        "check_id": "ML-PH-03",
+        "name": "防盗防破坏与媒体保护",
+        "category": "物理安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.3",
+        "status": "fail",
+        "evidence": "未部署入侵检测",
+        "notes": "",
+        "remediation": "设备应固定并加锁，存储介质应有物理保护"
+      },
+      {
+        "check_id": "ML-NW-01",
+        "name": "网络架构与带宽",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.4",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应保证网络设备的业务处理能力满足业务高峰需要"
+      },
+      {
+        "check_id": "ML-NW-02",
+        "name": "网络访问控制",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.5",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在网络边界部署访问控制设备，启用访问控制功能"
+      },
+      {
+        "check_id": "ML-NW-03",
+        "name": "入侵防范",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.6",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在网络边界处监视攻击行为并告警"
+      },
+      {
+        "check_id": "ML-NW-04",
+        "name": "恶意代码防范",
+        "category": "网络安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.7",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在关键节点对恶意代码进行检测和清除"
+      },
+      {
+        "check_id": "ML-NW-05",
+        "name": "安全审计",
+        "category": "网络安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.8",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对网络系统运行状态和用户行为进行审计，留存不少于6个月"
+      },
+      {
+        "check_id": "ML-HS-01",
+        "name": "身份鉴别",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.9",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对登录用户进行身份标识和鉴别，口令复杂度达标"
+      },
+      {
+        "check_id": "ML-HS-02",
+        "name": "访问控制",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.10",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应授予管理用户所需的最小权限"
+      },
+      {
+        "check_id": "ML-HS-03",
+        "name": "安全审计",
+        "category": "主机安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.11",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应启用安全审计功能，覆盖每个用户"
+      },
+      {
+        "check_id": "ML-HS-04",
+        "name": "入侵防范",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.12",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应遵循最小安装原则，关闭不需要的端口和服务"
+      },
+      {
+        "check_id": "ML-HS-05",
+        "name": "资源控制",
+        "category": "主机安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.13",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对资源使用限额进行控制"
+      },
+      {
+        "check_id": "ML-AP-01",
+        "name": "身份鉴别",
+        "category": "应用安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.14",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用口令、密码技术等两种或以上组合技术进行身份鉴别"
+      },
+      {
+        "check_id": "ML-AP-02",
+        "name": "访问控制",
+        "category": "应用安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.15",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应由授权主体配置访问控制策略"
+      },
+      {
+        "check_id": "ML-AP-03",
+        "name": "通信安全",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.16",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证通信过程中数据的完整性和保密性"
+      },
+      {
+        "check_id": "ML-AP-04",
+        "name": "软件容错",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.17",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应提供数据有效性检验功能"
+      },
+      {
+        "check_id": "ML-AP-05",
+        "name": "资源控制",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.18",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应限制用户终端超时锁定和并发会话数"
+      },
+      {
+        "check_id": "ML-DS-01",
+        "name": "数据完整性",
+        "category": "数据安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.19",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证重要数据传输和存储完整性"
+      },
+      {
+        "check_id": "ML-DS-02",
+        "name": "数据保密性",
+        "category": "数据安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.20",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证重要数据存储保密性"
+      },
+      {
+        "check_id": "ML-DS-03",
+        "name": "数据备份恢复",
+        "category": "数据安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.21",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应提供本地数据备份与恢复功能，完全备份至少每天一次"
+      },
+      {
+        "check_id": "ML-MG-01",
+        "name": "安全管理制度制定",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.2.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应制定信息安全工作的总体方针和安全策略"
+      },
+      {
+        "check_id": "ML-MG-02",
+        "name": "安全制度发布评审",
+        "category": "安全管理",
+        "risk_level": "低",
+        "standard_clause": "8.2.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应定期对制度进行评审和更新"
+      },
+      {
+        "check_id": "ML-MG-03",
+        "name": "安全管理机构设置",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.3.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应成立指导和管理信息安全工作的委员会"
+      },
+      {
+        "check_id": "ML-MG-04",
+        "name": "人员录用与离岗管理",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.3.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应及时终止离岗人员所有访问权限"
+      },
+      {
+        "check_id": "ML-MG-05",
+        "name": "人员安全意识培训",
+        "category": "安全管理",
+        "risk_level": "低",
+        "standard_clause": "8.4.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对各类人员进行安全意识教育培训"
+      },
+      {
+        "check_id": "ML-MG-06",
+        "name": "外部人员访问管理",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.4.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对外部人员访问机房等区域进行审批"
+      },
+      {
+        "check_id": "ML-MG-07",
+        "name": "系统建设方案审批",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.5.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "保证建设过程同步考虑安全"
+      },
+      {
+        "check_id": "ML-MG-08",
+        "name": "上线前安全测评",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.5.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "上线前应进行安全性测试和验收"
+      },
+      {
+        "check_id": "ML-MG-09",
+        "name": "运维漏洞与风险管理",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.6.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应定期进行漏洞扫描和风险评估"
+      },
+      {
+        "check_id": "ML-MG-10",
+        "name": "应急预案与演练",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.6.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应制定应急预案并定期演练"
+      }
+    ],
+    "report": {
+      "total_items": 31,
+      "applicable_items": 3,
+      "passed": 2,
+      "failed": 1,
+      "not_applicable": 28,
+      "compliance_rate": 0.6667,
+      "by_category": {
+        "物理安全": {
+          "pass": 2,
+          "fail": 1,
+          "na": 0
+        },
+        "网络安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "主机安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "应用安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "数据安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 3
+        },
+        "安全管理": {
+          "pass": 0,
+          "fail": 0,
+          "na": 10
+        }
+      },
+      "non_compliant_items": [
+        {
+          "check_id": "ML-PH-03",
+          "name": "防盗防破坏与媒体保护",
+          "category": "物理安全",
+          "risk_level": "中",
+          "standard_clause": "8.1.3",
+          "remediation": "设备应固定并加锁，存储介质应有物理保护"
+        }
+      ],
+      "risk_summary": {
+        "中": 1
+      },
+      "remediation_plan": [
+        {
+          "check_id": "ML-PH-03",
+          "name": "防盗防破坏与媒体保护",
+          "risk_level": "中",
+          "action": "设备应固定并加锁，存储介质应有物理保护"
+        }
+      ]
+    }
+  },
+  "audit-854512e588": {
+    "audit_id": "audit-854512e588",
+    "framework": "mlps2",
+    "framework_label": "网络安全等级保护2.0",
+    "created_at": 1789205938.8370938,
+    "target": "测试系统",
+    "results": [
+      {
+        "check_id": "ML-PH-01",
+        "name": "机房选址与防震防风防水",
+        "category": "物理安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.1",
+        "status": "pass",
+        "evidence": "已部署防火墙",
+        "notes": "",
+        "remediation": "机房应避开危险区域，采取防水防潮措施"
+      },
+      {
+        "check_id": "ML-PH-02",
+        "name": "物理访问控制",
+        "category": "物理安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.2",
+        "status": "pass",
+        "evidence": "已配置访问控制",
+        "notes": "",
+        "remediation": "机房出入口应配置电子门禁系统，控制、鉴别和记录进入人员"
+      },
+      {
+        "check_id": "ML-PH-03",
+        "name": "防盗防破坏与媒体保护",
+        "category": "物理安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.3",
+        "status": "fail",
+        "evidence": "未部署入侵检测",
+        "notes": "",
+        "remediation": "设备应固定并加锁，存储介质应有物理保护"
+      },
+      {
+        "check_id": "ML-NW-01",
+        "name": "网络架构与带宽",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.4",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应保证网络设备的业务处理能力满足业务高峰需要"
+      },
+      {
+        "check_id": "ML-NW-02",
+        "name": "网络访问控制",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.5",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在网络边界部署访问控制设备，启用访问控制功能"
+      },
+      {
+        "check_id": "ML-NW-03",
+        "name": "入侵防范",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.6",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在网络边界处监视攻击行为并告警"
+      },
+      {
+        "check_id": "ML-NW-04",
+        "name": "恶意代码防范",
+        "category": "网络安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.7",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在关键节点对恶意代码进行检测和清除"
+      },
+      {
+        "check_id": "ML-NW-05",
+        "name": "安全审计",
+        "category": "网络安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.8",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对网络系统运行状态和用户行为进行审计，留存不少于6个月"
+      },
+      {
+        "check_id": "ML-HS-01",
+        "name": "身份鉴别",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.9",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对登录用户进行身份标识和鉴别，口令复杂度达标"
+      },
+      {
+        "check_id": "ML-HS-02",
+        "name": "访问控制",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.10",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应授予管理用户所需的最小权限"
+      },
+      {
+        "check_id": "ML-HS-03",
+        "name": "安全审计",
+        "category": "主机安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.11",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应启用安全审计功能，覆盖每个用户"
+      },
+      {
+        "check_id": "ML-HS-04",
+        "name": "入侵防范",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.12",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应遵循最小安装原则，关闭不需要的端口和服务"
+      },
+      {
+        "check_id": "ML-HS-05",
+        "name": "资源控制",
+        "category": "主机安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.13",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对资源使用限额进行控制"
+      },
+      {
+        "check_id": "ML-AP-01",
+        "name": "身份鉴别",
+        "category": "应用安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.14",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用口令、密码技术等两种或以上组合技术进行身份鉴别"
+      },
+      {
+        "check_id": "ML-AP-02",
+        "name": "访问控制",
+        "category": "应用安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.15",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应由授权主体配置访问控制策略"
+      },
+      {
+        "check_id": "ML-AP-03",
+        "name": "通信安全",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.16",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证通信过程中数据的完整性和保密性"
+      },
+      {
+        "check_id": "ML-AP-04",
+        "name": "软件容错",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.17",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应提供数据有效性检验功能"
+      },
+      {
+        "check_id": "ML-AP-05",
+        "name": "资源控制",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.18",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应限制用户终端超时锁定和并发会话数"
+      },
+      {
+        "check_id": "ML-DS-01",
+        "name": "数据完整性",
+        "category": "数据安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.19",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证重要数据传输和存储完整性"
+      },
+      {
+        "check_id": "ML-DS-02",
+        "name": "数据保密性",
+        "category": "数据安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.20",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证重要数据存储保密性"
+      },
+      {
+        "check_id": "ML-DS-03",
+        "name": "数据备份恢复",
+        "category": "数据安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.21",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应提供本地数据备份与恢复功能，完全备份至少每天一次"
+      },
+      {
+        "check_id": "ML-MG-01",
+        "name": "安全管理制度制定",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.2.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应制定信息安全工作的总体方针和安全策略"
+      },
+      {
+        "check_id": "ML-MG-02",
+        "name": "安全制度发布评审",
+        "category": "安全管理",
+        "risk_level": "低",
+        "standard_clause": "8.2.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应定期对制度进行评审和更新"
+      },
+      {
+        "check_id": "ML-MG-03",
+        "name": "安全管理机构设置",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.3.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应成立指导和管理信息安全工作的委员会"
+      },
+      {
+        "check_id": "ML-MG-04",
+        "name": "人员录用与离岗管理",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.3.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应及时终止离岗人员所有访问权限"
+      },
+      {
+        "check_id": "ML-MG-05",
+        "name": "人员安全意识培训",
+        "category": "安全管理",
+        "risk_level": "低",
+        "standard_clause": "8.4.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对各类人员进行安全意识教育培训"
+      },
+      {
+        "check_id": "ML-MG-06",
+        "name": "外部人员访问管理",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.4.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对外部人员访问机房等区域进行审批"
+      },
+      {
+        "check_id": "ML-MG-07",
+        "name": "系统建设方案审批",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.5.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "保证建设过程同步考虑安全"
+      },
+      {
+        "check_id": "ML-MG-08",
+        "name": "上线前安全测评",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.5.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "上线前应进行安全性测试和验收"
+      },
+      {
+        "check_id": "ML-MG-09",
+        "name": "运维漏洞与风险管理",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.6.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应定期进行漏洞扫描和风险评估"
+      },
+      {
+        "check_id": "ML-MG-10",
+        "name": "应急预案与演练",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.6.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应制定应急预案并定期演练"
+      }
+    ],
+    "report": {
+      "total_items": 31,
+      "applicable_items": 3,
+      "passed": 2,
+      "failed": 1,
+      "not_applicable": 28,
+      "compliance_rate": 0.6667,
+      "by_category": {
+        "物理安全": {
+          "pass": 2,
+          "fail": 1,
+          "na": 0
+        },
+        "网络安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "主机安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "应用安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "数据安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 3
+        },
+        "安全管理": {
+          "pass": 0,
+          "fail": 0,
+          "na": 10
+        }
+      },
+      "non_compliant_items": [
+        {
+          "check_id": "ML-PH-03",
+          "name": "防盗防破坏与媒体保护",
+          "category": "物理安全",
+          "risk_level": "中",
+          "standard_clause": "8.1.3",
+          "remediation": "设备应固定并加锁，存储介质应有物理保护"
+        }
+      ],
+      "risk_summary": {
+        "中": 1
+      },
+      "remediation_plan": [
+        {
+          "check_id": "ML-PH-03",
+          "name": "防盗防破坏与媒体保护",
+          "risk_level": "中",
+          "action": "设备应固定并加锁，存储介质应有物理保护"
+        }
+      ]
+    }
+  },
+  "audit-03e6a86a88": {
+    "audit_id": "audit-03e6a86a88",
+    "framework": "mlps2",
+    "framework_label": "网络安全等级保护2.0",
+    "created_at": 1789208412.6751227,
+    "target": "",
+    "results": [
+      {
+        "check_id": "ML-PH-01",
+        "name": "机房选址与防震防风防水",
+        "category": "物理安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "机房应避开危险区域，采取防水防潮措施"
+      },
+      {
+        "check_id": "ML-PH-02",
+        "name": "物理访问控制",
+        "category": "物理安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "机房出入口应配置电子门禁系统，控制、鉴别和记录进入人员"
+      },
+      {
+        "check_id": "ML-PH-03",
+        "name": "防盗防破坏与媒体保护",
+        "category": "物理安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.3",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "设备应固定并加锁，存储介质应有物理保护"
+      },
+      {
+        "check_id": "ML-NW-01",
+        "name": "网络架构与带宽",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.4",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应保证网络设备的业务处理能力满足业务高峰需要"
+      },
+      {
+        "check_id": "ML-NW-02",
+        "name": "网络访问控制",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.5",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在网络边界部署访问控制设备，启用访问控制功能"
+      },
+      {
+        "check_id": "ML-NW-03",
+        "name": "入侵防范",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.6",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在网络边界处监视攻击行为并告警"
+      },
+      {
+        "check_id": "ML-NW-04",
+        "name": "恶意代码防范",
+        "category": "网络安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.7",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在关键节点对恶意代码进行检测和清除"
+      },
+      {
+        "check_id": "ML-NW-05",
+        "name": "安全审计",
+        "category": "网络安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.8",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对网络系统运行状态和用户行为进行审计，留存不少于6个月"
+      },
+      {
+        "check_id": "ML-HS-01",
+        "name": "身份鉴别",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.9",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对登录用户进行身份标识和鉴别，口令复杂度达标"
+      },
+      {
+        "check_id": "ML-HS-02",
+        "name": "访问控制",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.10",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应授予管理用户所需的最小权限"
+      },
+      {
+        "check_id": "ML-HS-03",
+        "name": "安全审计",
+        "category": "主机安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.11",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应启用安全审计功能，覆盖每个用户"
+      },
+      {
+        "check_id": "ML-HS-04",
+        "name": "入侵防范",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.12",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应遵循最小安装原则，关闭不需要的端口和服务"
+      },
+      {
+        "check_id": "ML-HS-05",
+        "name": "资源控制",
+        "category": "主机安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.13",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对资源使用限额进行控制"
+      },
+      {
+        "check_id": "ML-AP-01",
+        "name": "身份鉴别",
+        "category": "应用安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.14",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用口令、密码技术等两种或以上组合技术进行身份鉴别"
+      },
+      {
+        "check_id": "ML-AP-02",
+        "name": "访问控制",
+        "category": "应用安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.15",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应由授权主体配置访问控制策略"
+      },
+      {
+        "check_id": "ML-AP-03",
+        "name": "通信安全",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.16",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证通信过程中数据的完整性和保密性"
+      },
+      {
+        "check_id": "ML-AP-04",
+        "name": "软件容错",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.17",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应提供数据有效性检验功能"
+      },
+      {
+        "check_id": "ML-AP-05",
+        "name": "资源控制",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.18",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应限制用户终端超时锁定和并发会话数"
+      },
+      {
+        "check_id": "ML-DS-01",
+        "name": "数据完整性",
+        "category": "数据安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.19",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证重要数据传输和存储完整性"
+      },
+      {
+        "check_id": "ML-DS-02",
+        "name": "数据保密性",
+        "category": "数据安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.20",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证重要数据存储保密性"
+      },
+      {
+        "check_id": "ML-DS-03",
+        "name": "数据备份恢复",
+        "category": "数据安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.21",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应提供本地数据备份与恢复功能，完全备份至少每天一次"
+      },
+      {
+        "check_id": "ML-MG-01",
+        "name": "安全管理制度制定",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.2.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应制定信息安全工作的总体方针和安全策略"
+      },
+      {
+        "check_id": "ML-MG-02",
+        "name": "安全制度发布评审",
+        "category": "安全管理",
+        "risk_level": "低",
+        "standard_clause": "8.2.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应定期对制度进行评审和更新"
+      },
+      {
+        "check_id": "ML-MG-03",
+        "name": "安全管理机构设置",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.3.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应成立指导和管理信息安全工作的委员会"
+      },
+      {
+        "check_id": "ML-MG-04",
+        "name": "人员录用与离岗管理",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.3.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应及时终止离岗人员所有访问权限"
+      },
+      {
+        "check_id": "ML-MG-05",
+        "name": "人员安全意识培训",
+        "category": "安全管理",
+        "risk_level": "低",
+        "standard_clause": "8.4.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对各类人员进行安全意识教育培训"
+      },
+      {
+        "check_id": "ML-MG-06",
+        "name": "外部人员访问管理",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.4.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对外部人员访问机房等区域进行审批"
+      },
+      {
+        "check_id": "ML-MG-07",
+        "name": "系统建设方案审批",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.5.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "保证建设过程同步考虑安全"
+      },
+      {
+        "check_id": "ML-MG-08",
+        "name": "上线前安全测评",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.5.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "上线前应进行安全性测试和验收"
+      },
+      {
+        "check_id": "ML-MG-09",
+        "name": "运维漏洞与风险管理",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.6.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应定期进行漏洞扫描和风险评估"
+      },
+      {
+        "check_id": "ML-MG-10",
+        "name": "应急预案与演练",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.6.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应制定应急预案并定期演练"
+      }
+    ],
+    "report": {
+      "total_items": 31,
+      "applicable_items": 0,
+      "passed": 0,
+      "failed": 0,
+      "not_applicable": 31,
+      "compliance_rate": 0.0,
+      "by_category": {
+        "物理安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 3
+        },
+        "网络安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "主机安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "应用安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "数据安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 3
+        },
+        "安全管理": {
+          "pass": 0,
+          "fail": 0,
+          "na": 10
+        }
+      },
+      "non_compliant_items": [],
+      "risk_summary": {},
+      "remediation_plan": []
+    }
+  },
+  "audit-c9c851c85b": {
+    "audit_id": "audit-c9c851c85b",
+    "framework": "mlps2",
+    "framework_label": "网络安全等级保护2.0",
+    "created_at": 1789209056.7762039,
+    "target": "",
+    "results": [
+      {
+        "check_id": "ML-PH-01",
+        "name": "机房选址与防震防风防水",
+        "category": "物理安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "机房应避开危险区域，采取防水防潮措施"
+      },
+      {
+        "check_id": "ML-PH-02",
+        "name": "物理访问控制",
+        "category": "物理安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "机房出入口应配置电子门禁系统，控制、鉴别和记录进入人员"
+      },
+      {
+        "check_id": "ML-PH-03",
+        "name": "防盗防破坏与媒体保护",
+        "category": "物理安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.3",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "设备应固定并加锁，存储介质应有物理保护"
+      },
+      {
+        "check_id": "ML-NW-01",
+        "name": "网络架构与带宽",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.4",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应保证网络设备的业务处理能力满足业务高峰需要"
+      },
+      {
+        "check_id": "ML-NW-02",
+        "name": "网络访问控制",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.5",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在网络边界部署访问控制设备，启用访问控制功能"
+      },
+      {
+        "check_id": "ML-NW-03",
+        "name": "入侵防范",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.6",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在网络边界处监视攻击行为并告警"
+      },
+      {
+        "check_id": "ML-NW-04",
+        "name": "恶意代码防范",
+        "category": "网络安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.7",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在关键节点对恶意代码进行检测和清除"
+      },
+      {
+        "check_id": "ML-NW-05",
+        "name": "安全审计",
+        "category": "网络安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.8",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对网络系统运行状态和用户行为进行审计，留存不少于6个月"
+      },
+      {
+        "check_id": "ML-HS-01",
+        "name": "身份鉴别",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.9",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对登录用户进行身份标识和鉴别，口令复杂度达标"
+      },
+      {
+        "check_id": "ML-HS-02",
+        "name": "访问控制",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.10",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应授予管理用户所需的最小权限"
+      },
+      {
+        "check_id": "ML-HS-03",
+        "name": "安全审计",
+        "category": "主机安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.11",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应启用安全审计功能，覆盖每个用户"
+      },
+      {
+        "check_id": "ML-HS-04",
+        "name": "入侵防范",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.12",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应遵循最小安装原则，关闭不需要的端口和服务"
+      },
+      {
+        "check_id": "ML-HS-05",
+        "name": "资源控制",
+        "category": "主机安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.13",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对资源使用限额进行控制"
+      },
+      {
+        "check_id": "ML-AP-01",
+        "name": "身份鉴别",
+        "category": "应用安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.14",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用口令、密码技术等两种或以上组合技术进行身份鉴别"
+      },
+      {
+        "check_id": "ML-AP-02",
+        "name": "访问控制",
+        "category": "应用安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.15",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应由授权主体配置访问控制策略"
+      },
+      {
+        "check_id": "ML-AP-03",
+        "name": "通信安全",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.16",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证通信过程中数据的完整性和保密性"
+      },
+      {
+        "check_id": "ML-AP-04",
+        "name": "软件容错",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.17",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应提供数据有效性检验功能"
+      },
+      {
+        "check_id": "ML-AP-05",
+        "name": "资源控制",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.18",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应限制用户终端超时锁定和并发会话数"
+      },
+      {
+        "check_id": "ML-DS-01",
+        "name": "数据完整性",
+        "category": "数据安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.19",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证重要数据传输和存储完整性"
+      },
+      {
+        "check_id": "ML-DS-02",
+        "name": "数据保密性",
+        "category": "数据安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.20",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证重要数据存储保密性"
+      },
+      {
+        "check_id": "ML-DS-03",
+        "name": "数据备份恢复",
+        "category": "数据安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.21",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应提供本地数据备份与恢复功能，完全备份至少每天一次"
+      },
+      {
+        "check_id": "ML-MG-01",
+        "name": "安全管理制度制定",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.2.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应制定信息安全工作的总体方针和安全策略"
+      },
+      {
+        "check_id": "ML-MG-02",
+        "name": "安全制度发布评审",
+        "category": "安全管理",
+        "risk_level": "低",
+        "standard_clause": "8.2.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应定期对制度进行评审和更新"
+      },
+      {
+        "check_id": "ML-MG-03",
+        "name": "安全管理机构设置",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.3.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应成立指导和管理信息安全工作的委员会"
+      },
+      {
+        "check_id": "ML-MG-04",
+        "name": "人员录用与离岗管理",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.3.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应及时终止离岗人员所有访问权限"
+      },
+      {
+        "check_id": "ML-MG-05",
+        "name": "人员安全意识培训",
+        "category": "安全管理",
+        "risk_level": "低",
+        "standard_clause": "8.4.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对各类人员进行安全意识教育培训"
+      },
+      {
+        "check_id": "ML-MG-06",
+        "name": "外部人员访问管理",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.4.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对外部人员访问机房等区域进行审批"
+      },
+      {
+        "check_id": "ML-MG-07",
+        "name": "系统建设方案审批",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.5.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "保证建设过程同步考虑安全"
+      },
+      {
+        "check_id": "ML-MG-08",
+        "name": "上线前安全测评",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.5.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "上线前应进行安全性测试和验收"
+      },
+      {
+        "check_id": "ML-MG-09",
+        "name": "运维漏洞与风险管理",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.6.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应定期进行漏洞扫描和风险评估"
+      },
+      {
+        "check_id": "ML-MG-10",
+        "name": "应急预案与演练",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.6.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应制定应急预案并定期演练"
+      }
+    ],
+    "report": {
+      "total_items": 31,
+      "applicable_items": 0,
+      "passed": 0,
+      "failed": 0,
+      "not_applicable": 31,
+      "compliance_rate": 0.0,
+      "by_category": {
+        "物理安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 3
+        },
+        "网络安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "主机安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "应用安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "数据安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 3
+        },
+        "安全管理": {
+          "pass": 0,
+          "fail": 0,
+          "na": 10
+        }
+      },
+      "non_compliant_items": [],
+      "risk_summary": {},
+      "remediation_plan": []
+    }
+  },
+  "audit-a92c4e380e": {
+    "audit_id": "audit-a92c4e380e",
+    "framework": "mlps2",
+    "framework_label": "网络安全等级保护2.0",
+    "created_at": 1789209220.9168832,
+    "target": "",
+    "results": [
+      {
+        "check_id": "ML-PH-01",
+        "name": "机房选址与防震防风防水",
+        "category": "物理安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "机房应避开危险区域，采取防水防潮措施"
+      },
+      {
+        "check_id": "ML-PH-02",
+        "name": "物理访问控制",
+        "category": "物理安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "机房出入口应配置电子门禁系统，控制、鉴别和记录进入人员"
+      },
+      {
+        "check_id": "ML-PH-03",
+        "name": "防盗防破坏与媒体保护",
+        "category": "物理安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.3",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "设备应固定并加锁，存储介质应有物理保护"
+      },
+      {
+        "check_id": "ML-NW-01",
+        "name": "网络架构与带宽",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.4",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应保证网络设备的业务处理能力满足业务高峰需要"
+      },
+      {
+        "check_id": "ML-NW-02",
+        "name": "网络访问控制",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.5",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在网络边界部署访问控制设备，启用访问控制功能"
+      },
+      {
+        "check_id": "ML-NW-03",
+        "name": "入侵防范",
+        "category": "网络安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.6",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在网络边界处监视攻击行为并告警"
+      },
+      {
+        "check_id": "ML-NW-04",
+        "name": "恶意代码防范",
+        "category": "网络安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.7",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应在关键节点对恶意代码进行检测和清除"
+      },
+      {
+        "check_id": "ML-NW-05",
+        "name": "安全审计",
+        "category": "网络安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.8",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对网络系统运行状态和用户行为进行审计，留存不少于6个月"
+      },
+      {
+        "check_id": "ML-HS-01",
+        "name": "身份鉴别",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.9",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对登录用户进行身份标识和鉴别，口令复杂度达标"
+      },
+      {
+        "check_id": "ML-HS-02",
+        "name": "访问控制",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.10",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应授予管理用户所需的最小权限"
+      },
+      {
+        "check_id": "ML-HS-03",
+        "name": "安全审计",
+        "category": "主机安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.11",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应启用安全审计功能，覆盖每个用户"
+      },
+      {
+        "check_id": "ML-HS-04",
+        "name": "入侵防范",
+        "category": "主机安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.12",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应遵循最小安装原则，关闭不需要的端口和服务"
+      },
+      {
+        "check_id": "ML-HS-05",
+        "name": "资源控制",
+        "category": "主机安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.13",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对资源使用限额进行控制"
+      },
+      {
+        "check_id": "ML-AP-01",
+        "name": "身份鉴别",
+        "category": "应用安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.14",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用口令、密码技术等两种或以上组合技术进行身份鉴别"
+      },
+      {
+        "check_id": "ML-AP-02",
+        "name": "访问控制",
+        "category": "应用安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.15",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应由授权主体配置访问控制策略"
+      },
+      {
+        "check_id": "ML-AP-03",
+        "name": "通信安全",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.16",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证通信过程中数据的完整性和保密性"
+      },
+      {
+        "check_id": "ML-AP-04",
+        "name": "软件容错",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.17",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应提供数据有效性检验功能"
+      },
+      {
+        "check_id": "ML-AP-05",
+        "name": "资源控制",
+        "category": "应用安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.18",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应限制用户终端超时锁定和并发会话数"
+      },
+      {
+        "check_id": "ML-DS-01",
+        "name": "数据完整性",
+        "category": "数据安全",
+        "risk_level": "中",
+        "standard_clause": "8.1.19",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证重要数据传输和存储完整性"
+      },
+      {
+        "check_id": "ML-DS-02",
+        "name": "数据保密性",
+        "category": "数据安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.20",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应采用密码技术保证重要数据存储保密性"
+      },
+      {
+        "check_id": "ML-DS-03",
+        "name": "数据备份恢复",
+        "category": "数据安全",
+        "risk_level": "高",
+        "standard_clause": "8.1.21",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应提供本地数据备份与恢复功能，完全备份至少每天一次"
+      },
+      {
+        "check_id": "ML-MG-01",
+        "name": "安全管理制度制定",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.2.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应制定信息安全工作的总体方针和安全策略"
+      },
+      {
+        "check_id": "ML-MG-02",
+        "name": "安全制度发布评审",
+        "category": "安全管理",
+        "risk_level": "低",
+        "standard_clause": "8.2.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应定期对制度进行评审和更新"
+      },
+      {
+        "check_id": "ML-MG-03",
+        "name": "安全管理机构设置",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.3.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应成立指导和管理信息安全工作的委员会"
+      },
+      {
+        "check_id": "ML-MG-04",
+        "name": "人员录用与离岗管理",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.3.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应及时终止离岗人员所有访问权限"
+      },
+      {
+        "check_id": "ML-MG-05",
+        "name": "人员安全意识培训",
+        "category": "安全管理",
+        "risk_level": "低",
+        "standard_clause": "8.4.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对各类人员进行安全意识教育培训"
+      },
+      {
+        "check_id": "ML-MG-06",
+        "name": "外部人员访问管理",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.4.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应对外部人员访问机房等区域进行审批"
+      },
+      {
+        "check_id": "ML-MG-07",
+        "name": "系统建设方案审批",
+        "category": "安全管理",
+        "risk_level": "中",
+        "standard_clause": "8.5.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "保证建设过程同步考虑安全"
+      },
+      {
+        "check_id": "ML-MG-08",
+        "name": "上线前安全测评",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.5.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "上线前应进行安全性测试和验收"
+      },
+      {
+        "check_id": "ML-MG-09",
+        "name": "运维漏洞与风险管理",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.6.1",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应定期进行漏洞扫描和风险评估"
+      },
+      {
+        "check_id": "ML-MG-10",
+        "name": "应急预案与演练",
+        "category": "安全管理",
+        "risk_level": "高",
+        "standard_clause": "8.6.2",
+        "status": "not_applicable",
+        "evidence": "",
+        "notes": "",
+        "remediation": "应制定应急预案并定期演练"
+      }
+    ],
+    "report": {
+      "total_items": 31,
+      "applicable_items": 0,
+      "passed": 0,
+      "failed": 0,
+      "not_applicable": 31,
+      "compliance_rate": 0.0,
+      "by_category": {
+        "物理安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 3
+        },
+        "网络安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "主机安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "应用安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 5
+        },
+        "数据安全": {
+          "pass": 0,
+          "fail": 0,
+          "na": 3
+        },
+        "安全管理": {
+          "pass": 0,
+          "fail": 0,
+          "na": 10
+        }
+      },
+      "non_compliant_items": [],
+      "risk_summary": {},
+      "remediation_plan": []
+    }
+  }
+}

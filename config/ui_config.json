@@ -1,0 +1,175 @@
+{
+  "default_theme": "light",
+  "default_language": "zh",
+  "brand": {
+    "name_zh": "AI Hacking Agent",
+    "name_en": "AI Hacking Agent",
+    "subtitle_zh": "统一安全平台 V2",
+    "subtitle_en": "Unified Security Platform V2"
+  },
+  "onboarding_steps": [
+    {
+      "id": "welcome",
+      "title_zh": "欢迎使用统一安全平台 V2",
+      "title_en": "Welcome to Unified Security Platform V2",
+      "description_zh": "这是您的一站式安全运营控制台。接下来 1 分钟带您熟悉核心功能，随时可以跳过。",
+      "description_en": "This is your all-in-one security operations console. A quick 1-minute tour, skippable anytime.",
+      "target_selector": null,
+      "position": "center"
+    },
+    {
+      "id": "nav",
+      "title_zh": "左侧导航菜单",
+      "title_en": "Left Navigation",
+      "description_zh": "所有功能模块都在这里：仪表盘、评估中心、数据分析、资产管理、合规审计、报告中心等。点击即可切换视图。",
+      "description_en": "All modules live here: Dashboard, Assessment Center, Analytics, Assets, Compliance, Reports. Click to switch views.",
+      "target_selector": "#nav-sidebar",
+      "position": "right"
+    },
+    {
+      "id": "quick-assess",
+      "title_zh": "快速评估入口",
+      "title_en": "Quick Assessment Entry",
+      "description_zh": "在仪表盘输入目标地址即可发起一次快速安全评估，支持 Web 扫描、漏洞探测与风险评分。",
+      "description_en": "Enter a target on the Dashboard to run a quick assessment: web scan, vulnerability probing and risk scoring.",
+      "target_selector": "#view-dashboard .quick-assess-card",
+      "position": "bottom"
+    },
+    {
+      "id": "analytics",
+      "title_zh": "数据分析仪表盘",
+      "title_en": "Analytics Dashboard",
+      "description_zh": "切换到「数据分析」查看评估总量、漏洞趋势、严重程度分布与 Top 风险目标，全部图表由纯 SVG 渲染。",
+      "description_en": "Switch to Analytics to view assessment totals, vulnerability trends, severity distribution and top risky targets, all rendered in pure SVG.",
+      "target_selector": "#nav-analytics",
+      "position": "right"
+    },
+    {
+      "id": "reporting",
+      "title_zh": "报告生成",
+      "title_en": "Report Generation",
+      "description_zh": "在「报告中心」选择评估 ID、输出格式（HTML/PDF/Word/Excel）与模板，一键生成可下载的专业报告。",
+      "description_en": "In Report Center pick an assessment ID, output format (HTML/PDF/Word/Excel) and a template to generate a downloadable report.",
+      "target_selector": "#nav-reports",
+      "position": "right"
+    },
+    {
+      "id": "done",
+      "title_zh": "开始使用",
+      "title_en": "You Are All Set",
+      "description_zh": "提示：按 Ctrl+K 随时打开命令面板，按 Ctrl+/ 查看全部快捷键。祝使用顺利！",
+      "description_en": "Tip: press Ctrl+K anytime to open the command palette, press Ctrl+/ to view all shortcuts. Happy hunting!",
+      "target_selector": null,
+      "position": "center"
+    }
+  ],
+  "shortcuts": {
+    "ctrl+k": {
+      "id": "command-palette",
+      "label_zh": "打开命令面板",
+      "label_en": "Open command palette"
+    },
+    "ctrl+n": {
+      "id": "new-assessment",
+      "label_zh": "新建评估",
+      "label_en": "New assessment"
+    },
+    "ctrl+r": {
+      "id": "view-reports",
+      "label_zh": "查看报告",
+      "label_en": "View reports"
+    },
+    "ctrl+d": {
+      "id": "view-analytics",
+      "label_zh": "数据分析",
+      "label_en": "Analytics"
+    },
+    "ctrl+/": {
+      "id": "shortcut-help",
+      "label_zh": "快捷键帮助",
+      "label_en": "Keyboard shortcuts help"
+    }
+  },
+  "navigation": [
+    {
+      "id": "dashboard",
+      "label_zh": "仪表盘",
+      "label_en": "Dashboard",
+      "icon": "▦",
+      "path": "/dashboard",
+      "order": 1
+    },
+    {
+      "id": "assessment",
+      "label_zh": "评估中心",
+      "label_en": "Assessment Center",
+      "icon": "◎",
+      "path": "/assessment",
+      "order": 2
+    },
+    {
+      "id": "analytics",
+      "label_zh": "数据分析",
+      "label_en": "Analytics",
+      "icon": "📈",
+      "path": "/analytics",
+      "order": 3
+    },
+    {
+      "id": "assets",
+      "label_zh": "资产管理",
+      "label_en": "Assets",
+      "icon": "▣",
+      "path": "/assets",
+      "order": 4
+    },
+    {
+      "id": "compliance",
+      "label_zh": "合规审计",
+      "label_en": "Compliance",
+      "icon": "✔",
+      "path": "/compliance",
+      "order": 5
+    },
+    {
+      "id": "attack-path",
+      "label_zh": "攻击路径",
+      "label_en": "Attack Path",
+      "icon": "➤",
+      "path": "/attack-path",
+      "order": 6
+    },
+    {
+      "id": "reports",
+      "label_zh": "报告中心",
+      "label_en": "Reports",
+      "icon": "▤",
+      "path": "/reports",
+      "order": 7
+    },
+    {
+      "id": "integrations",
+      "label_zh": "集成管理",
+      "label_en": "Integrations",
+      "icon": "⛓",
+      "path": "/integrations",
+      "order": 8
+    },
+    {
+      "id": "alerts",
+      "label_zh": "告警中心",
+      "label_en": "Alerts",
+      "icon": "🔔",
+      "path": "/alerts",
+      "order": 9
+    },
+    {
+      "id": "settings",
+      "label_zh": "系统设置",
+      "label_en": "Settings",
+      "icon": "⚙",
+      "path": "/settings",
+      "order": 10
+    }
+  ]
+}

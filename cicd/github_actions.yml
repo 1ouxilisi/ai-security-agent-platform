@@ -1,0 +1,328 @@
+# =============================================================================
+# AI Hacking Agent - GitHub Actions 安全扫描集成模板
+# =============================================================================
+# 使用说明：
+#   1. 将本文件保存为 .github/workflows/security-scan.yml
+#   2. 在 GitHub 仓库 Settings -> Secrets and variables -> Actions 中配置：
+#      Secrets:
+#        - AI_HACKING_API_URL:   AI安全扫描API服务地址
+#        - AI_HACKING_API_KEY:   API密钥
+#      Variables:
+#        - AI_HACKING_TARGET:    待扫描目标URL/域名
+#   3. 根据需要调整触发条件和扫描阈值
+#
+# 触发时机：
+#   - 推送到 main / develop 分支
+#   - 创建Pull Request
+#   - 每天凌晨2点定时执行
+# =============================================================================
+
+name: Security Scan
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * *'  # 每天凌晨2点UTC（北京时间10:00）
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: '扫描类型'
+        required: true
+        default: 'comprehensive'
+        type: choice
+        options:
+          - comprehensive
+          - web
+          - mobile
+          - internal
+      target_override:
+        description: '目标覆盖（可选，默认使用仓库变量）'
+        required: false
+        type: string
+
+# 权限最小化
+permissions:
+  contents: read
+  pull-requests: write  # 允许向PR发表评论
+  actions: read
+
+jobs:
+  # ===========================================================================
+  # 安全扫描主任务
+  # ===========================================================================
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30  # 超时保护
+
+    steps:
+      # -----------------------------------------------------------------------
+      # 步骤1：检出代码
+      # -----------------------------------------------------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1  # 浅克隆加速
+
+      # -----------------------------------------------------------------------
+      # 步骤2：设置Python环境
+      # -----------------------------------------------------------------------
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      # -----------------------------------------------------------------------
+      # 步骤3：安装依赖
+      # -----------------------------------------------------------------------
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pyyaml
+
+      # -----------------------------------------------------------------------
+      # 步骤4：执行安全扫描
+      # -----------------------------------------------------------------------
+      - name: Run comprehensive security scan
+        id: scan
+        env:
+          AI_HACKING_API_URL: ${{ secrets.AI_HACKING_API_URL }}
+          AI_HACKING_API_KEY: ${{ secrets.AI_HACKING_API_KEY }}
+          AI_HACKING_TARGET: ${{ vars.AI_HACKING_TARGET }}
+          SCAN_TYPE: ${{ github.event.inputs.scan_type || 'comprehensive' }}
+          TARGET_OVERRIDE: ${{ github.event.inputs.target_override }}
+        run: |
+          # 确定扫描目标
+          if [ -n "$TARGET_OVERRIDE" ]; then
+            TARGET="$TARGET_OVERRIDE"
+          else
+            TARGET="$AI_HACKING_TARGET"
+          fi
+
+          echo "::group::扫描配置"
+          echo "目标: $TARGET"
+          echo "类型: $SCAN_TYPE"
+          echo "API: $AI_HACKING_API_URL"
+          echo "::endgroup::"
+
+          # 执行扫描
+          python -m cicd.cli scan \
+            --target "$TARGET" \
+            --type "$SCAN_TYPE" \
+            --depth standard \
+            --api-url "$AI_HACKING_API_URL" \
+            --api-key "$AI_HACKING_API_KEY" \
+            --format json \
+            --output scan-result.json
+
+          # 提取assessment_id供后续步骤使用
+          ASSESSMENT_ID=$(python -c "
+import json
+try:
+    with open('scan-result.json') as f:
+        data = json.load(f)
+    print(data.get('assessment_id', ''))
+except:
+    print('')
+")
+          echo "assessment_id=$ASSESSMENT_ID" >> $GITHUB_OUTPUT
+
+      # -----------------------------------------------------------------------
+      # 步骤5：漏洞阈值检查（决定是否继续）
+      # -----------------------------------------------------------------------
+      - name: Vulnerability threshold check
+        id: threshold_check
+        env:
+          AI_HACKING_API_URL: ${{ secrets.AI_HACKING_API_URL }}
+          AI_HACKING_API_KEY: ${{ secrets.AI_HACKING_API_KEY }}
+          AI_HACKING_TARGET: ${{ vars.AI_HACKING_TARGET }}
+        run: |
+          echo "::group::漏洞阈值检查"
+          echo "阈值: high (阻断高危及以上)"
+          echo "::endgroup::"
+
+          # 执行阈值检查
+          if python -m cicd.cli check \
+            --target "$AI_HACKING_TARGET" \
+            --threshold high \
+            --fail-on any_high \
+            --api-url "$AI_HACKING_API_URL" \
+            --api-key "$AI_HACKING_API_KEY" \
+            --format json; then
+            echo "threshold_passed=true" >> $GITHUB_OUTPUT
+            echo "✅ 所有安全检查通过！"
+          else
+            EXIT_CODE=$?
+            echo "threshold_passed=false" >> $GITHUB_OUTPUT
+            echo "❌ 安全检查未通过，发现高危漏洞（退出码: $EXIT_CODE）"
+            # 不在这里直接exit，让后续步骤生成报告后再失败
+            exit 0
+          fi
+
+      # -----------------------------------------------------------------------
+      # 步骤6：生成安全报告
+      # -----------------------------------------------------------------------
+      - name: Generate security report
+        if: always()
+        env:
+          AI_HACKING_API_URL: ${{ secrets.AI_HACKING_API_URL }}
+          AI_HACKING_API_KEY: ${{ secrets.AI_HACKING_API_KEY }}
+          ASSESSMENT_ID: ${{ steps.scan.outputs.assessment_id }}
+        run: |
+          echo "::group::生成安全报告"
+          if [ -n "$ASSESSMENT_ID" ]; then
+            python -m cicd.cli report \
+              --assessment-id "$ASSESSMENT_ID" \
+              --report-format html \
+              --output security-report.html \
+              --api-url "$AI_HACKING_API_URL" \
+              --api-key "$AI_HACKING_API_KEY" \
+              --format text || echo "报告生成失败，继续..."
+          else
+            echo "无assessment_id，跳过报告生成"
+          fi
+          echo "::endgroup::"
+
+      # -----------------------------------------------------------------------
+      # 步骤7：上传扫描结果作为Artifacts
+      # -----------------------------------------------------------------------
+      - name: Upload scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-scan-results-${{ github.run_number }}
+          path: |
+            scan-result.json
+            security-report.html
+          retention-days: 90  # 保留90天
+          compression-level: 6
+
+      # -----------------------------------------------------------------------
+      # 步骤8：在PR上评论扫描结果
+      # -----------------------------------------------------------------------
+      - name: Comment PR with scan results
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // 读取扫描结果
+            let scanSummary = '未获取到扫描数据';
+            let vulnTable = '';
+            let emoji = '✅';
+            let status = '通过';
+
+            try {
+              if (fs.existsSync('scan-result.json')) {
+                const data = JSON.parse(fs.readFileSync('scan-result.json', 'utf8'));
+                const summary = data.vulnerabilities_summary || {};
+
+                // 构建漏洞统计表
+                const total = (summary.critical||0) + (summary.high||0) + (summary.medium||0) + (summary.low||0);
+                emoji = (summary.critical > 0 || summary.high > 0) ? '🚨' : '✅';
+                status = (summary.critical > 0 || summary.high > 0) ? '未通过' : '通过';
+
+                scanSummary = `共发现 **${total}** 个安全问题`;
+                vulnTable = `
+| 严重等级 | 数量 |
+|---------|------|
+| 🔴 严重 | ${summary.critical || 0} |
+| 🟠 高危 | ${summary.high || 0} |
+| 🟡 中危 | ${summary.medium || 0} |
+| 🟢 低危 | ${summary.low || 0} |
+`;
+              }
+            } catch (e) {
+              console.error('解析扫描结果失败:', e);
+            }
+
+            // 构建PR评论内容
+            const body = `
+## ${emoji} 安全扫描报告
+
+**状态**: ${status}
+**结果**: ${scanSummary}
+
+${vulnTable}
+
+---
+*由 AI Hacking Agent 自动生成 | 工作流运行: #${{ github.run_number }}*
+*完整报告请下载 Artifacts 查看*
+`;
+
+            // 发布评论
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+
+      # -----------------------------------------------------------------------
+      # 步骤9：根据检查结果决定是否失败
+      # -----------------------------------------------------------------------
+      - name: Fail build if vulnerabilities found
+        if: steps.threshold_check.outputs.threshold_passed == 'false'
+        run: |
+          echo "=========================================="
+          echo "  ❌ 安全检查未通过！"
+          echo "  发现高危或严重漏洞，阻止部署。"
+          echo "  请查看安全报告修复后再提交。"
+          echo "=========================================="
+          exit 1
+
+  # ===========================================================================
+  # 定时深度扫描（独立任务，不影响PR流程）
+  # ===========================================================================
+  scheduled-deep-scan:
+    name: Scheduled Deep Security Scan
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests pyyaml
+
+      - name: Run deep scan
+        env:
+          AI_HACKING_API_URL: ${{ secrets.AI_HACKING_API_URL }}
+          AI_HACKING_API_KEY: ${{ secrets.AI_HACKING_API_KEY }}
+          AI_HACKING_TARGET: ${{ vars.AI_HACKING_TARGET }}
+        run: |
+          python -m cicd.cli scan \
+            --target "$AI_HACKING_TARGET" \
+            --type comprehensive \
+            --depth deep \
+            --api-url "$AI_HACKING_API_URL" \
+            --api-key "$AI_HACKING_API_KEY" \
+            --format json \
+            --output scheduled-deep-scan.json
+
+      - name: Upload deep scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: deep-scan-${{ github.run_number }}
+          path: scheduled-deep-scan.json
+          retention-days: 180
+
+# =============================================================================
+# GitHub Actions 使用最佳实践：
+# 1. Secrets管理：API密钥必须存储在Secrets中，不要硬编码在yml里
+# 2. 并发控制：防止PR频繁推送导致重复扫描
+# 3. 缓存优化：使用pip缓存加速依赖安装
+# 4. 超时保护：设置合理的timeout-minutes防止任务挂起
+# 5. 渐进式启用：先仅报告不阻断（移除步骤9），观察误报率后再启用阻断
+# =============================================================================

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API 安全全生命周期管理平台</title>
+<style>
+:root{
+  --bg:#0d1117;--panel:#161b22;--border:#30363d;--text:#c9d1d9;
+  --muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;
+  --yellow:#d29922;--purple:#bc8cff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.6}
+header{background:linear-gradient(90deg,#161b22,#0d1117);border-bottom:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+header h1{font-size:18px;color:var(--accent);font-weight:600}
+header .sub{color:var(--muted);font-size:12px}
+.layout{display:flex;min-height:calc(100vh - 60px)}
+nav{width:210px;background:var(--panel);border-right:1px solid var(--border);padding:12px 0;flex-shrink:0;overflow-y:auto}
+nav button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--text);padding:11px 18px;cursor:pointer;font-size:13px;border-left:3px solid transparent}
+nav button:hover{background:#1f2630}
+nav button.active{background:#1f2630;border-left-color:var(--accent);color:var(--accent)}
+main{flex:1;padding:20px;overflow-x:auto}
+.tab{display:none}
+.tab.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card .label{color:var(--muted);font-size:12px}
+.card .value{font-size:26px;font-weight:700;color:var(--accent);margin-top:4px}
+.card .value.g{color:var(--green)}.card .value.r{color:var(--red)}.card .value.y{color:var(--yellow)}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.panel h3{font-size:14px;color:var(--accent);margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:600}
+tr:hover td{background:#1f2630}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.t-critical{background:#f8514933;color:var(--red)}.t-high{background:#d2992233;color:var(--yellow)}
+.t-medium{background:#58a6ff33;color:var(--accent)}.t-low{background:#8b949e33;color:var(--muted)}
+.t-success{background:#3fb95033;color:var(--green)}.t-fail{background:#f8514933;color:var(--red)}
+button.btn{background:var(--accent);color:#0d1117;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
+button.btn:hover{filter:brightness(1.1)}
+button.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+input,textarea,select{background:#0d1117;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;width:100%;margin-bottom:8px}
+textarea{font-family:Consolas,monospace;min-height:100px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.row>div{flex:1;min-width:140px}
+.muted{color:var(--muted);font-size:12px}
+.bar{height:8px;background:#0d1117;border-radius:4px;overflow:hidden;margin-top:6px}
+.bar>span{display:block;height:100%;background:var(--accent)}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--panel);border:1px solid var(--accent);padding:12px 18px;border-radius:8px;opacity:0;transition:.3s;z-index:999;max-width:320px}
+#toast.show{opacity:1}
+pre{background:#0d1117;padding:10px;border-radius:6px;overflow:auto;font-size:12px;color:var(--green);max-height:260px;white-space:pre-wrap;word-break:break-all}
+@media(max-width:768px){
+  .layout{flex-direction:column}
+  nav{width:100%;display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid var(--border)}
+  nav button{border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
+  nav button.active{border-left:none;border-bottom-color:var(--accent)}
+  .cards{grid-template-columns:repeat(2,1fr)}
+  main{padding:12px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>API 安全全生命周期管理平台</h1>
+  <div class="sub">第29轮升级方向3 · v29.3.0</div>
+</header>
+<div class="layout">
+<nav>
+  <button class="active" data-tab="overview">安全总览</button>
+  <button data-tab="assets">API 资产</button>
+  <button data-tab="design">设计安全</button>
+  <button data-tab="dev">开发安全</button>
+  <button data-tab="runtime">运行时安全</button>
+  <button data-tab="abuse">滥用与业务逻辑</button>
+  <button data-tab="gov">治理合规</button>
+  <button data-tab="settings">系统设置</button>
+</nav>
+<main>
+
+<!-- ==================== Tab 1: 总览 ==================== -->
+<div class="tab active" id="tab-overview">
+  <div class="cards" id="ov-cards"></div>
+  <div class="panel"><h3>模块汇总</h3><div id="ov-modules"></div></div>
+  <div class="panel"><h3>最近威胁事件</h3><div id="ov-threats"></div></div>
+</div>
+
+<!-- ==================== Tab 2: API 资产 ==================== -->
+<div class="tab" id="tab-assets">
+  <div class="cards" id="ast-cards"></div>
+  <div class="panel">
+    <h3>API 清单</h3>
+    <div class="row">
+      <div><input id="ast-search" placeholder="搜索API名称或路径..."></div>
+      <div><button class="btn" onclick="loadAssets()">搜索</button></div>
+      <div><button class="btn ghost" onclick="discoverTraffic()">流量发现</button></div>
+    </div>
+    <div id="ast-list"></div>
+  </div>
+  <div class="panel">
+    <h3>服务地图 / 依赖分析</h3>
+    <button class="btn ghost" onclick="loadServiceMap()">查看服务地图</button>
+    <div id="ast-map"></div>
+  </div>
+  <div class="panel">
+    <h3>资产盘点</h3>
+    <button class="btn ghost" onclick="loadInventory()">盘点报告</button>
+    <div id="ast-inv"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 3: 设计安全 ==================== -->
+<div class="tab" id="tab-design">
+  <div class="panel">
+    <h3>安全设计原则</h3>
+    <div id="ds-principles"></div>
+  </div>
+  <div class="panel">
+    <h3>设计规范</h3>
+    <div id="ds-specs"></div>
+  </div>
+  <div class="panel">
+    <h3>认证授权配置</h3>
+    <div id="ds-auth"></div>
+  </div>
+  <div class="panel">
+    <h3>JSON Schema 校验</h3>
+    <div class="row">
+      <div><input id="ds-schema-name" placeholder="Schema名称"></div>
+      <div><button class="btn" onclick="validateSchema()">校验输入</button></div>
+    </div>
+    <textarea id="ds-validate-data" placeholder='{"key": "value"}'></textarea>
+    <pre id="ds-validate-result"></pre>
+  </div>
+  <div class="panel">
+    <h3>设计评审</h3>
+    <div class="row">
+      <div><input id="ds-review-name" placeholder="API名称"></div>
+      <div><input id="ds-review-path" placeholder="路径 /api/v1/xxx"></div>
+    </div>
+    <button class="btn" onclick="runDesignReview()">发起评审</button>
+    <pre id="ds-review-result"></pre>
+  </div>
+</div>
+
+<!-- ==================== Tab 4: 开发安全 ==================== -->
+<div class="tab" id="tab-dev">
+  <div class="panel">
+    <h3>密钥泄露检测</h3>
+    <textarea id="dev-secret-code" placeholder="粘贴代码片段检测硬编码密钥..."></textarea>
+    <button class="btn" onclick="detectSecrets()">扫描密钥</button>
+    <pre id="dev-secret-result"></pre>
+  </div>
+  <div class="panel">
+    <h3>API 密钥管理</h3>
+    <div class="row">
+      <div><input id="dev-key-name" placeholder="密钥名称"></div>
+      <div><button class="btn" onclick="genKey()">生成密钥</button></div>
+      <div><button class="btn ghost" onclick="loadKeys()">刷新列表</button></div>
+    </div>
+    <div id="dev-keys"></div>
+  </div>
+  <div class="panel">
+    <h3>CI/CD 安全门禁</h3>
+    <div class="row">
+      <div><input id="dev-gate-critical" type="number" placeholder="Critical数" value="0"></div>
+      <div><input id="dev-gate-high" type="number" placeholder="High数" value="3"></div>
+      <div><input id="dev-gate-medium" type="number" placeholder="Medium数" value="15"></div>
+      <div><button class="btn" onclick="evalGate()">评估门禁</button></div>
+    </div>
+    <pre id="dev-gate-result"></pre>
+  </div>
+  <div class="panel">
+    <h3>版本管理</h3>
+    <button class="btn ghost" onclick="loadVersions()">查看版本</button>
+    <div id="dev-versions"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 5: 运行时安全 ==================== -->
+<div class="tab" id="tab-runtime">
+  <div class="cards" id="rt-cards"></div>
+  <div class="panel">
+    <h3>威胁检测</h3>
+    <div class="row">
+      <div><input id="rt-threat-input" placeholder="输入待检测内容 (如: ' OR 1=1)"></div>
+      <div><button class="btn" onclick="detectThreat()">检测威胁</button></div>
+    </div>
+    <pre id="rt-threat-result"></pre>
+  </div>
+  <div class="panel">
+    <h3>网关路由</h3>
+    <div id="rt-routes"></div>
+  </div>
+  <div class="panel">
+    <h3>访问控制 (RBAC)</h3>
+    <div id="rt-roles"></div>
+  </div>
+  <div class="panel">
+    <h3>数据脱敏</h3>
+    <textarea id="rt-mask-input" placeholder='{"password":"secret123","phone":"13800138000","name":"张三"}'></textarea>
+    <button class="btn" onclick="maskData()">脱敏处理</button>
+    <pre id="rt-mask-result"></pre>
+  </div>
+</div>
+
+<!-- ==================== Tab 6: 滥用与业务逻辑 ==================== -->
+<div class="tab" id="tab-abuse">
+  <div class="cards" id="ab-cards"></div>
+  <div class="panel">
+    <h3>机器人检测</h3>
+    <div class="row">
+      <div><input id="ab-bot-ua" placeholder="User-Agent" value="python-requests/2.28"></div>
+      <div><input id="ab-bot-reqs" type="number" placeholder="请求数" value="150"></div>
+      <div><button class="btn" onclick="detectBot()">检测机器人</button></div>
+    </div>
+    <pre id="ab-bot-result"></pre>
+  </div>
+  <div class="panel">
+    <h3>业务逻辑漏洞检测</h3>
+    <div class="row">
+      <div><input id="ab-flaw-endpoint" placeholder="端点" value="/api/v1/orders/999"></div>
+      <div><input id="ab-flaw-role" placeholder="角色" value="user"></div>
+      <div><input id="ab-flaw-target" placeholder="目标用户ID" value="user-123"></div>
+      <div><input id="ab-flaw-self" placeholder="自身用户ID" value="user-456"></div>
+    </div>
+    <button class="btn" onclick="detectFlaw()">检测漏洞</button>
+    <pre id="ab-flaw-result"></pre>
+  </div>
+  <div class="panel">
+    <h3>滥用告警列表</h3>
+    <button class="btn ghost" onclick="loadAbuseAlerts()">刷新</button>
+    <div id="ab-alerts"></div>
+  </div>
+  <div class="panel">
+    <h3>重放攻击防护</h3>
+    <button class="btn ghost" onclick="genNonce()">生成Nonce</button>
+    <div id="ab-nonce"></div>
+  </div>
+  <div class="panel">
+    <h3>配额套餐</h3>
+    <div id="ab-tiers"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 7: 治理合规 ==================== -->
+<div class="tab" id="tab-gov">
+  <div class="cards" id="gv-cards"></div>
+  <div class="panel">
+    <h3>合规框架</h3>
+    <button class="btn ghost" onclick="loadFrameworks()">查看框架</button>
+    <div id="gv-frameworks"></div>
+  </div>
+  <div class="panel">
+    <h3>安全策略</h3>
+    <button class="btn ghost" onclick="loadPolicies()">查看策略</button>
+    <div id="gv-policies"></div>
+  </div>
+  <div class="panel">
+    <h3>成熟度评估</h3>
+    <div class="row">
+      <div><label>治理</label><input type="number" id="gv-mat-gov" min="1" max="5" value="3"></div>
+      <div><label>设计</label><input type="number" id="gv-mat-des" min="1" max="5" value="4"></div>
+      <div><label>开发</label><input type="number" id="gv-mat-dev" min="1" max="5" value="3"></div>
+      <div><label>运行时</label><input type="number" id="gv-mat-rt" min="1" max="5" value="4"></div>
+      <div><label>监控</label><input type="number" id="gv-mat-mon" min="1" max="5" value="2"></div>
+    </div>
+    <button class="btn" onclick="assessMaturity()">评估成熟度</button>
+    <pre id="gv-mat-result"></pre>
+  </div>
+  <div class="panel">
+    <h3>审计日志</h3>
+    <button class="btn ghost" onclick="loadAuditLogs()">查看日志</button>
+    <div id="gv-audit"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 8: 系统设置 ==================== -->
+<div class="tab" id="tab-settings">
+  <div class="panel">
+    <h3>系统设置</h3>
+    <div id="set-list"></div>
+    <button class="btn" onclick="saveSettings()">保存设置</button>
+  </div>
+  <div class="panel">
+    <h3>平台信息</h3>
+    <div id="set-info"></div>
+  </div>
+</div>
+
+</main>
+</div>
+<div id="toast"></div>
+
+<script>
+const BASE = '/api/v1/api-security-lifecycle';
+let currentTab = 'overview';
+
+// ---- Tab switching ----
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.getElementById('tab-' + tab).classList.add('active');
+    currentTab = tab;
+    loadTab(tab);
+  };
+});
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function api(path, opts = {}) {
+  try {
+    const resp = await fetch(BASE + path, {
+      headers: {'Content-Type': 'application/json'},
+      ...opts,
+    });
+    const json = await resp.json();
+    if (!json.success) { toast('错误: ' + json.error); }
+    return json;
+  } catch(e) {
+    toast('请求失败: ' + e.message);
+    return {success: false, error: e.message, data: null};
+  }
+}
+
+function fmt(v) {
+  if (v === null || v === undefined) return '-';
+  if (typeof v === 'object') return JSON.stringify(v, null, 2);
+  return v;
+}
+
+function tagCls(sev) {
+  const map = {critical:'t-critical',high:'t-high',medium:'t-medium',low:'t-low',
+               healthy:'t-success',degraded:'t-medium',unhealthy:'t-high',critical2:'t-critical'};
+  return map[sev] || 't-low';
+}
+
+function table(headers, rows) {
+  if (!rows || !rows.length) return '<p class="muted">暂无数据</p>';
+  let h = '<table><tr>' + headers.map(x => '<th>' + x + '</th>').join('') + '</tr>';
+  rows.forEach(r => {
+    h += '<tr>' + r.map(c => '<td>' + fmt(c) + '</td>').join('') + '</tr>';
+  });
+  return h + '</table>';
+}
+
+// ---- Tab loaders ----
+function loadTab(tab) {
+  if (tab === 'overview') loadOverview();
+  else if (tab === 'assets') loadAssets();
+  else if (tab === 'design') loadDesign();
+  else if (tab === 'dev') loadDev();
+  else if (tab === 'runtime') loadRuntime();
+  else if (tab === 'abuse') loadAbuse();
+  else if (tab === 'gov') loadGov();
+  else if (tab === 'settings') loadSettings();
+}
+
+async function loadOverview() {
+  const r = await api('/overview');
+  if (!r.data) return;
+  const d = r.data;
+  document.getElementById('ov-cards').innerHTML = `
+    <div class="card"><div class="label">API 总数</div><div class="value">${d.assets.total_apis}</div></div>
+    <div class="card"><div class="label">健康评分</div><div class="value g">${d.health.avg_score}</div></div>
+    <div class="card"><div class="label">威胁事件</div><div class="value y">${d.threat.total_events}</div></div>
+    <div class="card"><div class="label">合规评分</div><div class="value">${d.assets.compliance_score}</div></div>
+    <div class="card"><div class="label">安全总分</div><div class="value g">${d.security_score}</div></div>
+    <div class="card"><div class="label">成熟度</div><div class="value">${d.maturity}</div></div>
+  `;
+  document.getElementById('ov-modules').innerHTML = table(
+    ['模块','API数','依赖','事件','评审'],
+    [['资产',d.assets.total_apis,'-','-','-'],
+     ['设计','-','-','-','-'],
+     ['运行时',d.threat.total_events,'-','-','-'],
+     ['滥用',d.abuse.total_alerts,'-',d.logic_flaws.total_findings,'-'],
+     ['治理',d.compliance.assessments,'-','-','-']]
+  );
+  document.getElementById('ov-threats').innerHTML = table(
+    ['类别','数量'],
+    Object.entries(d.threat.by_category).map(([k,v]) => [k, v])
+  );
+}
+
+async function loadAssets() {
+  const kw = document.getElementById('ast-search').value.trim();
+  const path = kw ? '/assets/search?keyword=' + encodeURIComponent(kw) : '/assets/apis';
+  const r = await api(path);
+  if (!r.data) return;
+  const items = Array.isArray(r.data) ? r.data : [];
+  document.getElementById('ast-cards').innerHTML = `
+    <div class="card"><div class="label">API 总数</div><div class="value">${items.length}</div></div>
+  `;
+  document.getElementById('ast-list').innerHTML = table(
+    ['ID','方法','路径','状态','分类','负责人','来源'],
+    items.map(a => [a.id, a.method, a.path,
+      `<span class="tag ${tagCls(a.status)}">${a.status}</span>`,
+      a.category, a.owner, a.discovery_source])
+  );
+}
+
+async function discoverTraffic() {
+  const sample = [
+    '192.168.1.1 - - [16/Sep/2026] "GET /api/v1/users/123 HTTP/1.1" 200 1234',
+    '192.168.1.2 - - [16/Sep/2026] "POST /api/v1/payments HTTP/1.1" 201 567',
+    '192.168.1.3 - - [16/Sep/2026] "GET /api/v1/products/search HTTP/1.1" 200 890',
+  ];
+  const r = await api('/assets/discover/traffic', {method:'POST', body:JSON.stringify({log_lines: sample})});
+  toast('流量发现: 发现 ' + (r.data ? r.data.length : 0) + ' 个新API');
+  loadAssets();
+}
+
+async function loadServiceMap() {
+  const r = await api('/assets/service-map');
+  if (!r.data) return;
+  document.getElementById('ast-map').innerHTML = table(
+    ['节点数','边数','关键API'],
+    [[r.data.node_count, r.data.edge_count,
+      (r.data.critical_apis||[]).map(c => c.api_id+'('+c.downstream_deps+')').join(', ') || '无']]
+  );
+}
+
+async function loadInventory() {
+  const r = await api('/assets/inventory');
+  if (!r.data) return;
+  document.getElementById('ast-inv').innerHTML = table(
+    ['指标','值'],
+    [['API总数',r.data.total_apis],
+     ['未归属',r.data.unowned_count],
+     ['无文档',r.data.undocumented_count],
+     ['已弃用',r.data.deprecated_count],
+     ['无认证',r.data.no_auth_count],
+     ['合规评分',r.data.compliance_score]]
+  );
+}
+
+async function loadDesign() {
+  const p = await api('/design/principles');
+  document.getElementById('ds-principles').innerHTML = table(['原则','描述'],
+    (p.data||[]).map(x => [x.id, x.description]));
+  const s = await api('/design/specs');
+  document.getElementById('ds-specs').innerHTML = table(['名称','类别','规则数'],
+    (s.data||[]).map(x => [x.name, x.category, (x.rules||[]).length]));
+  const a = await api('/design/auth-methods');
+  document.getElementById('ds-auth').innerHTML = table(['方法','描述'],
+    (a.data||[]).map(x => [x.id, x.description]));
+}
+
+async function validateSchema() {
+  const name = document.getElementById('ds-schema-name').value;
+  const data = JSON.parse(document.getElementById('ds-validate-data').value || '{}');
+  const r = await api('/design/validate', {method:'POST', body:JSON.stringify({data, schema_name: name})});
+  document.getElementById('ds-validate-result').textContent = JSON.stringify(r.data, null, 2);
+}
+
+async function runDesignReview() {
+  const r = await api('/design/review', {method:'POST', body:JSON.stringify({
+    api_name: document.getElementById('ds-review-name').value || 'TestAPI',
+    path: document.getElementById('ds-review-path').value || '/api/v1/test',
+    method: 'GET', has_auth: true, has_rate_limit: true,
+    has_input_validation: true, has_tls: true,
+    error_messages_generic: true, uses_minimal_privilege: true,
+  })});
+  document.getElementById('ds-review-result').textContent = JSON.stringify(r.data, null, 2);
+}
+
+async function loadDev() {
+  const k = await api('/dev/keys');
+  document.getElementById('dev-keys').innerHTML = table(
+    ['名称','前缀','所有者','范围','状态','轮换次数'],
+    (k.data||[]).map(x => [x.name, x.key_prefix, x.owner,
+      (x.scopes||[]).join(','), x.status, x.rotations])
+  );
+  const v = await api('/dev/versions/stats');
+  if (v.data) {
+    document.getElementById('dev-versions').innerHTML = table(
+      ['版本','已迁移/总数','进度'],
+      (v.data.migration_progress||[]).map(x => [x.api+' '+x.version,
+        x.migrated+'/'+x.total, x.pct+'%'])
+    );
+  }
+}
+
+async function detectSecrets() {
+  const code = document.getElementById('dev-secret-code').value;
+  const r = await api('/dev/detect-secrets', {method:'POST', body:JSON.stringify({code})});
+  document.getElementById('dev-secret-result').textContent = JSON.stringify(r.data, null, 2);
+}
+
+async function genKey() {
+  const name = document.getElementById('dev-key-name').value || 'new-key';
+  const r = await api('/dev/keys', {method:'POST', body:JSON.stringify({name, owner:'user'})});
+  if (r.data && r.data.raw_key) {
+    toast('密钥已生成: ' + r.data.raw_key.substring(0,10) + '...');
+  }
+  loadDev();
+}
+
+async function evalGate() {
+  const findings = {
+    critical_vulns: parseInt(document.getElementById('dev-gate-critical').value)||0,
+    high_vulns: parseInt(document.getElementById('dev-gate-high').value)||0,
+    medium_vulns: parseInt(document.getElementById('dev-gate-medium').value)||0,
+  };
+  const r = await api('/dev/gate/evaluate', {method:'POST', body:JSON.stringify({findings})});
+  document.getElementById('dev-gate-result').textContent = JSON.stringify(r.data, null, 2);
+}
+
+async function loadRuntime() {
+  const t = await api('/runtime/threat-overview');
+  const r = await api('/runtime/routes');
+  const ro = await api('/runtime/roles');
+  document.getElementById('rt-cards').innerHTML = `
+    <div class="card"><div class="label">威胁事件</div><div class="value y">${t.data?t.data.total_events:0}</div></div>
+    <div class="card"><div class="label">网关路由</div><div class="value">${r.data?r.data.length:0}</div></div>
+    <div class="card"><div class="label">角色数</div><div class="value">${ro.data?ro.data.length:0}</div></div>
+  `;
+  document.getElementById('rt-routes').innerHTML = table(
+    ['路径','服务','方法','认证'],
+    (r.data||[]).map(x => [x.path, x.service, (x.methods||[]).join(','), x.auth_required?'是':'否'])
+  );
+  document.getElementById('rt-roles').innerHTML = table(
+    ['角色','权限'],
+    (ro.data||[]).map(x => [x.role, (x.permissions||[]).join(', ')])
+  );
+}
+
+async function detectThreat() {
+  const input = document.getElementById('rt-threat-input').value;
+  const r = await api('/runtime/detect-threat', {method:'POST', body:JSON.stringify({input_data: input})});
+  document.getElementById('rt-threat-result').textContent = JSON.stringify(r.data, null, 2);
+}
+
+async function maskData() {
+  const data = JSON.parse(document.getElementById('rt-mask-input').value || '{}');
+  const r = await api('/runtime/mask', {method:'POST', body:JSON.stringify({data})});
+  document.getElementById('rt-mask-result').textContent = JSON.stringify(r.data, null, 2);
+}
+
+async function loadAbuse() {
+  const b = await api('/abuse/bot-overview');
+  const f = await api('/abuse/flaw-overview');
+  document.getElementById('ab-cards').innerHTML = `
+    <div class="card"><div class="label">机器人检出</div><div class="value r">${b.data?b.data.bot_count:0}</div></div>
+    <div class="card"><div class="label">漏洞发现</div><div class="value y">${f.data?f.data.total_findings:0}</div></div>
+    <div class="card"><div class="label">严重漏洞</div><div class="value r">${f.data?f.data.critical_count:0}</div></div>
+  `;
+  const t = await api('/abuse/tiers');
+  document.getElementById('ab-tiers').innerHTML = table(
+    ['套餐','RPM','日调用量','月费'],
+    (t.data||[]).map(x => [x.name, x.rpm, x.daily_calls, '¥'+x.price_monthly])
+  );
+}
+
+async function detectBot() {
+  const ua = document.getElementById('ab-bot-ua').value;
+  const rc = parseInt(document.getElementById('ab-bot-reqs').value)||0;
+  const r = await api('/abuse/detect-bot', {method:'POST', body:JSON.stringify({user_agent:ua, request_count:rc})});
+  document.getElementById('ab-bot-result').textContent = JSON.stringify(r.data, null, 2);
+}
+
+async function detectFlaw() {
+  const body = {
+    api_endpoint: document.getElementById('ab-flaw-endpoint').value,
+    user_role: document.getElementById('ab-flaw-role').value,
+    target_user_id: document.getElementById('ab-flaw-target').value,
+    authenticated_user_id: document.getElementById('ab-flaw-self').value,
+  };
+  const r = await api('/abuse/detect-flaw', {method:'POST', body:JSON.stringify(body)});
+  document.getElementById('ab-flaw-result').textContent = JSON.stringify(r.data, null, 2);
+}
+
+async function loadAbuseAlerts() {
+  const r = await api('/abuse/alerts');
+  document.getElementById('ab-alerts').innerHTML = table(
+    ['ID','客户端','信号数','状态','时间'],
+    (r.data||[]).map(x => [x.id, x.client, x.signals.length, x.status, x.detected_at])
+  );
+}
+
+async function genNonce() {
+  const r = await api('/abuse/nonce', {method:'POST'});
+  document.getElementById('ab-nonce').innerHTML = '<p class="muted">Nonce: <code>' + (r.data?r.data.nonce:'') + '</code></p>';
+}
+
+async function loadGov() {
+  const c = await api('/gov/compliance-overview');
+  document.getElementById('gv-cards').innerHTML = `
+    <div class="card"><div class="label">合规评估数</div><div class="value">${c.data?c.data.total_assessments:0}</div></div>
+    <div class="card"><div class="label">平均合规分</div><div class="value g">${c.data?c.data.avg_score:0}</div></div>
+  `;
+  const p = await api('/gov/policies');
+  document.getElementById('gv-policies').innerHTML = table(
+    ['名称','类型','状态','执行方式'],
+    (p.data||[]).map(x => [x.name, x.type, x.status, x.enforcement])
+  );
+}
+
+async function loadFrameworks() {
+  const r = await api('/gov/frameworks');
+  document.getElementById('gv-frameworks').innerHTML = table(
+    ['ID','名称','地区','控制项数'],
+    (r.data||[]).map(x => [x.id, x.name, x.region, x.control_count])
+  );
+}
+
+async function assessMaturity() {
+  const body = {
+    governance: parseInt(document.getElementById('gv-mat-gov').value)||1,
+    design: parseInt(document.getElementById('gv-mat-des').value)||1,
+    development: parseInt(document.getElementById('gv-mat-dev').value)||1,
+    runtime: parseInt(document.getElementById('gv-mat-rt').value)||1,
+    monitoring: parseInt(document.getElementById('gv-mat-mon').value)||1,
+  };
+  const r = await api('/gov/maturity', {method:'POST', body:JSON.stringify(body)});
+  document.getElementById('gv-mat-result').textContent = JSON.stringify(r.data, null, 2);
+}
+
+async function loadAuditLogs() {
+  const r = await api('/gov/audit-logs?limit=20');
+  document.getElementById('gv-audit').innerHTML = table(
+    ['动作','执行者','资源','时间'],
+    (r.data||[]).map(x => [x.action, x.actor, x.resource, x.timestamp])
+  );
+}
+
+async function loadSettings() {
+  const r = await api('/settings');
+  if (!r.data) return;
+  let html = '';
+  for (const [k,v] of Object.entries(r.data)) {
+    html += '<div class="row"><div><label>'+k+'</label><input id="set-'+k+'" value="'+v+'"></div></div>';
+  }
+  document.getElementById('set-list').innerHTML = html;
+  document.getElementById('set-info').innerHTML = table(
+    ['项目','值'],[['平台', r.data.platform_name],['版本', r.data.version]]
+  );
+}
+
+async function saveSettings() {
+  const inputs = document.querySelectorAll('#set-list input');
+  const fields = {};
+  inputs.forEach(inp => {
+    const key = inp.id.replace('set-','');
+    let v = inp.value;
+    if (!isNaN(v) && v !== '') v = Number(v);
+    fields[key] = v;
+  });
+  const r = await api('/settings', {method:'PUT', body:JSON.stringify({fields})});
+  toast(r.success ? '设置已保存' : '保存失败');
+}
+
+// Initial load
+loadOverview();
+</script>
+</body>
+</html>

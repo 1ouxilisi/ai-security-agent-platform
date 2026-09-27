@@ -1,0 +1,127 @@
+{
+  "timestamp": "2026-08-27T22:21:13.605344",
+  "summary": {
+    "total_tools": 12,
+    "available_tools": 3,
+    "unavailable_tools": 9
+  },
+  "tools": [
+    {
+      "name": "python",
+      "available": true,
+      "version": "3.13.13",
+      "path": "C:\\Users\\ASUS\\AppData\\Local\\Doubao\\User Data\\sandbox_runtime\\bases\\9f6d27f23933fb44a3a1c728c88a5ce4\\python\\python.EXE",
+      "error": null
+    },
+    {
+      "name": "nmap",
+      "available": false,
+      "version": null,
+      "path": null,
+      "error": "未安装或不在PATH中"
+    },
+    {
+      "name": "sqlmap",
+      "available": true,
+      "version": null,
+      "path": "C:\\Users\\ASUS\\AppData\\Local\\Doubao\\User Data\\sandbox_runtime\\bases\\9f6d27f23933fb44a3a1c728c88a5ce4\\python\\Scripts\\sqlmap.EXE",
+      "error": null
+    },
+    {
+      "name": "nuclei",
+      "available": false,
+      "version": null,
+      "path": null,
+      "error": "未安装或不在PATH中"
+    },
+    {
+      "name": "gobuster",
+      "available": false,
+      "version": null,
+      "path": null,
+      "error": "未安装或不在PATH中"
+    },
+    {
+      "name": "ffuf",
+      "available": false,
+      "version": null,
+      "path": null,
+      "error": "未安装或不在PATH中"
+    },
+    {
+      "name": "httpx",
+      "available": true,
+      "version": "Usage:",
+      "path": "C:\\Users\\ASUS\\AppData\\Local\\Doubao\\User Data\\sandbox_runtime\\bases\\9f6d27f23933fb44a3a1c728c88a5ce4\\python\\Scripts\\httpx.EXE",
+      "error": null
+    },
+    {
+      "name": "whatweb",
+      "available": false,
+      "version": null,
+      "path": null,
+      "error": "未安装或不在PATH中"
+    },
+    {
+      "name": "nikto",
+      "available": false,
+      "version": null,
+      "path": null,
+      "error": "未安装或不在PATH中"
+    },
+    {
+      "name": "masscan",
+      "available": false,
+      "version": null,
+      "path": null,
+      "error": "未安装或不在PATH中"
+    },
+    {
+      "name": "amass",
+      "available": false,
+      "version": null,
+      "path": null,
+      "error": "未安装或不在PATH中"
+    },
+    {
+      "name": "subfinder",
+      "available": false,
+      "version": null,
+      "path": null,
+      "error": "未安装或不在PATH中"
+    }
+  ],
+  "verifications": [
+    {
+      "name": "python",
+      "functional": true,
+      "test": "Python版本和依赖检查",
+      "result": "Python 3.13.13",
+      "error": null
+    },
+    {
+      "name": "sqlmap",
+      "functional": true,
+      "test": "显示版本和帮助",
+      "result": "版本显示正常",
+      "error": null
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "high",
+      "message": "以下工具未安装: nmap, nuclei, gobuster, ffuf, whatweb, nikto, masscan, amass, subfinder",
+      "action": "运行 install_tools.bat 或手动安装缺失的工具"
+    },
+    {
+      "priority": "critical",
+      "message": "nmap未安装，端口扫描功能将使用模拟模式",
+      "action": "从 https://nmap.org/download.html 下载安装nmap"
+    },
+    {
+      "priority": "high",
+      "message": "nuclei未安装，漏洞模板扫描功能不可用",
+      "action": "从 https://github.com/projectdiscovery/nuclei/releases 下载安装"
+    }
+  ]
+}

@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<title>专业报告引擎 · Report Engine Console</title>
+<style>
+  :root{
+    --bg:#0b1020; --panel:#121a33; --panel2:#172142; --line:#26335c;
+    --fg:#d7e0ff; --mute:#8a96c0; --accent:#4fd1c5; --warn:#f6ad55;
+    --err:#fc8181; --ok:#68d391;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:"Microsoft YaHei",Segoe UI,sans-serif;font-size:13px}
+  header{padding:14px 22px;background:linear-gradient(90deg,#0f1735,#172142);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  header h1{margin:0;font-size:18px;color:var(--accent)}
+  header .sub{color:var(--mute);font-size:12px;margin-left:12px}
+  .wrap{padding:18px 22px}
+  .tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .tab{padding:8px 14px;background:var(--panel);border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--mute)}
+  .tab.active{background:var(--accent);color:#0b1020;font-weight:bold}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:14px}
+  .card h3{margin:0 0 10px 0;color:var(--accent);font-size:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:10px}
+  .stat .v{font-size:20px;font-weight:bold;color:var(--accent)}
+  .stat .k{color:var(--mute);font-size:12px}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:var(--accent)}
+  tr:hover td{background:#1b2749}
+  button{background:var(--accent);color:#0b1020;border:0;border-radius:4px;padding:6px 12px;cursor:pointer;font-weight:bold}
+  button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  button:hover{opacity:.85}
+  input,select,textarea{background:#0e1631;color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:6px 8px;font-family:inherit}
+  textarea{width:100%;min-height:90px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  .muted{color:var(--mute);font-size:12px}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}
+  pre{background:#0a0f24;border:1px solid var(--line);padding:10px;border-radius:6px;overflow:auto;max-height:420px;font-size:12px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px}
+  .b-critical{background:#fc8181;color:#200}
+  .b-high{background:#f6ad55;color:#200}
+  .b-medium{background:#ecc94b;color:#200}
+  .b-low{background:#68d391;color:#200}
+  .hidden{display:none}
+  footer{padding:12px 22px;color:var(--mute);font-size:11px;border-top:1px solid var(--line);margin-top:20px}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>专业报告引擎 <span class="sub">Report Engine · Round14 Direction3</span></h1></div>
+  <div class="muted" id="healthLine">health: checking…</div>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <div class="tab active" data-tab="tpl">模板库</div>
+    <div class="tab" data-tab="gen">智能生成</div>
+    <div class="tab" data-tab="qc">质量校验</div>
+    <div class="tab" data-tab="exp">多格式导出</div>
+    <div class="tab" data-tab="col">协作审批</div>
+    <div class="tab" data-tab="an">报告分析</div>
+  </div>
+
+  <!-- ==================== 模板库 ==================== -->
+  <section id="tpl" class="pane">
+    <div class="grid" id="tplStats"></div>
+    <div class="card">
+      <h3>模板列表</h3>
+      <div class="row">
+        <select id="tplInd"><option value="">全部行业</option></select>
+        <select id="tplType"><option value="">全部类型</option></select>
+        <input id="tplKw" placeholder="关键词搜索" style="width:180px"/>
+        <button onclick="loadTemplates()">刷新</button>
+        <button class="ghost" onclick="previewSelected()">预览选中</button>
+      </div>
+      <table id="tplTable"><thead><tr><th>ID</th><th>名称</th><th>行业</th><th>类型</th><th>版本</th><th>操作</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="card"><h3>模板预览</h3><pre id="tplPreview">—</pre></div>
+  </section>
+
+  <!-- ==================== 智能生成 ==================== -->
+  <section id="gen" class="pane hidden">
+    <div class="card">
+      <h3>智能生成报告</h3>
+      <div class="row">
+        <label>模板ID：<input id="genTpl" value="TPL-FINANCE-PENETRATION_TEST" style="width:280px"/></label>
+        <label>客户：<input id="genClient" value="示例银行"/></label>
+        <label>项目：<input id="genProj" value="年度渗透测试"/></label>
+        <button onclick="runGenerate()">生成</button>
+      </div>
+      <div class="row muted">内置示例扫描结果（含 Log4Shell / SQLi / XSS / Heartbleed 等）</div>
+    </div>
+    <div class="card"><h3>报告列表</h3><table id="genTable"><thead><tr><th>ID</th><th>客户</th><th>模板</th><th>风险</th><th>漏洞数</th><th>操作</th></tr></thead><tbody></tbody></table></div>
+    <div class="card"><h3>报告详情 / 执行摘要</h3><pre id="genDetail">—</pre></div>
+  </section>
+
+  <!-- ==================== 质量校验 ==================== -->
+  <section id="qc" class="pane hidden">
+    <div class="card">
+      <h3>质量校验</h3>
+      <div class="row">
+        <input id="qcRid" placeholder="report_id" style="width:260px"/>
+        <button onclick="runQualityCheck()">开始校验</button>
+      </div>
+    </div>
+    <div class="grid" id="qcStats"></div>
+    <div class="card"><h3>校验发现</h3><pre id="qcResult">—</pre></div>
+  </section>
+
+  <!-- ==================== 多格式导出 ==================== -->
+  <section id="exp" class="pane hidden">
+    <div class="card">
+      <h3>多格式导出</h3>
+      <div class="row">
+        <input id="expRid" placeholder="report_id" style="width:260px"/>
+        <select id="expFmt">
+          <option value="html">HTML</option>
+          <option value="markdown">Markdown</option>
+          <option value="json">JSON</option>
+          <option value="csv">CSV</option>
+          <option value="pdf">PDF</option>
+          <option value="word">Word</option>
+          <option value="excel">Excel</option>
+        </select>
+        <button onclick="runExport()">导出</button>
+      </div>
+    </div>
+    <div class="card"><h3>导出结果</h3><pre id="expResult">—</pre></div>
+  </section>
+
+  <!-- ==================== 协作审批 ==================== -->
+  <section id="col" class="pane hidden">
+    <div class="card">
+      <h3>创建协作文档</h3>
+      <div class="row">
+        <input id="colRid" placeholder="report_id" style="width:260px"/>
+        <button onclick="runCollabCreate()">基于报告创建文档</button>
+      </div>
+    </div>
+    <div class="card"><h3>文档列表</h3><table id="colTable"><thead><tr><th>DocID</th><th>标题</th><th>阶段</th><th>成员</th><th>操作</th></tr></thead><tbody></tbody></table></div>
+    <div class="card">
+      <h3>阶段推进 / 签名 / 评论</h3>
+      <div class="row">
+        <input id="colDid" placeholder="doc_id" style="width:220px"/>
+        <button class="ghost" onclick="colAdvance()">推进阶段</button>
+        <button class="ghost" onclick="colSign()">电子签名</button>
+        <button class="ghost" onclick="colFinalize()">定稿</button>
+        <button class="ghost" onclick="colArchive()">归档</button>
+      </div>
+      <div class="row">
+        <input id="colCmt" placeholder="评论内容" style="width:320px"/>
+        <button onclick="colComment()">发表评论</button>
+      </div>
+    </div>
+    <div class="card"><h3>评论 / 变更</h3><pre id="colResult">—</pre></div>
+  </section>
+
+  <!-- ==================== 报告分析 ==================== -->
+  <section id="an" class="pane hidden">
+    <div class="grid" id="anStats"></div>
+    <div class="card"><h3>仪表盘</h3><pre id="anDash">—</pre></div>
+    <div class="card"><h3>报告库搜索</h3>
+      <div class="row">
+        <input id="anKw" placeholder="客户/项目关键词" style="width:200px"/>
+        <button onclick="loadAnalyticsSearch()">搜索</button>
+      </div>
+      <table id="anTable"><thead><tr><th>ID</th><th>客户</th><th>行业</th><th>类型</th><th>风险</th><th>评分</th><th>阶段</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+</div>
+<footer>Report Engine Console · 第14轮升级方向3 · 仅用于授权安全评估工作</footer>
+
+<script>
+const API = "/api/v1/report-engine";
+let lastReport = null;
+
+async function jget(u){ const r=await fetch(API+u); return r.json(); }
+async function jpost(u,b){ const r=await fetch(API+u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{})}); return r.json(); }
+async function jraw(u,body,ct){ const r=await fetch(API+u,{method:"POST",headers:{"Content-Type":ct||"application/json"},body}); return r.json(); }
+
+// tabs
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".pane").forEach(x=>x.classList.add("hidden"));
+  t.classList.add("active");
+  document.getElementById(t.dataset.tab).classList.remove("hidden");
+});
+
+// health
+(async()=>{ try{ const d=await jget("/health"); document.getElementById("healthLine").textContent="module="+d.data.available+" endpoints="+d.data.endpoints_registered; }catch(e){ document.getElementById("healthLine").textContent="health: unreachable"; }})();
+
+// ---- 模板库 ----
+async function loadTemplateMeta(){
+  const d=await jget("/templates/meta");
+  if(!d.data) return;
+  const ind=document.getElementById("tplInd"); d.data.industries.forEach(i=>{const o=document.createElement("option");o.value=i.key;o.textContent=i.industry;ind.appendChild(o);});
+  const ty=document.getElementById("tplType"); d.data.report_types.forEach(i=>{const o=document.createElement("option");o.value=i.key;o.textContent=i.type_name;ty.appendChild(o);});
+}
+async function loadTemplates(){
+  const ind=document.getElementById("tplInd").value, ty=document.getElementById("tplType").value, kw=document.getElementById("tplKw").value;
+  const params=new URLSearchParams(); if(ind)params.set("industry",ind); if(ty)params.set("report_type",ty); if(kw)params.set("keyword",kw);
+  const d=await jget("/templates?"+params.toString());
+  const rows=(d.data||[]).map(t=>`<tr><td>${t.template_id}</td><td>${t.name}</td><td>${t.industry}</td><td>${t.report_type}</td><td>${t.version}</td>
+    <td><button class="ghost" onclick="previewTpl('${t.template_id}')">预览</button></td></tr>`).join("");
+  document.querySelector("#tplTable tbody").innerHTML=rows||"<tr><td colspan=6>无数据</td></tr>";
+  document.getElementById("tplStats").innerHTML=`
+    <div class="stat"><div class="v">${(d.data||[]).length}</div><div class="k">当前模板数</div></div>
+    <div class="stat"><div class="v">8</div><div class="k">内置行业</div></div>
+    <div class="stat"><div class="v">8</div><div class="k">报告类型</div></div>`;
+}
+async function previewTpl(tid){
+  const d=await jget("/templates/"+tid+"/preview");
+  document.getElementById("tplPreview").textContent=JSON.stringify(d.data,null,2);
+}
+function previewSelected(){
+  const tid=document.getElementById("genTpl").value; previewTpl(tid);
+}
+
+// ---- 智能生成 ----
+const SAMPLE_SCAN=[
+  {name:"Log4Shell",cve_id:"CVE-2021-44228",host:"app-01"},
+  {name:"Struts2 S2-045",cve_id:"CVE-2017-5638",host:"web-02"},
+  {name:"Heartbleed",cve_id:"CVE-2014-0160",host:"lb-01"},
+  {name:"SQL注入",title:"SQLi on /api/login",host:"api-01"},
+  {name:"反射型XSS",title:"XSS on /search",host:"web-01"},
+  {name:"目录遍历",title:"目录遍历 /backup",host:"web-01"},
+  {name:"弱加密",title:"TLS1.0",host:"lb-01"},
+];
+const SAMPLE_ASSETS=[
+  {ip:"10.0.0.11",os:"CentOS7",type:"应用"},
+  {ip:"10.0.0.12",os:"Windows2019",type:"Web"},
+  {ip:"10.0.0.20",os:"Linux",type:"API"},
+  {ip:"10.0.0.30",os:"Network",type:"LB"},
+];
+async function runGenerate(){
+  const tpl=document.getElementById("genTpl").value;
+  const client=document.getElementById("genClient").value;
+  const proj=document.getElementById("genProj").value;
+  const d=await jpost("/generate",{template_id:tpl,scan_results:SAMPLE_SCAN,assets:SAMPLE_ASSETS,meta:{client,project:proj,author:"penter01",industry:"finance",report_type:"penetration_test"}});
+  if(d.data){ lastReport=d.data; refreshReportList(); document.getElementById("genDetail").textContent=d.data.executive_summary; document.getElementById("qcRid").value=d.data.report_id; document.getElementById("expRid").value=d.data.report_id; document.getElementById("colRid").value=d.data.report_id; }
+  else alert(d.error);
+}
+async function refreshReportList(){
+  const d=await jget("/reports");
+  const rows=(d.data||[]).map(r=>`<tr><td>${r.report_id}</td><td>${r.client}</td><td>${r.template_name}</td><td><span class="badge b-${r.overall_risk}">${r.overall_risk}</span></td><td>${r.vuln_count||0}</td><td><button class="ghost" onclick="viewReport('${r.report_id}')">查看</button></td></tr>`).join("");
+  document.querySelector("#genTable tbody").innerHTML=rows||"<tr><td colspan=6>无数据</td></tr>";
+}
+async function viewReport(rid){
+  const d=await jget("/reports/"+rid); lastReport=d.data;
+  document.getElementById("genDetail").textContent=JSON.stringify(d.data,null,2);
+}
+
+// ---- 质量校验 ----
+async function runQualityCheck(){
+  const rid=document.getElementById("qcRid").value;
+  const d=await jpost("/quality/check?report_id="+encodeURIComponent(rid),{});
+  if(!d.data){alert(d.error);return;}
+  const r=d.data;
+  document.getElementById("qcStats").innerHTML=`
+    <div class="stat"><div class="v">${r.score}</div><div class="k">质量分</div></div>
+    <div class="stat"><div class="v">${r.grade}</div><div class="k">等级</div></div>
+    <div class="stat"><div class="v">${r.summary.errors}</div><div class="k">错误</div></div>
+    <div class="stat"><div class="v">${r.summary.warns}</div><div class="k">警告</div></div>
+    <div class="stat"><div class="v">${r.passed?"通过":"未通过"}</div><div class="k">结果</div></div>`;
+  document.getElementById("qcResult").textContent=JSON.stringify(r,null,2);
+}
+
+// ---- 多格式导出 ----
+async function runExport(){
+  const rid=document.getElementById("expRid").value, fmt=document.getElementById("expFmt").value;
+  const d=await jpost("/export",{report_id:rid,fmt,style:{watermark:"CONFIDENTIAL",cover:true}});
+  document.getElementById("expResult").textContent=JSON.stringify(d.data||d.error,null,2);
+}
+
+// ---- 协作审批 ----
+async function runCollabCreate(){
+  const rid=document.getElementById("colRid").value;
+  const d=await jpost("/collab/"+rid+"/create?owner=penter01",{});
+  if(d.data){ document.getElementById("colDid").value=d.data.doc_id; loadCollabDocs(); }
+}
+async function loadCollabDocs(){
+  const d=await jget("/collab/docs");
+  const rows=(d.data||[]).map(x=>`<tr><td>${x.doc_id}</td><td>${x.title}</td><td>${x.stage}</td><td>${x.members.map(m=>m.user+":"+m.role).join(", ")}</td>
+    <td><button class="ghost" onclick="pickDoc('${x.doc_id}')">选择</button></td></tr>`).join("");
+  document.querySelector("#colTable tbody").innerHTML=rows||"<tr><td colspan=5>无</td></tr>";
+}
+function pickDoc(did){ document.getElementById("colDid").value=did; }
+async function colAdvance(){ const did=document.getElementById("colDid").value; const d=await jpost("/collab/docs/"+did+"/advance",{user:"lead",note:"审核通过"}); document.getElementById("colResult").textContent=JSON.stringify(d.data||d.error,null,2); loadCollabDocs(); }
+async function colSign(){ const did=document.getElementById("colDid").value; const d=await jpost("/collab/docs/"+did+"/sign",{user:"approver01",role:"approver",signature:"SIGN-APPROVER-X1"}); document.getElementById("colResult").textContent=JSON.stringify(d.data||d.error,null,2); }
+async function colFinalize(){ const did=document.getElementById("colDid").value; const d=await jpost("/collab/docs/"+did+"/finalize",{}); document.getElementById("colResult").textContent=JSON.stringify(d.data||d.error,null,2); loadCollabDocs(); }
+async function colArchive(){ const did=document.getElementById("colDid").value; const d=await jpost("/collab/docs/"+did+"/archive",{}); document.getElementById("colResult").textContent=JSON.stringify(d.data||d.error,null,2); loadCollabDocs(); }
+async function colComment(){ const did=document.getElementById("colDid").value; const txt=document.getElementById("colCmt").value; const d=await jpost("/collab/docs/"+did+"/comments",{user:"reviewer01",text:txt}); document.getElementById("colResult").textContent=JSON.stringify(d.data||d.error,null,2); }
+
+// ---- 分析 ----
+async function loadAnalyticsDash(){
+  const d=await jget("/analytics/dashboard");
+  if(!d.data) return;
+  document.getElementById("anStats").innerHTML=`
+    <div class="stat"><div class="v">${d.data.total_reports}</div><div class="k">报告总数</div></div>
+    <div class="stat"><div class="v">${d.data.avg_quality_score}</div><div class="k">平均质量分</div></div>
+    <div class="stat"><div class="v">${d.data.avg_customer_rating}</div><div class="k">客户评分</div></div>
+    <div class="stat"><div class="v">${Object.keys(d.data.by_report_type).length}</div><div class="k">覆盖类型</div></div>`;
+  document.getElementById("anDash").textContent=JSON.stringify(d.data,null,2);
+}
+async function loadAnalyticsSearch(){
+  const kw=document.getElementById("anKw").value;
+  const d=await jget("/analytics/search?keyword="+encodeURIComponent(kw||""));
+  const rows=(d.data||[]).map(r=>`<tr><td>${r.report_id}</td><td>${r.client}</td><td>${r.industry}</td><td>${r.report_type}</td><td>${r.overall_risk}</td><td>${r.quality_score??"-"}</td><td>${r.stage}</td></tr>`).join("");
+  document.querySelector("#anTable tbody").innerHTML=rows||"<tr><td colspan=7>无</td></tr>";
+}
+
+// init
+loadTemplateMeta().then(loadTemplates);
+refreshReportList();
+loadCollabDocs();
+loadAnalyticsDash().then(loadAnalyticsSearch);
+</script>
+</body>
+</html>

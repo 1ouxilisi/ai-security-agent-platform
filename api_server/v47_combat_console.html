@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>v4.7 AI安全作战中心 - 遗传进化/多轮攻击/MCP深扫</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e1a;color:#e0e6f0;font-family:'Segoe UI',system-ui,sans-serif}
+.header{background:linear-gradient(135deg,#0d1b2a,#1b263b);padding:20px 30px;border-bottom:2px solid #00d4ff;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:22px;color:#00d4ff}
+.header .badge{background:#00d4ff;color:#0a0e1a;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:bold}
+.tabs{display:flex;background:#0d1b2a;padding:0 20px;border-bottom:1px solid #1b263b}
+.tab{padding:14px 24px;cursor:pointer;border-bottom:3px solid transparent;color:#8892b0;transition:all .2s}
+.tab:hover{color:#e0e6f0}
+.tab.active{color:#00d4ff;border-bottom-color:#00d4ff;background:#1b263b}
+.panel{display:none;padding:24px}
+.panel.active{display:block}
+.card{background:#0d1b2a;border:1px solid #1b263b;border-radius:8px;padding:20px;margin-bottom:16px}
+.card h3{color:#00d4ff;margin-bottom:12px;font-size:16px}
+.btn{background:#00d4ff;color:#0a0e1a;border:none;padding:10px 20px;border-radius:4px;cursor:pointer;font-weight:bold;font-size:14px;transition:all .2s}
+.btn:hover{background:#00b8e6}
+.btn:disabled{background:#333;color:#666;cursor:not-allowed}
+.btn-danger{background:#ff4757;color:#fff}
+.btn-danger:hover{background:#ff6b7a}
+input,select,textarea{background:#1b263b;border:1px solid #2d3a4f;color:#e0e6f0;padding:8px 12px;border-radius:4px;width:100%;font-size:13px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#00d4ff}
+label{display:block;color:#8892b0;font-size:12px;margin-bottom:4px;margin-top:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.stat{background:#1b263b;padding:14px;border-radius:6px;text-align:center}
+.stat .num{font-size:28px;font-weight:bold;color:#00d4ff}
+.stat .label{font-size:11px;color:#8892b0;margin-top:4px}
+.log-box{background:#0a0e1a;border:1px solid #1b263b;border-radius:4px;padding:12px;height:300px;overflow-y:auto;font-family:monospace;font-size:12px;line-height:1.6}
+.log-box .info{color:#00d4ff}
+.log-box .success{color:#2ed573}
+.log-box .warn{color:#ffa502}
+.log-box .error{color:#ff4757}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#1b263b;color:#00d4ff;padding:10px;text-align:left;font-size:12px}
+td{padding:8px 10px;border-bottom:1px solid #1b263b}
+tr:hover{background:#1b263b}
+.severity-critical{color:#ff4757;font-weight:bold}
+.severity-high{color:#ff6b7a}
+.severity-medium{color:#ffa502}
+.severity-low{color:#2ed573}
+.progress-bar{background:#1b263b;border-radius:4px;height:8px;overflow:hidden}
+.progress-fill{background:linear-gradient(90deg,#00d4ff,#2ed573);height:100%;transition:width .3s}
+.badge-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;margin:2px}
+.badge-critical{background:#ff4757;color:#fff}
+.badge-high{background:#ff6b7a;color:#fff}
+.badge-medium{background:#ffa502;color:#000}
+.badge-low{background:#2ed573;color:#000}
+.config-row{display:flex;gap:12px;align-items:flex-end}
+.config-row > div{flex:1}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ v4.7 AI安全作战中心</h1>
+  <span class="badge">GENETIC + MULTI-TURN + MCP DEEP SCAN</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('genetic')">🧬 遗传算法进化</div>
+  <div class="tab" onclick="switchTab('multiturn')">🔄 多轮攻击编排</div>
+  <div class="tab" onclick="switchTab('mcp')">🔍 MCP深度扫描</div>
+  <div class="tab" onclick="switchTab('stats')">📊 引擎统计</div>
+</div>
+
+<!-- 遗传算法进化 -->
+<div class="panel active" id="panel-genetic">
+  <div class="card">
+    <h3>🧬 遗传算法Prompt进化引擎</h3>
+    <p style="color:#8892b0;font-size:13px;margin-bottom:12px">20种攻击策略 × 12种编码 × 10种包装 × 10种目标 = 24,000种基因组合，自动进化发现新攻击</p>
+    <div class="config-row">
+      <div><label>目标模型/API</label><input id="gen-target" placeholder="https://api.example.com/v1/chat 或留空模拟"></div>
+      <div><label>种群大小</label><input id="gen-pop" type="number" value="20" min="5" max="100"></div>
+      <div><label>最大代数</label><input id="gen-gen" type="number" value="5" min="1" max="20"></div>
+      <div><label>变异率</label><input id="gen-mut" type="number" value="0.3" min="0.1" max="0.9" step="0.1"></div>
+      <div><button class="btn" onclick="runGenetic()">▶ 开始进化</button></div>
+    </div>
+  </div>
+
+  <div class="grid" id="gen-stats" style="display:none">
+    <div class="stat"><div class="num" id="gen-gens">0</div><div class="label">进化代数</div></div>
+    <div class="stat"><div class="num" id="gen-best">0</div><div class="label">最佳适应度</div></div>
+    <div class="stat"><div class="num" id="gen-unique">0</div><div class="label">发现唯一攻击</div></div>
+    <div class="stat"><div class="num" id="gen-success">0</div><div class="label">成功攻击数</div></div>
+  </div>
+
+  <div class="card" id="gen-result-card" style="display:none">
+    <h3>进化结果</h3>
+    <div style="margin-bottom:12px">
+      <label>适应度进化曲线</label>
+      <div class="progress-bar"><div class="progress-fill" id="gen-progress" style="width:0%"></div></div>
+    </div>
+    <div id="gen-attacks"></div>
+  </div>
+
+  <div class="card">
+    <h3>执行日志</h3>
+    <div class="log-box" id="gen-log"></div>
+  </div>
+</div>
+
+<!-- 多轮攻击编排 -->
+<div class="panel" id="panel-multiturn">
+  <div class="card">
+    <h3>🔄 多轮攻击编排引擎</h3>
+    <p style="color:#8892b0;font-size:13px;margin-bottom:12px">8种多轮攻击策略，模拟真实攻击者的渐进式诱导、信任建立、上下文操纵</p>
+    <div class="config-row">
+      <div><label>攻击策略</label>
+        <select id="mt-strategy">
+          <option value="all">全部策略（8种）</option>
+          <option value="gradual_induction">渐进式诱导</option>
+          <option value="trust_building">信任建立</option>
+          <option value="context_manipulation">上下文操纵</option>
+          <option value="roleplay_chain">角色扮演链</option>
+          <option value="fragmentation">碎片化攻击</option>
+          <option value="reverse_psychology">反向心理学</option>
+          <option value="academic_escalation">学术包装渐进</option>
+          <option value="emotional_manipulation">情感操纵</option>
+        </select>
+      </div>
+      <div><label>目标模型</label><input id="mt-target" placeholder="留空用模拟模式"></div>
+      <div><label>最大轮次</label><input id="mt-turns" type="number" value="5" min="1" max="10"></div>
+      <div><button class="btn" onclick="runMultiTurn()">▶ 开始攻击</button></div>
+    </div>
+  </div>
+
+  <div class="grid" id="mt-stats" style="display:none">
+    <div class="stat"><div class="num" id="mt-total">0</div><div class="label">策略总数</div></div>
+    <div class="stat"><div class="num" id="mt-success">0</div><div class="label">成功攻击</div></div>
+    <div class="stat"><div class="num" id="mt-rate">0%</div><div class="label">成功率</div></div>
+    <div class="stat"><div class="num" id="mt-avg">0</div><div class="label">平均效果</div></div>
+  </div>
+
+  <div class="card" id="mt-result-card" style="display:none">
+    <h3>攻击结果</h3>
+    <div id="mt-results"></div>
+  </div>
+
+  <div class="card">
+    <h3>执行日志</h3>
+    <div class="log-box" id="mt-log"></div>
+  </div>
+</div>
+
+<!-- MCP深度扫描 -->
+<div class="panel" id="panel-mcp">
+  <div class="card">
+    <h3>🔍 MCP服务器深度安全扫描器</h3>
+    <p style="color:#8892b0;font-size:13px;margin-bottom:12px">工具权限图谱 + 污点流分析 + 攻击链生成 + PoC自动生成 + 供应链风险评估</p>
+    <div class="config-row">
+      <div><label>MCP服务器名称</label><input id="mcp-name" placeholder="my-mcp-server" value="test-server"></div>
+      <div><button class="btn" onclick="runMcpScan()">▶ 开始扫描</button></div>
+    </div>
+    <div style="margin-top:12px">
+      <label>工具列表（JSON格式，可选）</label>
+      <textarea id="mcp-tools" rows="3" placeholder='[{"name":"read_file","description":"Read files"}]'></textarea>
+    </div>
+    <div style="margin-top:8px">
+      <label>源代码（可选，用于污点流分析）</label>
+      <textarea id="mcp-code" rows="3" placeholder="def execute(cmd): os.system(cmd)"></textarea>
+    </div>
+  </div>
+
+  <div class="grid" id="mcp-stats" style="display:none">
+    <div class="stat"><div class="num" id="mcp-tools-found">0</div><div class="label">发现工具</div></div>
+    <div class="stat"><div class="num" id="mcp-risk">0</div><div class="label">风险评分</div></div>
+    <div class="stat"><div class="num" id="mcp-flows">0</div><div class="label">污点流</div></div>
+    <div class="stat"><div class="num" id="mcp-chains">0</div><div class="label">攻击链</div></div>
+  </div>
+
+  <div class="card" id="mcp-result-card" style="display:none">
+    <h3>扫描结果</h3>
+    <div id="mcp-overall"></div>
+    <div id="mcp-chains-detail"></div>
+    <div id="mcp-recs"></div>
+  </div>
+
+  <div class="card">
+    <h3>执行日志</h3>
+    <div class="log-box" id="mcp-log"></div>
+  </div>
+</div>
+
+<!-- 统计 -->
+<div class="panel" id="panel-stats">
+  <div class="card">
+    <h3>📊 v4.7 引擎总览</h3>
+    <div id="stats-content"><p style="color:#8892b0">加载中...</p></div>
+  </div>
+</div>
+
+<script>
+const API_BASE = '/api/v1/ai-v47';
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='stats') loadStats();
+}
+
+function log(boxId,msg,type='info'){
+  const box=document.getElementById(boxId);
+  const time=new Date().toLocaleTimeString();
+  box.innerHTML+=`<div class="${type}">[${time}] ${msg}</div>`;
+  box.scrollTop=box.scrollHeight;
+}
+
+async function runGenetic(){
+  const btn=event.target;btn.disabled=true;
+  log('gen-log','启动遗传算法进化...','info');
+  document.getElementById('gen-stats').style.display='grid';
+  try{
+    const res=await fetch(API_BASE+'/genetic-evolve',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        target:document.getElementById('gen-target').value,
+        population_size:parseInt(document.getElementById('gen-pop').value),
+        max_generations:parseInt(document.getElementById('gen-gen').value),
+        mutation_rate:parseFloat(document.getElementById('gen-mut').value),
+      })
+    });
+    const data=await res.json();
+    if(data.success){
+      const d=data.data;
+      log('gen-log',`进化完成: ${d.generations_run}代, 最佳适应度${d.best_fitness}, 发现${d.unique_attacks_found}个攻击`,'success');
+      document.getElementById('gen-gens').textContent=d.generations_run;
+      document.getElementById('gen-best').textContent=d.best_fitness;
+      document.getElementById('gen-unique').textContent=d.unique_attacks_found;
+      document.getElementById('gen-success').textContent=(d.best_attacks||[]).length;
+      document.getElementById('gen-progress').style.width=(d.best_fitness*100)+'%';
+      document.getElementById('gen-result-card').style.display='block';
+      let html='<table><tr><th>适应度</th><th>策略</th><th>编码</th><th>包装</th><th>目标</th><th>类型</th></tr>';
+      (d.best_attacks||[]).slice(0,10).forEach(a=>{
+        html+=`<tr><td>${a.fitness}</td><td>${a.gene.strategy}</td><td>${a.gene.encoding}</td><td>${a.gene.wrapper}</td><td>${a.gene.target}</td><td>${a.success_type||'-'}</td></tr>`;
+      });
+      html+='</table>';
+      document.getElementById('gen-attacks').innerHTML=html;
+    }
+  }catch(e){log('gen-log','错误: '+e.message,'error')}
+  btn.disabled=false;
+}
+
+async function runMultiTurn(){
+  const btn=event.target;btn.disabled=true;
+  log('mt-log','启动多轮攻击编排...','info');
+  document.getElementById('mt-stats').style.display='grid';
+  try{
+    const res=await fetch(API_BASE+'/multi-turn',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        strategy:document.getElementById('mt-strategy').value,
+        target:document.getElementById('mt-target').value,
+        max_turns:parseInt(document.getElementById('mt-turns').value),
+      })
+    });
+    const data=await res.json();
+    if(data.success){
+      const s=data.data.summary;
+      log('mt-log',`完成: ${s.total_strategies}策略, 成功${s.successful_attacks}, 成功率${s.success_rate}%`,'success');
+      document.getElementById('mt-total').textContent=s.total_strategies;
+      document.getElementById('mt-success').textContent=s.successful_attacks;
+      document.getElementById('mt-rate').textContent=s.success_rate+'%';
+      document.getElementById('mt-avg').textContent=s.avg_effectiveness;
+      document.getElementById('mt-result-card').style.display='block';
+      let html='<table><tr><th>策略</th><th>状态</th><th>效果</th><th>抗性</th><th>轮次</th></tr>';
+      data.data.results.forEach(r=>{
+        const status=r.successful?'<span class="severity-critical">✅成功</span>':'<span class="severity-low">未成功</span>';
+        html+=`<tr><td>${r.name}</td><td>${status}</td><td>${r.effectiveness}</td><td>${r.resistance}</td><td>${r.turns_count}</td></tr>`;
+      });
+      html+='</table>';
+      document.getElementById('mt-results').innerHTML=html;
+    }
+  }catch(e){log('mt-log','错误: '+e.message,'error')}
+  btn.disabled=false;
+}
+
+async function runMcpScan(){
+  const btn=event.target;btn.disabled=true;
+  log('mcp-log','启动MCP深度扫描...','info');
+  document.getElementById('mcp-stats').style.display='grid';
+  try{
+    let tools=null;
+    const toolsText=document.getElementById('mcp-tools').value.trim();
+    if(toolsText){try{tools=JSON.parse(toolsText)}catch(e){log('mcp-log','工具JSON解析失败，使用默认测试数据','warn')}}
+    if(!tools){
+      tools=[
+        {name:"read_file",description:"Read files from filesystem",inputSchema:{}},
+        {name:"execute_command",description:"Execute shell commands",inputSchema:{}},
+        {name:"send_http",description:"Send HTTP requests to any URL",inputSchema:{}},
+      ];
+    }
+    const res=await fetch(API_BASE+'/mcp-deep-scan',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        server_name:document.getElementById('mcp-name').value,
+        tools:tools,
+        source_code:document.getElementById('mcp-code').value,
+      })
+    });
+    const data=await res.json();
+    if(data.success){
+      const d=data.data;
+      log('mcp-log',`扫描完成: ${d.tools_found}工具, 风险${d.overall_risk}(${d.risk_score}/10), ${d.attack_chains.length}攻击链`,'success');
+      document.getElementById('mcp-tools-found').textContent=d.tools_found;
+      document.getElementById('mcp-risk').textContent=d.risk_score;
+      document.getElementById('mcp-flows').textContent=d.taint_flows.length;
+      document.getElementById('mcp-chains').textContent=d.attack_chains.length;
+      document.getElementById('mcp-result-card').style.display='block';
+      const sevClass=d.overall_risk==='critical'?'severity-critical':d.overall_risk==='high'?'severity-high':'severity-medium';
+      document.getElementById('mcp-overall').innerHTML=`<p style="margin-bottom:12px">综合风险: <span class="${sevClass}" style="font-size:18px;font-weight:bold">${d.overall_risk.toUpperCase()}</span> (${d.risk_score}/10)</p>`;
+      let chainHtml='<h4 style="color:#00d4ff;margin:12px 0">攻击链</h4><table><tr><th>严重度</th><th>目标</th><th>描述</th></tr>';
+      d.attack_chains.forEach(c=>{
+        chainHtml+=`<tr><td><span class="badge-tag badge-${c.severity}">${c.severity}</span></td><td>${c.goal}</td><td style="font-size:12px">${c.description}</td></tr>`;
+      });
+      chainHtml+='</table>';
+      document.getElementById('mcp-chains-detail').innerHTML=chainHtml;
+      let recHtml='<h4 style="color:#00d4ff;margin:12px 0">修复建议</h4><ol style="padding-left:20px">';
+      d.recommendations.forEach(r=>{recHtml+=`<li style="margin-bottom:6px">${r}</li>`});
+      recHtml+='</ol>';
+      document.getElementById('mcp-recs').innerHTML=recHtml;
+    }
+  }catch(e){log('mcp-log','错误: '+e.message,'error')}
+  btn.disabled=false;
+}
+
+async function loadStats(){
+  try{
+    const res=await fetch(API_BASE+'/stats');
+    const data=await res.json();
+    if(data.success){
+      const d=data.data;
+      document.getElementById('stats-content').innerHTML=`
+        <div class="grid">
+          <div class="stat"><div class="num">${d.genetic_evolver.total_combinations.toLocaleString()}</div><div class="label">遗传算法基因组合</div></div>
+          <div class="stat"><div class="num">${d.multi_turn.strategies}</div><div class="label">多轮攻击策略</div></div>
+          <div class="stat"><div class="num">${d.mcp_deep_scanner.dangerous_operations}</div><div class="label">危险操作检测类</div></div>
+          <div class="stat"><div class="num">${d.mcp_deep_scanner.attack_chain_templates}</div><div class="label">攻击链模板</div></div>
+        </div>
+        <div style="margin-top:16px">
+          <h4 style="color:#00d4ff;margin-bottom:8px">遗传算法组件</h4>
+          <p style="font-size:13px;color:#8892b0">策略${d.genetic_evolver.attack_strategies} × 编码${d.genetic_evolver.encoding_methods} × 包装${d.genetic_evolver.context_wrappers} × 目标${d.genetic_evolver.target_instructions}</p>
+          <h4 style="color:#00d4ff;margin:12px 0 8px">多轮攻击策略</h4>
+          <p style="font-size:13px;color:#8892b0">${d.multi_turn.strategy_names.join('、')}</p>
+        </div>`;
+    }
+  }catch(e){document.getElementById('stats-content').innerHTML='<p style="color:#ff4757">加载失败</p>'}
+}
+</script>
+</body>
+</html>

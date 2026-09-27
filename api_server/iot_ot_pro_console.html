@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工控IoT安全 Pro · 方向3</title>
+<style>
+:root{
+  --bg:#0b0f17; --panel:#131a26; --panel2:#1a2333; --line:#26324a;
+  --txt:#e6edf6; --sub:#8aa0bd; --cyan:#26c6da; --blue:#4fc3f7;
+  --green:#2ecc71; --yellow:#f1c40f; --orange:#ff7043; --red:#ff5252;
+  --purple:#b39ddb;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);
+  font-family:-apple-system,Segoe UI,Microsoft YaHei,sans-serif;
+  font-size:14px;line-height:1.5}
+header{display:flex;align-items:center;gap:14px;padding:14px 22px;
+  background:linear-gradient(90deg,#0e1522,#132033);
+  border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+header h1{font-size:18px;color:var(--cyan);letter-spacing:1px}
+header .tag{font-size:12px;color:var(--sub);border:1px solid var(--line);
+  padding:2px 8px;border-radius:10px}
+.spacer{flex:1}
+button{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+  padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px}
+button:hover{border-color:var(--cyan);color:var(--cyan)}
+button.primary{background:var(--cyan);color:#06222a;border:none;font-weight:600}
+button.danger{background:var(--red);color:#fff;border:none}
+.wrap{padding:18px 22px;max-width:1680px;margin:0 auto}
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:14px 16px}
+.kpi .v{font-size:26px;font-weight:700}
+.kpi .l{font-size:12px;color:var(--sub);margin-top:2px}
+.kpi.c1 .v{color:var(--cyan)} .kpi.c2 .v{color:var(--blue)}
+.kpi.c3 .v{color:var(--orange)} .kpi.c4 .v{color:var(--red)}
+.kpi.c5 .v{color:var(--yellow)} .kpi.c6 .v{color:var(--green)}
+/* stages */
+.stages{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin-bottom:16px}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:10px 8px;text-align:center;font-size:12px;color:var(--sub)}
+.stage .n{font-size:11px;color:var(--sub)}
+.stage .p{height:5px;background:#0a0e16;border-radius:3px;margin-top:6px;overflow:hidden}
+.stage .p i{display:block;height:100%;background:var(--cyan);width:0}
+.stage.active{border-color:var(--cyan);color:var(--txt)}
+.stage.done .p i{background:var(--green)}
+/* tabs */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button{font-size:13px}
+.tabs button.on{background:var(--blue);color:#04222e;border:none}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:16px;margin-bottom:16px}
+.panel h3{font-size:15px;color:var(--cyan);margin-bottom:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--sub);font-weight:600;font-size:12px}
+tr:hover td{background:#16202f}
+.badge{padding:1px 8px;border-radius:9px;font-size:11px;font-weight:600}
+.badge.critical{background:#5a1418;color:#ff8a80}
+.badge.high{background:#5a2a12;color:#ffab91}
+.badge.medium{background:#4a3d10;color:#ffe082}
+.badge.low{background:#173a2a;color:#a5d6a7}
+.badge.pass{background:#14321f;color:#81c784}
+.badge.fail{background:#4a1620;color:#ef9a9a}
+.badge.info{background:#1a2c4a;color:#90caf9}
+/* log */
+#logbox{background:#070a11;border:1px solid var(--line);border-radius:8px;
+  height:240px;overflow-y:auto;padding:10px;font-family:Consolas,monospace;
+  font-size:12px}
+#logbox div{margin-bottom:2px}
+.thought{background:#1a1430;border-left:3px solid var(--purple);
+  padding:6px 10px;margin:6px 0;border-radius:4px;color:#d1c4e9;font-size:12px}
+/* bars */
+.bar-row{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:12px}
+.bar-row .name{width:130px;color:var(--sub);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.bar-row .bar{flex:1;height:8px;background:#0a0e16;border-radius:4px;overflow:hidden}
+.bar-row .bar i{display:block;height:100%;background:linear-gradient(90deg,#1a6a7a,var(--cyan))}
+.bar-row .val{width:40px;text-align:right}
+/* progress */
+.prog{height:14px;background:#0a0e16;border-radius:7px;overflow:hidden;margin:8px 0}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,#1a6a7a,var(--cyan));transition:width .3s}
+.muted{color:var(--sub);font-size:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.heat{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.heat div{padding:10px 4px;text-align:center;border-radius:4px;font-size:11px;color:#0b0f17;font-weight:600}
+@media(max-width:1100px){.stages{grid-template-columns:repeat(4,1fr)}.grid2,.grid3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚙ 工控 IoT 安全 Pro</h1>
+  <span class="tag">方向3 · 8 阶段</span>
+  <span class="tag">IEC 62443 / NIST IoT</span>
+  <span class="spacer"></span>
+  <button class="primary" onclick="startRun()">▶ 启动全流程评估</button>
+  <button onclick="loadAll()">🔄 刷新大屏</button>
+</header>
+
+<div class="wrap">
+  <!-- KPI -->
+  <div class="kpis" id="kpis"></div>
+
+  <!-- 8 stages -->
+  <div class="stages" id="stages"></div>
+
+  <!-- overall progress -->
+  <div class="panel">
+    <div class="row">
+      <b id="curStage">就绪</b><span class="muted" id="eta">ETA -</span>
+      <span class="spacer"></span><span id="pct">0%</span>
+    </div>
+    <div class="prog"><i id="progBar" style="width:0%"></i></div>
+  </div>
+
+  <!-- tabs -->
+  <div class="tabs" id="tabs">
+    <button class="on" data-t="dash" onclick="switchTab('dash')">大屏总览</button>
+    <button data-t="dev" onclick="switchTab('dev')">设备发现</button>
+    <button data-t="proto" onclick="switchTab('proto')">协议分析</button>
+    <button data-t="fw" onclick="switchTab('fw')">固件分析</button>
+    <button data-t="vuln" onclick="switchTab('vuln')">漏洞检测</button>
+    <button data-t="cfg" onclick="switchTab('cfg')">配置审计</button>
+    <button data-t="traf" onclick="switchTab('traf')">流量监控</button>
+    <button data-t="risk" onclick="switchTab('risk')">风险评级</button>
+    <button data-t="comp" onclick="switchTab('comp')">合规审计</button>
+    <button data-t="ai" onclick="switchTab('ai')">AI 分析</button>
+    <button data-t="log" onclick="switchTab('log')">实时日志</button>
+  </div>
+
+  <!-- DASH -->
+  <div id="tab-dash" class="tabpane">
+    <div class="grid2">
+      <div class="panel"><h3>设备类型分布</h3><div id="dashDev"></div></div>
+      <div class="panel"><h3>漏洞严重程度</h3><div id="dashSev"></div></div>
+      <div class="panel"><h3>协议分布（工控/IoT/通用）</h3><div id="dashProto"></div></div>
+      <div class="panel"><h3>风险热力图（位置×业务）</h3><div id="dashHeat"></div></div>
+      <div class="panel"><h3>Top 风险设备</h3><div id="dashTop"></div></div>
+      <div class="panel"><h3>实时告警滚动</h3><div id="dashAlert"></div></div>
+    </div>
+  </div>
+
+  <!-- DEV -->
+  <div id="tab-dev" class="tabpane" style="display:none">
+    <div class="panel">
+      <div class="row">
+        <input id="devIp" placeholder="目标 IP，如 192.168.1.10" style="padding:7px;background:#0a0e16;border:1px solid var(--line);color:var(--txt);border-radius:6px">
+        <button onclick="scanHost()">真实 socket 单主机扫描</button>
+        <button onclick="scanRange()">网段发现(兜底模拟)</button>
+        <span class="spacer"></span>
+        <span class="muted" id="devTools"></span>
+      </div>
+      <table><thead><tr><th>IP</th><th>厂商</th><th>型号</th><th>类型</th><th>协议</th><th>位置</th></tr></thead>
+      <tbody id="devTable"></tbody></table>
+    </div>
+  </div>
+
+  <!-- PROTO -->
+  <div id="tab-proto" class="tabpane" style="display:none">
+    <div class="panel">
+      <div class="row">
+        <button onclick="protoAuto()">自动协议分析</button>
+        <span class="muted">真实构造 Modbus/S7/MQTT 帧探测，未达目标自动兜底</span>
+      </div>
+      <table><thead><tr><th>协议</th><th>目标</th><th>类别</th><th>级别</th><th>详情</th></tr></thead>
+      <tbody id="protoTable"></tbody></table>
+    </div>
+  </div>
+
+  <!-- FW -->
+  <div id="tab-fw" class="tabpane" style="display:none">
+    <div class="panel">
+      <div class="row">
+        <button onclick="fwAll()">固件全分析(binwalk 框架)</button>
+        <span class="muted" id="fwTools"></span>
+      </div>
+      <div id="fwBody"></div>
+    </div>
+  </div>
+
+  <!-- VULN -->
+  <div id="tab-vuln" class="tabpane" style="display:none">
+    <div class="panel">
+      <div class="row">
+        <button onclick="vulnDetect()">批量漏洞检测</button>
+        <span class="spacer"></span>
+        <span class="muted" id="vulnStat"></span>
+      </div>
+      <table><thead><tr><th>漏洞</th><th>目标</th><th>CVE</th><th>CVSS</th><th>级别</th><th>状态</th></tr></thead>
+      <tbody id="vulnTable"></tbody></table>
+    </div>
+  </div>
+
+  <!-- CFG -->
+  <div id="tab-cfg" class="tabpane" style="display:none">
+    <div class="panel">
+      <div class="row"><button onclick="cfgRun()">配置审计</button>
+        <span class="muted" id="cfgStat"></span></div>
+      <div id="cfgBody"></div>
+    </div>
+  </div>
+
+  <!-- TRAF -->
+  <div id="tab-traf" class="tabpane" style="display:none">
+    <div class="panel">
+      <div class="row">
+        <button class="primary" onclick="trafStart()">启动实时流量监控</button>
+        <button class="danger" onclick="trafStop()">停止</button>
+        <button onclick="trafGen()">生成20条异常</button>
+        <span class="muted" id="trafStat"></span>
+      </div>
+      <table><thead><tr><th>类别</th><th>源</th><th>目标</th><th>级别</th><th>详情</th></tr></thead>
+      <tbody id="trafTable"></tbody></table>
+    </div>
+  </div>
+
+  <!-- RISK -->
+  <div id="tab-risk" class="tabpane" style="display:none">
+    <div class="grid2">
+      <div class="panel"><h3>风险 Top 排序</h3><div id="riskTop"></div></div>
+      <div class="panel"><h3>安全成熟度</h3><div id="riskMat"></div></div>
+    </div>
+  </div>
+
+  <!-- COMP -->
+  <div id="tab-comp" class="tabpane" style="display:none">
+    <div class="panel">
+      <div class="row"><button onclick="compRun()">运行合规检查</button>
+        <button onclick="genReport()">生成报告(MD/HTML)</button>
+        <span class="muted" id="compStat"></span></div>
+      <table><thead><tr><th>标准</th><th>要求</th><th>目标SL</th><th>状态</th><th>得分</th></tr></thead>
+      <tbody id="compTable"></tbody></table>
+    </div>
+  </div>
+
+  <!-- AI -->
+  <div id="tab-ai" class="tabpane" style="display:none">
+    <div class="panel">
+      <div class="row"><button class="primary" onclick="aiOverview()">AI 综合分析</button></div>
+      <div id="aiBody"></div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div id="tab-log" class="tabpane" style="display:none">
+    <div class="panel">
+      <h3>实时思考过程</h3><div id="thoughtBox"></div>
+      <h3 style="margin-top:12px">日志流</h3>
+      <div id="logbox"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1/iot-ot-pro';
+let ws=null, curTask=null;
+const STAGE_KEYS=['device_discovery','protocol_analysis','firmware_analysis','vuln_detection','config_audit','traffic_monitor','risk_rating','compliance_audit'];
+
+async function j(url,opt){const r=await fetch(API+url,opt);const d=await r.json();return d;}
+async function post(u,b){return j(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});}
+
+function badge(sev){return `<span class="badge ${sev}">${sev}</span>`;}
+function bars(obj,el,color){
+  const entries=Object.entries(obj||{});const max=Math.max(1,...entries.map(e=>e[1]));
+  el.innerHTML=entries.map(([k,v])=>`<div class="bar-row"><span class="name">${k}</span><span class="bar"><i style="width:${Math.round(v/max*100)}%"></i></span><span class="val">${v}</span></div>`).join('');
+}
+
+async function loadKpi(){
+  const d=(await j('/dashboard/kpi')).data||{};
+  const k=[['devices_total','设备总数','c1'],['devices_scanned','已扫描','c2'],['vulns_total','漏洞总数','c3'],['vulns_high','高危+','c4'],['alerts_total','流量告警','c5'],['compliance_rate','合规率','c6']];
+  document.getElementById('kpis').innerHTML=k.map(([k,l,c])=>`<div class="kpi ${c}"><div class="v">${d[k]??'-'}</div><div class="l">${l}</div></div>`).join('');
+}
+
+async function loadStages(){
+  const d=(await j('/stages')).data;
+  document.getElementById('stages').innerHTML=(d.stages||[]).map(s=>`<div class="stage" id="st-${s.key}"><div class="n">${s.label}</div><div class="p"><i></i></div></div>`).join('');
+}
+
+async function loadDash(){
+  const d=(await j('/dashboard/full')).data||{};
+  bars((d.device_distribution||{}).by_type,document.getElementById('dashDev'));
+  bars(d.severity,document.getElementById('dashSev'));
+  const pr=d.protocol_distribution||{};
+  bars({...Object.fromEntries(Object.entries(pr.ics||{}).map(([k,v])=>['工控:'+k,v])),
+        ...Object.fromEntries(Object.entries(pr.iot||{}).map(([k,v])=>['IoT:'+k,v])),
+        ...Object.fromEntries(Object.entries(pr.general||{}).map(([k,v])=>['通用:'+k,v]))},
+        document.getElementById('dashProto'));
+  const hm=d.risk_heatmap||[];
+  document.getElementById('dashHeat').innerHTML='<div class="heat">'+hm.map(x=>{
+    const c=x.value>70?'#ff5252':x.value>45?'#ff9800':x.value>25?'#ffd54f':'#66bb6a';
+    return `<div style="background:${c}" title="${x.location}/${x.business}:${x.value}">${x.value}</div>`;}).join('')+'</div>';
+  document.getElementById('dashTop').innerHTML=(d.top_risks||[]).map(x=>`<div class="bar-row"><span class="name">${x.device}</span><span class="bar"><i style="width:${x.score}%"></i></span><span class="val">${x.score}</span></div>`).join('');
+  document.getElementById('dashAlert').innerHTML=(d.recent_alerts||[]).map(a=>`<div class="bar-row"><span class="name">${a.category}</span><span>${a.detail}</span>${badge(a.severity)}</div>`).join('');
+}
+
+async function loadAll(){await loadKpi();await loadDash();}
+
+/* tabs */
+function switchTab(t){
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  document.querySelectorAll('.tabpane').forEach(p=>p.style.display='none');
+  document.getElementById('tab-'+t).style.display='block';
+}
+
+/* run + ws */
+async function startRun(){
+  const r=await post('/start',{name:'工控IoT全流程评估'});
+  curTask=r.data.task_id;
+  document.getElementById('logbox').innerHTML='';
+  document.getElementById('thoughtBox').innerHTML='';
+  connectWs(curTask);
+}
+function connectWs(tid){
+  if(ws)ws.close();
+  const proto=location.protocol==='https:'?'wss':'ws';
+  ws=new WebSocket(`${proto}://${location.host}${API}/ws/${tid}`);
+  ws.onmessage=e=>{
+    const ev=JSON.parse(e.data);
+    if(ev.type==='progress'){
+      document.getElementById('progBar').style.width=ev.overall+'%';
+      document.getElementById('pct').textContent=ev.overall+'%';
+      document.getElementById('curStage').textContent=ev.stage_label||ev.stage;
+      STAGE_KEYS.forEach(k=>{const el=document.getElementById('st-'+k);if(el){el.classList.remove('active');if(ev.overall>= (STAGE_KEYS.indexOf(k)*12+10))el.classList.add('done');}});
+      const cur=document.getElementById('st-'+ev.stage);if(cur)cur.classList.add('active');
+      if(ev.overall>=100)loadAll();
+    }else if(ev.type==='log'){
+      const lb=document.getElementById('logbox');
+      lb.innerHTML+=`<div style="color:${ev.color}">[${ev.timestamp}] ${ev.level} ${ev.message}</div>`;
+      lb.scrollTop=lb.scrollHeight;
+    }else if(ev.type==='thought'){
+      document.getElementById('thoughtBox').innerHTML+=`<div class="thought">💭 ${ev.thought}</div>`;
+    }else if(ev.type==='alert'||ev.type==='vuln'){
+      loadDash();
+    }
+  };
+}
+
+/* discovery */
+async function scanHost(){const ip=document.getElementById('devIp').value.trim();if(!ip)return;const r=await post('/discovery/scan-host',{ip});renderDev();}
+async function scanRange(){await post('/discovery/scan',{cidr:'192.168.10.0/24',real:false});renderDev();}
+async function renderDev(){
+  const d=(await j('/discovery/devices')).data.devices||[];
+  document.getElementById('devTable').innerHTML=d.map(x=>`<tr><td>${x.ip}</td><td>${x.vendor||'-'}</td><td>${x.model||'-'}</td><td>${x.device_type}</td><td>${(x.protocols||[]).join(',')}</td><td>${x.location||'-'}</td></tr>`).join('');
+  const t=(await j('/discovery/tools')).data;
+  document.getElementById('devTools').innerHTML='工具: '+Object.entries(t).map(([k,v])=>`${k}:${v.available?'✓':'✗'}`).join(' ');
+}
+
+/* protocol */
+async function protoAuto(){await post('/protocol/auto');renderProto();}
+async function renderProto(){
+  const d=(await j('/protocol/findings')).data.findings||[];
+  document.getElementById('protoTable').innerHTML=d.map(x=>`<tr><td>${x.protocol}</td><td>${x.device_ip}</td><td>${x.category}</td><td>${badge(x.severity)}</td><td>${x.detail}</td></tr>`).join('');
+}
+
+/* firmware */
+async function fwAll(){await post('/firmware/analyze-all',{path:'demo.bin'});
+  const d=(await j('/firmware/findings')).data.findings||[];
+  document.getElementById('fwBody').innerHTML='<table><thead><tr><th>类别</th><th>级别</th><th>文件</th><th>证据</th></tr></thead><tbody>'+
+    d.map(x=>`<tr><td>${x.category}</td><td>${badge(x.severity)}</td><td>${x.file}</td><td>${x.evidence}</td></tr>`).join('')+'</tbody></table>';
+  const t=(await j('/firmware/tools')).data;
+  document.getElementById('fwTools').innerHTML='工具: '+Object.entries(t).map(([k,v])=>`${k}:${v.available?'✓':'✗'}`).join(' ');
+}
+
+/* vuln */
+async function vulnDetect(){await post('/vuln/detect');renderVuln();}
+async function renderVuln(){
+  const d=(await j('/vuln/list')).data.vulns||[];
+  document.getElementById('vulnTable').innerHTML=d.map(x=>`<tr><td>${x.title}</td><td>${x.target}</td><td>${x.cve}</td><td>${x.cvss}</td><td>${badge(x.severity)}</td><td>${x.status}</td></tr>`).join('');
+  const s=(await j('/vuln/stats')).data;
+  document.getElementById('vulnStat').textContent=`共 ${s.total}，严重 ${(s.by_severity||{}).critical||0} / 高 ${(s.by_severity||{}).high||0}`;
+}
+
+/* config */
+async function cfgRun(){await post('/config/audit');
+  const s=(await j('/config/stats')).data;
+  document.getElementById('cfgStat').textContent=`失败率 ${s.fail_rate}`;
+  const d=(await j('/config/findings')).data.findings||[];
+  document.getElementById('cfgBody').innerHTML='<table><thead><tr><th>设备</th><th>域</th><th>检查</th><th>状态</th></tr></thead><tbody>'+
+    d.slice(0,40).map(x=>`<tr><td>${x.device}</td><td>${x.domain}</td><td>${x.check}</td><td><span class="badge ${x.status==='pass'?'pass':'fail'}">${x.status}</span></td></tr>`).join('')+'</tbody></table>';
+}
+
+/* traffic */
+async function trafStart(){await post('/traffic/start',{duration:30});renderTraf();}
+async function trafStop(){await post('/traffic/stop');}
+async function trafGen(){await post('/traffic/detect',{n:20});renderTraf();}
+async function renderTraf(){
+  const d=(await j('/traffic/alerts')).data.alerts||[];
+  document.getElementById('trafTable').innerHTML=d.map(x=>`<tr><td>${x.category}</td><td>${x.src_ip}</td><td>${x.dst_ip}</td><td>${badge(x.severity)}</td><td>${x.detail}</td></tr>`).join('');
+  const s=(await j('/traffic/stats')).data;
+  document.getElementById('trafStat').textContent=`共 ${s.total} 条`;
+}
+
+/* risk */
+async function renderRisk(){
+  await post('/risk/auto');
+  const t=(await j('/risk/top')).data.top||[];
+  document.getElementById('riskTop').innerHTML=t.map(x=>`<div class="bar-row"><span class="name">${x.device}</span><span class="bar"><i style="width:${x.score}%"></i></span><span class="val">${x.score}</span></div>`).join('');
+  const m=(await j('/risk/maturity')).data;
+  document.getElementById('riskMat').innerHTML=`<div style="font-size:40px;font-weight:700;color:var(--yellow)">${m.level} 级</div><div>${m.name}</div><div class="muted">均分 ${m.avg_score}</div>`;
+}
+
+/* compliance + report */
+async function compRun(){await post('/compliance/run');renderComp();}
+async function renderComp(){
+  const d=(await j('/compliance/items')).data.items||[];
+  document.getElementById('compTable').innerHTML=d.map(x=>`<tr><td>${x.standard}</td><td>${x.requirement}</td><td>${x.target_sl}</td><td><span class="badge ${x.status==='pass'?'pass':x.status==='fail'?'fail':'info'}">${x.status}</span></td><td>${x.score}</td></tr>`).join('');
+  const s=(await j('/compliance/summary')).data;
+  document.getElementById('compStat').textContent=`合规总分 ${s.overall_score}`;
+}
+async function genReport(){const r=await post('/report/generate',{fmt:'both'});alert('报告已生成:\n'+r.data.md_path+'\n'+r.data.html_path);}
+
+/* ai */
+async function aiOverview(){
+  const d=(await post('/ai/overview')).data;
+  const devs=(d.devices||[]).map(x=>`<tr><td>${x.device}</td><td>${x.verdict}</td><td>${x.priority}</td><td>${(x.reasons||[]).join('；')}</td></tr>`).join('');
+  document.getElementById('aiBody').innerHTML=
+    `<div class="thought">💭 ${d.thought||''}</div>
+     <h3>设备风险评估</h3><table><thead><tr><th>设备</th><th>判定</th><th>优先级</th><th>原因</th></tr></thead><tbody>${devs}</tbody></table>
+     <h3 style="margin-top:10px">流量研判</h3><div class="muted">${(d.traffic||{}).top_action||''}</div>
+     <h3 style="margin-top:10px">合规预警</h3><ul>${((d.compliance||{}).warnings||[]).map(w=>'<li>'+w+'</li>').join('')||'<li>暂无</li>'}</ul>`;
+}
+
+/* init */
+loadStages().then(loadAll);
+setInterval(()=>{if(document.getElementById('tab-dev').style.display!=='none')renderDev();},5000);
+</script>
+</body>
+</html>

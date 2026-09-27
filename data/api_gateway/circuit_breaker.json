@@ -1,0 +1,26 @@
+{
+  "configs": {
+    "/svc": {
+      "failure_rate_threshold": 0.5,
+      "min_requests": 4,
+      "open_timeout": 1,
+      "time_window": 60
+    }
+  },
+  "default_config": {
+    "failure_rate_threshold": 0.5,
+    "time_window": 60,
+    "open_timeout": 30,
+    "half_open_requests": 5,
+    "min_requests": 10
+  },
+  "states": {
+    "/svc": {
+      "state": "CLOSED",
+      "opened_at": 1789344764.509881,
+      "total_calls": 10,
+      "total_failures": 7,
+      "total_opened": 2
+    }
+  }
+}

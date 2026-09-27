@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>真实靶场集成控制台</title>
+<style>
+:root{
+  --bg:#0d1117;--panel:#161b22;--panel2:#0d1117;--border:#30363d;
+  --text:#e6edf3;--muted:#8b949e;--accent:#2ea043;--danger:#da3633;
+  --warn:#d29922;--info:#1f6feb;--purple:#8957e5;--radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.6}
+.topbar{display:flex;align-items:center;gap:14px;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--border);flex-wrap:wrap;position:sticky;top:0;z-index:100}
+.topbar h1{font-size:18px;font-weight:600;white-space:nowrap}
+.topbar .spacer{flex:1}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:12px;border:1px solid var(--border)}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.dot.green{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.dot.red{background:var(--danger);box-shadow:0 0 6px var(--danger)}
+.dot.yellow{background:var(--warn);box-shadow:0 0 6px var(--warn)}
+.warn-label{background:rgba(210,153,34,.15);color:var(--warn);border:1px solid var(--warn);padding:3px 10px;border-radius:6px;font-size:12px}
+.nav{display:flex;gap:4px;padding:0 20px;background:var(--panel);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.nav button{background:none;border:none;color:var(--muted);padding:10px 16px;cursor:pointer;font-size:13px;border-bottom:2px solid transparent;transition:.15s}
+.nav button:hover{color:var(--text)}
+.nav button.active{color:var(--accent);border-bottom-color:var(--accent)}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+section{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:18px}
+section h2{font-size:16px;margin-bottom:14px;border-left:3px solid var(--accent);padding-left:8px}
+section h3{font-size:14px;margin:12px 0 8px;color:var(--muted)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.stat-card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+.stat-card .num{font-size:28px;font-weight:700;color:var(--accent)}
+.stat-card .num.red{color:var(--danger)}
+.stat-card .num.yellow{color:var(--warn)}
+.stat-card .num.blue{color:var(--info)}
+.stat-card .label{font-size:12px;color:var(--muted);margin-top:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:14px;transition:.2s}
+.card:hover{border-color:var(--info)}
+.card .name{font-weight:600;font-size:15px;margin-bottom:6px}
+.card .desc{color:var(--muted);font-size:12px;margin-bottom:8px}
+.tags{margin:6px 0}
+.tag{display:inline-block;background:rgba(31,111,235,.15);color:#79b8ff;border-radius:4px;padding:1px 7px;font-size:11px;margin:2px 3px 2px 0}
+.tag.green{background:rgba(46,160,67,.15);color:var(--accent)}
+.tag.warn{background:rgba(210,153,34,.15);color:var(--warn)}
+.tag.red{background:rgba(218,54,51,.15);color:var(--danger)}
+.meta{font-size:12px;color:var(--muted);margin:4px 0}
+.actions{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+button{cursor:pointer;border:1px solid var(--border);background:#21262d;color:var(--text);padding:5px 12px;border-radius:6px;font-size:12px;transition:.15s}
+button:hover{background:#30363d}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+button.warn{background:var(--warn);border-color:var(--warn);color:#000}
+button.info{background:var(--info);border-color:var(--info);color:#fff}
+button:disabled{opacity:.4;cursor:not-allowed}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:600;background:var(--panel2)}
+tr:hover{background:rgba(255,255,255,.02)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge.running{background:rgba(46,160,67,.15);color:var(--accent)}
+.badge.stopped{background:rgba(139,148,158,.15);color:var(--muted)}
+.badge.simulated{background:rgba(210,153,34,.15);color:var(--warn)}
+.badge.completed{background:rgba(46,160,67,.15);color:var(--accent)}
+.badge.high{background:rgba(218,54,51,.15);color:var(--danger)}
+.badge.medium{background:rgba(210,153,34,.15);color:var(--warn)}
+.badge.low{background:rgba(139,148,158,.15);color:var(--muted)}
+.bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:4px 0}
+.bar-fill{height:100%;border-radius:4px;transition:width .3s}
+.bar-fill.green{background:var(--accent)}
+.bar-fill.yellow{background:var(--warn)}
+.bar-fill.red{background:var(--danger)}
+.modal-mask{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:200;justify-content:center;align-items:center}
+.modal-mask.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto}
+.modal h3{margin-bottom:12px;color:var(--accent)}
+.modal .close{float:right;cursor:pointer;font-size:20px;color:var(--muted)}
+input,select,textarea{background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--info)}
+label{font-size:12px;color:var(--muted);display:block;margin:8px 0 4px}
+.toast{position:fixed;bottom:20px;right:20px;background:#21262d;border:1px solid var(--border);padding:10px 16px;border-radius:8px;display:none;z-index:300;max-width:360px;font-size:13px}
+.toast.success{border-color:var(--accent)}
+.toast.error{border-color:var(--danger)}
+.log-box{background:#010409;border:1px solid var(--border);border-radius:6px;padding:10px;font-family:monospace;font-size:12px;max-height:300px;overflow-y:auto;white-space:pre-wrap}
+.hidden{display:none!important}
+.flex{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.mt10{margin-top:10px}
+.mt20{margin-top:20px}
+@media(max-width:768px){
+  .grid{grid-template-columns:1fr}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .container{padding:10px}
+  .topbar{padding:10px}
+  .nav{padding:0 10px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>🎯 真实靶场集成控制台</h1>
+  <span class="pill"><span id="dockerDot" class="dot yellow"></span><span id="dockerText">检测中…</span></span>
+  <span class="pill"><span id="instCount" class="dot green"></span><span id="instText">实例: 0</span></span>
+  <span class="warn-label">⚠ 仅限授权环境使用</span>
+  <div class="spacer"></div>
+  <button class="primary" onclick="loadAll()">🔄 刷新数据</button>
+</div>
+
+<div class="nav">
+  <button class="active" data-tab="overview" onclick="switchTab('overview')">📊 总览</button>
+  <button data-tab="ranges" onclick="switchTab('ranges')">🎯 靶场目录</button>
+  <button data-tab="instances" onclick="switchTab('instances')">🖥 实例管理</button>
+  <button data-tab="scans" onclick="switchTab('scans')">🔍 扫描管理</button>
+  <button data-tab="learning" onclick="switchTab('learning')">📚 学习训练</button>
+  <button data-tab="reports" onclick="switchTab('reports')">📄 报告中心</button>
+  <button data-tab="settings" onclick="switchTab('settings')">⚙️ 系统设置</button>
+</div>
+
+<div class="container">
+
+<!-- ============ 总览 Tab ============ -->
+<div id="tab-overview">
+  <section>
+    <h2>📊 靶场平台总览</h2>
+    <div class="stat-grid" id="overviewStats"></div>
+    <div id="dockerInfo" class="flex mt10"></div>
+  </section>
+
+  <section>
+    <h2>⚡ 快捷操作</h2>
+    <div class="flex">
+      <button class="primary" onclick="showDeployModal()">🚀 部署靶场</button>
+      <button class="info" onclick="showScanModal()">🔍 启动扫描</button>
+      <button onclick="loadLearning()">📚 学习路径</button>
+      <button onclick="loadReports()">📄 生成报告</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>📈 资源使用</h2>
+    <div id="resourceUsage"></div>
+  </section>
+</div>
+
+<!-- ============ 靶场目录 Tab ============ -->
+<div id="tab-ranges" class="hidden">
+  <section>
+    <h2>🎯 支持的漏洞靶场目录</h2>
+    <div class="flex" style="margin-bottom:14px">
+      <label>类别筛选:
+        <select id="catFilter" onchange="loadCatalog()">
+          <option value="">全部</option>
+          <option value="web">Web 漏洞</option>
+          <option value="system">系统漏洞</option>
+          <option value="mobile">移动漏洞</option>
+          <option value="cloud">云漏洞</option>
+          <option value="api">API 漏洞</option>
+          <option value="ics">工控漏洞</option>
+        </select>
+      </label>
+      <label>难度:
+        <select id="diffFilter" onchange="loadCatalog()">
+          <option value="">全部</option>
+          <option value="入门">入门</option>
+          <option value="进阶">进阶</option>
+          <option value="专家">专家</option>
+        </select>
+      </label>
+    </div>
+    <div class="grid" id="catalogGrid"></div>
+  </section>
+</div>
+
+<!-- ============ 实例管理 Tab ============ -->
+<div id="tab-instances" class="hidden">
+  <section>
+    <h2>🖥 靶场实例管理</h2>
+    <div class="flex" style="margin-bottom:14px">
+      <button class="primary" onclick="showDeployModal()">🚀 部署新靶场</button>
+      <button onclick="loadInstances()">🔄 刷新</button>
+    </div>
+    <div id="instanceTableWrap"></div>
+  </section>
+
+  <section>
+    <h2>📋 部署类型</h2>
+    <div id="deployTypes"></div>
+  </section>
+</div>
+
+<!-- ============ 扫描管理 Tab ============ -->
+<div id="tab-scans" class="hidden">
+  <section>
+    <h2>🔍 扫描任务</h2>
+    <div class="flex" style="margin-bottom:14px">
+      <button class="primary" onclick="showScanModal()">🔍 新建扫描</button>
+      <button onclick="loadScans()">🔄 刷新</button>
+    </div>
+    <div id="scanTasks"></div>
+  </section>
+
+  <section>
+    <h2>📊 扫描模板</h2>
+    <div class="grid" id="scanProfiles"></div>
+  </section>
+
+  <section>
+    <h2>📈 扫描质量指标</h2>
+    <div id="qualityMetrics"></div>
+  </section>
+</div>
+
+<!-- ============ 学习训练 Tab ============ -->
+<div id="tab-learning" class="hidden">
+  <section>
+    <h2>📚 学习路径</h2>
+    <div class="grid" id="learningPaths"></div>
+  </section>
+
+  <section>
+    <h2>🎮 练习模式</h2>
+    <div class="grid" id="practiceModes"></div>
+  </section>
+
+  <section>
+    <h2>🏆 竞赛与团队</h2>
+    <div class="flex">
+      <div style="flex:1;min-width:300px">
+        <h3>竞赛列表</h3>
+        <div id="compList"></div>
+      </div>
+      <div style="flex:1;min-width:300px">
+        <h3>团队列表</h3>
+        <div id="teamList"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ 报告中心 Tab ============ -->
+<div id="tab-reports" class="hidden">
+  <section>
+    <h2>📄 报告生成</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="name">📊 靶场评估报告</div>
+        <div class="desc">完整评估靶场漏洞情况与修复建议</div>
+        <div class="actions"><button class="primary" onclick="genReport('evaluation')">生成</button></div>
+      </div>
+      <div class="card">
+        <div class="name">📈 学习路径报告</div>
+        <div class="desc">分析学习进度与推荐下一步</div>
+        <div class="actions"><button class="primary" onclick="genReport('learning')">生成</button></div>
+      </div>
+      <div class="card">
+        <div class="name">✅ 合规映射报告</div>
+        <div class="desc">漏洞到合规条款映射与覆盖率</div>
+        <div class="actions"><button class="primary" onclick="genReport('compliance')">生成</button></div>
+      </div>
+      <div class="card">
+        <div class="name">🎓 教练反馈报告</div>
+        <div class="desc">操作分析与改进建议</div>
+        <div class="actions"><button class="primary" onclick="genReport('coach')">生成</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>📋 已生成报告</h2>
+    <div id="reportList"></div>
+  </section>
+</div>
+
+<!-- ============ 系统设置 Tab ============ -->
+<div id="tab-settings" class="hidden">
+  <section>
+    <h2>⚙️ 系统设置</h2>
+    <div id="settingsForm"></div>
+    <div class="mt10"><button class="primary" onclick="saveSettings()">💾 保存设置</button></div>
+  </section>
+</div>
+
+</div><!-- container -->
+
+<!-- 部署弹窗 -->
+<div class="modal-mask" id="deployModal">
+  <div class="modal">
+    <span class="close" onclick="closeModal('deployModal')">&times;</span>
+    <h3>🚀 部署靶场</h3>
+    <label>选择靶场</label>
+    <select id="deployRange" style="width:100%"></select>
+    <label>部署类型</label>
+    <select id="deployType" style="width:100%">
+      <option value="docker">Docker 容器</option>
+      <option value="vm">虚拟机</option>
+      <option value="local">本地</option>
+    </select>
+    <label>端口（留空自动分配）</label>
+    <input type="number" id="deployPort" placeholder="自动分配" style="width:100%">
+    <div class="mt20 flex">
+      <button class="primary" onclick="doDeploy()">确认部署</button>
+      <button onclick="closeModal('deployModal')">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 扫描弹窗 -->
+<div class="modal-mask" id="scanModal">
+  <div class="modal">
+    <span class="close" onclick="closeModal('scanModal')">&times;</span>
+    <h3>🔍 启动扫描</h3>
+    <label>目标地址</label>
+    <input type="text" id="scanTarget" placeholder="http://127.0.0.1:8080" style="width:100%">
+    <label>扫描模板</label>
+    <select id="scanProfile" style="width:100%">
+      <option value="quick">快速扫描（2分钟）</option>
+      <option value="standard" selected>标准扫描（10分钟）</option>
+      <option value="deep">深度扫描（30分钟）</option>
+    </select>
+    <div class="mt20 flex">
+      <button class="primary" onclick="doScan()">启动扫描</button>
+      <button onclick="closeModal('scanModal')">取消</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/v1/range-integration';
+let currentTab = 'overview';
+
+// ---------- 工具 ----------
+function toast(msg, type='success'){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  t.style.display = 'block';
+  setTimeout(()=>t.style.display='none', 3000);
+}
+async function api(path, opts={}){
+  try{
+    const r = await fetch(API+path, {
+      headers: {'Content-Type':'application/json'},
+      ...opts,
+    });
+    const j = await r.json();
+    return j;
+  }catch(e){
+    return {success:false, error:e.message};
+  }
+}
+
+// ---------- Tab 切换 ----------
+function switchTab(name){
+  currentTab = name;
+  document.querySelectorAll('.nav button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.tab===name);
+  });
+  ['overview','ranges','instances','scans','learning','reports','settings'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('hidden', t!==name);
+  });
+  loadTab(name);
+}
+function loadTab(name){
+  if(name==='overview') loadOverview();
+  if(name==='ranges') loadCatalog();
+  if(name==='instances') loadInstances();
+  if(name==='scans') loadScans();
+  if(name==='learning') loadLearning();
+  if(name==='reports') loadReports();
+  if(name==='settings') loadSettings();
+}
+
+// ---------- 总览 ----------
+async function loadOverview(){
+  // Docker 状态
+  const dk = await api('/docker/status');
+  if(dk.success){
+    const d = dk.data;
+    document.getElementById('dockerDot').className = 'dot ' + (d.available?'green':'red');
+    document.getElementById('dockerText').textContent = d.available ? 'Docker: '+d.server_version : 'Docker 不可用';
+  }
+  // 总览数据
+  const ov = await api('/dashboard/overview');
+  if(ov.success){
+    const d = ov.data;
+    const s = document.getElementById('overviewStats');
+    s.innerHTML = `
+      <div class="stat-card"><div class="num">${d.ranges.total}</div><div class="label">靶场总数</div></div>
+      <div class="stat-card"><div class="num green">${d.ranges.running}</div><div class="label">运行中</div></div>
+      <div class="stat-card"><div class="num yellow">${d.ranges.stopped}</div><div class="label">已停止</div></div>
+      <div class="stat-card"><div class="num red">${d.ranges.abnormal}</div><div class="label">异常</div></div>
+      <div class="stat-card"><div class="num blue">${d.scans.total_tasks}</div><div class="label">扫描任务</div></div>
+      <div class="stat-card"><div class="num">${d.learning.paths}</div><div class="label">学习路径</div></div>
+      <div class="stat-card"><div class="num">${d.learning.courses}</div><div class="label">课程数</div></div>
+      <div class="stat-card"><div class="num green">${d.learning.competitions}</div><div class="label">竞赛数</div></div>
+    `;
+    const ru = document.getElementById('resourceUsage');
+    ru.innerHTML = `
+      <div class="meta">CPU 使用: ${d.resources.cpu_usage}</div>
+      <div class="meta">内存: ${d.resources.memory_usage}</div>
+      <div class="meta">磁盘: ${d.resources.disk_usage}</div>
+      <div class="meta">网络: 入 ${d.resources.network_in} / 出 ${d.resources.network_out}</div>
+    `;
+  }
+  // 实例数
+  const inst = await api('/ranges/overview');
+  if(inst.success){
+    document.getElementById('instText').textContent = '实例: '+inst.data.total_ranges;
+  }
+}
+
+// ---------- 靶场目录 ----------
+async function loadCatalog(){
+  const cat = document.getElementById('catFilter').value;
+  const diff = document.getElementById('diffFilter').value;
+  const params = new URLSearchParams();
+  if(cat) params.set('category', cat);
+  if(diff) params.set('difficulty', diff);
+  const r = await api('/catalog?'+params);
+  const grid = document.getElementById('catalogGrid');
+  if(!r.success){ grid.innerHTML = '<p style="color:var(--danger)">'+r.error+'</p>'; return; }
+  grid.innerHTML = (r.data.ranges||[]).map(item=>`
+    <div class="card">
+      <div class="name">${item.name}</div>
+      <div class="desc">${item.description}</div>
+      <div class="tags">
+        <span class="tag ${item.difficulty==='入门'?'green':item.difficulty==='进阶'?'warn':'red'}">${item.difficulty}</span>
+        <span class="tag">${item.category}</span>
+        ${(item.tags||[]).slice(0,3).map(t=>`<span class="tag">${t}</span>`).join('')}
+      </div>
+      <div class="meta">技术栈: ${(item.tech_stack||[]).join(', ')}</div>
+      <div class="meta">资源: ${item.resources?.cpu||''} / ${item.resources?.memory||''}</div>
+      <div class="meta">端口: ${item.default_port}</div>
+      <div class="actions">
+        <button class="primary" onclick="quickDeploy('${item.id}')">部署</button>
+      </div>
+    </div>
+  `).join('') || '<p class="meta">暂无数据</p>';
+}
+
+// ---------- 实例管理 ----------
+async function loadInstances(){
+  const r = await api('/ranges/instances');
+  const wrap = document.getElementById('instanceTableWrap');
+  if(!r.success){ wrap.innerHTML = '<p style="color:var(--danger)">'+r.error+'</p>'; return; }
+  const insts = r.data.instances||[];
+  if(insts.length===0){
+    wrap.innerHTML = '<p class="meta">暂无实例，点击「部署新靶场」创建</p>';
+  } else {
+    wrap.innerHTML = `<table>
+      <thead><tr><th>ID</th><th>名称</th><th>状态</th><th>端口</th><th>难度</th><th>操作</th></tr></thead>
+      <tbody>${insts.map(i=>`
+        <tr>
+          <td style="font-family:monospace;font-size:11px">${i.instance_id}</td>
+          <td>${i.name}</td>
+          <td><span class="badge ${i.status}">${i.status}</span></td>
+          <td>${i.port}</td>
+          <td>${i.difficulty||'-'}</td>
+          <td>
+            <button onclick="instAction('${i.instance_id}','start')">启动</button>
+            <button onclick="instAction('${i.instance_id}','stop')">停止</button>
+            <button onclick="instAction('${i.instance_id}','restart')">重启</button>
+            <button class="danger" onclick="instAction('${i.instance_id}','delete')">删除</button>
+          </td>
+        </tr>`).join('')}
+      </tbody></table>`;
+  }
+  // 部署类型
+  const dt = await api('/deploy-types');
+  if(dt.success){
+    document.getElementById('deployTypes').innerHTML =
+      Object.entries(dt.data).map(([k,v])=>`<div class="meta"><b>${k}</b>: ${v}</div>`).join('');
+  }
+}
+
+async function instAction(id, action){
+  const paths = {start:'/instances/'+id+'/start', stop:'/instances/'+id+'/stop',
+    restart:'/instances/'+id+'/restart'};
+  if(action==='delete'){
+    if(!confirm('确认删除此实例？')) return;
+    const r = await api('/instances/'+id, {method:'DELETE'});
+    toast(r.success?'删除成功':r.error, r.success?'success':'error');
+  } else {
+    const r = await api(paths[action], {method:'POST'});
+    toast(r.success?'操作成功':r.error, r.success?'success':'error');
+  }
+  loadInstances();
+}
+
+// ---------- 扫描 ----------
+async function loadScans(){
+  const tasks = await api('/scans/tasks');
+  const wrap = document.getElementById('scanTasks');
+  if(tasks.success){
+    const t = tasks.data.tasks||[];
+    wrap.innerHTML = t.length===0 ? '<p class="meta">暂无扫描任务</p>' : `<table>
+      <thead><tr><th>任务ID</th><th>目标</th><th>模板</th><th>状态</th><th>进度</th></tr></thead>
+      <tbody>${t.map(x=>`<tr>
+        <td style="font-family:monospace;font-size:11px">${x.task_id}</td>
+        <td>${x.target}</td><td>${x.profile_name}</td>
+        <td><span class="badge ${x.status}">${x.status}</span></td>
+        <td><div class="bar" style="width:100px"><div class="bar-fill green" style="width:${x.progress}%"></div></div></td>
+      </tr>`).join('')}</tbody></table>`;
+  }
+  // 模板
+  const pf = await api('/scans/profiles');
+  if(pf.success){
+    document.getElementById('scanProfiles').innerHTML = (pf.data.profiles||[]).map(p=>`
+      <div class="card">
+        <div class="name">${p.name}</div>
+        <div class="desc">${p.description}</div>
+        <div class="meta">强度: ${p.intensity} | 速度: ${p.speed}</div>
+        <div class="tags">${p.checks.map(c=>`<span class="tag">${c}</span>`).join('')}</div>
+      </div>`).join('');
+  }
+  // 质量
+  const q = await api('/scans/quality');
+  if(q.success){
+    const m = q.data;
+    document.getElementById('qualityMetrics').innerHTML = `
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num green">${m.coverage||0}%</div><div class="label">覆盖率</div></div>
+        <div class="stat-card"><div class="num green">${m.accuracy||0}%</div><div class="label">准确率</div></div>
+        <div class="stat-card"><div class="num yellow">${m.false_positive_rate||0}%</div><div class="label">误报率</div></div>
+        <div class="stat-card"><div class="num blue">${m.repeatability||0}%</div><div class="label">可重复性</div></div>
+      </div>`;
+  }
+}
+
+// ---------- 学习 ----------
+async function loadLearning(){
+  const paths = await api('/learning/paths');
+  if(paths.success){
+    document.getElementById('learningPaths').innerHTML = (paths.data.paths||[]).map(p=>`
+      <div class="card">
+        <div class="name">${p.name}</div>
+        <div class="desc">${p.description}</div>
+        <div class="tags">
+          <span class="tag ${p.level==='入门'?'green':p.level==='进阶'?'warn':'red'}">${p.level}</span>
+          <span class="tag">${p.estimated_hours}小时</span>
+        </div>
+        <div class="meta">模块数: ${p.modules.length}</div>
+      </div>`).join('');
+  }
+  const pm = await api('/learning/practice-modes');
+  if(pm.success){
+    document.getElementById('practiceModes').innerHTML =
+      Object.values(pm.data).map(m=>`
+        <div class="card">
+          <div class="name">${m.name}</div>
+          <div class="desc">${m.description}</div>
+        </div>`).join('');
+  }
+  const comp = await api('/learning/competitions');
+  if(comp.success){
+    document.getElementById('compList').innerHTML =
+      (comp.data.competitions||[]).map(c=>`<div class="meta">${c.name} (${c.status})</div>`).join('')||'<p class="meta">暂无竞赛</p>';
+  }
+  const teams = await api('/learning/teams');
+  if(teams.success){
+    document.getElementById('teamList').innerHTML =
+      (teams.data.teams||[]).map(t=>`<div class="meta">${t.name} (${t.members.length}人)</div>`).join('')||'<p class="meta">暂无团队</p>';
+  }
+}
+
+// ---------- 报告 ----------
+async function loadReports(){
+  const list = await api('/reports/list');
+  if(list.success){
+    document.getElementById('reportList').innerHTML = (list.data.reports||[]).map(r=>`
+      <div class="card mt10">
+        <div class="name">${r.report_type}</div>
+        <div class="meta">生成时间: ${r.generated_at}</div>
+        <div class="meta">ID: ${r.report_id}</div>
+      </div>`).join('')||'<p class="meta">暂无报告，点击上方按钮生成</p>';
+  }
+}
+async function genReport(type){
+  let path = '/reports/evaluation';
+  if(type==='learning') path = '/reports/learning-path';
+  if(type==='compliance') path = '/reports/compliance';
+  if(type==='coach') path = '/reports/coach-feedback';
+  const r = await api(path, {method:'POST'});
+  toast(r.success?'报告生成成功':r.error, r.success?'success':'error');
+  loadReports();
+}
+
+// ---------- 设置 ----------
+async function loadSettings(){
+  const r = await api('/settings');
+  if(r.success){
+    const s = r.data;
+    document.getElementById('settingsForm').innerHTML = `
+      <label>自动清理实例（小时）</label>
+      <input type="number" id="set_cleanup" value="${s.cleanup_hours||24}" style="width:100px">
+      <label>每用户最大实例数</label>
+      <input type="number" id="set_maxinst" value="${s.max_instances_per_user||5}" style="width:100px">
+      <label>扫描并发数</label>
+      <input type="number" id="set_conc" value="${s.scan_concurrency||10}" style="width:100px">
+      <label>启用审计日志</label>
+      <select id="set_audit"><option value="true" ${s.audit_log_enabled?'selected':''}>开启</option><option value="false" ${!s.audit_log_enabled?'selected':''}>关闭</option></select>
+    `;
+  }
+}
+async function saveSettings(){
+  const body = {settings:{
+    cleanup_hours: parseInt(document.getElementById('set_cleanup').value)||24,
+    max_instances_per_user: parseInt(document.getElementById('set_maxinst').value)||5,
+    scan_concurrency: parseInt(document.getElementById('set_conc').value)||10,
+    audit_log_enabled: document.getElementById('set_audit').value==='true',
+  }};
+  const r = await api('/settings', {method:'PUT', body:JSON.stringify(body)});
+  toast(r.success?'设置已保存':r.error, r.success?'success':'error');
+}
+
+// ---------- 部署 ----------
+async function showDeployModal(){
+  const r = await api('/catalog');
+  if(r.success){
+    document.getElementById('deployRange').innerHTML =
+      r.data.ranges.map(x=>`<option value="${x.id}">${x.name}</option>`).join('');
+  }
+  document.getElementById('deployModal').classList.add('open');
+}
+async function quickDeploy(rangeId){
+  const r = await api('/ranges/deploy', {method:'POST',
+    body:JSON.stringify({range_id:rangeId, deploy_type:'docker'})});
+  toast(r.success?'部署成功: '+r.data.message:r.error, r.success?'success':'error');
+}
+async function doDeploy(){
+  const body = {
+    range_id: document.getElementById('deployRange').value,
+    deploy_type: document.getElementById('deployType').value,
+    port: parseInt(document.getElementById('deployPort').value)||null,
+  };
+  const r = await api('/ranges/deploy', {method:'POST', body:JSON.stringify(body)});
+  toast(r.success?'部署成功: '+r.data.message:r.error, r.success?'success':'error');
+  closeModal('deployModal');
+}
+
+// ---------- 扫描弹窗 ----------
+function showScanModal(){ document.getElementById('scanModal').classList.add('open'); }
+async function doScan(){
+  const body = {
+    target: document.getElementById('scanTarget').value,
+    profile: document.getElementById('scanProfile').value,
+  };
+  const r = await api('/scans/start', {method:'POST', body:JSON.stringify(body)});
+  toast(r.success?'扫描已启动: '+r.data.task_id:r.error, r.success?'success':'error');
+  closeModal('scanModal');
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function loadAll(){ loadOverview(); }
+
+// 初始化
+loadOverview();
+</script>
+</body>
+</html>

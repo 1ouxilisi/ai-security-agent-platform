@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全 Fuzzing 与模糊测试平台</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#c9d1d9;
+  --muted:#8b949e; --accent:#58a6ff; --green:#3fb950; --red:#f85149;
+  --yellow:#d29922; --purple:#bc8cff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}
+.header{background:var(--panel);border-bottom:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.header h1{font-size:18px;color:var(--accent)}
+.header .ver{color:var(--muted);font-size:12px}
+.tabs{display:flex;background:var(--panel);border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap}
+.tab-btn{background:transparent;border:none;color:var(--muted);padding:12px 18px;cursor:pointer;white-space:nowrap;font-size:13px;border-bottom:2px solid transparent}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.container{padding:20px;max-width:1500px;margin:0 auto}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.kpi{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px}
+.kpi .label{color:var(--muted);font-size:12px}
+.kpi .value{font-size:26px;font-weight:600;margin-top:4px;color:var(--accent)}
+.kpi .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.panel h3{font-size:15px;color:var(--accent);margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:8px}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+input,select,textarea{background:#0d1117;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;min-width:120px}
+textarea{width:100%;min-height:80px;font-family:monospace}
+button.btn{background:var(--accent);color:#0d1117;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-weight:600;font-size:13px}
+button.btn:hover{opacity:.88}
+button.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{border:1px solid var(--border);padding:6px 8px;text-align:left;word-break:break-all}
+th{background:#0d1117;color:var(--accent)}
+tr:nth-child(even){background:#0d1117}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px}
+.badge.high{background:rgba(248,81,73,.15);color:var(--red)}
+.badge.medium{background:rgba(210,153,34,.15);color:var(--yellow)}
+.badge.low{background:rgba(63,185,80,.15);color:var(--green)}
+.badge.info{background:rgba(88,166,255,.15);color:var(--accent)}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:10px;overflow:auto;max-height:300px;font-size:11px;white-space:pre-wrap;word-break:break-all}
+.muted{color:var(--muted);font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.foot{text-align:center;color:var(--muted);font-size:11px;padding:20px}
+.bar{height:8px;background:#0d1117;border-radius:4px;overflow:hidden;margin-top:4px}
+.bar>span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--green))}
+@media(max-width:768px){
+  .grid2{grid-template-columns:1fr}
+  .container{padding:10px}
+  .kpi .value{font-size:20px}
+  .header h1{font-size:15px}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🛡️ 安全 Fuzzing 与模糊测试平台</h1>
+  <span class="ver">v27.2.0 · AI Hacking Agent · 第27轮升级方向2</span>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="overview">Fuzzing总览</button>
+  <button class="tab-btn" data-tab="protocol">协议Fuzzing</button>
+  <button class="tab-btn" data-tab="file">文件Fuzzing</button>
+  <button class="tab-btn" data-tab="api">API Fuzzing</button>
+  <button class="tab-btn" data-tab="browser">浏览器Fuzzing</button>
+  <button class="tab-btn" data-tab="kernel">内核Fuzzing</button>
+  <button class="tab-btn" data-tab="manager">平台管理</button>
+  <button class="tab-btn" data-tab="settings">系统设置</button>
+</div>
+
+<div class="container">
+
+<!-- ============ 总览 ============ -->
+<div class="tab-pane active" id="pane-overview">
+  <div class="kpi-grid" id="ov-kpi"></div>
+  <div class="grid2">
+    <div class="panel"><h3>实时崩溃墙</h3><pre id="ov-crash">加载中...</pre></div>
+    <div class="panel"><h3>支持能力矩阵</h3><div id="ov-supported" class="muted">加载中...</div></div>
+  </div>
+  <div class="panel"><h3>覆盖率矩阵</h3><div id="ov-cov" class="muted">加载中...</div></div>
+</div>
+
+<!-- ============ 协议 Fuzzing ============ -->
+<div class="tab-pane" id="pane-protocol">
+  <div class="panel">
+    <h3>协议变异用例生成</h3>
+    <div class="row">
+      <label class="muted">协议</label>
+      <select id="proto-sel"></select>
+      <label class="muted">策略</label>
+      <select id="proto-strat">
+        <option value="random">随机变异</option>
+        <option value="template">模板变异</option>
+        <option value="grammar">语法变异</option>
+        <option value="state">状态变异</option>
+        <option value="coverage">覆盖率引导</option>
+        <option value="smart">智能变异</option>
+      </select>
+      <button class="btn" onclick="protoGen()">生成用例</button>
+      <button class="btn ghost" onclick="protoRun()">执行一轮(50)</button>
+      <button class="btn ghost" onclick="protoGenetic()">遗传算法</button>
+      <button class="btn ghost" onclick="protoAnneal()">模拟退火</button>
+    </div>
+    <pre id="proto-out">点击按钮生成协议变异报文...</pre>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>协议用例</h3><div id="proto-cases" class="muted">暂无</div></div>
+    <div class="panel"><h3>协议崩溃</h3><div id="proto-crashes" class="muted">暂无</div></div>
+  </div>
+</div>
+
+<!-- ============ 文件 Fuzzing ============ -->
+<div class="tab-pane" id="pane-file">
+  <div class="panel">
+    <h3>文件格式变异用例生成</h3>
+    <div class="row">
+      <label class="muted">格式</label>
+      <select id="file-fmt"></select>
+      <label class="muted">策略</label>
+      <select id="file-strat">
+        <option value="bitflip">位翻转</option>
+        <option value="byteflip">字节翻转</option>
+        <option value="arithmetic">算术变异</option>
+        <option value="block">块变异</option>
+      </select>
+      <button class="btn" onclick="fileGen()">生成用例</button>
+      <button class="btn ghost" onclick="fileRun()">执行一轮(50)</button>
+    </div>
+    <pre id="file-out">点击按钮生成文件变异用例...</pre>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>文件用例</h3><div id="file-cases" class="muted">暂无</div></div>
+    <div class="panel"><h3>文件崩溃(ASAN)</h3><div id="file-crashes" class="muted">暂无</div></div>
+  </div>
+</div>
+
+<!-- ============ API Fuzzing ============ -->
+<div class="tab-pane" id="pane-api">
+  <div class="panel">
+    <h3>端点发现与参数变异</h3>
+    <div class="row">
+      <input id="api-url" value="https://api.example.com" style="flex:1;min-width:200px">
+      <button class="btn" onclick="apiDiscover()">端点发现</button>
+    </div>
+    <div class="row">
+      <label class="muted">参数名</label><input id="api-param" value="id">
+      <label class="muted">变异类型</label>
+      <select id="api-vtype">
+        <option value="value">值变异</option>
+        <option value="boundary">边界值</option>
+        <option value="length">长度变异</option>
+        <option value="encoding">编码变异</option>
+        <option value="type">类型变异</option>
+      </select>
+      <button class="btn ghost" onclick="apiMutate()">变异参数</button>
+    </div>
+    <pre id="api-out">输入目标 URL 进行端点发现...</pre>
+  </div>
+  <div class="panel"><h3>发现的端点</h3><div id="api-endpoints" class="muted">暂无</div></div>
+  <div class="panel"><h3>检测到的漏洞</h3><div id="api-vulns" class="muted">暂无</div></div>
+</div>
+
+<!-- ============ 浏览器 Fuzzing ============ -->
+<div class="tab-pane" id="pane-browser">
+  <div class="panel">
+    <h3>浏览器变异用例生成</h3>
+    <div class="row">
+      <label class="muted">浏览器</label>
+      <select id="br-browser">
+        <option>chrome</option><option>firefox</option><option>safari</option>
+        <option>edge</option><option>chromium</option>
+      </select>
+      <label class="muted">变异类型</label>
+      <select id="br-mtype">
+        <option value="html">HTML变异</option>
+        <option value="css">CSS变异</option>
+        <option value="js">JS变异</option>
+        <option value="dom">DOM变异</option>
+      </select>
+      <button class="btn" onclick="brGen()">生成用例</button>
+      <button class="btn ghost" onclick="brRun()">执行一轮(30)</button>
+    </div>
+    <pre id="br-out">点击生成浏览器变异页面...</pre>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>浏览器用例</h3><div id="br-cases" class="muted">暂无</div></div>
+    <div class="panel"><h3>浏览器崩溃</h3><div id="br-crashes" class="muted">暂无</div></div>
+  </div>
+</div>
+
+<!-- ============ 内核 Fuzzing ============ -->
+<div class="tab-pane" id="pane-kernel">
+  <div class="panel">
+    <h3>系统调用序列生成</h3>
+    <div class="row">
+      <label class="muted">序列长度</label><input id="k-len" value="10" type="number" style="width:80px">
+      <label class="muted">变异</label>
+      <select id="k-mtype">
+        <option value="sequence">序列变异</option>
+        <option value="state">状态变异</option>
+        <option value="race">竞态变异</option>
+      </select>
+      <button class="btn" onclick="kGen()">生成序列</button>
+      <button class="btn ghost" onclick="kRun()">执行一轮(30)</button>
+    </div>
+    <pre id="k-out">点击生成系统调用序列...</pre>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>系统调用表</h3><div id="k-syscalls" class="muted">加载中...</div></div>
+    <div class="panel"><h3>内核崩溃</h3><div id="k-crashes" class="muted">暂无</div></div>
+  </div>
+</div>
+
+<!-- ============ 平台管理 ============ -->
+<div class="tab-pane" id="pane-manager">
+  <div class="panel">
+    <h3>项目管理</h3>
+    <div class="row">
+      <input id="proj-name" placeholder="项目名称" style="flex:1">
+      <input id="proj-target" placeholder="目标(如 openssl:443)" style="flex:1">
+      <select id="proj-type">
+        <option value="protocol">协议</option><option value="file">文件</option>
+        <option value="api">API</option><option value="browser">浏览器</option>
+        <option value="kernel">内核</option>
+      </select>
+      <button class="btn" onclick="projCreate()">创建项目</button>
+    </div>
+    <div id="proj-list" class="muted">加载中...</div>
+  </div>
+  <div class="panel"><h3>任务管理</h3><div id="task-list" class="muted">加载中...</div></div>
+  <div class="panel"><h3>报告生成</h3>
+    <div class="row">
+      <select id="rep-type">
+        <option value="fuzzing">Fuzzing报告</option>
+        <option value="crash">崩溃报告</option>
+        <option value="coverage">覆盖率报告</option>
+        <option value="performance">性能报告</option>
+      </select>
+      <button class="btn ghost" onclick="repGen()">生成报告</button>
+    </div>
+    <pre id="rep-out">点击生成报告...</pre>
+  </div>
+</div>
+
+<!-- ============ 系统设置 ============ -->
+<div class="tab-pane" id="pane-settings">
+  <div class="panel"><h3>系统设置</h3><pre id="set-out">加载中...</pre></div>
+  <div class="panel"><h3>平台健康</h3><pre id="health-out">加载中...</pre></div>
+</div>
+
+</div>
+
+<div class="foot">安全 Fuzzing 与模糊测试平台 · 仅用于授权安全测试 · 全部数据为内存模拟演示</div>
+
+<script>
+const BASE = '/api/v1/fuzzing-platform';
+async function api(path, opts){
+  try{
+    const r = await fetch(BASE+path, Object.assign({headers:{'Content-Type':'application/json'}},opts||{}));
+    const j = await r.json();
+    return j;
+  }catch(e){ return {success:false,error:String(e)}; }
+}
+function table(rows, cols){
+  if(!rows||!rows.length) return '<span class="muted">暂无数据</span>';
+  let h='<table><tr>'+cols.map(c=>'<th>'+c[1]+'</th>').join('')+'</tr>';
+  rows.forEach(r=>{ h+='<tr>'+cols.map(c=>'<td>'+esc(r[c[0]])+'</td>').join('')+'</tr>'; });
+  return h+'</table>';
+}
+function esc(s){ if(s==null)return''; return String(s).replace(/[<>]/g,m=>({ '<':'&lt;','>':'&gt;'}[m])); }
+function badge(sev){ const c=({critical:'high',high:'high',medium:'medium',low:'low'}[sev]||'info'); return '<span class="badge '+c+'">'+sev+'</span>'; }
+
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('pane-'+b.dataset.tab).classList.add('active');
+    loadTab(b.dataset.tab);
+  };
+});
+function loadTab(t){
+  if(t==='overview') loadOverview();
+  if(t==='kernel') loadKernel();
+  if(t==='manager') loadManager();
+  if(t==='settings') loadSettings();
+}
+
+// ===== 总览 =====
+async function loadOverview(){
+  const o = await api('/overview');
+  if(o.success){
+    const d=o.data;
+    document.getElementById('ov-kpi').innerHTML = `
+      <div class="kpi"><div class="label">协议用例</div><div class="value">${d.protocol.total_cases}</div><div class="sub">崩溃 ${d.protocol.total_crashes}</div></div>
+      <div class="kpi"><div class="label">文件用例</div><div class="value">${d.file.total_cases}</div><div class="sub">崩溃 ${d.file.total_crashes}</div></div>
+      <div class="kpi"><div class="label">API 用例</div><div class="value">${d.api.total_cases}</div><div class="sub">漏洞 ${d.api.total_vulns}</div></div>
+      <div class="kpi"><div class="label">浏览器用例</div><div class="value">${d.browser.total_cases}</div><div class="sub">崩溃 ${d.browser.total_crashes}</div></div>
+      <div class="kpi"><div class="label">内核用例</div><div class="value">${d.kernel.total_cases}</div><div class="sub">崩溃 ${d.kernel.total_crashes}</div></div>
+      <div class="kpi"><div class="label">项目/任务</div><div class="value">${d.manager.projects}/${d.manager.tasks}</div><div class="sub">报告 ${d.manager.reports}</div></div>`;
+  }
+  const cw = await api('/crash-wall');
+  document.getElementById('ov-crash').textContent = cw.success? JSON.stringify(cw.data,null,2): cw.error;
+  const sp = await api('/supported');
+  if(sp.success) document.getElementById('ov-supported').innerHTML =
+    `<b>协议</b>(${sp.data.protocols.length}): ${sp.data.protocols.join(', ')}<br><br>
+     <b>文件格式</b>(${sp.data.file_formats.length}): ${sp.data.file_formats.join(', ')}<br><br>
+     <b>浏览器</b>: ${sp.data.browsers.join(', ')}<br><br>
+     <b>内核</b>: ${sp.data.kernels.join(', ')}`;
+  const cm = await api('/coverage-matrix');
+  if(cm.success){
+    document.getElementById('ov-cov').innerHTML = Object.keys(cm.data).map(k=>{
+      const v=cm.data[k]; return `<div style="margin-bottom:8px">${k}: 行覆盖率 ${v.line_pct}%
+        <div class="bar"><span style="width:${v.line_pct}%"></span></div></div>`;
+    }).join('');
+  }
+}
+
+// ===== 协议 =====
+async function initProto(){
+  const p=await api('/protocol/protocols');
+  if(p.success){ document.getElementById('proto-sel').innerHTML =
+    Object.keys(p.data).map(k=>`<option value="${k}">${p.data[k].name}</option>`).join(''); }
+}
+async function protoGen(){
+  const proto=document.getElementById('proto-sel').value;
+  const strat=document.getElementById('proto-strat').value;
+  const r=await api('/protocol/generate',{method:'POST',body:JSON.stringify({protocol:proto,strategy:strat})});
+  document.getElementById('proto-out').textContent = r.success? JSON.stringify(r.data,null,2): r.error;
+}
+async function protoRun(){
+  const proto=document.getElementById('proto-sel').value;
+  const r=await api('/protocol/run',{method:'POST',body:JSON.stringify({protocol:proto,count:50,strategy:'random',mode:'serial'})});
+  document.getElementById('proto-out').textContent = r.success? JSON.stringify(r.data,null,2): r.error;
+  const cs=await api('/protocol/cases?limit=8');
+  if(cs.success) document.getElementById('proto-cases').innerHTML = table(cs.data,[['case_id','ID'],['protocol','协议'],['strategy','策略'],['priority','优先级']]);
+  const cr=await api('/protocol/crashes?limit=8');
+  if(cr.success) document.getElementById('proto-crashes').innerHTML = table(cr.data,[['crash_id','ID'],['protocol','协议'],['type','类型'],['severity','级别']]);
+}
+async function protoGenetic(){
+  const proto=document.getElementById('proto-sel').value;
+  const r=await api('/protocol/genetic',{method:'POST',body:JSON.stringify({protocol:proto,count:6})});
+  document.getElementById('proto-out').textContent = r.success? '遗传算法生成 '+r.data.count+' 个用例\n'+JSON.stringify(r.data.history[0],null,2): r.error;
+}
+async function protoAnneal(){
+  const proto=document.getElementById('proto-sel').value;
+  const r=await api('/protocol/annealing',{method:'POST',body:JSON.stringify({protocol:proto,count:10})});
+  document.getElementById('proto-out').textContent = r.success? '模拟退火生成 '+r.data.count+' 个用例': r.error;
+}
+
+// ===== 文件 =====
+async function initFile(){
+  const f=await api('/file/formats');
+  if(f.success){ document.getElementById('file-fmt').innerHTML =
+    Object.keys(f.data).map(k=>`<option value="${k}">${f.data[k].name}</option>`).join(''); }
+}
+async function fileGen(){
+  const fmt=document.getElementById('file-fmt').value;
+  const strat=document.getElementById('file-strat').value;
+  const r=await api('/file/generate',{method:'POST',body:JSON.stringify({fmt:fmt,strategy:strat,target:'parser'})});
+  document.getElementById('file-out').textContent = r.success? JSON.stringify(r.data,null,2): r.error;
+}
+async function fileRun(){
+  const fmt=document.getElementById('file-fmt').value;
+  const r=await api('/file/run',{method:'POST',body:JSON.stringify({fmt:fmt,count:50,strategy:'bitflip',target:'parser'})});
+  document.getElementById('file-out').textContent = r.success? JSON.stringify(r.data,null,2): r.error;
+  const cs=await api('/file/cases?limit=8');
+  if(cs.success) document.getElementById('file-cases').innerHTML = table(cs.data,[['case_id','ID'],['format','格式'],['size','大小'],['priority','优先级']]);
+  const cr=await api('/file/crashes?limit=8');
+  if(cr.success) document.getElementById('file-crashes').innerHTML = table(cr.data,[['crash_id','ID'],['format','格式'],['type','类型'],['severity','级别']]);
+}
+
+// ===== API =====
+async function apiDiscover(){
+  const url=document.getElementById('api-url').value;
+  const r=await api('/api-fuzz/discover',{method:'POST',body:JSON.stringify({base_url:url,detect_methods:true})});
+  document.getElementById('api-out').textContent = r.success? '发现 '+r.data.count+' 个端点': r.error;
+  if(r.success) document.getElementById('api-endpoints').innerHTML = table(r.data.endpoints,[['path','路径'],['methods','方法'],['version','版本'],['status','状态']]);
+  const vu=await api('/api-fuzz/vulns?limit=8');
+  if(vu.success) document.getElementById('api-vulns').innerHTML = table(vu.data,[['vuln_id','ID'],['type','类型'],['endpoint','端点'],['severity','级别']]);
+}
+async function apiMutate(){
+  const name=document.getElementById('api-param').value;
+  const vtype=document.getElementById('api-vtype').value;
+  const r=await api('/api-fuzz/mutate-param',{method:'POST',body:JSON.stringify({name:name,param_type:'string',vtype:vtype})});
+  document.getElementById('api-out').textContent = r.success? JSON.stringify(r.data,null,2): r.error;
+}
+
+// ===== 浏览器 =====
+async function brGen(){
+  const br=document.getElementById('br-browser').value;
+  const mt=document.getElementById('br-mtype').value;
+  const r=await api('/browser/generate',{method:'POST',body:JSON.stringify({browser:br,target:'js_engine',mtype:mt})});
+  document.getElementById('br-out').textContent = r.success? JSON.stringify(r.data,null,2): r.error;
+}
+async function brRun(){
+  const br=document.getElementById('br-browser').value;
+  const r=await api('/browser/run',{method:'POST',body:JSON.stringify({browser:br,target:'js_engine',count:30,mtype:'js',headless:true})});
+  document.getElementById('br-out').textContent = r.success? JSON.stringify(r.data,null,2): r.error;
+  const cs=await api('/browser/cases?limit=8');
+  if(cs.success) document.getElementById('br-cases').innerHTML = table(cs.data,[['case_id','ID'],['browser','浏览器'],['mutation','变异'],['size','大小']]);
+  const cr=await api('/browser/crashes?limit=8');
+  if(cr.success) document.getElementById('br-crashes').innerHTML = table(cr.data,[['crash_id','ID'],['browser','浏览器'],['type','类型'],['severity','级别']]);
+}
+
+// ===== 内核 =====
+async function loadKernel(){
+  const sc=await api('/kernel/syscalls');
+  if(sc.success) document.getElementById('k-syscalls').innerHTML = table(sc.data.slice(0,15),[['nr','号'],['name','名称'],['args','参数']]);
+}
+async function kGen(){
+  const len=parseInt(document.getElementById('k-len').value)||10;
+  const mt=document.getElementById('k-mtype').value;
+  const r=await api('/kernel/generate-seq',{method:'POST',body:JSON.stringify({length:len,mtype:mt})});
+  document.getElementById('k-out').textContent = r.success? JSON.stringify(r.data,null,2): r.error;
+}
+async function kRun(){
+  const r=await api('/kernel/run',{method:'POST',body:JSON.stringify({target:'syscall',count:30,length:10,mode:'vm'})});
+  document.getElementById('k-out').textContent = r.success? JSON.stringify(r.data,null,2): r.error;
+  const cr=await api('/kernel/crashes?limit=8');
+  if(cr.success) document.getElementById('k-crashes').innerHTML = table(cr.data,[['crash_id','ID'],['type','类型'],['log_hint','日志特征'],['severity','级别']]);
+}
+
+// ===== 管理 =====
+async function loadManager(){
+  const pj=await api('/manager/projects');
+  if(pj.success) document.getElementById('proj-list').innerHTML = table(pj.data,[['project_id','ID'],['name','名称'],['fuzz_type','类型'],['status','状态'],['progress','进度']]);
+  const tk=await api('/manager/tasks');
+  if(tk.success) document.getElementById('task-list').innerHTML = table(tk.data,[['task_id','ID'],['name','名称'],['priority','优先级'],['status','状态']]);
+}
+async function projCreate(){
+  const name=document.getElementById('proj-name').value;
+  const target=document.getElementById('proj-target').value;
+  const ft=document.getElementById('proj-type').value;
+  if(!name) return;
+  const r=await api('/manager/projects',{method:'POST',body:JSON.stringify({name:name,target:target,fuzz_type:ft})});
+  if(r.success){ document.getElementById('proj-name').value=''; loadManager(); }
+}
+async function repGen(){
+  const rt=document.getElementById('rep-type').value;
+  const r=await api('/manager/reports',{method:'POST',body:JSON.stringify({report_type:rt})});
+  document.getElementById('rep-out').textContent = r.success? r.data.body: r.error;
+}
+
+// ===== 设置 =====
+async function loadSettings(){
+  const s=await api('/settings');
+  document.getElementById('set-out').textContent = s.success? JSON.stringify(s.data,null,2): s.error;
+  const h=await api('/health');
+  document.getElementById('health-out').textContent = h.success? JSON.stringify(h.data,null,2): h.error;
+}
+
+// init
+initProto(); initFile(); loadOverview();
+</script>
+</body>
+</html>

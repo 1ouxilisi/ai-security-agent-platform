@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全知识图谱与智能推理控制台 v27</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --bg3: #1f2630;
+  --border: #30363d;
+  --text: #c9d1d9;
+  --text-dim: #8b949e;
+  --primary: #58a6ff;
+  --green: #3fb950;
+  --yellow: #d29922;
+  --red: #f85149;
+  --purple: #bc8cff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg); color: var(--text);
+  font-size: 14px; line-height: 1.6;
+}
+header {
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 14px 24px; display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 10px;
+}
+header h1 { font-size: 18px; color: var(--primary); font-weight: 600; }
+header .meta { color: var(--text-dim); font-size: 12px; }
+.tabs {
+  display: flex; background: var(--bg2); border-bottom: 1px solid var(--border);
+  overflow-x: auto; padding: 0 12px;
+}
+.tab-btn {
+  background: transparent; border: none; color: var(--text-dim);
+  padding: 12px 18px; cursor: pointer; font-size: 13px;
+  border-bottom: 2px solid transparent; white-space: nowrap;
+}
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-btn:hover { color: var(--text); }
+main { padding: 20px; max-width: 1400px; margin: 0 auto; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+.card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px; margin-bottom: 16px;
+}
+.card h3 {
+  font-size: 14px; color: var(--primary); margin-bottom: 12px;
+  border-bottom: 1px solid var(--border); padding-bottom: 8px;
+}
+.grid { display: grid; gap: 12px; }
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.grid-4 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.stat {
+  background: var(--bg3); border-radius: 6px; padding: 14px;
+  border-left: 3px solid var(--primary);
+}
+.stat .num { font-size: 24px; font-weight: 700; color: var(--text); }
+.stat .label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+.stat.green { border-left-color: var(--green); }
+.stat.yellow { border-left-color: var(--yellow); }
+.stat.red { border-left-color: var(--red); }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--text-dim); font-weight: 600; background: var(--bg3); }
+tr:hover td { background: rgba(88,166,255,0.05); }
+.btn {
+  background: var(--primary); color: #fff; border: none; padding: 8px 16px;
+  border-radius: 6px; cursor: pointer; font-size: 13px;
+}
+.btn:hover { opacity: 0.9; }
+.btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn.danger { background: var(--red); }
+.btn.small { padding: 4px 10px; font-size: 12px; }
+input, select, textarea {
+  background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 10px; border-radius: 6px; font-size: 13px; width: 100%;
+}
+label { font-size: 12px; color: var(--text-dim); display: block; margin-bottom: 4px; }
+.form-row { margin-bottom: 12px; }
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 11px; font-weight: 600;
+}
+.badge.p0 { background: rgba(248,81,73,0.2); color: var(--red); }
+.badge.p1 { background: rgba(210,153,34,0.2); color: var(--yellow); }
+.badge.p2 { background: rgba(88,166,255,0.2); color: var(--primary); }
+.badge.p3 { background: rgba(139,148,158,0.2); color: var(--text-dim); }
+.badge.ok { background: rgba(63,185,80,0.2); color: var(--green); }
+pre {
+  background: var(--bg); padding: 12px; border-radius: 6px;
+  overflow-x: auto; font-size: 12px; max-height: 400px; overflow-y: auto;
+}
+.path-vis { font-family: "Consolas", monospace; font-size: 12px; }
+.path-vis .hop { color: var(--primary); margin: 0 6px; }
+.qa-bubble {
+  background: var(--bg3); padding: 10px 14px; border-radius: 8px;
+  margin-bottom: 8px;
+}
+.qa-bubble.user { border-left: 3px solid var(--primary); }
+.qa-bubble.bot { border-left: 3px solid var(--green); }
+.qa-bubble .meta { font-size: 11px; color: var(--text-dim); margin-top: 6px; }
+.toast {
+  position: fixed; bottom: 20px; right: 20px; background: var(--bg3);
+  border: 1px solid var(--primary); padding: 12px 18px; border-radius: 8px;
+  z-index: 9999; display: none; max-width: 360px;
+}
+.empty { color: var(--text-dim); text-align: center; padding: 20px; font-style: italic; }
+.bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 120px; padding: 8px 0; }
+.bar-chart .bar {
+  background: var(--primary); min-width: 12px; border-radius: 2px 2px 0 0;
+  position: relative;
+}
+.bar-chart .bar:hover { background: var(--purple); }
+@media (max-width: 768px) {
+  main { padding: 10px; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  header { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>安全知识图谱与智能推理控制台</h1>
+  <div class="meta">v27.1 · 方向1 · 80 个 API · A*/SIR/规则推理</div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="overview">知识图谱总览</button>
+  <button class="tab-btn" data-tab="graph">图谱管理</button>
+  <button class="tab-btn" data-tab="attack">攻击路径</button>
+  <button class="tab-btn" data-tab="vuln">漏洞关联</button>
+  <button class="tab-btn" data-tab="propagation">威胁传播</button>
+  <button class="tab-btn" data-tab="reasoning">知识推理</button>
+  <button class="tab-btn" data-tab="qa">智能问答</button>
+  <button class="tab-btn" data-tab="settings">系统设置</button>
+</div>
+
+<main>
+<!-- ==================== 总览 ==================== -->
+<section class="tab-pane active" id="tab-overview">
+  <div class="grid grid-4" id="ov-stats"></div>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>图谱质量报告</h3>
+      <pre id="ov-quality">加载中...</pre>
+    </div>
+    <div class="card">
+      <h3>推理引擎实时结论</h3>
+      <pre id="ov-reasoning">加载中...</pre>
+    </div>
+  </div>
+  <div class="card">
+    <h3>问答统计</h3>
+    <pre id="ov-qa">加载中...</pre>
+  </div>
+</section>
+
+<!-- ==================== 图谱管理 ==================== -->
+<section class="tab-pane" id="tab-graph">
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>实体类型分布</h3>
+      <pre id="g-typedist">加载中...</pre>
+    </div>
+    <div class="card">
+      <h3>关系类型分布</h3>
+      <pre id="g-redirect">加载中...</pre>
+    </div>
+  </div>
+  <div class="card">
+    <h3>新增实体</h3>
+    <div class="grid grid-4">
+      <div class="form-row">
+        <label>实体类型</label>
+        <select id="g-etype">
+          <option value="cve">CVE</option>
+          <option value="cwe">CWE</option>
+          <option value="ip">IP</option>
+          <option value="domain">域名</option>
+          <option value="service">服务</option>
+          <option value="ioc">IOC</option>
+          <option value="actor">威胁组织</option>
+          <option value="attack_tech">ATT&CK技术</option>
+          <option value="tool">工具</option>
+          <option value="person">人员</option>
+          <option value="org">组织</option>
+          <option value="event">事件</option>
+          <option value="asset">资产</option>
+        </select>
+      </div>
+      <div class="form-row" style="grid-column: span 2;">
+        <label>名称</label>
+        <input id="g-ename" placeholder="例如 CVE-2024-1234">
+      </div>
+      <div class="form-row">
+        <label>&nbsp;</label>
+        <button class="btn" onclick="addEntity()">添加实体</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>从文本抽取实体</h3>
+    <div class="form-row">
+      <textarea id="g-text" rows="3" placeholder="粘贴含 CVE-xxxx-xxxx / IP / 域名 的文本..."></textarea>
+    </div>
+    <button class="btn" onclick="extractText()">执行抽取</button>
+    <pre id="g-extract-result" style="margin-top:10px;"></pre>
+  </div>
+  <div class="card">
+    <h3>实体列表（前 50 条）</h3>
+    <div style="overflow-x:auto;">
+      <table id="g-table">
+        <thead><tr><th>ID</th><th>类型</th><th>名称</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <h3>知识图谱运维</h3>
+    <button class="btn" onclick="callPost('/completion',{},'知识补全')">知识补全</button>
+    <button class="btn ghost" onclick="callPost('/cleanse',{},'知识清洗')">知识清洗</button>
+    <button class="btn ghost" onclick="callPost('/validate',{},'知识验证')">知识验证</button>
+    <button class="btn danger" onclick="callPost('/reset',{},'重置图谱')">重置图谱</button>
+    <pre id="g-ops-result" style="margin-top:10px;"></pre>
+  </div>
+</section>
+
+<!-- ==================== 攻击路径 ==================== -->
+<section class="tab-pane" id="tab-attack">
+  <div class="card">
+    <h3>攻击路径搜索</h3>
+    <div class="grid grid-3">
+      <div class="form-row">
+        <label>源节点 ID</label>
+        <input id="ap-src" placeholder="node id">
+      </div>
+      <div class="form-row">
+        <label>目标节点 ID</label>
+        <input id="ap-dst" placeholder="node id">
+      </div>
+      <div class="form-row">
+        <label>&nbsp;</label>
+        <button class="btn" onclick="runAttackPath()">搜索路径</button>
+      </div>
+    </div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>最短路径 (Dijkstra)</h3>
+      <div class="path-vis" id="ap-shortest"></div>
+    </div>
+    <div class="card">
+      <h3>A* 启发式路径</h3>
+      <div class="path-vis" id="ap-astar"></div>
+    </div>
+    <div class="card">
+      <h3>概率路径</h3>
+      <pre id="ap-prob"></pre>
+    </div>
+    <div class="card">
+      <h3>风险路径</h3>
+      <pre id="ap-risk"></pre>
+    </div>
+  </div>
+  <div class="card">
+    <h3>下一步攻击预测</h3>
+    <div class="grid grid-2">
+      <div class="form-row">
+        <label>当前节点 ID</label>
+        <input id="ap-cur" placeholder="node id">
+      </div>
+      <div class="form-row">
+        <label>&nbsp;</label>
+        <button class="btn" onclick="predictNext()">预测</button>
+      </div>
+    </div>
+    <pre id="ap-predict"></pre>
+  </div>
+</section>
+
+<!-- ==================== 漏洞关联 ==================== -->
+<section class="tab-pane" id="tab-vuln">
+  <div class="card">
+    <h3>漏洞优先级 Top</h3>
+    <div style="overflow-x:auto;">
+      <table id="v-table">
+        <thead><tr><th>ID</th><th>名称</th><th>CVSS</th><th>EPSS</th><th>暴露</th><th>优先级</th><th>建议</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>漏洞趋势</h3>
+      <pre id="v-trend"></pre>
+    </div>
+    <div class="card">
+      <h3>组合风险</h3>
+      <pre id="v-combined"></pre>
+    </div>
+  </div>
+  <div class="card">
+    <h3>单漏洞关联分析</h3>
+    <div class="grid grid-3">
+      <div class="form-row">
+        <label>CVE 编号</label>
+        <input id="v-id" placeholder="CVE-2021-44228">
+      </div>
+      <div class="form-row">
+        <label>&nbsp;</label>
+        <button class="btn" onclick="vulnDetail()">分析</button>
+      </div>
+    </div>
+    <pre id="v-detail"></pre>
+  </div>
+</section>
+
+<!-- ==================== 威胁传播 ==================== -->
+<section class="tab-pane" id="tab-propagation">
+  <div class="card">
+    <h3>SIR 模型参数</h3>
+    <div class="grid grid-4">
+      <div class="form-row"><label>beta 传播率</label><input id="p-beta" type="number" step="0.05" value="0.5"></div>
+      <div class="form-row"><label>gamma 恢复率</label><input id="p-gamma" type="number" step="0.01" value="0.1"></div>
+      <div class="form-row"><label>总人数</label><input id="p-total" type="number" value="100"></div>
+      <div class="form-row"><label>&nbsp;</label><button class="btn" onclick="runSIR()">运行 SIR</button></div>
+    </div>
+  </div>
+  <div class="grid grid-3">
+    <div class="stat"><div class="num" id="p-peak">-</div><div class="label">感染峰值</div></div>
+    <div class="stat yellow"><div class="num" id="p-peakday">-</div><div class="label">峰值出现(天)</div></div>
+    <div class="stat red"><div class="num" id="p-final">-</div><div class="label">最终感染比例</div></div>
+  </div>
+  <div class="card">
+    <h3>SIR 曲线（S/I/R）</h3>
+    <div class="bar-chart" id="p-chart" style="height:200px;"></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>阻断策略对比</h3>
+      <pre id="p-block"></pre>
+    </div>
+    <div class="card">
+      <h3>蒙特卡洛模拟（30次）</h3>
+      <pre id="p-mc"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 知识推理 ==================== -->
+<section class="tab-pane" id="tab-reasoning">
+  <div class="card">
+    <h3>规则库</h3>
+    <div style="overflow-x:auto;">
+      <table id="r-rules">
+        <thead><tr><th>ID</th><th>名称</th><th>条件</th><th>结论</th><th>置信度</th><th>优先级</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <h3>前向链推理</h3>
+    <button class="btn" onclick="runForward()">执行前向链推理</button>
+    <pre id="r-forward" style="margin-top:10px;"></pre>
+  </div>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>不确定性 / 验证</h3>
+      <pre id="r-uncertain"></pre>
+    </div>
+    <div class="card">
+      <h3>攻击预测与建议</h3>
+      <pre id="r-predict"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 智能问答 ==================== -->
+<section class="tab-pane" id="tab-qa">
+  <div class="card">
+    <h3>向知识图谱提问</h3>
+    <div class="form-row">
+      <textarea id="qa-input" rows="2" placeholder="例如：CVE-2021-44228 影响哪个资产？"></textarea>
+    </div>
+    <button class="btn" onclick="askQA()">发送问题</button>
+  </div>
+  <div class="card">
+    <h3>对话记录</h3>
+    <div id="qa-log"><div class="empty">暂无对话</div></div>
+  </div>
+  <div class="card">
+    <h3>FAQ 知识库</h3>
+    <pre id="qa-faq"></pre>
+  </div>
+</section>
+
+<!-- ==================== 系统设置 ==================== -->
+<section class="tab-pane" id="tab-settings">
+  <div class="card">
+    <h3>系统设置</h3>
+    <pre id="s-settings">加载中...</pre>
+    <div class="form-row" style="margin-top:12px;">
+      <label>更新设置（JSON）</label>
+      <textarea id="s-updates" rows="3">{"alert_threshold_p0": 0.75}</textarea>
+    </div>
+    <button class="btn" onclick="saveSettings()">保存</button>
+  </div>
+  <div class="card">
+    <h3>异步任务</h3>
+    <pre id="s-tasks">暂无任务</pre>
+  </div>
+</section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/v1/security-kg';
+async function api(method, path, body) {
+  const opts = { method, headers: {'Content-Type': 'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  try {
+    const r = await fetch(API + path, opts);
+    const j = await r.json();
+    if (!j.success) throw new Error(j.error || '请求失败');
+    return j.data;
+  } catch (e) {
+    showToast('错误: ' + e.message);
+    throw e;
+  }
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+function pretty(obj) { return JSON.stringify(obj, null, 2); }
+
+// Tab 切换
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    loadTab(btn.dataset.tab);
+  });
+});
+
+async function loadTab(name) {
+  try {
+    if (name === 'overview') await loadOverview();
+    else if (name === 'graph') await loadGraph();
+    else if (name === 'attack') await loadAttack();
+    else if (name === 'vuln') await loadVuln();
+    else if (name === 'propagation') await loadPropagation();
+    else if (name === 'reasoning') await loadReasoning();
+    else if (name === 'qa') await loadQA();
+    else if (name === 'settings') await loadSettings();
+  } catch (e) { console.error(e); }
+}
+
+async function loadOverview() {
+  const d = await api('GET', '/overview');
+  document.getElementById('ov-stats').innerHTML = `
+    <div class="stat"><div class="num">${d.graph.nodes}</div><div class="label">实体节点</div></div>
+    <div class="stat"><div class="num">${d.graph.edges}</div><div class="label">关系边</div></div>
+    <div class="stat green"><div class="num">${d.graph.quality_score}</div><div class="label">质量分 (${d.graph.quality_grade})</div></div>
+    <div class="stat red"><div class="num">${d.vulns.p0_p1}</div><div class="label">P0/P1 漏洞</div></div>`;
+  document.getElementById('ov-quality').textContent = pretty(d.graph);
+  document.getElementById('ov-reasoning').textContent = pretty(d.reasoning);
+  document.getElementById('ov-qa').textContent = pretty(d.qa);
+}
+
+async function loadGraph() {
+  const s = await api('GET', '/stats');
+  document.getElementById('g-typedist').textContent = pretty(s.entity_type_distribution);
+  document.getElementById('g-redirect').textContent = pretty(s.relation_type_distribution);
+  const ents = await api('GET', '/entities?limit=50');
+  const tb = document.querySelector('#g-table tbody');
+  tb.innerHTML = ents.map(e => `<tr><td>${e.id}</td><td>${e.type_cn}</td><td>${e.name}</td></tr>`).join('');
+}
+
+async function addEntity() {
+  const etype = document.getElementById('g-etype').value;
+  const name = document.getElementById('g-ename').value.trim();
+  if (!name) return showToast('请输入名称');
+  await api('POST', '/entities', { etype, name, props: { source: 'console' } });
+  showToast('实体已添加');
+  loadGraph();
+}
+
+async function extractText() {
+  const text = document.getElementById('g-text').value;
+  const d = await api('POST', '/extract', { text });
+  document.getElementById('g-extract-result').textContent = pretty(d);
+}
+
+async function callPost(path, body, label) {
+  const d = await api('POST', path, body);
+  document.getElementById('g-ops-result').textContent =
+    `【${label}】\n` + pretty(d);
+}
+
+async function loadAttack() {
+  const viz = await api('GET', '/attack-path/visualization');
+  // 自动填充第一对节点
+  if (viz.nodes.length >= 2) {
+    document.getElementById('ap-src').value = viz.nodes[0].id;
+    document.getElementById('ap-cur').value = viz.nodes[0].id;
+    const assets = viz.nodes.filter(n => n.type === 'asset');
+    if (assets.length) document.getElementById('ap-dst').value = assets[assets.length-1].id;
+  }
+}
+
+async function runAttackPath() {
+  const src = document.getElementById('ap-src').value;
+  const dst = document.getElementById('ap-dst').value;
+  const body = { src, dst, max_depth: 6 };
+  const sp = await api('POST', '/attack-path/shortest', body);
+  const ap = await api('POST', '/attack-path/astar', body);
+  const pr = await api('POST', '/attack-path/probabilistic', body);
+  const rk = await api('POST', '/attack-path/risk', body);
+  document.getElementById('ap-shortest').innerHTML =
+    (sp.found ? sp.nodes.map(n => n.name).join('<span class="hop">→</span>') : '未找到');
+  document.getElementById('ap-astar').innerHTML =
+    (ap.found ? ap.nodes.map(n => n.name).join('<span class="hop">→</span>') : '未找到');
+  document.getElementById('ap-prob').textContent = pretty(pr);
+  document.getElementById('ap-risk').textContent = pretty(rk);
+}
+
+async function predictNext() {
+  const node = document.getElementById('ap-cur').value;
+  const d = await api('POST', '/attack-path/predict-next', { node, top_k: 5 });
+  document.getElementById('ap-predict').textContent = pretty(d);
+}
+
+async function loadVuln() {
+  const pri = await api('GET', '/vulns-priorities');
+  const tb = document.querySelector('#v-table tbody');
+  tb.innerHTML = pri.map(v => `<tr>
+    <td>${v.id}</td><td>${v.name}</td><td>${v.cvss}</td><td>${v.epss}</td>
+    <td>${v.exposed ? '是' : '否'}</td>
+    <td><span class="badge ${v.priority_level.toLowerCase()}">${v.priority_level}</span></td>
+    <td>${v.recommendation}</td></tr>`).join('');
+  const tr = await api('GET', '/vulns-trend');
+  document.getElementById('v-trend').textContent = pretty(tr);
+  const cb = await api('GET', '/vulns-combined');
+  document.getElementById('v-combined').textContent = pretty(cb);
+}
+
+async function vulnDetail() {
+  const vid = document.getElementById('v-id').value.trim();
+  if (!vid) return;
+  const cor = await api('GET', `/vulns/${vid}/correlate`);
+  const imp = await api('GET', `/vulns/${vid}/impact`);
+  const pg = await api('GET', `/vulns/${vid}/propagation`);
+  document.getElementById('v-detail').textContent =
+    '【关联】\n' + pretty(cor) + '\n\n【影响】\n' + pretty(imp) +
+    '\n\n【传播】\n' + pretty(pg);
+}
+
+async function runSIR() {
+  const body = {
+    beta: parseFloat(document.getElementById('p-beta').value),
+    gamma: parseFloat(document.getElementById('p-gamma').value),
+    total: parseInt(document.getElementById('p-total').value),
+    days: 60, initial_infected: 1,
+  };
+  const d = await api('POST', '/propagation/sir', body);
+  document.getElementById('p-peak').textContent = d.peak_infected;
+  document.getElementById('p-peakday').textContent = d.peak_day;
+  document.getElementById('p-final').textContent = (d.final_infected_ratio*100).toFixed(1) + '%';
+  // 简化柱状图：画 I 曲线
+  const chart = document.getElementById('p-chart');
+  const maxI = Math.max(...d.series.map(s => s.I), 1);
+  chart.innerHTML = d.series.map(s =>
+    `<div class="bar" style="height:${(s.I/maxI*100).toFixed(1)}%" title="day ${s.day}: I=${s.I}"></div>`
+  ).join('');
+  const blk = await api('GET', '/propagation/blocking?seed=Web');
+  document.getElementById('p-block').textContent = pretty(blk);
+  const mc = await api('POST', '/propagation/monte-carlo', { runs: 30 });
+  document.getElementById('p-mc').textContent = pretty(mc);
+}
+
+async function loadPropagation() { await runSIR(); }
+
+async function loadReasoning() {
+  const rules = await api('GET', '/reasoning/rules');
+  const tb = document.querySelector('#r-rules tbody');
+  tb.innerHTML = rules.map(r => `<tr>
+    <td>${r.id}</td><td>${r.name}</td><td>${r.condition}</td>
+    <td>${r.conclusion}</td><td>${r.confidence}</td><td>${r.priority}</td>
+  </tr>`).join('');
+  await runForward();
+}
+
+async function runForward() {
+  const d = await api('POST', '/reasoning/forward');
+  document.getElementById('r-forward').textContent = pretty(d);
+  const unc = await api('GET', '/reasoning/uncertainty');
+  document.getElementById('r-uncertain').textContent = pretty(unc);
+  const pr = await api('GET', '/reasoning/predict');
+  const rc = await api('GET', '/reasoning/recommendations');
+  document.getElementById('r-predict').textContent =
+    pretty(pr) + '\n\n【建议】\n' + pretty(rc);
+}
+
+async function askQA() {
+  const q = document.getElementById('qa-input').value.trim();
+  if (!q) return;
+  const log = document.getElementById('qa-log');
+  log.innerHTML = `<div class="qa-bubble user"><b>问:</b> ${q}</div>` + log.innerHTML;
+  const d = await api('POST', '/qa/ask', { question: q, user: 'console' });
+  log.innerHTML = `<div class="qa-bubble bot"><b>答:</b> ${d.answer}
+    <div class="meta">置信度 ${(d.confidence*100).toFixed(0)}% · 来源 ${d.source} · ${d.elapsed_ms}ms</div></div>` + log.innerHTML;
+  document.getElementById('qa-input').value = '';
+}
+
+async function loadQA() {
+  const faq = await api('GET', '/qa/faq');
+  document.getElementById('qa-faq').textContent = pretty(faq);
+}
+
+async function loadSettings() {
+  const s = await api('GET', '/settings');
+  document.getElementById('s-settings').textContent = pretty(s);
+  const t = await api('GET', '/tasks');
+  document.getElementById('s-tasks').textContent = pretty(t);
+}
+
+async function saveSettings() {
+  try {
+    const updates = JSON.parse(document.getElementById('s-updates').value);
+    await api('POST', '/settings', { updates });
+    showToast('设置已保存');
+    loadSettings();
+  } catch (e) { showToast('JSON 格式错误: ' + e.message); }
+}
+
+// 初始化
+loadOverview();
+</script>
+</body>
+</html>

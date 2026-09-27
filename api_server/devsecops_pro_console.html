@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DevSecOps Pro 控制台 · 方向3</title>
+<style>
+:root{
+  --bg:#0f1115; --panel:#171a21; --panel2:#1f232c; --border:#2a2f3a;
+  --text:#e6e8ee; --muted:#8a90a0; --accent:#4fc3f7; --ok:#2ecc71;
+  --warn:#f1c40f; --high:#e67e22; --crit:#e74c3c; --info:#95a5a6;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+header{padding:16px 24px;background:linear-gradient(90deg,#1a1f2a,#171a21);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:12px}
+header h1{margin:0;font-size:18px}
+header .badge{background:var(--accent);color:#000;padding:2px 10px;
+  border-radius:999px;font-size:12px;font-weight:bold}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.col{flex:1;min-width:320px}
+.card{background:var(--panel);border:1px solid var(--border);
+  border-radius:10px;padding:16px;margin-bottom:16px}
+.card h2{margin:0 0 12px;font-size:15px;color:var(--accent);
+  border-bottom:1px solid var(--border);padding-bottom:8px}
+input,select,button,textarea{background:var(--panel2);border:1px solid var(--border);
+  color:var(--text);padding:8px 12px;border-radius:6px;font-size:14px;
+  font-family:inherit}
+input[type=text]{flex:1}
+button{cursor:pointer;background:var(--accent);color:#000;border:none;
+  font-weight:bold}
+button:hover{opacity:.85}
+button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.stages{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.stage{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:10px;text-align:center}
+.stage.active{border-color:var(--accent);box-shadow:0 0 12px rgba(79,195,247,.3)}
+.stage.done{border-color:var(--ok)}
+.stage .num{display:inline-block;width:26px;height:26px;line-height:26px;
+  border-radius:50%;background:var(--border);font-weight:bold;margin-bottom:6px}
+.stage.active .num{background:var(--accent);color:#000}
+.stage.done .num{background:var(--ok);color:#000}
+.stage .label{font-size:12px;font-weight:bold}
+.stage .prog{font-size:11px;color:var(--muted);margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;
+  vertical-align:top}
+th{color:var(--muted);font-weight:normal}
+tr:hover td{background:var(--panel2)}
+.sev{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;
+  font-weight:bold;color:#000}
+.sev.critical{background:var(--crit)}
+.sev.high{background:var(--high)}
+.sev.medium{background:var(--warn)}
+.sev.low{background:var(--accent)}
+.sev.info{background:var(--info);color:#fff}
+code,pre{background:#0a0c10;padding:2px 6px;border-radius:4px;
+  font-family:Consolas,Monaco,monospace;font-size:12px}
+pre{padding:12px;overflow-x:auto;max-height:360px;white-space:pre-wrap}
+.muted{color:var(--muted)}
+.stat{display:inline-block;margin-right:16px}
+.stat b{font-size:22px;display:block}
+.log{background:#0a0c10;padding:10px;border-radius:6px;max-height:260px;
+  overflow-y:auto;font-family:Consolas,monospace;font-size:12px;
+  white-space:pre-wrap}
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.progress-bar{height:10px;background:var(--border);border-radius:4px;
+  overflow:hidden;margin-top:8px}
+.progress-bar > div{height:100%;background:var(--accent);transition:width .4s}
+.tab-row{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.tab{padding:6px 14px;border-radius:6px;cursor:pointer;background:var(--panel2);
+  border:1px solid var(--border);font-size:13px}
+.tab.active{background:var(--accent);color:#000;font-weight:bold}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.kpi{display:inline-block;margin:6px 14px 6px 0;padding:12px 20px;
+  background:var(--panel2);border:1px solid var(--border);border-radius:10px}
+.kpi .num{font-size:24px;font-weight:bold}
+.kpi .lbl{font-size:12px;color:var(--muted)}
+.badge-ok{background:var(--ok);color:#000;padding:2px 8px;border-radius:4px;font-size:11px}
+.badge-warn{background:var(--warn);color:#000;padding:2px 8px;border-radius:4px;font-size:11px}
+.badge-fail{background:var(--crit);color:#fff;padding:2px 8px;border-radius:4px;font-size:11px}
+.thinking{background:#1a1430;border-left:3px solid #ce93d8;padding:8px 12px;
+  border-radius:4px;margin:4px 0;font-size:12px;color:#ce93d8}
+.tool-ok{color:var(--ok)} .tool-no{color:var(--crit)}
+@media (max-width:768px){
+  .stages .stage{min-width:45%}
+  .row{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡️ DevSecOps Pro <span class="badge">方向3 · 5.5→9.0</span></h1>
+  <div>
+    <span class="muted" id="taskInfo">未启动任务</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- 启动区 -->
+  <div class="card">
+    <h2>启动八阶段扫描</h2>
+    <div class="toolbar">
+      <input type="text" id="targetInput" placeholder="代码仓库/目录路径，例如 E:/projects/my-app" value="">
+      <button id="btnStart">🚀 一键启动</button>
+      <button class="secondary" id="btnRefresh">🔄 刷新</button>
+    </div>
+    <div class="progress-bar"><div id="overallBar" style="width:0%"></div></div>
+    <div class="muted" id="overallText">整体进度 0% · 等待启动</div>
+  </div>
+
+  <!-- 八阶段可视化 -->
+  <div class="stages" id="stagesBar">
+    <div class="stage" data-k="cicd"><span class="num">1</span><div class="label">CI/CD</div><div class="prog">-</div></div>
+    <div class="stage" data-k="sast"><span class="num">2</span><div class="label">SAST</div><div class="prog">-</div></div>
+    <div class="stage" data-k="sca"><span class="num">3</span><div class="label">SCA</div><div class="prog">-</div></div>
+    <div class="stage" data-k="secrets"><span class="num">4</span><div class="label">Secrets</div><div class="prog">-</div></div>
+    <div class="stage" data-k="iac"><span class="num">5</span><div class="label">IaC</div><div class="prog">-</div></div>
+    <div class="stage" data-k="container"><span class="num">6</span><div class="label">容器</div><div class="prog">-</div></div>
+    <div class="stage" data-k="gate"><span class="num">7</span><div class="label">门禁</div><div class="prog">-</div></div>
+    <div class="stage" data-k="risk"><span class="num">8</span><div class="label">评级</div><div class="prog">-</div></div>
+  </div>
+
+  <!-- 概览 -->
+  <div class="card" id="overview">
+    <h2>仪表盘概览</h2>
+    <div id="overviewBody" class="muted">加载中...</div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-row">
+    <div class="tab active" data-tab="cicd">① CI/CD</div>
+    <div class="tab" data-tab="sast">② SAST</div>
+    <div class="tab" data-tab="sca">③ SCA</div>
+    <div class="tab" data-tab="secrets">④ Secrets</div>
+    <div class="tab" data-tab="iac">⑤ IaC</div>
+    <div class="tab" data-tab="container">⑥ 容器</div>
+    <div class="tab" data-tab="gate">⑦ 门禁</div>
+    <div class="tab" data-tab="risk">⑧ 评级</div>
+    <div class="tab" data-tab="ai">🤖 AI 分析</div>
+    <div class="tab" data-tab="report">📄 报告</div>
+    <div class="tab" data-tab="tools">🔧 工具状态</div>
+    <div class="tab" data-tab="log">📋 日志/思考</div>
+  </div>
+
+  <div class="tab-pane active" id="tab-cicd">
+    <div class="card"><h2>CI/CD 流水线配置</h2>
+      <div class="toolbar">
+        <select id="cicdPlatform">
+          <option value="github">GitHub Actions</option>
+          <option value="gitlab">GitLab CI</option>
+          <option value="jenkins">Jenkins</option>
+        </select>
+        <input type="text" id="cicdRepo" placeholder="owner/repo" style="flex:1">
+        <button id="btnCicdGen">📜 生成配置</button>
+        <button id="btnCicdTrigger">▶ 触发流水线</button>
+      </div>
+      <pre id="cicdBody" class="muted">选择平台后点击生成</pre>
+    </div>
+  </div>
+
+  <div class="tab-pane" id="tab-sast">
+    <div class="card"><h2>SAST 静态代码分析结果</h2>
+      <div id="sastBody" class="muted">未运行</div></div>
+  </div>
+
+  <div class="tab-pane" id="tab-sca">
+    <div class="card"><h2>SCA 依赖漏洞结果</h2>
+      <div id="scaBody" class="muted">未运行</div></div>
+  </div>
+
+  <div class="tab-pane" id="tab-secrets">
+    <div class="card"><h2>Secrets 泄露结果</h2>
+      <div id="secretsBody" class="muted">未运行</div></div>
+  </div>
+
+  <div class="tab-pane" id="tab-iac">
+    <div class="card"><h2>IaC 配置安全结果</h2>
+      <div id="iacBody" class="muted">未运行</div></div>
+  </div>
+
+  <div class="tab-pane" id="tab-container">
+    <div class="card"><h2>容器安全结果</h2>
+      <div id="containerBody" class="muted">未运行</div></div>
+  </div>
+
+  <div class="tab-pane" id="tab-gate">
+    <div class="card"><h2>安全门禁结果</h2>
+      <div id="gateBody" class="muted">未运行</div></div>
+    <div class="card"><h2>门禁规则</h2>
+      <div id="gateRulesBody" class="muted">加载中...</div></div>
+  </div>
+
+  <div class="tab-pane" id="tab-risk">
+    <div class="card"><h2>风险评级</h2>
+      <div id="riskBody" class="muted">未运行</div></div>
+  </div>
+
+  <div class="tab-pane" id="tab-ai">
+    <div class="card"><h2>AI 总体评估</h2>
+      <div id="aiSummary" class="muted">未运行</div></div>
+    <div class="row">
+      <div class="col"><div class="card"><h2>优先级 Top 风险</h2>
+        <div id="aiPriority" class="muted">-</div></div></div>
+      <div class="col"><div class="card"><h2>攻击路径</h2>
+        <div id="aiPaths" class="muted">-</div></div></div>
+    </div>
+    <div class="card"><h2>修复建议</h2><div id="aiFix" class="muted">-</div></div>
+    <div class="card"><h2>改进路线图</h2><div id="aiRoadmap" class="muted">-</div></div>
+  </div>
+
+  <div class="tab-pane" id="tab-report">
+    <div class="card"><h2>报告</h2>
+      <div class="toolbar">
+        <button id="btnGenReport">📄 生成 HTML 报告</button>
+        <button class="secondary" id="btnMdReport">📝 查看 Markdown</button>
+      </div>
+      <pre id="reportBody" class="muted">未生成</pre>
+    </div>
+  </div>
+
+  <div class="tab-pane" id="tab-tools">
+    <div class="card"><h2>工具可用性</h2>
+      <div id="toolsBody" class="muted">加载中...</div></div>
+  </div>
+
+  <div class="tab-pane" id="tab-log">
+    <div class="card"><h2>执行日志（8 级颜色）</h2>
+      <div class="log" id="logBody">暂无</div></div>
+    <div class="card"><h2>AI 思考过程</h2>
+      <div id="thinkBody" class="muted">暂无思考流</div></div>
+  </div>
+
+</div>
+
+<script>
+const API = '/api/v1/devsecops-pro';
+let currentTaskId = null;
+let pollTimer = null;
+let ws = null;
+
+async function api(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({'Content-Type':'application/json'}, opts.headers);
+  if(opts.body && typeof opts.body !== 'string') opts.body = JSON.stringify(opts.body);
+  const r = await fetch(API + path, opts);
+  return r.json();
+}
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function sevBadge(s){return `<span class="sev ${esc(s)}">${esc(s)}</span>`;}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-'+t.dataset.tab).classList.add('active');
+  };
+});
+
+// Stages
+const STAGES = [
+  ['cicd','CI/CD'],['sast','SAST'],['sca','SCA'],['secrets','Secrets'],
+  ['iac','IaC'],['container','容器'],['gate','门禁'],['risk','评级']
+];
+function setStage(key, cls, prog){
+  const el = document.querySelector(`.stage[data-k="${key}"]`);
+  if(!el) return;
+  el.classList.remove('active','done');
+  if(cls) el.classList.add(cls);
+  el.querySelector('.prog').textContent = prog || '-';
+}
+
+// Start
+document.getElementById('btnStart').onclick = async ()=>{
+  const target = document.getElementById('targetInput').value.trim();
+  if(!target){alert('请输入代码目录路径');return;}
+  const r = await api('/start', {method:'POST', body:{target}});
+  if(!r.success){alert(r.error);return;}
+  currentTaskId = r.data.task_id;
+  document.getElementById('taskInfo').textContent = '任务 '+currentTaskId+' 运行中';
+  connectWS(currentTaskId);
+  pollTask();
+};
+
+document.getElementById('btnRefresh').onclick = ()=>loadOverview();
+
+// WebSocket
+function connectWS(taskId){
+  if(ws){try{ws.close();}catch(e){}}
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}${API}/ws/${taskId}`);
+  ws.onmessage = (ev)=>{
+    try{
+      const m = JSON.parse(ev.data);
+      if(m.type === 'log'){
+        const div = document.createElement('div');
+        div.style.color = m.color || '#4fc3f7';
+        div.textContent = `[${m.timestamp}] [${m.level}] ${m.message}`;
+        document.getElementById('logBody').appendChild(div);
+        document.getElementById('logBody').scrollTop = 999999;
+      } else if(m.type === 'thought'){
+        const div = document.createElement('div');
+        div.className = 'thinking';
+        div.textContent = `💭 ${m.thought}`;
+        document.getElementById('thinkBody').appendChild(div);
+      } else if(m.type === 'progress'){
+        document.getElementById('overallBar').style.width = m.overall+'%';
+        document.getElementById('overallText').textContent =
+          `整体进度 ${m.overall}% · 当前: ${m.stage_label}`;
+      } else if(m.type === 'result'){
+        renderStageResult(m.stage, m.data);
+      }
+    }catch(e){}
+  };
+}
+
+function renderStageResult(stage, data){
+  if(!data) return;
+  const body = document.getElementById(stage+'Body');
+  if(!body) return;
+  if(stage === 'cicd'){
+    body.innerHTML = `<pre>${esc(data.config ? data.config.content : '')}</pre>`;
+    return;
+  }
+  const findings = data.findings || [];
+  if(data.error){
+    body.innerHTML = `<span class="muted">错误: ${esc(data.error)}</span>`;
+    return;
+  }
+  if(data.message){
+    body.innerHTML = `<span class="muted">${esc(data.message)}</span><br><br>` + findingsTable(findings);
+    return;
+  }
+  body.innerHTML = `<span class="muted">工具: ${esc(data.tool||'-')} · 发现 ${findings.length} 条</span>` +
+    findingsTable(findings);
+}
+
+function findingsTable(items){
+  if(!items || !items.length) return '<p class="muted">无发现</p>';
+  const rows = items.slice(0,50).map(f=>{
+    const title = f.message || f.description || f.title || f.cve || f.rule_id || f.kind || '-';
+    const loc = f.path || f.file || f.artifact || '-';
+    const line = f.line ? ':'+f.line : '';
+    return `<tr>${sevBadge(f.severity)}<td>${esc(title).slice(0,160)}</td>
+      <td>${esc(loc)}${line}</td></tr>`;
+  }).join('');
+  return `<table><tr><th>级别</th><th>发现</th><th>位置</th></tr>${rows}</table>`;
+}
+
+// Poll task
+async function pollTask(){
+  if(!currentTaskId) return;
+  const r = await api('/task/'+currentTaskId+'/status');
+  if(!r.success) return;
+  const d = r.data;
+  document.getElementById('overallBar').style.width = d.progress+'%';
+  document.getElementById('overallText').textContent =
+    `整体进度 ${d.progress}% · ${d.status} · ${d.stage}`;
+  // render log
+  const lb = document.getElementById('logBody');
+  lb.innerHTML = (d.log||[]).map(l=>`<div>${esc(l)}</div>`).join('');
+  if(d.status === 'done' || d.status === 'error'){
+    loadResults();
+    return;
+  }
+  pollTimer = setTimeout(pollTask, 1500);
+}
+
+async function loadResults(){
+  if(!currentTaskId) return;
+  const r = await api('/task/'+currentTaskId+'/results');
+  if(!r.success) return;
+  const d = r.data;
+  document.getElementById('taskInfo').textContent =
+    `任务 ${currentTaskId} · ${d.status} · 评分 ${(d.risk||{}).score||'-'}`;
+  ['cicd','sast','sca','secrets','iac','container'].forEach(k=>renderStageResult(k, d[k]));
+  // gate
+  const g = d.gate || {};
+  const gateCls = g.decision==='pass'?'badge-ok':g.decision==='warn'?'badge-warn':'badge-fail';
+  document.getElementById('gateBody').innerHTML =
+    `<div><span class="${gateCls}">${esc(g.decision||'-')}</span>
+     评分 ${g.score||'-'}</div>
+     <ul>${(g.reasons||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+  // risk
+  const rk = d.risk || {};
+  document.getElementById('riskBody').innerHTML =
+    `<div>
+       <div class="kpi"><div class="num">${rk.score||'-'}</div><div class="lbl">风险评分</div></div>
+       <div class="kpi"><div class="num">${esc(rk.level||'-')}</div><div class="lbl">等级</div></div>
+       <div class="kpi"><div class="num">${esc(rk.maturity||'-')}</div><div class="lbl">成熟度</div></div>
+     </div>
+     <p>${esc(rk.summary||'')}</p>
+     <h3>Top 风险</h3>${findingsTable(rk.top_risks||[])}`;
+  // AI
+  const ai = d.ai || {};
+  document.getElementById('aiSummary').textContent = ai.overall_assessment || '-';
+  document.getElementById('aiPriority').innerHTML =
+    findingsTable((ai.priority_list||[]).map(p=>({severity:p.severity,message:p.title,path:p.location})));
+  document.getElementById('aiPaths').innerHTML =
+    (ai.attack_paths||[]).map(p=>`<li><b>${esc(p.name)}</b>: ${esc(p.impact)}<br>
+      <span class="muted">${(p.steps||[]).join(' → ')}</span></li>`).join('') || '<span class="muted">-</span>';
+  document.getElementById('aiFix').innerHTML =
+    (ai.fix_suggestions||[]).map(s=>`<li>[${esc(s.priority)}] ${esc(s.issue)}<br>
+      <span class="muted">→ ${esc(s.recommended_fix)}</span></li>`).join('') || '<span class="muted">-</span>';
+  document.getElementById('aiRoadmap').innerHTML =
+    (ai.roadmap||[]).map(r=>`<li><b>${esc(r.phase)}</b>（${esc(r.focus)}）<ul>
+      ${(r.items||[]).map(i=>`<li>${esc(i)}</li>`).join('')}</ul></li>`).join('');
+}
+
+// CI/CD actions
+document.getElementById('btnCicdGen').onclick = async ()=>{
+  const platform = document.getElementById('cicdPlatform').value;
+  const repo = document.getElementById('cicdRepo').value.trim();
+  const r = await api('/cicd/generate', {method:'POST', body:{platform, repo}});
+  if(r.success) document.getElementById('cicdBody').textContent = r.data.content;
+};
+document.getElementById('btnCicdTrigger').onclick = async ()=>{
+  const platform = document.getElementById('cicdPlatform').value;
+  const repo = document.getElementById('cicdRepo').value.trim();
+  if(!repo){alert('请输入 owner/repo');return;}
+  const r = await api('/cicd/trigger', {method:'POST', body:{platform, repo}});
+  alert((r.data||{}).message || r.error);
+};
+
+// Reports
+document.getElementById('btnGenReport').onclick = async ()=>{
+  if(!currentTaskId){alert('先启动任务');return;}
+  const r = await api('/report/generate/'+currentTaskId, {method:'POST', body:{fmt:'html'}});
+  document.getElementById('reportBody').textContent =
+    r.success ? '报告已生成: '+r.data.report_path : r.error;
+};
+document.getElementById('btnMdReport').onclick = async ()=>{
+  if(!currentTaskId){alert('先启动任务');return;}
+  const r = await api('/report/markdown/'+currentTaskId);
+  document.getElementById('reportBody').textContent =
+    r.success ? r.data.markdown : r.error;
+};
+
+// Overview + tools
+async function loadOverview(){
+  const r = await api('/dashboard/overview');
+  if(r.success){
+    const d = r.data;
+    document.getElementById('overviewBody').innerHTML =
+      `<div class="kpi"><div class="num">${d.task_total}</div><div class="lbl">总任务</div></div>
+       <div class="kpi"><div class="num">${d.task_running}</div><div class="lbl">运行中</div></div>
+       <div class="kpi"><div class="num">${d.task_done}</div><div class="lbl">已完成</div></div>
+       <div class="kpi"><div class="num">${d.task_error}</div><div class="lbl">错误</div></div>`;
+  }
+  const t = await api('/dashboard/tools');
+  if(t.success){
+    document.getElementById('toolsBody').innerHTML =
+      '<pre>'+esc(JSON.stringify(t.data, null, 2))+'</pre>';
+  }
+  const gr = await api('/gate/rules');
+  if(gr.success){
+    document.getElementById('gateRulesBody').innerHTML =
+      '<table><tr><th>规则</th><th>级别</th><th>阈值</th><th>说明</th></tr>'+
+      gr.data.rules.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.level)}</td>
+        <td>${x.threshold}</td><td>${esc(x.description)}</td></tr>`).join('')+'</table>';
+  }
+}
+loadOverview();
+</script>
+</body>
+</html>

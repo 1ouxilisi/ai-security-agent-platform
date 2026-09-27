@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevSecOps 深度平台 · 安全自动化</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#c9d1d9;
+  --muted:#8b949e; --accent:#58a6ff; --green:#3fb950; --red:#f85149;
+  --yellow:#d29922; --purple:#bc8cff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.6}
+header{background:linear-gradient(90deg,#161b22,#0d1117);border-bottom:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+header h1{font-size:18px;color:var(--accent);font-weight:600}
+header .sub{color:var(--muted);font-size:12px}
+.layout{display:flex;min-height:calc(100vh - 60px)}
+nav{width:210px;background:var(--panel);border-right:1px solid var(--border);padding:12px 0;flex-shrink:0}
+nav button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--text);padding:11px 18px;cursor:pointer;font-size:13px;border-left:3px solid transparent}
+nav button:hover{background:#1f2630}
+nav button.active{background:#1f2630;border-left-color:var(--accent);color:var(--accent)}
+main{flex:1;padding:20px;overflow-x:auto}
+.tab{display:none}
+.tab.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card .label{color:var(--muted);font-size:12px}
+.card .value{font-size:26px;font-weight:700;color:var(--accent);margin-top:4px}
+.card .value.g{color:var(--green)} .card .value.r{color:var(--red)} .card .value.y{color:var(--yellow)}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.panel h3{font-size:14px;color:var(--accent);margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:600}
+tr:hover td{background:#1f2630}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.t-critical{background:#f8514933;color:var(--red)}
+.t-high{background:#d2992233;color:var(--yellow)}
+.t-medium{background:#58a6ff33;color:var(--accent)}
+.t-low{background:#8b949e33;color:var(--muted)}
+.t-success{background:#3fb95033;color:var(--green)}
+.t-fail{background:#f8514933;color:var(--red)}
+button.btn{background:var(--accent);color:#0d1117;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
+button.btn:hover{filter:brightness(1.1)}
+button.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+input,textarea,select{background:#0d1117;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;width:100%;margin-bottom:8px}
+textarea{font-family:Consolas,monospace;min-height:120px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.row>div{flex:1;min-width:140px}
+.muted{color:var(--muted);font-size:12px}
+.bar{height:8px;background:#0d1117;border-radius:4px;overflow:hidden;margin-top:6px}
+.bar>span{display:block;height:100%;background:var(--accent)}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--panel);border:1px solid var(--accent);padding:12px 18px;border-radius:8px;opacity:0;transition:.3s;z-index:999;max-width:320px}
+#toast.show{opacity:1}
+pre{background:#0d1117;padding:10px;border-radius:6px;overflow:auto;font-size:12px;color:var(--green);max-height:260px}
+@media(max-width:768px){
+  .layout{flex-direction:column}
+  nav{width:100%;display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid var(--border)}
+  nav button{border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
+  nav button.active{border-left:none;border-bottom-color:var(--accent)}
+  main{padding:12px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🔐 DevSecOps 深度平台</h1>
+    <div class="sub">第26轮升级方向2 · 安全自动化与 DevSecOps 深度集成</div>
+  </div>
+  <div class="muted" id="clock">--:--:--</div>
+</header>
+<div class="layout">
+<nav id="nav">
+  <button data-tab="overview" class="active">📊 总览</button>
+  <button data-tab="cicd">🔄 CI/CD 管理</button>
+  <button data-tab="sast">🐍 代码安全</button>
+  <button data-tab="dep">📦 依赖安全</button>
+  <button data-tab="container">🐳 容器安全</button>
+  <button data-tab="iac">🏗️ IaC 安全</button>
+  <button data-tab="sac">📜 安全即代码</button>
+  <button data-tab="settings">⚙️ 系统设置</button>
+</nav>
+<main>
+
+<!-- 总览 -->
+<section class="tab active" id="tab-overview">
+  <div class="cards" id="ov-cards"></div>
+  <div class="panel"><h3>模块健康度</h3><div id="ov-modules"></div></div>
+  <div class="panel"><h3>7 日平台健康度趋势</h3><div id="ov-trend"></div></div>
+</section>
+
+<!-- CI/CD -->
+<section class="tab" id="tab-cicd">
+  <div class="cards" id="cicd-cards"></div>
+  <div class="panel"><h3>管道列表 <button class="btn ghost" onclick="loadPipelines()">刷新</button></h3>
+    <div id="pipeline-list"></div></div>
+  <div class="panel"><h3>安全门禁阈值 <button class="btn ghost" onclick="loadGate()">刷新</button></h3>
+    <div id="gate-rules"></div></div>
+  <div class="panel"><h3>最近运行</h3><div id="cicd-runs"></div></div>
+</section>
+
+<!-- SAST -->
+<section class="tab" id="tab-sast">
+  <div class="panel"><h3>在线代码扫描（真实正则匹配）</h3>
+    <textarea id="sast-code" placeholder='粘贴 Python / JS 代码...'>import subprocess
+password = "admin123"
+subprocess.call("ls " + user_input, shell=True)
+eval(user_input)
+app.run(debug=True)</textarea>
+    <button class="btn" onclick="runSast()">开始扫描</button>
+    <div id="sast-result" style="margin-top:12px"></div>
+  </div>
+  <div class="panel"><h3>扫描规则库</h3><div id="sast-rules"></div></div>
+</section>
+
+<!-- 依赖 -->
+<section class="tab" id="tab-dep">
+  <div class="panel"><h3>requirements.txt 依赖扫描（真实解析）</h3>
+    <textarea id="dep-text" placeholder="django==3.2.10&#10;flask==2.0.1&#10;requests==2.28.1">django==3.2.10
+flask==2.0.1
+requests==2.28.1
+pillow==9.5.0
+pyyaml==5.3.1
+urllib3==1.26.5</textarea>
+    <button class="btn" onclick="runDepScan()">扫描依赖</button>
+    <div id="dep-result" style="margin-top:12px"></div>
+  </div>
+  <div class="panel"><h3>陈旧依赖</h3><div id="dep-outdated"></div></div>
+</section>
+
+<!-- 容器 -->
+<section class="tab" id="tab-container">
+  <div class="panel"><h3>镜像层分析 <button class="btn ghost" onclick="loadImages()">刷新镜像</button></h3>
+    <div id="container-images"></div></div>
+  <div class="panel"><h3>运行时风险检查（真实布尔判定）</h3>
+    <div class="row">
+      <label><input type="checkbox" id="c-priv"> privileged 特权</label>
+      <label><input type="checkbox" id="c-sock"> 挂载 docker.sock</label>
+      <label><input type="checkbox" id="c-hostnet"> host 网络</label>
+      <label><input type="checkbox" id="c-root"> 以 root 运行</label>
+    </div>
+    <button class="btn" onclick="runRuntimeCheck()">检查运行时</button>
+    <div id="container-result" style="margin-top:12px"></div>
+  </div>
+  <div class="panel"><h3>生命周期控制点</h3><div id="container-lifecycle"></div></div>
+</section>
+
+<!-- IaC -->
+<section class="tab" id="tab-iac">
+  <div class="panel"><h3>Terraform / YAML 扫描</h3>
+    <textarea id="iac-text">resource "aws_s3_bucket" "data" {
+  bucket = "public-data-bucket"
+  acl    = "public-read"
+}
+resource "aws_security_group" "web" {
+  ingress {
+    from_port   = 22
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}</textarea>
+    <button class="btn" onclick="runIacScan()">扫描 IaC</button>
+    <div id="iac-result" style="margin-top:12px"></div>
+  </div>
+  <div class="panel"><h3>合规映射</h3><div id="iac-compliance"></div></div>
+</section>
+
+<!-- SaC -->
+<section class="tab" id="tab-sac">
+  <div class="panel"><h3>安全策略即代码</h3><div id="sac-policies"></div></div>
+  <div class="panel"><h3>安全控制项</h3><div id="sac-controls"></div></div>
+  <div class="panel"><h3>运行安全审计</h3>
+    <button class="btn" onclick="runAudit()">执行审计</button>
+    <div id="sac-audit" style="margin-top:12px"></div></div>
+</section>
+
+<!-- 设置 -->
+<section class="tab" id="tab-settings">
+  <div class="panel"><h3>平台设置</h3><div id="settings-view"></div></div>
+  <div class="panel"><h3>健康检查</h3><div id="health-view"></div></div>
+</section>
+
+</main>
+</div>
+<div id="toast"></div>
+
+<script>
+const BASE='/api/v1/devsecops-deep';
+async function api(path,opts={}){
+  try{
+    const r=await fetch(BASE+path,{headers:{'Content-Type':'application/json'},...opts});
+    const j=await r.json();
+    if(!j.success){showToast('❌ '+(j.error||'请求失败'));return null;}
+    return j.data;
+  }catch(e){showToast('❌ 网络错误: '+e.message);return null;}
+}
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function tag(sev){const cls={'critical':'t-critical','high':'t-high','medium':'t-medium','low':'t-low'}[sev]||'t-low';return `<span class="tag ${cls}">${sev}</span>`;}
+function table(headers,rows){
+  return `<table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>'<tr>'+r.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('')}</tbody></table>`;
+}
+
+// Tab 切换
+document.getElementById('nav').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById('tab-'+b.dataset.tab).classList.add('active');
+  loadTab(b.dataset.tab);
+});
+function loadTab(t){
+  if(t==='overview')loadOverview();
+  else if(t==='cicd'){loadPipelines();loadGate();loadCicdRuns();}
+  else if(t==='sast')loadSastRules();
+  else if(t==='dep')loadOutdated();
+  else if(t==='container'){loadImages();loadLifecycle();}
+  else if(t==='iac')loadCompliance();
+  else if(t==='sac'){loadPolicies();loadControls();}
+  else if(t==='settings'){loadSettings();loadHealth();}
+}
+
+// 总览
+async function loadOverview(){
+  const d=await api('/overview');if(!d)return;
+  document.getElementById('ov-cards').innerHTML=[
+    ['平台健康分',d.platform_health_score,''],
+    ['管道总数',d.pipeline_total,''],
+    ['运行总数',d.run_total,''],
+    ['门禁通过率',(d.gate_pass_rate*100).toFixed(1)+'%','g'],
+    ['扫描覆盖率',d.scan_coverage_pct+'%','y'],
+  ].map(([l,v,c])=>`<div class="card"><div class="label">${l}</div><div class="value ${c}">${v}</div></div>`).join('');
+  const mods=d.active_modules;
+  document.getElementById('ov-modules').innerHTML=Object.entries(mods).map(([k,v])=>
+    `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span>${k}</span><span class="tag ${v?'t-success':'t-fail'}">${v?'运行中':'离线'}</span></div>`).join('');
+  const trend=d.trend_7d||[];const max=Math.max(...trend,100);
+  document.getElementById('ov-trend').innerHTML=trend.map((v,i)=>
+    `<div style="margin-bottom:6px"><div class="muted">第${i+1}天 · ${v}分</div><div class="bar"><span style="width:${v/max*100}%"></span></div></div>`).join('');
+}
+
+// CI/CD
+async function loadPipelines(){
+  const list=await api('/cicd/pipelines');if(!list)return;
+  document.getElementById('pipeline-list').innerHTML=table(['ID','名称','类型','状态','运行数','操作'],
+    list.map(p=>[esc(p.id),esc(p.name),esc(p.kind),`<span class="tag ${p.status==='active'?'t-success':'t-medium'}">${p.status}</span>`,p.run_count,
+      `<button class="btn" onclick="runPipeline('${p.id}')">运行</button>`]));
+}
+async function runPipeline(pid){
+  const d=await api('/cicd/pipelines/'+pid+'/run',{method:'POST',body:JSON.stringify({branch:'main',commit:'abc1234'})});
+  if(d){showToast('✅ 管道执行完成，门禁:'+(d.result.gate.passed?'通过':'阻塞'));loadCicdRuns();}
+}
+async function loadGate(){
+  const rules=await api('/cicd/gate/rules');if(!rules)return;
+  document.getElementById('gate-rules').innerHTML=table(['阈值项','上限/值'],Object.entries(rules).map(([k,v])=>[esc(k),esc(JSON.stringify(v))]));
+}
+async function loadCicdRuns(){
+  const list=await api('/cicd/runs?limit=8');if(!list)return;
+  const m=await api('/cicd/metrics');
+  if(m)document.getElementById('cicd-cards').innerHTML=[
+    ['管道总数',m.pipeline_total,''],['运行总数',m.run_total,''],
+    ['门禁通过率',(m.gate_pass_rate*100).toFixed(1)+'%','g'],['MTTR(分)',m.mttr_minutes,'y'],
+  ].map(([l,v,c])=>`<div class="card"><div class="label">${l}</div><div class="value ${c}">${v}</div></div>`).join('');
+  document.getElementById('cicd-runs').innerHTML=list.length?table(['Run ID','管道','状态','门禁'],
+    list.map(r=>[esc(r.run_id),esc(r.pipeline_name),`<span class="tag ${r.status==='success'?'t-success':'t-fail'}">${r.status}</span>`,r.gate.passed?'<span class="tag t-success">通过</span>':'<span class="tag t-fail">阻塞</span>'])):'<span class="muted">暂无运行记录</span>';
+}
+
+// SAST
+async function runSast(){
+  const code=document.getElementById('sast-code').value;
+  const d=await api('/sast/scan',{method:'POST',body:JSON.stringify({code:code,filename:'snippet.py'})});
+  if(!d)return;const r=d.result;
+  document.getElementById('sast-result').innerHTML=
+    `<div>扫描 ${r.lines_total} 行，发现 <b>${r.findings.length}</b> 处问题：
+     C${r.severity_count.critical}/H${r.severity_count.high}/M${r.severity_count.medium}/L${r.severity_count.low}</div>`+
+    (r.findings.length?table(['规则','级别','行号','代码'],
+      r.findings.slice(0,12).map(f=>[esc(f.rule_name),tag(f.severity),f.line,esc(f.snippet)])):'<span class="muted">未发现问题</span>');
+}
+async function loadSastRules(){
+  const list=await api('/sast/rules');if(!list)return;
+  document.getElementById('sast-rules').innerHTML=table(['规则ID','名称','类别','级别','CWE'],
+    list.map(r=>[esc(r.id),esc(r.name),esc(r.category),tag(r.severity),esc(r.cwe)]));
+}
+
+// 依赖
+async function runDepScan(){
+  const text=document.getElementById('dep-text').value;
+  const d=await api('/dependency/scan',{method:'POST',body:JSON.stringify({text:text})});
+  if(!d)return;const r=d.result;
+  document.getElementById('dep-result').innerHTML=
+    `<div>解析 ${r.dependency_count} 个依赖，发现 <b>${r.vuln_count}</b> 个漏洞</div>`+
+    (r.vulnerabilities.length?table(['包','已装','CVE','级别','CVSS','升级'],
+      r.vulnerabilities.map(v=>[esc(v.package),esc(v.installed),esc(v.cve),tag(v.severity),v.cvss,'→'+esc(v.fixed_version)])):'<span class="muted">未发现已知漏洞</span>');
+}
+async function loadOutdated(){
+  const list=await api('/dependency/outdated');if(!list)return;
+  document.getElementById('dep-outdated').innerHTML=table(['包','当前','最新','落后'],
+    list.map(d=>[esc(d.package),esc(d.current),esc(d.latest),esc(d.age)]));
+}
+
+// 容器
+async function loadImages(){
+  const list=await api('/container/images');if(!list)return;
+  document.getElementById('container-images').innerHTML=list.map(img=>
+    `<div style="margin-bottom:10px"><b>${esc(img.name)}</b> <span class="muted">(${img.layers.length} 层)</span>
+     <button class="btn" onclick="analyzeImg('${img.id}')" style="margin-left:8px">分析层</button></div>`).join('');
+}
+async function analyzeImg(iid){
+  const d=await api('/container/images/'+iid+'/analyze',{method:'POST',body:JSON.stringify({extra_layers:[]})});
+  if(!d)return;const r=d.result;
+  document.getElementById('container-result').innerHTML=
+    `<div>${r.image}: ${r.layer_count} 层, 共 ${r.total_size_mb}MB, root层 ${r.root_layer_count}</div>`+
+    (r.dangerous_layer_cmds.length?table(['层','问题','级别'],r.dangerous_layer_cmds.map(x=>[x.layer,esc(x.issue),tag(x.severity)])):'<span class="muted">未发现危险层命令</span>');
+}
+async function runRuntimeCheck(){
+  const spec={name:'demo',privileged:document.getElementById('c-priv').checked,
+    docker_sock_mounted:document.getElementById('c-sock').checked,
+    host_network:document.getElementById('c-hostnet').checked,
+    run_as_root:document.getElementById('c-root').checked,exposed_ports:[22,80]};
+  const d=await api('/container/runtime-check',{method:'POST',body:JSON.stringify(spec)});
+  if(!d)return;
+  document.getElementById('container-result').innerHTML=
+    `<div>逃逸风险: <span class="tag ${d.escape_risk?'t-fail':'t-success'}">${d.escape_risk?'存在':'无'}</span> 级别: ${tag(d.risk_level)}</div>`+
+    (d.risks.length?table(['风险','说明'],d.risks.map(x=>[esc(x.flag),esc(x.message)])):'<span class="muted">未发现运行时风险</span>');
+}
+async function loadLifecycle(){
+  const list=await api('/container/lifecycle');if(!list)return;
+  document.getElementById('container-lifecycle').innerHTML=table(['阶段','控制点','要求'],
+    list.map(x=>[esc(x.stage),esc(x.control),esc(x.required)]));
+}
+
+// IaC
+async function runIacScan(){
+  const content=document.getElementById('iac-text').value;
+  const d=await api('/iac/scan',{method:'POST',body:JSON.stringify({content:content,filename:'main.tf'})});
+  if(!d)return;const r=d.result;
+  document.getElementById('iac-result').innerHTML=
+    `<div>语言: ${r.lang}, 解析器: ${r.yaml_parser_used}, 发现 <b>${r.findings.length}</b> 项配置错误</div>`+
+    (r.findings.length?table(['规则','级别','行号','修复'],
+      r.findings.map(f=>[esc(f.title),tag(f.severity),f.line,esc(f.fix)])):'<span class="muted">未发现配置错误</span>');
+}
+async function loadCompliance(){
+  const list=await api('/iac/compliance-map');if(!list)return;
+  document.getElementById('iac-compliance').innerHTML=table(['框架','控制项'],
+    list.map(x=>[esc(x.framework),esc(x.controls)]));
+}
+
+// SaC
+async function loadPolicies(){
+  const list=await api('/sac/policies');if(!list)return;
+  document.getElementById('sac-policies').innerHTML=table(['ID','名称','级别','版本'],
+    list.map(p=>[esc(p.id),esc(p.name),tag(p.severity),esc(p.version)]));
+}
+async function loadControls(){
+  const list=await api('/sac/controls');if(!list)return;
+  document.getElementById('sac-controls').innerHTML=table(['ID','控制项','框架','状态'],
+    list.map(c=>[esc(c.id),esc(c.name),esc(c.framework),`<span class="tag ${c.status==='implemented'?'t-success':'t-medium'}">${c.status}</span>`]));
+}
+async function runAudit(){
+  const d=await api('/sac/audits/run?scope=all',{method:'POST'});
+  if(!d)return;
+  document.getElementById('sac-audit').innerHTML=
+    `<div>审计 ${d.controls_total} 项控制，已实现 ${d.implemented} 项，覆盖率 <b>${d.coverage_pct}%</b></div>`;
+}
+
+// 设置
+async function loadSettings(){
+  const d=await api('/settings');if(!d)return;
+  let html='';
+  for(const[k,v] of Object.entries(d)){
+    if(typeof v==='object'){html+=`<div class="muted">${k}: ${esc(JSON.stringify(v))}</div>`;}
+    else{html+=`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span>${k}</span><span class="tag t-medium">${esc(v)}</span></div>`;}
+  }
+  document.getElementById('settings-view').innerHTML=html;
+}
+async function loadHealth(){
+  const d=await api('/health');if(!d)return;
+  document.getElementById('health-view').innerHTML=
+    `<div style="display:flex;justify-content:space-between"><span>${esc(d.message)}</span><span class="tag t-success">${d.status}</span></div>`;
+}
+
+// 时钟 + 初始化
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('zh-CN');},1000);
+loadOverview();
+</script>
+</body>
+</html>

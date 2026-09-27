@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web3 安全控制台 — AI Hacking Agent</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #1f2630;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+  }
+  header {
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+  }
+  header h1 { font-size: 18px; color: var(--accent); }
+  header .meta { font-size: 12px; color: var(--muted); }
+  .layout { display: flex; min-height: calc(100vh - 60px); }
+  nav {
+    width: 220px; background: var(--bg2); border-right: 1px solid var(--border);
+    padding: 12px 0; flex-shrink: 0;
+  }
+  nav .tab {
+    padding: 10px 20px; cursor: pointer; color: var(--muted);
+    border-left: 3px solid transparent; font-size: 14px;
+  }
+  nav .tab:hover { background: var(--bg3); color: var(--text); }
+  nav .tab.active {
+    color: var(--accent); border-left-color: var(--accent); background: var(--bg3);
+  }
+  main { flex: 1; padding: 20px; overflow-x: auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 16px; margin-bottom: 16px;
+  }
+  .card h2 { font-size: 16px; margin-bottom: 12px; color: var(--accent); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .stat {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 14px;
+  }
+  .stat .v { font-size: 22px; font-weight: 600; color: var(--text); }
+  .stat .l { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+  th { color: var(--muted); font-weight: 500; background: var(--bg3); }
+  tr:hover td { background: rgba(88,166,255,0.05); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .badge.critical { background: rgba(248,81,73,0.15); color: var(--red); }
+  .badge.high { background: rgba(210,153,34,0.15); color: var(--yellow); }
+  .badge.medium { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .badge.low { background: rgba(139,148,158,0.15); color: var(--muted); }
+  .badge.ok { background: rgba(63,185,80,0.15); color: var(--green); }
+  textarea, input, select {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); padding: 8px; border-radius: 4px; font-size: 13px;
+    font-family: inherit;
+  }
+  textarea { min-height: 140px; font-family: "Consolas", monospace; }
+  button {
+    background: var(--accent); color: #fff; border: none; padding: 8px 18px;
+    border-radius: 4px; cursor: pointer; font-size: 13px;
+  }
+  button:hover { background: #79b8ff; }
+  button.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .row > div { flex: 1; min-width: 180px; }
+  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  pre {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+    padding: 10px; font-size: 12px; overflow-x: auto; max-height: 320px;
+    color: var(--green);
+  }
+  .muted { color: var(--muted); font-size: 12px; }
+  .bar { height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+  .bar > span { display: block; height: 100%; background: var(--accent); }
+  @media (max-width: 768px) {
+    .layout { flex-direction: column; }
+    nav { width: 100%; display: flex; overflow-x: auto; padding: 4px; }
+    nav .tab { border-left: none; border-bottom: 2px solid transparent; white-space: nowrap; }
+    nav .tab.active { border-bottom-color: var(--accent); }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>⛓️ Web3 安全控制台</h1>
+  <div class="meta">第27轮·方向4 · v27.4.0 · AI Hacking Agent</div>
+</header>
+<div class="layout">
+  <nav id="nav">
+    <div class="tab active" data-page="overview">📊 Web3 总览</div>
+    <div class="tab" data-page="contract">📜 智能合约</div>
+    <div class="tab" data-page="defi">🏦 DeFi 安全</div>
+    <div class="tab" data-page="nft">🖼️ NFT 安全</div>
+    <div class="tab" data-page="dao">🏛️ DAO 安全</div>
+    <div class="tab" data-page="node">🖥️ 节点安全</div>
+    <div class="tab" data-page="crypto">💰 加密货币</div>
+    <div class="tab" data-page="settings">⚙️ 系统设置</div>
+  </nav>
+  <main>
+    <!-- 总览 -->
+    <section class="page active" id="page-overview">
+      <div class="grid" id="ov-totals"></div>
+      <div class="card">
+        <h2>风险分布</h2>
+        <div id="ov-risk"></div>
+      </div>
+      <div class="card">
+        <h2>最近事件</h2>
+        <table id="ov-events"><thead><tr><th>时间</th><th>类型</th><th>详情</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- 智能合约 -->
+    <section class="page" id="page-contract">
+      <div class="card">
+        <h2>合约静态分析（真实漏洞检测）</h2>
+        <div class="row">
+          <div style="flex:2">
+            <label>合约源码（Solidity / Vyper / Move / Rust / Cairo / Clarity）</label>
+            <textarea id="sc-source">pragma solidity ^0.7.0;
+contract VulnerableBank {
+    mapping(address => uint) public balance;
+    function withdraw(uint amount) public {
+        (bool ok, ) = msg.sender.call{value: amount}("");
+        balance[msg.sender] -= amount;
+    }
+    function kill() public { selfdestruct(msg.sender); }
+    function random() public view returns (uint) {
+        return uint(keccak256(abi.encodePacked(block.timestamp)));
+    }
+}</textarea>
+          </div>
+        </div>
+        <button onclick="scAnalyze()">🔍 开始分析</button>
+        <button class="ghost" onclick="scDeploy()">📦 模拟部署</button>
+      </div>
+      <div class="card">
+        <h2>分析结果</h2>
+        <pre id="sc-result">// 等待分析...</pre>
+      </div>
+      <div class="card">
+        <h2>已部署合约</h2>
+        <table id="sc-list"><thead><tr><th>地址</th><th>名称</th><th>语言</th><th>评分</th><th>评级</th><th>漏洞数</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- DeFi -->
+    <section class="page" id="page-defi">
+      <div class="card">
+        <h2>DeFi 协议风险评估</h2>
+        <div class="row">
+          <div><label>协议类型</label><select id="df-type">
+            <option value="lending">借贷</option><option value="dex">DEX</option>
+            <option value="stablecoin">稳定币</option><option value="staking">质押</option>
+            <option value="yield_aggregator">收益聚合</option><option value="synthetic">合成资产</option>
+          </select></div>
+          <div><label>TVL (USD)</label><input id="df-tvl" type="number" value="2000000000"></div>
+          <div><label>预言机</label><select id="df-oracle">
+            <option value="spot">现货</option><option value="twap">TWAP</option>
+            <option value="chainlink">Chainlink</option><option value="pyth">Pyth</option>
+          </select></div>
+          <div><label>Timelock (h)</label><input id="df-tl" type="number" value="48"></div>
+        </div>
+        <button onclick="dfAssess()">评估协议</button>
+      </div>
+      <div class="card">
+        <h2>闪电贷 / 预言机操纵模拟</h2>
+        <div class="row">
+          <div><label>预言机价格</label><input id="fl-oracle" type="number" value="100"></div>
+          <div><label>操纵后价格</label><input id="fl-manip" type="number" value="120"></div>
+          <div><label>池储备 USD</label><input id="fl-pool" type="number" value="1000000"></div>
+          <div><label>借入 USD</label><input id="fl-borrow" type="number" value="5000000"></div>
+        </div>
+        <button onclick="flSim()">模拟攻击</button>
+      </div>
+      <div class="card"><h2>评估结果</h2><pre id="df-result">// 等待评估...</pre></div>
+      <div class="card"><h2>协议列表</h2>
+        <table id="df-list"><thead><tr><th>名称</th><th>类型</th><th>TVL</th><th>评分</th><th>评级</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- NFT -->
+    <section class="page" id="page-nft">
+      <div class="card">
+        <h2>NFT 合约漏洞检测</h2>
+        <div class="row"><div style="flex:2">
+          <label>ERC721/ERC1155 源码</label>
+          <textarea id="nft-source">pragma solidity ^0.7.0;
+contract MyNFT {
+    mapping(address => uint) public balances;
+    function mint(uint tokenId) public { _mint(msg.sender, tokenId); }
+    function _mint(address to, uint id) internal {}
+    function setBaseURI(string memory u) public {}
+}</textarea>
+        </div></div>
+        <button onclick="nftAnalyze()">🔍 检测漏洞</button>
+      </div>
+      <div class="card"><h2>检测结果</h2><pre id="nft-result">// 等待检测...</pre></div>
+      <div class="card"><h2>收藏品列表</h2>
+        <table id="nft-list"><thead><tr><th>名称</th><th>类型</th><th>持有者</th><th>地板价</th><th>评分</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- DAO -->
+    <section class="page" id="page-dao">
+      <div class="card">
+        <h2>DAO 治理风险评估</h2>
+        <div class="row">
+          <div><label>投票率 %</label><input id="gov-turnout" type="number" value="10"></div>
+          <div><label>Quorum %</label><input id="gov-quorum" type="number" value="2"></div>
+          <div><label>Timelock (h)</label><input id="gov-tl" type="number" value="12"></div>
+          <div><label>提案门槛 %</label><input id="gov-th" type="number" value="0.5"></div>
+        </div>
+        <button onclick="govAssess()">评估治理</button>
+      </div>
+      <div class="card"><h2>国库风险评估</h2>
+        <div class="row">
+          <div><label>国库 USD</label><input id="tr-total" type="number" value="5000000"></div>
+          <div><label>月支出 USD</label><input id="tr-out" type="number" value="500000"></div>
+          <div><label>多签阈值</label><input id="tr-mt" type="number" value="2"></div>
+          <div><label>多签人数</label><input id="tr-ms" type="number" value="5"></div>
+        </div>
+        <button onclick="trAssess()">评估国库</button>
+      </div>
+      <div class="card"><h2>DAO 列表</h2>
+        <table id="dao-list"><thead><tr><th>ID</th><th>名称</th><th>类型</th><th>成员</th><th>提案</th><th>国库</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="card"><h2>评估结果</h2><pre id="dao-result">// 等待评估...</pre></div>
+    </section>
+
+    <!-- 节点 -->
+    <section class="page" id="page-node">
+      <div class="card">
+        <h2>区块链节点配置审计</h2>
+        <div class="row">
+          <div><label>节点类型</label><select id="nd-type">
+            <option value="validator">验证节点</option><option value="full">全节点</option>
+            <option value="archive">归档</option><option value="miner">挖矿</option>
+          </select></div>
+          <div><label>共识</label><select id="nd-cons">
+            <option value="pos">PoS</option><option value="pow">PoW</option>
+            <option value="pbft">PBFT</option><option value="poa">PoA</option>
+          </select></div>
+          <div><label>RPC 公网暴露</label><select id="nd-pub">
+            <option value="true">是</option><option value="false">否</option>
+          </select></div>
+          <div><label>RPC 鉴权</label><select id="nd-auth">
+            <option value="false">未启用</option><option value="true">已启用</option>
+          </select></div>
+        </div>
+        <button onclick="ndAudit()">审计节点</button>
+      </div>
+      <div class="card"><h2>节点列表</h2>
+        <table id="nd-list"><thead><tr><th>名称</th><th>类型</th><th>共识</th><th>评分</th><th>评级</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="card"><h2>审计结果</h2><pre id="nd-result">// 等待审计...</pre></div>
+    </section>
+
+    <!-- 加密货币 -->
+    <section class="page" id="page-crypto">
+      <div class="card">
+        <h2>地址校验</h2>
+        <div class="row">
+          <div><label>地址</label><input id="addr-in" value="0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed"></div>
+          <div><label>链</label><select id="addr-chain">
+            <option value="ethereum">Ethereum</option><option value="bitcoin">Bitcoin</option>
+            <option value="solana">Solana</option>
+          </select></div>
+        </div>
+        <button onclick="addrValidate()">校验地址</button>
+      </div>
+      <div class="card">
+        <h2>钱包风险评估</h2>
+        <div class="row">
+          <div><label>钱包类型</label><select id="wl-type">
+            <option value="hot">热钱包</option><option value="cold">冷钱包</option>
+            <option value="hardware">硬件</option><option value="mpc">MPC</option>
+          </select></div>
+          <div><label>加密</label><select id="wl-enc">
+            <option value="true">已启用</option><option value="false">未启用</option>
+          </select></div>
+          <div><label>助记词离线</label><select id="wl-seed">
+            <option value="false">未离线</option><option value="true">已离线</option>
+          </select></div>
+          <div><label>MFA</label><select id="wl-mfa">
+            <option value="false">未启用</option><option value="true">已启用</option>
+          </select></div>
+        </div>
+        <button onclick="wlAssess()">评估钱包</button>
+      </div>
+      <div class="card"><h2>钱包列表</h2>
+        <table id="wl-list"><thead><tr><th>名称</th><th>类型</th><th>评分</th><th>评级</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="card"><h2>评估结果</h2><pre id="cr-result">// 等待评估...</pre></div>
+    </section>
+
+    <!-- 系统设置 -->
+    <section class="page" id="page-settings">
+      <div class="card">
+        <h2>系统设置</h2>
+        <div id="settings-box"></div>
+        <button onclick="loadSettings()">刷新</button>
+      </div>
+      <div class="card">
+        <h2>关于</h2>
+        <p class="muted">Web3 安全控制台 v27.4.0 — 覆盖智能合约 / DeFi / NFT / DAO / 节点 / 加密货币 6 大领域。</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const API = "/api/v1/web3-security";
+async function api(path, opts) {
+  try {
+    const r = await fetch(API + path, Object.assign({
+      headers: {"Content-Type": "application/json"}
+    }, opts));
+    const j = await r.json();
+    if (!j.success) throw new Error(j.error || "API 错误");
+    return j.data;
+  } catch (e) {
+    console.error(path, e);
+    return {error: e.message};
+  }
+}
+const $ = id => document.getElementById(id);
+const show = (id, v) => $(id).textContent = typeof v === "string" ? v : JSON.stringify(v, null, 2);
+
+// Tabs
+document.querySelectorAll("#nav .tab").forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll("#nav .tab").forEach(x => x.classList.remove("active"));
+    document.querySelectorAll(".page").forEach(x => x.classList.remove("active"));
+    t.classList.add("active");
+    $("page-" + t.dataset.page).classList.add("active");
+    loadTab(t.dataset.page);
+  };
+});
+
+function loadTab(p) {
+  if (p === "overview") loadOverview();
+  else if (p === "contract") scList();
+  else if (p === "defi") dfList();
+  else if (p === "nft") nftList();
+  else if (p === "dao") daoList();
+  else if (p === "node") ndList();
+  else if (p === "crypto") wlList();
+  else if (p === "settings") loadSettings();
+}
+
+async function loadOverview() {
+  const ov = await api("/overview");
+  if (ov.error) return;
+  const t = ov.totals;
+  $("ov-totals").innerHTML = [
+    ["合约", t.contracts], ["DeFi 协议", t.defi_protocols],
+    ["NFT 集合", t.nft_collections], ["DAO", t.daos],
+    ["节点", t.nodes], ["钱包", t.wallets],
+    ["严重问题", ov.critical_issues]
+  ].map(([l,v]) => `<div class="stat"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
+  const rd = ov.risk_distribution || await api("/risk-distribution");
+  $("ov-risk").innerHTML = Object.entries(rd).map(([k,v]) =>
+    `<div style="margin-bottom:6px"><span class="badge ${k}">${k}</span> ${v}</div>`).join("");
+  const evts = await api("/events?limit=10");
+  document.querySelector("#ov-events tbody").innerHTML = (evts||[]).map(e =>
+    `<tr><td>${e.ts||""}</td><td>${e.kind||""}</td><td>${(e.detail||e.reason||"")}</td></tr>`).join("");
+}
+
+async function scAnalyze() {
+  const src = $("sc-source").value;
+  const r = await api("/contract/analyze", {method:"POST", body: JSON.stringify({source: src, name:"Demo"})});
+  show("sc-result", r);
+  scList();
+}
+async function scDeploy() {
+  const src = $("sc-source").value;
+  const r = await api("/contract/deploy", {method:"POST", body: JSON.stringify({name:"Demo"+Date.now(), source: src})});
+  show("sc-result", r);
+  scList();
+}
+async function scList() {
+  const items = await api("/contract/list");
+  document.querySelector("#sc-list tbody").innerHTML = (items||[]).map(c =>
+    `<tr><td>${c.address.slice(0,14)}…</td><td>${c.name}</td><td>${c.language}</td>
+     <td>${c.score}</td><td><span class="badge ok">${c.rating}</span></td><td>${c.findings}</td></tr>`).join("");
+}
+
+async function dfAssess() {
+  const r = await api("/defi/assess", {method:"POST", body: JSON.stringify({
+    protocol_type: $("df-type").value, tvl_usd: +$("df-tvl").value,
+    oracle_type: $("df-oracle").value, upgrade_timelock_hours: +$("df-tl").value
+  })});
+  show("df-result", r); dfList();
+}
+async function flSim() {
+  const r = await api("/defi/flashloan/simulate", {method:"POST", body: JSON.stringify({
+    oracle_price:+$("fl-oracle").value, manipulated_price:+$("fl-manip").value,
+    pool_reserve:+$("fl-pool").value, borrow_amt:+$("fl-borrow").value
+  })});
+  show("df-result", r);
+}
+async function dfList() {
+  const items = await api("/defi/list");
+  document.querySelector("#df-list tbody").innerHTML = (items||[]).map(p =>
+    `<tr><td>${p.protocol_name}</td><td>${p.protocol_type}</td><td>$${(p.tvl_usd/1e6).toFixed(1)}M</td>
+     <td>${p.score}</td><td><span class="badge ok">${p.rating}</span></td></tr>`).join("");
+}
+
+async function nftAnalyze() {
+  const r = await api("/nft/detect-vulns", {method:"POST", body: JSON.stringify({source: $("nft-source").value})});
+  show("nft-result", r);
+  nftList();
+}
+async function nftList() {
+  const items = await api("/nft/list");
+  document.querySelector("#nft-list tbody").innerHTML = (items||[]).map(n =>
+    `<tr><td>${n.collection}</td><td>${n.nft_type}</td><td>${n.holders}</td>
+     <td>$${n.floor_price_usd}</td><td>${n.score}</td></tr>`).join("");
+}
+
+async function govAssess() {
+  const r = await api("/dao/governance/assess", {method:"POST", body: JSON.stringify({
+    voting_turnout_pct:+$("gov-turnout").value, quorum_pct:+$("gov-quorum").value,
+    timelock_hours:+$("gov-tl").value, proposal_threshold_pct:+$("gov-th").value
+  })});
+  show("dao-result", r);
+}
+async function trAssess() {
+  const r = await api("/dao/treasury/assess", {method:"POST", body: JSON.stringify({
+    total_usd:+$("tr-total").value, monthly_outflow_usd:+$("tr-out").value,
+    multisig_threshold:+$("tr-mt").value, multisig_signers:+$("tr-ms").value, timelock_hours:48
+  })});
+  show("dao-result", r);
+}
+async function daoList() {
+  const items = await api("/dao/list");
+  document.querySelector("#dao-list tbody").innerHTML = (items||[]).map(d =>
+    `<tr><td>${d.id}</td><td>${d.name}</td><td>${d.type}</td><td>${d.members}</td>
+     <td>${d.proposals}</td><td>$${(d.treasury_usd/1e6).toFixed(1)}M</td></tr>`).join("");
+}
+
+async function ndAudit() {
+  const r = await api("/node/audit", {method:"POST", body: JSON.stringify({
+    node_type: $("nd-type").value, consensus: $("nd-cons").value,
+    rpc_exposed_public: $("nd-pub").value==="true",
+    rpc_auth: $("nd-auth").value==="true"
+  })});
+  show("nd-result", r); ndList();
+}
+async function ndList() {
+  const items = await api("/node/list");
+  document.querySelector("#nd-list tbody").innerHTML = (items||[]).map(n =>
+    `<tr><td>${n.node_name}</td><td>${n.node_type}</td><td>${n.consensus}</td>
+     <td>${n.score}</td><td><span class="badge ok">${n.rating}</span></td></tr>`).join("");
+}
+
+async function addrValidate() {
+  const r = await api("/crypto/address/validate", {method:"POST", body: JSON.stringify({
+    address: $("addr-in").value, chain: $("addr-chain").value
+  })});
+  show("cr-result", r);
+}
+async function wlAssess() {
+  const r = await api("/crypto/wallet/assess", {method:"POST", body: JSON.stringify({
+    wallet_type: $("wl-type").value, encryption_enabled: $("wl-enc").value==="true",
+    seed_offline_stored: $("wl-seed").value==="true", mfa_enabled: $("wl-mfa").value==="true"
+  })});
+  show("cr-result", r); wlList();
+}
+async function wlList() {
+  const items = await api("/crypto/wallets");
+  document.querySelector("#wl-list tbody").innerHTML = (items||[]).map(w =>
+    `<tr><td>${w.name}</td><td>${w.wallet_type}</td><td>${w.score}</td>
+     <td><span class="badge ok">${w.rating}</span></td></tr>`).join("");
+}
+
+async function loadSettings() {
+  const s = await api("/settings");
+  $("settings-box").innerHTML = Object.entries(s).map(([k,v]) =>
+    `<div class="row"><div><label>${k}</label><div>${JSON.stringify(v)}</div></div></div>`).join("");
+}
+
+loadOverview();
+</script>
+</body>
+</html>

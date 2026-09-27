@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI全栈安全平台 v4.5 — 企业级安全运营中心</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0e17;color:#e0e6ed;min-height:100vh}
+.topbar{background:linear-gradient(90deg,#0d1117,#161b22);border-bottom:1px solid #21262d;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#00d4ff,#0099ff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:18px;color:#000}
+.logo-text{font-size:18px;font-weight:600}
+.logo-text span{color:#00d4ff}
+.version{background:#1a2332;border:1px solid #2d3a4f;padding:4px 10px;border-radius:12px;font-size:12px;color:#00d4ff}
+.nav{display:flex;gap:4px}
+.nav button{background:transparent;border:1px solid transparent;color:#8b949e;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;transition:all .2s}
+.nav button:hover,.nav button.active{background:#161b22;color:#00d4ff;border-color:#21262d}
+.main{padding:24px;max-width:1600px;margin:0 auto}
+.page{display:none}
+.page.active{display:block}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:20px;transition:transform .2s,border-color .2s}
+.stat-card:hover{transform:translateY(-2px);border-color:#00d4ff44}
+.stat-label{font-size:12px;color:#8b949e;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.stat-value{font-size:28px;font-weight:700;color:#fff}
+.stat-value.critical{color:#f85149}
+.stat-value.high{color:#d29922}
+.stat-value.ok{color:#3fb950}
+.stat-value.info{color:#00d4ff}
+.stat-sub{font-size:11px;color:#6e7681;margin-top:4px}
+.section{margin-bottom:24px}
+.section-title{font-size:16px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';width:4px;height:18px;background:#00d4ff;border-radius:2px}
+.modules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.module-card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:20px;cursor:pointer;transition:all .2s;text-decoration:none;color:inherit;display:block}
+.module-card:hover{border-color:#00d4ff;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,212,255,.1)}
+.module-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px}
+.module-name{font-size:15px;font-weight:600;margin-bottom:6px}
+.module-desc{font-size:12px;color:#8b949e;line-height:1.5;margin-bottom:12px}
+.module-tags{display:flex;gap:6px;flex-wrap:wrap}
+.module-tag{background:#1a2332;border:1px solid #2d3a4f;padding:2px 8px;border-radius:8px;font-size:10px;color:#8b949e}
+.quick-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.quick-btn{background:#161b22;border:1px solid #21262d;border-radius:10px;padding:16px;cursor:pointer;text-align:left;transition:all .2s;color:inherit}
+.quick-btn:hover{border-color:#00d4ff;background:#1a2332}
+.quick-btn .icon{font-size:24px;margin-bottom:8px}
+.quick-btn .name{font-size:13px;font-weight:600}
+.quick-btn .desc{font-size:11px;color:#8b949e;margin-top:4px}
+.log-panel{background:#0d1117;border:1px solid #21262d;border-radius:12px;padding:16px;font-family:'Consolas','Courier New',monospace;font-size:12px;max-height:300px;overflow-y:auto}
+.log-line{padding:4px 0;border-bottom:1px solid #161b22;display:flex;gap:8px}
+.log-time{color:#6e7681;flex-shrink:0}
+.log-level{flex-shrink:0;font-weight:600}
+.log-level.INFO{color:#58a6ff}
+.log-level.SUCCESS{color:#3fb950}
+.log-level.WARN{color:#d29922}
+.log-level.ERROR{color:#f85149}
+.log-msg{color:#c9d1d9;word-break:break-all}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+.input-group{display:flex;gap:8px;margin-bottom:16px}
+.input-group input{flex:1;background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:10px 14px;color:#e0e6ed;font-size:13px}
+.input-group input:focus{outline:none;border-color:#00d4ff}
+.input-group button{background:#00d4ff;color:#000;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-weight:600;font-size:13px}
+.input-group button:hover{background:#00b8e6}
+.badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600}
+.badge.attack{background:#f8514922;color:#f85149;border:1px solid #f8514944}
+.badge.defense{background:#3fb95022;color:#3fb950;border:1px solid #3fb95044}
+.badge.ai{background:#00d4ff22;color:#00d4ff;border:1px solid #00d4ff44}
+.badge.tool{background:#d2992222;color:#d29922;border:1px solid #d2992244}
+.progress-bar{background:#0d1117;border-radius:6px;height:8px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:linear-gradient(90deg,#00d4ff,#0099ff);border-radius:6px;transition:width .5s}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:10px;border-bottom:2px solid #21262d;color:#8b949e;font-weight:600}
+td{padding:10px;border-bottom:1px solid #161b22}
+tr:hover{background:#161b22}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">AI</div>
+    <div class="logo-text">全栈安全平台 <span>v4.5</span></div>
+    <span class="version">企业版</span>
+  </div>
+  <div class="nav">
+    <button class="active" onclick="showPage('overview')">总览</button>
+    <button onclick="showPage('attack')">攻击侧</button>
+    <button onclick="showPage('defense')">防御侧</button>
+    <button onclick="showPage('tasks')">任务中心</button>
+    <button onclick="showPage('reports')">报告中心</button>
+    <button onclick="showPage('settings')">系统</button>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ===== 总览页 ===== -->
+<div id="page-overview" class="page active">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">安全领域</div>
+      <div class="stat-value info">12</div>
+      <div class="stat-sub">Web/移动/云/区块链/AI/内网/二进制/无线/ICS/IoT/社工/取证</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">智能体数量</div>
+      <div class="stat-value info">59</div>
+      <div class="stat-sub">覆盖MITRE Kill Chain 12阶段</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">集成工具</div>
+      <div class="stat-value info">186+</div>
+      <div class="stat-sub">nmap/nuclei/sqlmap/nikto/subfinder/httpx/Katana</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">CVE漏洞库</div>
+      <div class="stat-value info">12,257</div>
+      <div class="stat-sub">274个漏洞模板</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">AI引擎</div>
+      <div class="stat-value ok">LLM驱动</div>
+      <div class="stat-sub">Qwen2.5-7B + 6种专业提示词</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">防御模块</div>
+      <div class="stat-value ok">4</div>
+      <div class="stat-sub">AI恶意软件检测/SOC/MCP扫描/Agent守卫</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">快速启动</div>
+    <div class="quick-actions">
+      <div class="quick-btn" onclick="quickScan('web')">
+        <div class="icon">🌐</div>
+        <div class="name">Web漏洞扫描</div>
+        <div class="desc">输入URL，自动扫描OWASP Top10</div>
+      </div>
+      <div class="quick-btn" onclick="quickScan('port')">
+        <div class="icon">🔌</div>
+        <div class="name">端口扫描</div>
+        <div class="desc">输入IP，nmap全端口扫描</div>
+      </div>
+      <div class="quick-btn" onclick="quickScan('api')">
+        <div class="icon">🔗</div>
+        <div class="name">API安全测试</div>
+        <div class="desc">JS分析+Katana+参数补全+漏洞测试</div>
+      </div>
+      <div class="quick-btn" onclick="quickScan('full')">
+        <div class="icon">⚔️</div>
+        <div class="name">完整渗透测试</div>
+        <div class="desc">6阶段自动化流水线</div>
+      </div>
+      <div class="quick-btn" onclick="quickScan('mobile')">
+        <div class="icon">📱</div>
+        <div class="name">移动安全审计</div>
+        <div class="desc">APK分析+污点流+Frida Hook</div>
+      </div>
+      <div class="quick-btn" onclick="quickScan('multi')">
+        <div class="icon">🎯</div>
+        <div class="name">12领域作战</div>
+        <div class="desc">Fireteam多领域并行执行</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="section">
+        <div class="section-title">攻击侧模块</div>
+        <div class="modules-grid">
+          <a class="module-card" href="/auto-pentest" target="_blank">
+            <div class="module-icon" style="background:#f8514922">⚔️</div>
+            <div class="module-name">自动化渗透控制台</div>
+            <div class="module-desc">6阶段流水线，真实工具执行，风险摘要+合规评估</div>
+            <div class="module-tags"><span class="module-tag badge attack">攻击</span><span class="module-tag">6阶段</span></div>
+          </a>
+          <a class="module-card" href="/multi-domain-console" target="_blank">
+            <div class="module-icon" style="background:#d2992222">🎯</div>
+            <div class="module-name">12领域作战中心</div>
+            <div class="module-desc">59Agent多领域并行，攻击链验证，智能决策</div>
+            <div class="module-tags"><span class="module-tag badge attack">攻击</span><span class="module-tag">12领域</span></div>
+          </a>
+          <a class="module-card" href="/war-room" target="_blank">
+            <div class="module-icon" style="background:#8957e522">🛡️</div>
+            <div class="module-name">智能作战中心</div>
+            <div class="module-desc">知识图谱+红蓝绿对抗+MITRE+PoC+Agent安全+任务流</div>
+            <div class="module-tags"><span class="module-tag badge ai">AI</span><span class="module-tag">7标签页</span></div>
+          </a>
+          <a class="module-card" href="/ai-commander" target="_blank">
+            <div class="module-icon" style="background:#00d4ff22">🧠</div>
+            <div class="module-name">AI指挥中心</div>
+            <div class="module-desc">自然语言下达安全任务，LLM智能解析执行</div>
+            <div class="module-tags"><span class="module-tag badge ai">AI</span><span class="module-tag">LLM</span></div>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="section">
+        <div class="section-title">防御侧模块</div>
+        <div class="modules-grid">
+          <div class="module-card" onclick="showPage('defense')">
+            <div class="module-icon" style="background:#3fb95022">🦠</div>
+            <div class="module-name">AI恶意软件检测</div>
+            <div class="module-desc">四模型投票，5个已知家族，12种可疑模式</div>
+            <div class="module-tags"><span class="module-tag badge defense">防御</span><span class="module-tag">CLOSEDQUORUM</span></div>
+          </div>
+          <div class="module-card" onclick="showPage('defense')">
+            <div class="module-icon" style="background:#3fb95022">📡</div>
+            <div class="module-name">Agentic SOC</div>
+            <div class="module-desc">Sigma规则+异常检测+威胁情报+威胁狩猎</div>
+            <div class="module-tags"><span class="module-tag badge defense">防御</span><span class="module-tag">10规则</span></div>
+          </div>
+          <div class="module-card" onclick="showPage('defense')">
+            <div class="module-icon" style="background:#3fb95022">🔒</div>
+            <div class="module-name">MCP安全扫描</div>
+            <div class="module-desc">木马化MCP检测，权限审计，OIDC风险，供应链评估</div>
+            <div class="module-tags"><span class="module-tag badge defense">防御</span><span class="module-tag">2木马</span></div>
+          </div>
+          <div class="module-card" onclick="showPage('defense')">
+            <div class="module-icon" style="background:#3fb95022">🛡️</div>
+            <div class="module-name">Agent审批守卫</div>
+            <div class="module-desc">28条规则+AI意图分析，四层决策，审计日志</div>
+            <div class="module-tags"><span class="module-tag badge defense">防御</span><span class="module-tag">Jev模型</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">系统日志</div>
+    <div class="log-panel" id="system-log">
+      <div class="log-line"><span class="log-time">--:--:--</span><span class="log-level INFO">系统初始化完成</span><span class="log-msg">v4.5 企业级安全运营平台已启动</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 攻击侧页 ===== -->
+<div id="page-attack" class="page">
+  <div class="section">
+    <div class="section-title">攻击侧能力矩阵</div>
+    <table>
+      <tr><th>模块</th><th>能力</th><th>工具/技术</th><th>状态</th></tr>
+      <tr><td>Web安全</td><td>OWASP Top10扫描、SQL注入、XSS、SSRF</td><td>nuclei/sqlmap/nikto/Playwright</td><td><span class="badge attack">就绪</span></td></tr>
+      <tr><td>API安全</td><td>JS分析、Katana爬虫、Source Map、参数补全、未授权/IDOR</td><td>Katana/自定义爬虫</td><td><span class="badge attack">就绪</span></td></tr>
+      <tr><td>移动安全</td><td>APK逆向、污点流分析、Frida Hook、15类漏洞</td><td>apktool/jadx/Frida</td><td><span class="badge attack">就绪</span></td></tr>
+      <tr><td>云安全</td><td>AWS/Azure/阿里云配置检查、容器扫描</td><td>docker/trivy</td><td><span class="badge attack">就绪</span></td></tr>
+      <tr><td>区块链</td><td>智能合约审计、重入/溢出/权限漏洞</td><td>slither/mythril</td><td><span class="badge attack">就绪</span></td></tr>
+      <tr><td>内网渗透</td><td>SMB扫描、AD查询、哈希传递、横向移动</td><td>nmap/impacket</td><td><span class="badge attack">就绪</span></td></tr>
+      <tr><td>二进制逆向</td><td>恶意软件分析、字符串提取、哈希检测</td><td>Python分析</td><td><span class="badge attack">就绪</span></td></tr>
+      <tr><td>无线网络</td><td>WiFi扫描、热点检测</td><td>netsh</td><td><span class="badge attack">就绪</span></td></tr>
+      <tr><td>ICS/SCADA</td><td>Modbus探测、工控设备发现</td><td>Python socket</td><td><span class="badge attack">就绪</span></td></tr>
+      <tr><td>IoT安全</td><td>设备发现、默认凭证检测</td><td>nmap/socket</td><td><span class="badge attack">就绪</span></td></tr>
+      <tr><td>社会工程</td><td>OSINT、域名/邮箱收集</td><td>DNS/HTTP</td><td><span class="badge attack">就绪</span></td></tr>
+      <tr><td>数字取证</td><td>文件哈希、元数据、日志分析</td><td>Python</td><td><span class="badge attack">就绪</span></td></tr>
+    </table>
+  </div>
+  <div class="section">
+    <div class="section-title">快速扫描</div>
+    <div class="input-group">
+      <input id="attack-target" placeholder="输入目标 URL 或 IP，例如 https://example.com 或 192.168.1.1">
+      <button onclick="runAttackScan()">开始扫描</button>
+    </div>
+    <div id="attack-result"></div>
+  </div>
+</div>
+
+<!-- ===== 防御侧页 ===== -->
+<div id="page-defense" class="page">
+  <div class="section">
+    <div class="section-title">防御侧能力</div>
+    <div class="modules-grid">
+      <div class="module-card">
+        <div class="module-icon" style="background:#3fb95022">🦠</div>
+        <div class="module-name">AI恶意软件检测引擎</div>
+        <div class="module-desc">多模型投票机制，检测LLM驱动的自主恶意软件。支持行为序列分析、代码扫描、IOC提取。</div>
+        <div class="module-tags"><span class="module-tag">5家族</span><span class="module-tag">12模式</span><span class="module-tag">4分析器</span></div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="background:#3fb95022">📡</div>
+        <div class="module-name">Agentic SOC威胁狩猎</div>
+        <div class="module-desc">自主日志分析，Sigma规则检测，异常行为基线，威胁情报关联，自动事件分级。</div>
+        <div class="module-tags"><span class="module-tag">10Sigma</span><span class="module-tag">5狩猎</span><span class="module-tag">IOC库</span></div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="background:#3fb95022">🔒</div>
+        <div class="module-name">MCP服务器安全扫描</div>
+        <div class="module-desc">检测木马化MCP服务器，审计工具权限，OIDC token提取检测，供应链风险评估。</div>
+        <div class="module-tags"><span class="module-tag">2木马</span><span class="module-tag">18模式</span><span class="module-tag">9权限</span></div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="background:#3fb95022">🛡️</div>
+        <div class="module-name">Agent审批守卫</div>
+        <div class="module-desc">28条安全规则，AI意图分析，四层决策（allow/confirm/review/deny），完整审计日志。</div>
+        <div class="module-tags"><span class="module-tag">28规则</span><span class="module-tag">4层决策</span><span class="module-tag">审计</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">SOC日志摄入测试</div>
+    <div class="input-group">
+      <input id="soc-log-input" placeholder="输入日志行，例如：192.168.1.1 GET /search?q=union+select 200">
+      <button onclick="ingestSocLog()">摄入日志</button>
+    </div>
+    <div id="soc-result"></div>
+  </div>
+</div>
+
+<!-- ===== 任务中心页 ===== -->
+<div id="page-tasks" class="page">
+  <div class="section">
+    <div class="section-title">任务队列</div>
+    <div id="task-list">
+      <p style="color:#8b949e;font-size:13px">暂无运行中的任务。使用"快速启动"或各模块控制台创建任务。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 报告中心页 ===== -->
+<div id="page-reports" class="page">
+  <div class="section">
+    <div class="section-title">报告模板</div>
+    <div class="modules-grid">
+      <div class="module-card">
+        <div class="module-icon" style="background:#58a6ff22">📄</div>
+        <div class="module-name">渗透测试报告</div>
+        <div class="module-desc">10章节标准报告，含执行摘要、漏洞详情、攻击链、修复建议、风险矩阵。</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="background:#58a6ff22">📋</div>
+        <div class="module-name">合规评估报告</div>
+        <div class="module-desc">等保2.0/ISO 27001/PCI-DSS映射，差距分析，控制项覆盖。</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="background:#58a6ff22">🔍</div>
+        <div class="module-name">漏洞详情报告</div>
+        <div class="module-desc">CVSS v3.1评分，CWE映射，PoC，修复方案代码示例。</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="background:#58a6ff22">⚔️</div>
+        <div class="module-name">红蓝对抗报告</div>
+        <div class="module-desc">红队攻击链+蓝队检测规则+绿队修复方案，三方得分。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 系统页 ===== -->
+<div id="page-settings" class="page">
+  <div class="section">
+    <div class="section-title">系统状态</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Python版本</div>
+        <div class="stat-value info" style="font-size:18px">3.x</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">真实工具链</div>
+        <div class="stat-value ok">6/6</div>
+        <div class="stat-sub">nmap/nuclei/sqlmap/nikto/subfinder/httpx</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Playwright</div>
+        <div class="stat-value ok">已安装</div>
+        <div class="stat-sub">Chromium可用</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Docker</div>
+        <div class="stat-value ok">可用</div>
+        <div class="stat-sub">靶场容器管理</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">LLM API</div>
+        <div class="stat-value high">待配置</div>
+        <div class="stat-sub">硅基流动/OpenAI/Ollama</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">项目模块</div>
+        <div class="stat-value info">15+</div>
+        <div class="stat-sub">攻击+防御+AI+工具链</div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">控制台入口</div>
+    <div class="quick-actions">
+      <a class="quick-btn" href="/console" target="_blank"><div class="icon">🖥️</div><div class="name">主控制台</div><div class="desc">/console</div></a>
+      <a class="quick-btn" href="/auto-pentest" target="_blank"><div class="icon">⚔️</div><div class="name">自动化渗透</div><div class="desc">/auto-pentest</div></a>
+      <a class="quick-btn" href="/multi-domain-console" target="_blank"><div class="icon">🎯</div><div class="name">12领域作战</div><div class="desc">/multi-domain-console</div></a>
+      <a class="quick-btn" href="/war-room" target="_blank"><div class="icon">🛡️</div><div class="name">智能作战中心</div><div class="desc">/war-room</div></a>
+      <a class="quick-btn" href="/ai-commander" target="_blank"><div class="icon">🧠</div><div class="name">AI指挥中心</div><div class="desc">/ai-commander</div></a>
+      <a class="quick-btn" href="/docs" target="_blank"><div class="icon">📚</div><div class="name">API文档</div><div class="desc">/docs (Swagger)</div></a>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  event.target.classList.add('active');
+  addLog('INFO','切换到页面: '+name);
+}
+
+function addLog(level,msg){
+  const log=document.getElementById('system-log');
+  const time=new Date().toLocaleTimeString();
+  const div=document.createElement('div');
+  div.className='log-line';
+  div.innerHTML=`<span class="log-time">${time}</span><span class="log-level ${level}">${level}</span><span class="log-msg">${msg}</span>`;
+  log.appendChild(div);
+  log.scrollTop=log.scrollHeight;
+}
+
+function quickScan(type){
+  const targets={web:'Web漏洞扫描',port:'端口扫描',api:'API安全测试',full:'完整渗透测试',mobile:'移动安全审计',multi:'12领域作战'};
+  addLog('INFO',`快速启动: ${targets[type]}`);
+  addLog('WARN','请在对应控制台中输入目标并执行');
+  if(type==='web'||type==='full') window.open('/auto-pentest','_blank');
+  else if(type==='multi') window.open('/multi-domain-console','_blank');
+  else if(type==='api') window.open('/auto-pentest','_blank');
+  else addLog('INFO','该功能可在12领域作战中心执行');
+}
+
+async function runAttackScan(){
+  const target=document.getElementById('attack-target').value;
+  if(!target){addLog('ERROR','请输入目标');return;}
+  addLog('INFO',`开始扫描: ${target}`);
+  document.getElementById('attack-result').innerHTML='<p style="color:#00d4ff">扫描中... (调用API执行真实扫描)</p>';
+  try{
+    const resp=await fetch('/api/v1/llm/parse-task',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user_input:`扫描 ${target}`})
+    });
+    const data=await resp.json();
+    if(data.success){
+      const t=data.data;
+      document.getElementById('attack-result').innerHTML=
+        `<div style="background:#161b22;border:1px solid #21262d;border-radius:8px;padding:16px;margin-top:12px">
+          <p><strong>任务类型:</strong> ${t.task_type}</p>
+          <p><strong>目标:</strong> ${t.target||'(未提取到)'}</p>
+          <p><strong>预计耗时:</strong> ${t.estimated_time}</p>
+          <p><strong>模式:</strong> ${t.aggressive?'激进':'标准'}</p>
+          <p style="color:#8b949e;margin-top:8px">前往 <a href="/auto-pentest" style="color:#00d4ff" target="_blank">自动化渗透控制台</a> 执行完整扫描</p>
+        </div>`;
+      addLog('SUCCESS',`任务解析完成: ${t.task_type}`);
+    }
+  }catch(e){
+    addLog('ERROR','扫描请求失败: '+e.message);
+    document.getElementById('attack-result').innerHTML='<p style="color:#f85149">请确保服务已启动 (python app_lite.py)</p>';
+  }
+}
+
+async function ingestSocLog(){
+  const log=document.getElementById('soc-log-input').value;
+  if(!log){addLog('ERROR','请输入日志');return;}
+  addLog('INFO',`摄入SOC日志: ${log.substring(0,50)}...`);
+  try{
+    const resp=await fetch('/agentic-soc/ingest',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({logs:[log],source:'web'})
+    });
+    const data=await resp.json();
+    if(data.success){
+      const d=data.data;
+      document.getElementById('soc-result').innerHTML=
+        `<div style="background:#161b22;border:1px solid #21262d;border-radius:8px;padding:16px;margin-top:12px">
+          <p><strong>处理日志:</strong> ${d.logs_processed}条</p>
+          <p><strong>触发事件:</strong> ${d.events_triggered}个</p>
+          <p><strong>按严重度:</strong> ${JSON.stringify(d.by_severity)}</p>
+          ${d.events.map(e=>`<p style="color:${e.severity==='high'?'#f85149':'#d29922'};margin-top:4px">• [${e.severity}] ${e.title}</p>`).join('')}
+        </div>`;
+      addLog('SUCCESS',`SOC分析完成: ${d.events_triggered}个事件`);
+    }
+  }catch(e){
+    addLog('ERROR','SOC摄入失败: '+e.message);
+  }
+}
+
+// 初始化
+addLog('SUCCESS','v4.5 企业级安全运营平台已就绪');
+addLog('INFO','攻击侧: 12领域/59Agent/186工具');
+addLog('INFO','防御侧: AI恶意软件检测/SOC/MCP扫描/Agent守卫');
+addLog('INFO','AI引擎: LLM驱动 + 自然语言指挥');
+</script>
+</body>
+</html>

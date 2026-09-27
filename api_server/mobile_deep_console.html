@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>移动安全深度控制台 v2</title>
+<style>
+  body { background:#0d1117; color:#c9d1d9; font-family:Consolas,Menlo,monospace;
+         margin:0; padding:20px; }
+  h1 { color:#58a6ff; border-bottom:1px solid #30363d; padding-bottom:8px; }
+  h2 { color:#7ee787; margin-top:24px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(380px,1fr));
+          gap:16px; }
+  .card { background:#161b22; border:1px solid #30363d; border-radius:8px;
+          padding:14px; }
+  .sev-critical { color:#f85149; font-weight:bold; }
+  .sev-high { color:#ff9e64; font-weight:bold; }
+  .sev-medium { color:#d29922; }
+  .sev-low { color:#8b949e; }
+  button { background:#238636; color:#fff; border:0; padding:8px 14px;
+           border-radius:6px; cursor:pointer; margin:4px 0; }
+  button.secondary { background:#30363d; }
+  pre { background:#010409; padding:10px; border-radius:6px;
+        overflow:auto; max-height:320px; font-size:12px; }
+  input,textarea { background:#0d1117; color:#c9d1d9; border:1px solid #30363d;
+                   padding:6px; border-radius:4px; width:100%;
+                   box-sizing:border-box; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th,td { border-bottom:1px solid #21262d; padding:6px; text-align:left; }
+  th { color:#58a6ff; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:10px;
+          font-size:11px; margin-right:4px; }
+</style>
+</head>
+<body>
+<h1>🛡 移动安全深度控制台 v2</h1>
+<p>APK 深度分析 / 静态代码扫描 / 权限 CVSS 评级 / 常见漏洞检测 / Frida 动态框架</p>
+
+<div class="grid">
+  <div class="card">
+    <h2>1. 一键深度体检（演示样本）</h2>
+    <button onclick="demo()">运行演示体检</button>
+    <button class="secondary" onclick="loadEnv()">动态环境</button>
+    <pre id="demoOut">未运行</pre>
+  </div>
+
+  <div class="card">
+    <h2>2. 真实代码扫描</h2>
+    <textarea id="codeSample" rows="8">wv.addJavascriptInterface(b,"bridge");
+wv.getSettings().setAllowFileAccess(true);
+private static final String AK = "AKIAIOSFODNN7EXAMPLE";
+private String password = "Admin@123456";
+Log.d("X","token="+t);</textarea>
+    <button onclick="scan()">扫描代码</button>
+    <pre id="scanOut">未扫描</pre>
+  </div>
+
+  <div class="card">
+    <h2>3. 权限评级</h2>
+    <button onclick="ratePerms()">对示例权限评级</button>
+    <pre id="permOut">未评级</pre>
+  </div>
+
+  <div class="card">
+    <h2>4. 动态框架</h2>
+    <button onclick="scripts()">Frida 脚本库</button>
+    <pre id="dynOut">未加载</pre>
+  </div>
+</div>
+
+<script>
+const API = "/api/v1/mobile-deep";
+async function j(method, url, body) {
+  const opt = { method, headers: {"Content-Type":"application/json"} };
+  if (body) opt.body = JSON.stringify(body);
+  const r = await fetch(API + url, opt);
+  return r.json();
+}
+async function demo() {
+  document.getElementById("demoOut").textContent = "运行中...";
+  const d = await j("GET", "/v2/assess/demo");
+  document.getElementById("demoOut").textContent =
+    JSON.stringify(d.data?.overall || d, null, 2);
+}
+async function loadEnv() {
+  const d = await j("GET", "/v2/dynamic/env");
+  document.getElementById("dynOut").textContent =
+    JSON.stringify(d.data, null, 2);
+}
+async function scan() {
+  const code = document.getElementById("codeSample").value;
+  const d = await j("POST", "/v2/static/scan", { code_sample: code });
+  document.getElementById("scanOut").textContent =
+    JSON.stringify(d.data?.counts || d.data, null, 2);
+}
+async function ratePerms() {
+  const body = { manifest_signals: { permissions: [
+    "android.permission.READ_SMS","android.permission.SEND_SMS",
+    "android.permission.CAMERA","android.permission.ACCESS_FINE_LOCATION"
+  ]}};
+  const d = await j("POST", "/v2/permissions/rate", body);
+  document.getElementById("permOut").textContent =
+    JSON.stringify(d.data, null, 2);
+}
+async function scripts() {
+  const d = await j("GET", "/v2/dynamic/scripts");
+  document.getElementById("dynOut").textContent =
+    JSON.stringify(d.data, null, 2);
+}
+</script>
+</body>
+</html>

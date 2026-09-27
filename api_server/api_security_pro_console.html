@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API 安全专业级控制台 · Round 12</title>
+<style>
+  :root {
+    --bg: #0b0f17; --panel: #131a26; --panel2: #1a2333; --border: #233049;
+    --text: #d6deee; --muted: #7a8aa8; --accent: #39c5bb; --accent2: #ff6b6b;
+    --crit: #ff4d4f; --high: #fa8c16; --med: #fadb14; --low: #52c41a; --info: #1890ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; font-size: 14px; }
+  header { background: linear-gradient(90deg,#0d1522,#16223a); padding: 14px 22px;
+    border-bottom: 1px solid var(--border); display:flex; align-items:center; gap:14px; }
+  header h1 { margin: 0; font-size: 18px; color: var(--accent); }
+  header .tag { background: var(--panel2); padding: 3px 10px; border-radius: 10px; font-size: 12px; color: var(--muted); }
+  nav { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px 22px; background: #0e1522; border-bottom: 1px solid var(--border); }
+  nav button { background: transparent; color: var(--muted); border: 1px solid var(--border);
+    padding: 7px 14px; cursor: pointer; border-radius: 6px; font-size: 13px; }
+  nav button.active { background: var(--accent); color: #001; border-color: var(--accent); font-weight: 600; }
+  nav button:hover { color: var(--text); }
+  main { padding: 18px 22px; max-width: 1400px; margin: 0 auto; }
+  .tab { display: none; } .tab.active { display: block; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .card h3 { margin: 0 0 10px; font-size: 14px; color: var(--accent); }
+  label { display:block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+  input, textarea, select { width: 100%; background: #0c1320; color: var(--text);
+    border: 1px solid var(--border); border-radius: 5px; padding: 7px 9px; font-size: 13px; }
+  textarea { min-height: 90px; font-family: Consolas, monospace; }
+  button.action { background: var(--accent); color: #001; border: none; padding: 9px 18px;
+    border-radius: 5px; cursor: pointer; font-weight: 600; margin-top: 10px; }
+  button.action:hover { opacity: .9; }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .status { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .status.running { color: var(--med); } .status.done { color: var(--low); } .status.error { color: var(--crit); }
+  pre { background: #0a101c; border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px; overflow: auto; max-height: 420px; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { border-bottom: 1px solid var(--border); padding: 6px 8px; text-align: left; }
+  th { color: var(--accent); background: #0e1626; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .pill.critical { background: rgba(255,77,79,.18); color: var(--crit); }
+  .pill.high { background: rgba(250,140,22,.18); color: var(--high); }
+  .pill.medium { background: rgba(250,219,20,.18); color: var(--med); }
+  .pill.low { background: rgba(82,196,26,.18); color: var(--low); }
+  .pill.info { background: rgba(24,144,255,.18); color: var(--info); }
+  .kv { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+  .kv div b { color: var(--accent); font-size: 18px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .bar { height: 8px; background: var(--panel2); border-radius: 4px; overflow: hidden; margin: 4px 0; }
+  .bar > span { display: block; height: 100%; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🔐 API 安全专业级控制台</h1>
+  <span class="tag">Round 12 · api-security-pro</span>
+  <span class="muted" style="margin-left:auto">仅用于授权安全评估 · 检测视角</span>
+</header>
+
+<nav id="nav">
+  <button data-tab="openapi" class="active">📄 OpenAPI 解析</button>
+  <button data-tab="auth">🔑 认证授权</button>
+  <button data-tab="injection">💉 注入测试</button>
+  <button data-tab="business">🧩 业务逻辑</button>
+  <button data-tab="config">⚙️ 安全配置</button>
+  <button data-tab="fuzz">🔥 Fuzz 测试</button>
+  <button data-tab="scan">🚀 综合扫描</button>
+</nav>
+
+<main>
+<!-- ============ OpenAPI ============ -->
+<section class="tab active" id="tab-openapi">
+  <div class="grid">
+    <div class="card">
+      <h3>OpenAPI / Swagger 规范解析</h3>
+      <label>规范 URL（可选）</label>
+      <input id="oa-url" placeholder="https://example.com/openapi.json">
+      <label>或粘贴规范内容（JSON/YAML）</label>
+      <textarea id="oa-content" placeholder='{"openapi":"3.0.0","info":{"title":"API","version":"1.0"},"paths":{}}'></textarea>
+      <label>格式</label>
+      <select id="oa-ctype"><option value="json">JSON</option><option value="yaml">YAML</option></select>
+      <button class="action" onclick="parseOpenAPI()">解析规范</button>
+      <div class="status" id="oa-status"></div>
+    </div>
+    <div class="card">
+      <h3>解析结果摘要</h3>
+      <div class="kv" id="oa-summary"></div>
+      <div id="oa-endpoints"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>完整报告</h3>
+    <pre id="oa-report">// 解析后在此显示</pre>
+  </div>
+</section>
+
+<!-- ============ 认证授权 ============ -->
+<section class="tab" id="tab-auth">
+  <div class="grid">
+    <div class="card">
+      <h3>认证授权深度测试</h3>
+      <label>JWT Token（可选，用于静态分析）</label>
+      <input id="auth-jwt" placeholder="eyJhbGciOi...">
+      <label>API Key（可选）</label>
+      <input id="auth-key" placeholder="sk_...">
+      <label>端点 JSON 数组（可选，留空用默认样例）</label>
+      <textarea id="auth-eps" placeholder='[{"path":"/api/v1/users/{id}","method":"GET"}]'></textarea>
+      <button class="action" onclick="runAuth()">运行测试</button>
+      <div class="status" id="auth-status"></div>
+    </div>
+    <div class="card">
+      <h3>测试结果</h3>
+      <div class="kv" id="auth-summary"></div>
+      <div id="auth-findings"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>测试 Payload 参考</h3>
+    <button class="ghost action" onclick="loadAuthPayloads()">加载 Payload 字典</button>
+    <pre id="auth-payloads">// 弱 JWT 密钥 / 默认凭据 / 算法清单</pre>
+  </div>
+</section>
+
+<!-- ============ 注入测试 ============ -->
+<section class="tab" id="tab-injection">
+  <div class="grid">
+    <div class="card">
+      <h3>注入测试（SQL/NoSQL/命令/XXE/SSRF/SSTI/反序列化）</h3>
+      <label>参数 JSON 数组（可选）</label>
+      <textarea id="inj-params" placeholder='[{"name":"id","in":"path","type":"integer","path":"/api/v1/items/{id}"}]'></textarea>
+      <button class="action" onclick="runInjection()">运行注入测试</button>
+      <div class="status" id="inj-status"></div>
+    </div>
+    <div class="card">
+      <h3>检测结果</h3>
+      <div class="kv" id="inj-summary"></div>
+      <div id="inj-findings"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>注入 Payload 库</h3>
+    <div class="row">
+      <select id="inj-cat" style="width:auto">
+        <option value="">全部类别</option>
+        <option value="sql">SQL 注入</option>
+        <option value="nosql">NoSQL</option>
+        <option value="command">命令注入</option>
+        <option value="xxe">XXE</option>
+        <option value="ssrf">SSRF</option>
+        <option value="ssti">SSTI</option>
+        <option value="deser">反序列化</option>
+        <option value="ldap">LDAP</option>
+        <option value="crlf">CRLF</option>
+      </select>
+      <button class="ghost action" onclick="loadInjPayloads()">加载</button>
+    </div>
+    <pre id="inj-payloads">// 200+ 注入 Payload，按类别展示</pre>
+  </div>
+</section>
+
+<!-- ============ 业务逻辑 ============ -->
+<section class="tab" id="tab-business">
+  <div class="grid">
+    <div class="card">
+      <h3>业务逻辑漏洞检测</h3>
+      <label>端点 JSON 数组（可选）</label>
+      <textarea id="bl-eps" placeholder='[{"path":"/api/v1/orders/{id}","method":"GET"}]'></textarea>
+      <button class="action" onclick="runBusiness()">开始检测</button>
+      <div class="status" id="bl-status"></div>
+    </div>
+    <div class="card">
+      <h3>检测结果</h3>
+      <div class="kv" id="bl-summary"></div>
+      <div id="bl-findings"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 安全配置 ============ -->
+<section class="tab" id="tab-config">
+  <div class="grid">
+    <div class="card">
+      <h3>API 安全配置与防护检查</h3>
+      <label>响应头 JSON（可选）</label>
+      <textarea id="cfg-headers" placeholder='{"Content-Type":"application/json"}'></textarea>
+      <label>样例响应（用于敏感数据扫描）</label>
+      <textarea id="cfg-sample" placeholder='{"user":"admin","phone":"13800138000"}'></textarea>
+      <label><input type="checkbox" id="cfg-debug" style="width:auto"> 调试模式开启</label>
+      <button class="action" onclick="runConfig()">开始检查</button>
+      <div class="status" id="cfg-status"></div>
+    </div>
+    <div class="card">
+      <h3>安全评分</h3>
+      <div class="kv" id="cfg-score"></div>
+      <div id="cfg-findings"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Fuzz ============ -->
+<section class="tab" id="tab-fuzz">
+  <div class="grid">
+    <div class="card">
+      <h3>API Fuzz 测试引擎</h3>
+      <label>参数 JSON 数组（可选）</label>
+      <textarea id="fz-params" placeholder='[{"name":"id","in":"path","type":"integer"}]'></textarea>
+      <button class="action" onclick="runFuzz()">生成 Fuzz 用例</button>
+      <div class="status" id="fz-status"></div>
+    </div>
+    <div class="card">
+      <h3>Fuzz 结果</h3>
+      <div class="kv" id="fz-summary"></div>
+      <div id="fz-findings"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Fuzz Payload 库（300+）</h3>
+    <button class="ghost action" onclick="loadFzPayloads()">加载 Payload</button>
+    <pre id="fz-payloads">// 边界值 / 特殊字符 / Unicode / 编码 / 类型混淆</pre>
+  </div>
+</section>
+
+<!-- ============ 综合扫描 ============ -->
+<section class="tab" id="tab-scan">
+  <div class="card">
+    <h3>API 安全综合扫描工作流</h3>
+    <div class="grid">
+      <div>
+        <label>OpenAPI URL</label>
+        <input id="scan-url" placeholder="https://example.com/openapi.json">
+        <label>或粘贴规范内容</label>
+        <textarea id="scan-content" placeholder='{"openapi":"3.0.0",...}'></textarea>
+      </div>
+      <div>
+        <label>JWT Token</label>
+        <input id="scan-jwt" placeholder="eyJ...">
+        <label>响应头 JSON</label>
+        <textarea id="scan-headers" placeholder='{"Content-Type":"application/json"}'></textarea>
+        <label class="muted"><input type="checkbox" id="scan-inc" style="width:auto"> 增量扫描</label>
+      </div>
+    </div>
+    <button class="action" onclick="runScan()">启动综合扫描</button>
+    <div class="status" id="scan-status"></div>
+  </div>
+  <div class="card">
+    <h3>扫描报告</h3>
+    <div class="kv" id="scan-summary"></div>
+    <div id="scan-steps"></div>
+    <pre id="scan-report">// 综合扫描结论与修复优先级</pre>
+  </div>
+  <div class="card">
+    <h3>历史扫描</h3>
+    <button class="ghost action" onclick="loadHistory()">刷新历史</button>
+    <div id="scan-history"></div>
+  </div>
+</section>
+</main>
+
+<script>
+const BASE = "/api/v1/api-security-pro";
+const $ = id => document.getElementById(id);
+
+// Tab 切换
+document.querySelectorAll("#nav button").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll("#nav button").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    btn.classList.add("active");
+    $("tab-" + btn.dataset.tab).classList.add("active");
+  };
+});
+
+async function api(path, opts={}) {
+  const r = await fetch(BASE + path, {
+    method: opts.method || "POST",
+    headers: {"Content-Type": "application/json"},
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  return r.json();
+}
+function setStatus(id, msg, cls="") {
+  const el = $(id); el.textContent = msg; el.className = "status " + cls;
+}
+function pill(sev) {
+  const s = (sev||"info").toLowerCase();
+  return `<span class="pill ${s}">${s}</span>`;
+}
+function esc(s) { return String(s==null?"":s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+// ---------- OpenAPI ----------
+async function parseOpenAPI() {
+  setStatus("oa-status", "解析中...", "running");
+  const body = { url: $("oa-url").value.trim(), content: $("oa-content").value.trim(), content_type: $("oa-ctype").value };
+  try {
+    const r = await api("/openapi/parse", { body });
+    if (!r.success) { setStatus("oa-status", "失败: " + r.error, "error"); return; }
+    const res = r.data.result;
+    setStatus("oa-status", "解析完成：" + (res.summary?.total_endpoints||0) + " 端点", "done");
+    const s = res.summary || {};
+    $("oa-summary").innerHTML = `
+      <div><b>${s.total_endpoints||0}</b><br><span class="muted">端点</span></div>
+      <div><b>${s.total_schemas||0}</b><br><span class="muted">数据模型</span></div>
+      <div><b>${s.total_security_schemes||0}</b><br><span class="muted">认证方式</span></div>
+      <div><b>${(res.documentation_gaps||{}).total_gaps||0}</b><br><span class="muted">文档缺失</span></div>`;
+    $("oa-endpoints").innerHTML = "<table><tr><th>方法</th><th>路径</th><th>操作ID</th><th>标签</th></tr>" +
+      (res.endpoints||[]).slice(0,50).map(e =>
+        `<tr><td>${e.method}</td><td>${esc(e.path)}</td><td>${esc(e.operation_id||"-")}</td><td>${(e.tags||[]).join(", ")}</td></tr>`
+      ).join("") + "</table>";
+    $("oa-report").textContent = JSON.stringify({
+      valid: res.valid, version: res.spec_version, errors: res.errors,
+      compliance: res.compliance, gaps: (res.documentation_gaps||{}).gaps?.slice(0,20),
+      security_schemes: res.security_schemes,
+    }, null, 2);
+  } catch(e) { setStatus("oa-status", "异常: " + e, "error"); }
+}
+
+// ---------- Auth ----------
+async function runAuth() {
+  setStatus("auth-status", "测试中...", "running");
+  let eps = []; try { eps = JSON.parse($("auth-eps").value || "[]"); } catch(e) {}
+  const body = { endpoints: eps, jwt_token: $("auth-jwt").value.trim(), api_key: $("auth-key").value.trim() };
+  try {
+    const r = await api("/auth/test", { body });
+    if (!r.success) { setStatus("auth-status", "失败: " + r.error, "error"); return; }
+    const res = r.data.result;
+    setStatus("auth-status", "完成：" + res.total_findings + " 项发现", "done");
+    const sb = res.by_severity || {};
+    $("auth-summary").innerHTML = `
+      <div><b>${res.total_findings}</b><br><span class="muted">总发现</span></div>
+      <div><b>${sb.critical||0}</b><br><span class="muted">严重</span></div>
+      <div><b>${sb.high||0}</b><br><span class="muted">高危</span></div>
+      <div><b>${res.summary?.risk_level||"-"}</b><br><span class="muted">风险</span></div>`;
+    $("auth-findings").innerHTML = "<table><tr><th>级别</th><th>类别</th><th>名称</th><th>建议</th></tr>" +
+      (res.findings||[]).map(f => `<tr><td>${pill(f.severity)}</td><td>${esc(f.category)}</td><td>${esc(f.name)}</td><td class="muted">${esc(f.recommendation)}</td></tr>`).join("") + "</table>";
+  } catch(e) { setStatus("auth-status", "异常: " + e, "error"); }
+}
+async function loadAuthPayloads() {
+  const r = await api("/auth/payloads", { method: "GET" });
+  $("auth-payloads").textContent = JSON.stringify(r.data, null, 2);
+}
+
+// ---------- Injection ----------
+async function runInjection() {
+  setStatus("inj-status", "测试中...", "running");
+  let params = []; try { params = JSON.parse($("inj-params").value || "[]"); } catch(e) {}
+  try {
+    const r = await api("/injection/test", { body: { parameters: params } });
+    if (!r.success) { setStatus("inj-status", "失败: " + r.error, "error"); return; }
+    const res = r.data.result;
+    setStatus("inj-status", "完成：" + res.total_findings + " 项发现，" + res.payload_library_size + " Payload", "done");
+    const sb = res.by_severity || {};
+    $("inj-summary").innerHTML = `
+      <div><b>${res.total_findings}</b><br><span class="muted">总发现</span></div>
+      <div><b>${sb.critical||0}</b><br><span class="muted">严重</span></div>
+      <div><b>${sb.high||0}</b><br><span class="muted">高危</span></div>
+      <div><b>${res.payload_library_size}</b><br><span class="muted">Payload</span></div>`;
+    $("inj-findings").innerHTML = "<table><tr><th>级别</th><th>类别</th><th>名称</th></tr>" +
+      (res.findings||[]).map(f => `<tr><td>${pill(f.severity)}</td><td>${esc(f.category)}</td><td>${esc(f.name)}</td></tr>`).join("") + "</table>";
+  } catch(e) { setStatus("inj-status", "异常: " + e, "error"); }
+}
+async function loadInjPayloads() {
+  const cat = $("inj-cat").value;
+  const r = await api("/injection/payloads" + (cat?("?category="+cat):""), { method: "GET" });
+  $("inj-payloads").textContent = JSON.stringify(r.data, null, 2);
+}
+
+// ---------- Business ----------
+async function runBusiness() {
+  setStatus("bl-status", "检测中...", "running");
+  let eps = []; try { eps = JSON.parse($("bl-eps").value || "[]"); } catch(e) {}
+  try {
+    const r = await api("/business-logic/detect", { body: { endpoints: eps } });
+    if (!r.success) { setStatus("bl-status", "失败: " + r.error, "error"); return; }
+    const res = r.data.result;
+    setStatus("bl-status", "完成：" + res.total_findings + " 项", "done");
+    const sb = res.by_severity || {};
+    $("bl-summary").innerHTML = `
+      <div><b>${res.total_findings}</b><br><span class="muted">总发现</span></div>
+      <div><b>${sb.critical||0}</b><br><span class="muted">严重</span></div>
+      <div><b>${res.summary?.risk_level||"-"}</b><br><span class="muted">风险</span></div>`;
+    $("bl-findings").innerHTML = "<table><tr><th>级别</th><th>类别</th><th>名称</th><th>建议</th></tr>" +
+      (res.findings||[]).map(f => `<tr><td>${pill(f.severity)}</td><td>${esc(f.category)}</td><td>${esc(f.name)}</td><td class="muted">${esc(f.recommendation)}</td></tr>`).join("") + "</table>";
+  } catch(e) { setStatus("bl-status", "异常: " + e, "error"); }
+}
+
+// ---------- Config ----------
+async function runConfig() {
+  setStatus("cfg-status", "检查中...", "running");
+  let h = {}; try { h = JSON.parse($("cfg-headers").value || "{}"); } catch(e) {}
+  let sample = "";
+  try { const o = JSON.parse($("cfg-sample").value || '""'); sample = typeof o === "string" ? o : JSON.stringify(o); } catch(e) { sample = $("cfg-sample").value; }
+  try {
+    const r = await api("/security-config/check", { body: { response_headers: h, options: { sample_response: sample, debug_mode: $("cfg-debug").checked } } });
+    if (!r.success) { setStatus("cfg-status", "失败: " + r.error, "error"); return; }
+    const res = r.data.result;
+    setStatus("cfg-status", "完成：评分 " + res.score + " (" + res.grade + ")", "done");
+    $("cfg-score").innerHTML = `
+      <div><b>${res.score}</b><br><span class="muted">/100</span></div>
+      <div><b>${res.grade}</b><br><span class="muted">等级</span></div>
+      <div><b>${res.total_findings}</b><br><span class="muted">问题数</span></div>`;
+    $("cfg-findings").innerHTML = "<table><tr><th>级别</th><th>类别</th><th>名称</th></tr>" +
+      (res.findings||[]).map(f => `<tr><td>${pill(f.severity)}</td><td>${esc(f.category)}</td><td>${esc(f.name)}</td></tr>`).join("") + "</table>";
+  } catch(e) { setStatus("cfg-status", "异常: " + e, "error"); }
+}
+
+// ---------- Fuzz ----------
+async function runFuzz() {
+  setStatus("fz-status", "生成用例中...", "running");
+  let params = []; try { params = JSON.parse($("fz-params").value || "[]"); } catch(e) {}
+  try {
+    const r = await api("/fuzz/run", { body: { parameters: params } });
+    if (!r.success) { setStatus("fz-status", "失败: " + r.error, "error"); return; }
+    const res = r.data.result;
+    setStatus("fz-status", "完成：" + res.total_cases + " 用例 / " + res.payload_library_size + " Payload", "done");
+    const s = res.summary || {};
+    $("fz-summary").innerHTML = `
+      <div><b>${s.fuzz_cases||0}</b><br><span class="muted">用例</span></div>
+      <div><b>${s.payloads_available||0}</b><br><span class="muted">Payload</span></div>
+      <div><b>${s.anomaly_rules||0}</b><br><span class="muted">异常规则</span></div>`;
+    $("fz-findings").innerHTML = "<table><tr><th>级别</th><th>规则</th><th>说明</th></tr>" +
+      (res.findings||[]).map(f => `<tr><td>${pill(f.severity)}</td><td>${esc(f.name)}</td><td class="muted">${esc(f.description)}</td></tr>`).join("") + "</table>";
+  } catch(e) { setStatus("fz-status", "异常: " + e, "error"); }
+}
+async function loadFzPayloads() {
+  const r = await api("/fuzz/payloads", { method: "GET" });
+  $("fz-payloads").textContent = JSON.stringify(r.data, null, 2);
+}
+
+// ---------- Scan ----------
+async function runScan() {
+  setStatus("scan-status", "扫描中（多步骤编排）...", "running");
+  let h = {}; try { h = JSON.parse($("scan-headers").value || "{}"); } catch(e) {}
+  const body = {
+    openapi_url: $("scan-url").value.trim(),
+    openapi_content: $("scan-content").value.trim(),
+    jwt_token: $("scan-jwt").value.trim(),
+    response_headers: h,
+    incremental: $("scan-inc").checked,
+  };
+  try {
+    const r = await api("/scan/run", { body });
+    if (!r.success) { setStatus("scan-status", "失败: " + r.error, "error"); return; }
+    const res = r.data.result;
+    setStatus("scan-status", "扫描完成：风险 " + res.rating.risk_level, "done");
+    const agg = res.aggregate || {};
+    const sb = agg.by_severity || {};
+    $("scan-summary").innerHTML = `
+      <div><b>${res.rating.risk_level}</b><br><span class="muted">风险等级</span></div>
+      <div><b>${agg.total_findings||0}</b><br><span class="muted">总发现</span></div>
+      <div><b>${sb.critical||0}</b><br><span class="muted">严重</span></div>
+      <div><b>${sb.high||0}</b><br><span class="muted">高危</span></div>
+      <div><b>${res.config_score||0}</b><br><span class="muted">配置分</span></div>`;
+    $("scan-steps").innerHTML = "<table><tr><th>步骤</th><th>状态</th><th>说明</th></tr>" +
+      (res.workflow_steps||[]).map(s => `<tr><td>${esc(s.step)}</td><td>${pill(s.status==='ok'?'low':s.status==='warn'?'medium':'critical')}</td><td>${esc(s.message)}</td></tr>`).join("") + "</table>";
+    $("scan-report").textContent = res.conclusion + "\n\n" + JSON.stringify({
+      endpoints: res.endpoints_overview?.slice(0,30),
+      top_priorities: res.rating?.top_priorities?.slice(0,15),
+    }, null, 2);
+  } catch(e) { setStatus("scan-status", "异常: " + e, "error"); }
+}
+async function loadHistory() {
+  const r = await api("/scan/history", { method: "GET" });
+  const h = r.data?.history || [];
+  $("scan-history").innerHTML = "<table><tr><th>Scan ID</th><th>完成时间</th><th>风险</th><th>发现数</th></tr>" +
+    h.map(x => `<tr><td>${x.scan_id}</td><td>${x.finished_at}</td><td>${x.risk_level||"-"}</td><td>${x.total_findings||0}</td></tr>`).join("") + "</table>";
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>本地靶场 · AI Hacking Agent</title>
+<style>
+  :root{
+    --bg:#0d1117; --card:#161b22; --inset:#010409; --border:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --accent:#d29922; --green:#2ea043; --red:#f85149;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--fg);
+       font-size:16px;min-height:100vh}
+  .topbar{height:60px;background:var(--card);border-bottom:1px solid var(--border);
+          display:flex;align-items:center;gap:16px;padding:0 22px}
+  .topbar .logo{font-weight:700;font-size:18px;color:var(--accent)}
+  .topbar .spacer{flex:1}
+  .topbar button{background:transparent;color:var(--fg);border:1px solid var(--border);
+                 padding:8px 14px;border-radius:8px;cursor:pointer;font-size:14px}
+  .topbar button:hover{border-color:var(--accent);color:var(--accent)}
+  .wrap{max-width:1200px;margin:0 auto;padding:20px}
+  .banner{background:linear-gradient(135deg,#d2992222,transparent 60%),var(--card);
+          border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px}
+  .banner h1{font-size:22px;margin-bottom:6px}
+  .banner p{color:var(--muted);font-size:14px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .lab{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px}
+  .lab h3{font-size:18px;margin-bottom:4px}
+  .lab .desc{color:var(--muted);font-size:13px;margin-bottom:10px;min-height:36px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:12px}
+  .badge.running{background:#2ea04333;color:#3fb950}
+  .badge.stopped{background:#8b949e33;color:#8b949e}
+  .badge.starting{background:#1f6feb33;color:#79b8ff}
+  .badge.failed{background:#f8514933;color:#ff7b72}
+  .vtypes{margin:10px 0}
+  .vtypes span{display:inline-block;background:var(--inset);border:1px solid var(--border);
+               padding:2px 8px;border-radius:6px;font-size:11px;margin:2px;color:var(--muted)}
+  .btn{display:block;width:100%;margin-top:8px;padding:11px;border:none;border-radius:10px;
+       font-size:15px;font-weight:600;cursor:pointer}
+  .btn.start{background:var(--green);color:#04260d}
+  .btn.stop{background:transparent;color:var(--red);border:1px solid var(--red)}
+  .btn.open{background:var(--accent);color:#2d2200}
+  .url{margin-top:10px;font-family:Consolas,monospace;font-size:13px;color:var(--green);
+       word-break:break-all;background:var(--inset);padding:8px;border-radius:8px;display:none}
+  .logbox{margin-top:10px;background:var(--inset);border:1px solid var(--border);
+          border-radius:8px;padding:8px;font-family:Consolas,monospace;font-size:11px;
+          height:90px;overflow:auto;display:none;color:#8b949e}
+  .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .toolbar button{padding:10px 16px;border-radius:10px;border:none;cursor:pointer;font-size:14px}
+  .t-green{background:var(--green);color:#04260d}
+  .t-red{background:transparent;color:var(--red);border:1px solid var(--red)!important}
+  .t-ghost{background:transparent;color:var(--fg);border:1px solid var(--border)!important}
+  .notice{color:var(--muted);font-size:12px;margin-top:14px;text-align:center}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <span class="logo">🎯 本地靶场</span>
+    <span style="color:var(--muted);font-size:14px">一键启动 DVWA / Juice Shop / WebGoat</span>
+    <span class="spacer"></span>
+    <button onclick="location.href='/simple-console'">极简控制台</button>
+    <button onclick="location.href='/'">返回首页</button>
+  </div>
+
+  <div class="wrap">
+    <div class="banner">
+      <h1>本地靶场一键部署</h1>
+      <p>有 Docker 自动用官方镜像；没 Docker 自动用 Python 模拟。启动后点「打开」即可访问。</p>
+    </div>
+
+    <div class="toolbar">
+      <button class="t-green" onclick="startAll()">🚀 一键全部启动</button>
+      <button class="t-red" onclick="stopAll()">⏹ 全部停止</button>
+      <button class="t-ghost" onclick="refresh()">刷新状态</button>
+      <span id="dockerBadge" style="align-self:center;color:var(--muted);font-size:13px"></span>
+    </div>
+
+    <div class="grid" id="grid"></div>
+    <div class="notice">仅限授权环境：本地靶场仅用于授权安全测试 / 教学 / 演示。</div>
+  </div>
+
+<script>
+const API = '/api/v1/target-lab';
+async function jg(p){ const r = await fetch(API+p); return r.json(); }
+async function jp(p, b){ const r = await fetch(API+p, {method:'POST',
+  headers:{'Content-Type':'application/json'}, body: b?JSON.stringify(b):undefined}); return r.json(); }
+function toast(t){ let e=document.createElement('div'); e.textContent=t;
+  e.style.cssText='position:fixed;bottom:24px;right:24px;background:#161b22;border:1px solid #d29922;padding:12px 18px;border-radius:10px;z-index:99';
+  document.body.appendChild(e); setTimeout(()=>e.remove(),2500); }
+
+async function load(){
+  const d = await jg('/instances');
+  const inst = (d.instances) || [];
+  document.getElementById('dockerBadge').textContent =
+    d.docker && d.docker.available ? ('Docker: ' + (d.docker.version||'可用')) : 'Docker: 未安装（模拟模式）';
+  const grid = document.getElementById('grid');
+  grid.innerHTML = inst.map(i=>`
+    <div class="lab" id="lab-${i.lab_id}">
+      <h3>${i.name}</h3>
+      <div class="desc">${i.description || ''}</div>
+      <span class="badge ${i.status}">${i.status}</span>
+      <span style="color:var(--muted);font-size:12px;margin-left:6px">${i.mode||''}</span>
+      <div class="vtypes">${(i.vuln_types||[]).map(v=>`<span>${v}</span>`).join('')}</div>
+      <div class="url" id="url-${i.lab_id}">${i.url||''}</div>
+      <div class="logbox" id="log-${i.lab_id}"></div>
+      <button class="btn start" onclick="start('${i.lab_id}')">启动</button>
+      <button class="btn stop" onclick="stop('${i.lab_id}')">停止</button>
+      <button class="btn open" onclick="openUrl('${i.lab_id}')">打开靶场 ↗</button>
+    </div>`).join('');
+  inst.forEach(i=>{ if(i.url) document.getElementById('url-'+i.lab_id).style.display='block'; });
+}
+
+async function start(id){
+  const r = await jp('/start', {lab_id: id});
+  if(r.success){ toast(id + ' 已启动'); load(); } else toast('启动失败: ' + r.error);
+}
+async function stop(id){
+  const r = await jp('/stop', {lab_id: id});
+  if(r.success){ toast(id + ' 已停止'); load(); } else toast('停止失败: ' + r.error);
+}
+async function startAll(){ await jp('/start-all'); toast('已批量启动'); load(); }
+async function stopAll(){ await jp('/stop-all'); toast('已批量停止'); load(); }
+async function openUrl(id){
+  const r = await jg('/instances/'+id+'/url');
+  if(r.success && r.data.url){ window.open(r.data.url, '_blank'); }
+  else toast('靶场未运行，先点启动');
+}
+function refresh(){ load(); }
+
+load();
+setInterval(load, 5000);
+</script>
+</body>
+</html>

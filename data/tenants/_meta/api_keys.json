@@ -1,0 +1,50 @@
+{
+  "500ad684b2cb3500": {
+    "key_id": "500ad684b2cb3500",
+    "key_hash": "347c82c924549229fff95d630ddf924a15cb136874250f15069066aa002b2f4e",
+    "key_prefix": "sk_aWnHs0o...",
+    "tenant_id": "e2e_test_corp",
+    "username": "e2e_analyst",
+    "name": "e2e_test_key",
+    "permissions": [
+      "api:use"
+    ],
+    "rate_limit": 100,
+    "created_at": 1789196492.222666,
+    "is_active": true,
+    "last_used": 0,
+    "call_count": 0
+  },
+  "3c1e5de06b03ac5a": {
+    "key_id": "3c1e5de06b03ac5a",
+    "key_hash": "ab862a1fbc5ece365b45d1e0517da9dfd8b97e12abb1152d09d7575c0eba7bea",
+    "key_prefix": "sk_n-ITMYb...",
+    "tenant_id": "e2e_test_corp",
+    "username": "e2e_analyst",
+    "name": "e2e_test_key",
+    "permissions": [
+      "api:use"
+    ],
+    "rate_limit": 100,
+    "created_at": 1789196693.1332939,
+    "is_active": true,
+    "last_used": 0,
+    "call_count": 0
+  },
+  "fcf8c95c06957b57": {
+    "key_id": "fcf8c95c06957b57",
+    "key_hash": "e6d2656e395b05d6fb6865799e4cf5bc4b4e941007b4e820695642e891b16bb8",
+    "key_prefix": "sk_yKBo1aO...",
+    "tenant_id": "api_test_corp",
+    "username": "testuser",
+    "name": "test-key",
+    "permissions": [
+      "api:use"
+    ],
+    "rate_limit": 100,
+    "created_at": 1789196735.3747761,
+    "is_active": true,
+    "last_used": 0,
+    "call_count": 0
+  }
+}

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>取证分析控制台 V2 - AI Hacking Agent</title>
+<style>
+  :root{
+    --bg:#0d1117; --card:#161b22; --border:#30363d; --fg:#c9d1d9;
+    --muted:#8b949e; --primary:#58a6ff; --green:#3fb950; --red:#f85149;
+    --yellow:#d29922; --purple:#bc8cff; --orange:#f0883e;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--fg);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.5}
+  .wrap{max-width:1400px;margin:0 auto;padding:16px}
+  h1{font-size:20px;color:#fff;margin-bottom:4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+  .tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px}
+  .tab{padding:10px 16px;cursor:pointer;color:var(--muted);border:1px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;user-select:none}
+  .tab.active{color:var(--primary);background:var(--card);border-color:var(--border)}
+  .tab:hover{color:var(--fg)}
+  .pane{display:none}.pane.active{display:block}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px}
+  .card .num{font-size:24px;font-weight:700;color:#fff}
+  .card .lbl{color:var(--muted);font-size:12px;margin-top:4px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:600;background:#1c2129;position:sticky;top:0}
+  tr:hover td{background:#1c2129}
+  .filter{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+  input,select,button,textarea{background:#0d1117;color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary)}
+  button{cursor:pointer;background:#21262d}
+  button.primary{background:var(--primary);color:#0d1117;border-color:var(--primary);font-weight:600}
+  button.danger{background:var(--red);color:#fff;border-color:var(--red)}
+  button.success{background:var(--green);color:#0d1117;border-color:var(--green)}
+  button:hover{filter:brightness(1.15)}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+  .b-success{background:rgba(63,185,80,.15);color:var(--green)}
+  .b-failure,.b-critical{background:rgba(248,81,73,.15);color:var(--red)}
+  .b-warning{background:rgba(210,153,34,.15);color:var(--yellow)}
+  .b-info{background:rgba(88,166,255,.15);color:var(--primary)}
+  .b-high{background:rgba(188,140,255,.15);color:var(--purple)}
+  .scroll{max-height:500px;overflow:auto;border:1px solid var(--border);border-radius:8px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:99}
+  .modal.show{display:flex}
+  .modal-box{background:var(--card);border:1px solid var(--border);border-radius:10px;max-width:900px;width:92%;max-height:85vh;overflow:auto;padding:20px}
+  .kv{display:grid;grid-template-columns:140px 1fr;gap:6px;font-size:13px;margin-bottom:12px}
+  .kv .k{color:var(--muted)}
+  pre{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:10px;overflow:auto;font-size:12px;white-space:pre-wrap;max-height:400px}
+  .timeline{position:relative;padding-left:24px}
+  .timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--border)}
+  .tl-item{position:relative;margin-bottom:12px;padding-left:16px}
+  .tl-item::before{content:'';position:absolute;left:-20px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--primary)}
+  .tl-item.critical::before{background:var(--red)}
+  .tl-item.high::before{background:var(--purple)}
+  .tl-time{color:var(--muted);font-size:11px}
+  .tl-event{font-size:13px;margin-top:2px}
+  .muted{color:var(--muted)}
+  .ok{color:var(--green)}.bad{color:var(--red)}
+  .step-indicator{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px}
+  .step{padding:4px 10px;border-radius:12px;font-size:11px;background:var(--card);border:1px solid var(--border);color:var(--muted)}
+  .step.done{color:var(--green);border-color:var(--green)}
+  .step.active{color:var(--primary);border-color:var(--primary)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔬 取证分析控制台 V2</h1>
+  <div class="sub">内存取证 · 磁盘取证 · 网络取证 · 日志取证 · 综合审计 · 证据管理 — 第11轮深化模块</div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-pane="evidence">证据管理</div>
+    <div class="tab" data-pane="memory">内存取证</div>
+    <div class="tab" data-pane="disk">磁盘取证</div>
+    <div class="tab" data-pane="network">网络取证</div>
+    <div class="tab" data-pane="log">日志取证</div>
+    <div class="tab" data-pane="audit">综合取证</div>
+  </div>
+
+  <!-- ========== 证据管理 ========== -->
+  <div class="pane active" id="pane-evidence">
+    <div class="filter">
+      <input type="file" id="evFile">
+      <input id="evDesc" placeholder="证据描述...">
+      <button class="primary" onclick="uploadEvidence()">上传证据</button>
+      <button onclick="loadEvidence()">刷新列表</button>
+    </div>
+    <div class="cards" id="evCards"></div>
+    <div class="scroll"><table><thead><tr>
+      <th>证据ID</th><th>文件名</th><th>大小</th><th>MD5</th><th>SHA-256</th><th>上传时间</th><th>操作</th>
+    </tr></thead><tbody id="evBody"></tbody></table></div>
+  </div>
+
+  <!-- ========== 内存取证 ========== -->
+  <div class="pane" id="pane-memory">
+    <div class="filter">
+      <input id="memPath" placeholder="内存镜像路径 (.raw/.vmem/.dmp)">
+      <input id="memExaminer" placeholder="取证人员" value="ForensicAnalyst">
+      <input id="memCase" placeholder="案件编号" value="CASE-2026-001">
+      <button class="primary" onclick="runMemoryAnalyze()">启动分析</button>
+      <button onclick="loadMemoryTask()">刷新结果</button>
+    </div>
+    <div class="cards" id="memCards"></div>
+    <div class="grid2">
+      <div class="card"><h3 style="margin-bottom:10px">进程分析</h3><div id="memProcess"></div></div>
+      <div class="card"><h3 style="margin-bottom:10px">注入检测</h3><div id="memInjection"></div></div>
+    </div>
+    <div class="card" style="margin-top:12px"><h3 style="margin-bottom:10px">时间线</h3><div id="memTimeline" class="timeline"></div></div>
+  </div>
+
+  <!-- ========== 磁盘取证 ========== -->
+  <div class="pane" id="pane-disk">
+    <div class="filter">
+      <input id="diskPath" placeholder="磁盘镜像路径 (.dd/.e01/.vhd/.vmdk)">
+      <input id="diskExaminer" placeholder="取证人员" value="ForensicAnalyst">
+      <input id="diskCase" placeholder="案件编号" value="CASE-2026-001">
+      <button class="primary" onclick="runDiskAnalyze()">启动分析</button>
+      <button onclick="loadDiskTask()">刷新结果</button>
+    </div>
+    <div class="cards" id="diskCards"></div>
+    <div class="grid2">
+      <div class="card"><h3 style="margin-bottom:10px">文件系统</h3><div id="diskFS"></div></div>
+      <div class="card"><h3 style="margin-bottom:10px">已删除文件</h3><div id="diskDeleted"></div></div>
+    </div>
+    <div class="card" style="margin-top:12px"><h3 style="margin-bottom:10px">时间线</h3><div id="diskTimeline" class="timeline"></div></div>
+  </div>
+
+  <!-- ========== 网络取证 ========== -->
+  <div class="pane" id="pane-network">
+    <div class="filter">
+      <input id="netPath" placeholder="流量文件路径 (.pcap/.pcapng)">
+      <input id="netExaminer" placeholder="取证人员" value="ForensicAnalyst">
+      <input id="netCase" placeholder="案件编号" value="CASE-2026-001">
+      <button class="primary" onclick="runNetworkAnalyze()">启动分析</button>
+      <button onclick="loadNetworkTask()">刷新结果</button>
+    </div>
+    <div class="cards" id="netCards"></div>
+    <div class="grid2">
+      <div class="card"><h3 style="margin-bottom:10px">协议分布</h3><div id="netProto"></div></div>
+      <div class="card"><h3 style="margin-bottom:10px">IOC匹配</h3><div id="netIOC"></div></div>
+    </div>
+    <div class="card" style="margin-top:12px"><h3 style="margin-bottom:10px">攻击时间线</h3><div id="netTimeline" class="timeline"></div></div>
+  </div>
+
+  <!-- ========== 日志取证 ========== -->
+  <div class="pane" id="pane-log">
+    <div class="filter">
+      <input id="logPath" placeholder="日志文件路径 (.evtx/.log/.json)">
+      <input id="logExaminer" placeholder="取证人员" value="ForensicAnalyst">
+      <input id="logCase" placeholder="案件编号" value="CASE-2026-001">
+      <button class="primary" onclick="runLogAnalyze()">启动分析</button>
+      <button onclick="loadLogTask()">刷新结果</button>
+    </div>
+    <div class="cards" id="logCards"></div>
+    <div class="grid2">
+      <div class="card"><h3 style="margin-bottom:10px">攻击检测</h3><div id="logAttack"></div></div>
+      <div class="card"><h3 style="margin-bottom:10px">证据链</h3><div id="logChain"></div></div>
+    </div>
+    <div class="card" style="margin-top:12px"><h3 style="margin-bottom:10px">时间线</h3><div id="logTimeline" class="timeline"></div></div>
+  </div>
+
+  <!-- ========== 综合取证 ========== -->
+  <div class="pane" id="pane-audit">
+    <div class="step-indicator" id="auditSteps"></div>
+    <div class="filter">
+      <input id="auditMem" placeholder="内存镜像路径">
+      <input id="auditDisk" placeholder="磁盘镜像路径">
+      <input id="auditPcap" placeholder="流量文件路径">
+      <input id="auditLog" placeholder="日志文件路径">
+      <input id="auditExaminer" placeholder="取证人员" value="ForensicAnalyst">
+      <input id="auditCase" placeholder="案件编号" value="CASE-2026-001">
+      <button class="primary" onclick="runAudit()">运行综合审计</button>
+      <button onclick="loadAuditTask()">刷新结果</button>
+      <button onclick="loadAuditHistory()">历史记录</button>
+    </div>
+    <div class="cards" id="auditCards"></div>
+    <div class="card" style="margin-bottom:12px"><h3 style="margin-bottom:10px">综合时间线</h3><div id="auditTimeline" class="timeline"></div></div>
+    <div class="card"><h3 style="margin-bottom:10px">综合取证报告</h3><pre id="auditReport"></pre></div>
+  </div>
+
+</div>
+
+<script>
+const API = '/api/v1/forensics-v2';
+let currentTaskId = {memory:'',disk:'',network:'',log:'',audit:''};
+
+// ========== Tab switching ==========
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('pane-'+t.dataset.pane).classList.add('active');
+  });
+});
+
+// ========== Helper ==========
+async function api(path, opts={}){
+  try{
+    const r = await fetch(API+path, opts);
+    return await r.json();
+  }catch(e){
+    return {success:false, error:e.message};
+  }
+}
+function badge(sev){
+  const map = {CRITICAL:'b-critical',HIGH:'b-high',MEDIUM:'b-warning',LOW:'b-info',INFO:'b-info'};
+  return `<span class="badge ${map[sev]||'b-info'}">${sev}</span>`;
+}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+// ========== Evidence ==========
+async function uploadEvidence(){
+  const f = document.getElementById('evFile').files[0];
+  if(!f){alert('请选择文件');return;}
+  const fd = new FormData();
+  fd.append('file', f);
+  fd.append('description', document.getElementById('evDesc').value);
+  const r = await api('/evidence/upload',{method:'POST',body:fd});
+  if(r.success){loadEvidence();} else {alert(r.error);}
+}
+async function loadEvidence(){
+  const r = await api('/evidence/list');
+  if(!r.success) return;
+  const items = r.data?.items||[];
+  document.getElementById('evCards').innerHTML = `
+    <div class="card"><div class="num">${r.data.total}</div><div class="lbl">证据总数</div></div>`;
+  document.getElementById('evBody').innerHTML = items.map(e=>`
+    <tr><td>${e.evidence_id}</td><td>${esc(e.file_name)}</td>
+    <td>${e.size}</td><td><code>${e.md5?.substring(0,16)}...</code></td>
+    <td><code>${e.sha256?.substring(0,16)}...</code></td>
+    <td>${e.uploaded_at}</td>
+    <td><button onclick="verifyEvidence('${e.evidence_id}')" class="primary">校验</button>
+        <button onclick="delEvidence('${e.evidence_id}')" class="danger">删除</button></td></tr>`).join('');
+}
+async function verifyEvidence(id){
+  const r = await api(`/evidence/${id}/verify`,{method:'POST'});
+  alert(r.success?'校验通过':'校验失败: '+r.error);
+}
+async function delEvidence(id){
+  if(!confirm('确认删除该证据?'))return;
+  await api(`/evidence/${id}`,{method:'DELETE'});
+  loadEvidence();
+}
+
+// ========== Memory ==========
+async function runMemoryAnalyze(){
+  const r = await api('/memory/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({image_path:document.getElementById('memPath').value,
+      examiner:document.getElementById('memExaminer').value,
+      case_id:document.getElementById('memCase').value})});
+  if(r.success){currentTaskId.memory=r.data.task_id;loadMemoryTask();}
+}
+async function loadMemoryTask(){
+  if(!currentTaskId.memory){return;}
+  const r = await api(`/memory/${currentTaskId.memory}/results`);
+  if(!r.success)return;
+  const d = r.data;
+  document.getElementById('memCards').innerHTML=`
+    <div class="card"><div class="num">${d.process_analysis?.summary?.total_processes||0}</div><div class="lbl">进程数</div></div>
+    <div class="card"><div class="num">${d.process_analysis?.summary?.suspicious_count||0}</div><div class="lbl">可疑进程</div></div>
+    <div class="card"><div class="num">${d.injection_detection?.dll_injection?.length||0}</div><div class="lbl">DLL注入</div></div>
+    <div class="card"><div class="num bad">${d.malware_detection?.summary?.critical||0}</div><div class="lbl">严重威胁</div></div>`;
+  document.getElementById('memProcess').innerHTML = (d.process_analysis?.process_list||[]).map(p=>
+    `<div style="padding:4px 0;border-bottom:1px solid var(--border)">
+      <span class="badge ${p.suspicious?'b-critical':'b-info'}">PID ${p.pid}</span>
+      ${esc(p.name)} ${p.suspicious?badge('HIGH'):''}</div>`).join('');
+  document.getElementById('memInjection').innerHTML = (d.injection_detection?.code_injection||[]).map(i=>
+    `<div style="padding:4px 0"><span class="badge b-critical">${i.severity}</span>
+     PID ${i.pid} (${esc(i.process)}) — ${esc(i.evidence)}</div>`).join('')||'<span class="muted">无</span>';
+  const tl = d.timeline||[];
+  document.getElementById('memTimeline').innerHTML = tl.map(e=>
+    `<div class="tl-item ${e.severity==='CRITICAL'?'critical':e.severity==='HIGH'?'high':''}">
+      <div class="tl-time">${e.timestamp}</div><div class="tl-event">${esc(e.event)}</div></div>`).join('');
+}
+
+// ========== Disk ==========
+async function runDiskAnalyze(){
+  const r = await api('/disk/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({image_path:document.getElementById('diskPath').value,
+      examiner:document.getElementById('diskExaminer').value,
+      case_id:document.getElementById('diskCase').value})});
+  if(r.success){currentTaskId.disk=r.data.task_id;loadDiskTask();}
+}
+async function loadDiskTask(){
+  if(!currentTaskId.disk)return;
+  const r = await api(`/disk/${currentTaskId.disk}/results`);
+  if(!r.success)return;
+  const d = r.data;
+  document.getElementById('diskCards').innerHTML=`
+    <div class="card"><div class="num">${d.file_system?.summary?.total_files||0}</div><div class="lbl">文件总数</div></div>
+    <div class="card"><div class="num bad">${d.file_system?.summary?.suspicious||0}</div><div class="lbl">可疑文件</div></div>
+    <div class="card"><div class="num">${d.deleted_files?.summary?.recoverable||0}</div><div class="lbl">可恢复</div></div>
+    <div class="card"><div class="num">${d.hidden_data?.alternate_data_streams?.length||0}</div><div class="lbl">ADS流</div></div>`;
+  document.getElementById('diskFS').innerHTML = (d.file_system?.files||[]).slice(0,10).map(f=>
+    `<div style="padding:3px 0;border-bottom:1px solid var(--border)">
+      <span class="badge ${f.suspicious?'b-critical':'b-info'}">${f.type}</span>
+      ${esc(f.path)||esc(f.name)}</div>`).join('');
+  document.getElementById('diskDeleted').innerHTML = (d.deleted_files?.deleted_files||[]).map(f=>
+    `<div style="padding:3px 0"><span class="badge ${f.recoverable?'b-success':'b-warning'}">${f.recoverable?'可恢复':'不可恢复'}</span>
+     ${esc(f.filename)}</div>`).join('')||'<span class="muted">无</span>';
+  const tl = d.timeline||[];
+  document.getElementById('diskTimeline').innerHTML = tl.map(e=>
+    `<div class="tl-item ${e.severity==='HIGH'?'high':''}">
+      <div class="tl-time">${e.timestamp}</div><div class="tl-event">${esc(e.event)}</div></div>`).join('');
+}
+
+// ========== Network ==========
+async function runNetworkAnalyze(){
+  const r = await api('/network/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({pcap_path:document.getElementById('netPath').value,
+      examiner:document.getElementById('netExaminer').value,
+      case_id:document.getElementById('netCase').value})});
+  if(r.success){currentTaskId.network=r.data.task_id;loadNetworkTask();}
+}
+async function loadNetworkTask(){
+  if(!currentTaskId.network)return;
+  const r = await api(`/network/${currentTaskId.network}/results`);
+  if(!r.success)return;
+  const d = r.data;
+  document.getElementById('netCards').innerHTML=`
+    <div class="card"><div class="num">${d.traffic_analysis?.packet_count||0}</div><div class="lbl">数据包</div></div>
+    <div class="card"><div class="num bad">${d.traffic_analysis?.summary?.suspicious_connections||0}</div><div class="lbl">可疑连接</div></div>
+    <div class="card"><div class="num">${d.ioc_matching?.matched_ips?.length||0}</div><div class="lbl">IOC匹配</div></div>
+    <div class="card"><div class="num">${d.attack_reconstruction?.kill_chain?.length||0}</div><div class="lbl">攻击阶段</div></div>`;
+  const pd = d.traffic_analysis?.protocol_distribution||{};
+  document.getElementById('netProto').innerHTML = Object.entries(pd).map(([k,v])=>
+    `<div style="margin:4px 0">${k}: ${(v*100).toFixed(1)}%</div>`).join('');
+  document.getElementById('netIOC').innerHTML = (d.ioc_matching?.matched_ips||[]).map(i=>
+    `<div style="padding:3px 0"><span class="badge b-critical">${i.severity}</span>
+     ${esc(i.ip)} — ${esc(i.family)}</div>`).join('')||'<span class="muted">无匹配</span>';
+  const tl = d.timeline||[];
+  document.getElementById('netTimeline').innerHTML = tl.map(e=>
+    `<div class="tl-item critical"><div class="tl-time">${e.time}</div>
+     <div class="tl-event">${esc(e.phase)}: ${esc(e.detail)}</div></div>`).join('');
+}
+
+// ========== Log ==========
+async function runLogAnalyze(){
+  const r = await api('/log/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({log_path:document.getElementById('logPath').value,
+      examiner:document.getElementById('logExaminer').value,
+      case_id:document.getElementById('logCase').value})});
+  if(r.success){currentTaskId.log=r.data.task_id;loadLogTask();}
+}
+async function loadLogTask(){
+  if(!currentTaskId.log)return;
+  const r = await api(`/log/${currentTaskId.log}/results`);
+  if(!r.success)return;
+  const d = r.data;
+  document.getElementById('logCards').innerHTML=`
+    <div class="card"><div class="num">${d.aggregation?.total_events||0}</div><div class="lbl">总事件</div></div>
+    <div class="card"><div class="num bad">${d.anomaly_detection?.frequency_anomalies?.length||0}</div><div class="lbl">频率异常</div></div>
+    <div class="card"><div class="num">${d.attack_detection?.brute_force?.attempts||0}</div><div class="lbl">暴力破解次数</div></div>
+    <div class="card"><div class="num">${d.evidence_chain?.chain?.length||0}</div><div class="lbl">证据链步骤</div></div>`;
+  const atk = d.attack_detection||{};
+  document.getElementById('logAttack').innerHTML = Object.entries(atk).filter(([k,v])=>v&&v.detected).map(([k,v])=>
+    `<div style="padding:3px 0"><span class="badge b-critical">${k}</span>
+     ${esc(typeof v==='string'?v:JSON.stringify(v).slice(0,80))}</div>`).join('')||'<span class="muted">未检测到攻击</span>';
+  document.getElementById('logChain').innerHTML = (d.evidence_chain?.chain||[]).map(c=>
+    `<div style="padding:3px 0"><span class="badge b-info">${c.step}</span>
+     ${esc(c.event)} <span class="muted">(${c.source})</span></div>`).join('')||'<span class="muted">无</span>';
+  const tl = d.timeline||[];
+  document.getElementById('logTimeline').innerHTML = tl.map(e=>
+    `<div class="tl-item ${e.severity==='CRITICAL'?'critical':'high'}">
+      <div class="tl-time">${e.timestamp}</div><div class="tl-event">${esc(e.event)}</div></div>`).join('');
+}
+
+// ========== Audit ==========
+async function runAudit(){
+  const r = await api('/audit/run',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      memory_image:document.getElementById('auditMem').value,
+      disk_image:document.getElementById('auditDisk').value,
+      pcap_file:document.getElementById('auditPcap').value,
+      log_files:[document.getElementById('auditLog').value].filter(Boolean),
+      examiner:document.getElementById('auditExaminer').value,
+      case_id:document.getElementById('auditCase').value})});
+  if(r.success){currentTaskId.audit=r.data.task_id;loadAuditTask();}
+}
+async function loadAuditTask(){
+  if(!currentTaskId.audit)return;
+  const r = await api(`/audit/${currentTaskId.audit}/results`);
+  if(!r.success)return;
+  const d = r.data;
+  const steps = d.steps||[];
+  document.getElementById('auditSteps').innerHTML = steps.map(s=>
+    `<div class="step ${s.status==='completed'?'done':''}">${s.step}</div>`).join('');
+  document.getElementById('auditCards').innerHTML=`
+    <div class="card"><div class="num">${steps.length}</div><div class="lbl">工作流步骤</div></div>
+    <div class="card"><div class="num">${d.evidence_store_size||0}</div><div class="lbl">证据数量</div></div>
+    <div class="card"><div class="num">${d.finished_at?'✓':'...'}</div><div class="lbl">完成状态</div></div>`;
+  const tlR = await api(`/audit/${currentTaskId.audit}/timeline`);
+  const tl = tlR.data||[];
+  document.getElementById('auditTimeline').innerHTML = tl.map(e=>
+    `<div class="tl-item ${e.severity==='CRITICAL'?'critical':'high'}">
+      <div class="tl-time">${e.timestamp}</div><div class="tl-event">${esc(e.event)}</div></div>`).join('');
+  const rR = await api(`/audit/${currentTaskId.audit}/report`);
+  document.getElementById('auditReport').textContent = JSON.stringify(rR.data||{},null,2);
+}
+async function loadAuditHistory(){
+  const r = await api('/audit/history');
+  if(!r.success)return;
+  alert('历史任务数: '+r.data.total);
+}
+
+// init
+loadEvidence();
+</script>
+</body>
+</html>

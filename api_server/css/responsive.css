@@ -1,0 +1,249 @@
+/* =========================================================
+ * responsive.css — Global responsive stylesheet
+ * Breakpoints: phone (<768px) / tablet (768-1024px) / desktop (>1024px)
+ * Dark-theme security-tool style, zero external deps.
+ * ========================================================= */
+
+/* ---------- Base reset & helpers ---------- */
+html, body {
+  overflow-x: hidden;
+}
+body {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+img, video, canvas, svg { max-width: 100%; height: auto; }
+
+/* ECharts / chart containers always fluid */
+.echarts-container, [id^="echart"], [class*="echart"],
+.chart-box, .chart-container, div[id*="-chart"] {
+  width: 100% !important;
+  min-height: 280px;
+}
+
+/* Force desktop-only pages to become fluid on mobile */
+body.force-fluid { min-width: 0 !important; }
+
+/* Main content wrapper: gives room for fixed mobile nav */
+.main-content {
+  transition: margin-left .25s ease;
+  min-width: 0;
+}
+
+/* ---------- Sidebar (collapsible on mobile) ---------- */
+#sidebar, .sidebar, #nav-sidebar {
+  transition: transform .25s ease, margin-left .25s ease;
+}
+
+/* ---------- Hamburger button (injected by mobile-nav.js) ---------- */
+.mn-hamburger {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 1200;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #c9d1d9;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+.mn-hamburger:hover { border-color: #58a6ff; color: #58a6ff; }
+
+/* ---------- Overlay mask ---------- */
+.mn-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 1100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+.mn-overlay.visible { opacity: 1; pointer-events: auto; }
+
+/* ---------- Bottom nav bar (mobile only) ---------- */
+.mn-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: #161b22;
+  border-top: 1px solid #30363d;
+  display: none;
+  z-index: 1150;
+  box-shadow: 0 -2px 10px rgba(0,0,0,.4);
+}
+.mn-bottom-nav a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #8b949e;
+  text-decoration: none;
+  font-size: 11px;
+  gap: 2px;
+  min-height: 44px;
+}
+.mn-bottom-nav a .icon { font-size: 18px; line-height: 1; }
+.mn-bottom-nav a.active, .mn-bottom-nav a:hover { color: #58a6ff; }
+
+/* When bottom nav is visible, pad body so content isn't hidden */
+body.has-bottom-nav { padding-bottom: 56px; }
+
+/* ---------- Table -> card layout on mobile ---------- */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ---------- Modal / dialog: bottom-sheet on mobile ---------- */
+.modal, .dialog, .popup, [class*="modal"], [class*="dialog"] {
+  max-width: 95vw;
+}
+
+/* =========================================================
+ *  TABLET  (768px - 1024px)
+ * ========================================================= */
+@media (min-width: 768px) and (max-width: 1024px) {
+  body { font-size: 15px; }
+  .main-content { padding: 0 12px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important; }
+  .row { flex-direction: row !important; gap: 10px; }
+  .card { padding: 12px !important; }
+}
+
+/* =========================================================
+ *  PHONE  (<768px)
+ * ========================================================= */
+@media (max-width: 767.98px) {
+  html, body { font-size: 16px; }
+  body {
+    min-width: 0 !important;
+    padding-top: 60px; /* room for hamburger */
+  }
+
+  .mn-hamburger { display: flex; }
+  .mn-bottom-nav { display: flex; }
+  body.has-bottom-nav { padding-bottom: 56px; }
+
+  /* Sidebar becomes off-canvas */
+  #sidebar, .sidebar, #nav-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 260px !important;
+    max-width: 85vw;
+    height: 100vh !important;
+    z-index: 1200;
+    transform: translateX(-100%);
+    margin-left: 0 !important;
+    overflow-y: auto;
+    box-shadow: 2px 0 20px rgba(0,0,0,.5);
+  }
+  #sidebar.mn-open, .sidebar.mn-open, #nav-sidebar.mn-open {
+    transform: translateX(0);
+  }
+
+  /* Push main content to full width */
+  .main-content, main, .main { margin-left: 0 !important; width: 100% !important; }
+
+  /* Buttons: min 44px touch target */
+  button, .btn, a.btn, input[type="button"], input[type="submit"] {
+    min-height: 44px !important;
+    padding: 10px 16px !important;
+    font-size: 15px !important;
+  }
+
+  /* Forms full width */
+  input, select, textarea {
+    font-size: 16px !important; /* prevents iOS zoom */
+    padding: 10px 12px !important;
+  }
+
+  /* Grids collapse */
+  .grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+  .row { flex-direction: column !important; gap: 10px !important; }
+
+  /* Table -> card via .table-responsive */
+  .table-responsive table {
+    border: 0;
+  }
+  .table-responsive thead { display: none; }
+  .table-responsive tr {
+    display: block;
+    margin-bottom: 12px;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    background: #161b22;
+    padding: 8px;
+  }
+  .table-responsive td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px dashed #21262d;
+    padding: 8px 4px;
+    text-align: right;
+  }
+  .table-responsive td:last-child { border-bottom: 0; }
+  .table-responsive td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #8b949e;
+    text-align: left;
+    margin-right: 12px;
+  }
+
+  /* Modals become bottom sheet / near-fullscreen */
+  .modal, .dialog, .popup {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    max-height: 90vh !important;
+    border-radius: 16px 16px 0 0 !important;
+    margin: 0 !important;
+    overflow-y: auto;
+  }
+
+  /* Cards tighten */
+  .card { padding: 12px !important; margin-bottom: 12px !important; }
+
+  /* Header / tab bar scrollable */
+  header, .tabs { padding-left: 56px !important; padding-right: 12px !important; }
+  .tabs { overflow-x: auto; white-space: nowrap; }
+  .tab-btn { flex-shrink: 0; }
+
+  /* Hide heavy side columns */
+  .col-sidebar, .side-panel { display: none !important; }
+}
+
+/* =========================================================
+ *  DESKTOP  (>1024px) — restore normal layout
+ * ========================================================= */
+@media (min-width: 1025px) {
+  .mn-hamburger { display: none; }
+  .mn-bottom-nav { display: none; }
+  body.has-bottom-nav { padding-bottom: 0; }
+  #sidebar, .sidebar, #nav-sidebar {
+    transform: translateX(0) !important;
+    position: static !important;
+    height: auto !important;
+  }
+}

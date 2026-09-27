@@ -1,0 +1,78 @@
+[
+  {
+    "node_id": "local_master",
+    "name": "本地主节点",
+    "node_type": "master",
+    "status": "online",
+    "ip_address": "127.0.0.1",
+    "port": 8000,
+    "capabilities": [
+      "port_scan",
+      "directory_scan",
+      "vulnerability_scan",
+      "exploit",
+      "report"
+    ],
+    "max_concurrent_tasks": 10,
+    "current_tasks": 0,
+    "cpu_usage": 0.0,
+    "memory_usage": 0.0,
+    "total_scans": 0,
+    "success_count": 0,
+    "fail_count": 0,
+    "avg_response_time": 0.0,
+    "last_heartbeat": 0.0,
+    "registered_at": 1788159076.7222655,
+    "tags": [
+      "local",
+      "master"
+    ],
+    "metadata": {}
+  },
+  {
+    "node_id": "536a9127-798f-42aa-aabf-7b6d29a65e52",
+    "name": "测试节点_5ecf313a",
+    "node_type": "worker",
+    "status": "online",
+    "ip_address": "192.168.1.100",
+    "port": 0,
+    "capabilities": [
+      "port_scan"
+    ],
+    "max_concurrent_tasks": 4,
+    "current_tasks": 0,
+    "cpu_usage": 0.0,
+    "memory_usage": 0.0,
+    "total_scans": 0,
+    "success_count": 0,
+    "fail_count": 0,
+    "avg_response_time": 0.0,
+    "last_heartbeat": 1788168299.4004166,
+    "registered_at": 1788168299.4004204,
+    "tags": [],
+    "metadata": {}
+  },
+  {
+    "node_id": "4b469296-0442-4aaf-b92e-83ad609a6163",
+    "name": "测试节点_8cd4c680",
+    "node_type": "worker",
+    "status": "online",
+    "ip_address": "192.168.1.100",
+    "port": 0,
+    "capabilities": [
+      "port_scan"
+    ],
+    "max_concurrent_tasks": 4,
+    "current_tasks": 0,
+    "cpu_usage": 0.0,
+    "memory_usage": 0.0,
+    "total_scans": 0,
+    "success_count": 0,
+    "fail_count": 0,
+    "avg_response_time": 0.0,
+    "last_heartbeat": 1788168315.9254005,
+    "registered_at": 1788168315.9254036,
+    "tags": [],
+    "metadata": {}
+  }
+]

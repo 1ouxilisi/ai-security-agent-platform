@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>真实工具集成深度增强控制台 - AI Hacking Agent</title>
+<style>
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --border-color: #30363d;
+  --text-primary: #c9d1d9;
+  --text-secondary: #8b949e;
+  --accent: #58a6ff;
+  --accent-hover: #79b8ff;
+  --green: #3fb950;
+  --yellow: #d29922;
+  --red: #f85149;
+  --orange: #db6d28;
+  --purple: #bc8cff;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.header h1 {
+  font-size: 20px;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header .badge {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+.tabs {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  overflow-x: auto;
+  padding: 0 12px;
+  flex-wrap: nowrap;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 14px 18px;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.tab-btn:hover { color: var(--text-primary); }
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.content { padding: 24px; max-width: 1400px; margin: 0 auto; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card h3 {
+  color: var(--accent);
+  margin-bottom: 12px;
+  font-size: 16px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+}
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.grid-4 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.stat-box {
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  padding: 16px;
+  text-align: center;
+}
+.stat-box .num { font-size: 28px; font-weight: bold; color: var(--accent); }
+.stat-box .label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.stat-box.green .num { color: var(--green); }
+.stat-box.yellow .num { color: var(--yellow); }
+.stat-box.red .num { color: var(--red); }
+.stat-box.purple .num { color: var(--purple); }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th, td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+th { color: var(--text-secondary); font-weight: 600; }
+tr:hover td { background: var(--bg-tertiary); }
+.btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: opacity 0.2s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
+.btn-danger { background: var(--red); }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+input, select, textarea {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+label { display: block; margin-bottom: 4px; font-size: 13px; color: var(--text-secondary); }
+.form-group { margin-bottom: 12px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.badge-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-green { background: rgba(63,185,80,0.15); color: var(--green); }
+.badge-yellow { background: rgba(210,153,34,0.15); color: var(--yellow); }
+.badge-red { background: rgba(248,81,73,0.15); color: var(--red); }
+.badge-blue { background: rgba(88,166,255,0.15); color: var(--accent); }
+.badge-gray { background: rgba(139,148,158,0.15); color: var(--text-secondary); }
+pre {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+  overflow-x: auto;
+  font-size: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.status-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+.dot-green { background: var(--green); }
+.dot-red { background: var(--red); }
+.dot-yellow { background: var(--yellow); }
+.toast {
+  position: fixed;
+  top: 20px; right: 20px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px 20px;
+  z-index: 9999;
+  display: none;
+  max-width: 400px;
+}
+.toast.show { display: block; }
+.loading { text-align: center; padding: 20px; color: var(--text-secondary); }
+.progress-bar {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  height: 8px;
+  overflow: hidden;
+}
+.progress-fill {
+  background: var(--accent);
+  height: 100%;
+  transition: width 0.3s;
+}
+@media (max-width: 768px) {
+  .content { padding: 12px; }
+  .form-row { grid-template-columns: 1fr; }
+  .header h1 { font-size: 16px; }
+  .tab-btn { padding: 10px 12px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🛡️ 真实工具集成深度增强控制台 <span class="badge">第28轮 R28.1</span></h1>
+  <div style="font-size:13px;color:var(--text-secondary)">
+    <span id="system-status"><span class="status-dot dot-green"></span>系统正常</span>
+  </div>
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab-btn active" data-tab="overview">📊 工具总览</button>
+  <button class="tab-btn" data-tab="nmap">🔍 Nmap深度</button>
+  <button class="tab-btn" data-tab="sqlmap">💉 SQLMap深度</button>
+  <button class="tab-btn" data-tab="msf">🎯 Metasploit深度</button>
+  <button class="tab-btn" data-tab="other">🧰 其他工具</button>
+  <button class="tab-btn" data-tab="workflow">⚙️ 工具编排</button>
+  <button class="tab-btn" data-tab="report">📋 漏洞报告</button>
+  <button class="tab-btn" data-tab="settings">🔧 系统设置</button>
+</div>
+
+<div class="content">
+
+<!-- ==================== 工具总览 ==================== -->
+<div class="tab-panel active" id="panel-overview">
+  <div class="grid grid-4" id="overview-stats">
+    <div class="stat-box"><div class="num" id="stat-scans">-</div><div class="label">扫描总数</div></div>
+    <div class="stat-box red"><div class="num" id="stat-vulns">-</div><div class="label">发现漏洞</div></div>
+    <div class="stat-box green"><div class="num" id="stat-assets">-</div><div class="label">监控资产</div></div>
+    <div class="stat-box purple"><div class="num" id="stat-workflows">-</div><div class="label">工作流</div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>工具版本与状态</h3>
+    <div id="tool-status-table"></div>
+  </div>
+  <div class="card">
+    <h3>最近告警</h3>
+    <div id="recent-alerts">暂无告警</div>
+  </div>
+</div>
+
+<!-- ==================== Nmap ==================== -->
+<div class="tab-panel" id="panel-nmap">
+  <div class="card">
+    <h3>Nmap 扫描配置</h3>
+    <div class="form-group">
+      <label>目标（多个用逗号分隔）</label>
+      <input type="text" id="nmap-targets" value="127.0.0.1" placeholder="192.168.1.1, 10.0.0.0/24">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>扫描类型</label>
+        <select id="nmap-scan-type">
+          <option value="syn">SYN扫描 (-sS)</option>
+          <option value="connect">Connect扫描 (-sT)</option>
+          <option value="udp">UDP扫描 (-sU)</option>
+          <option value="ack">ACK扫描 (-sA)</option>
+          <option value="null">Null扫描 (-sN)</option>
+          <option value="fin">FIN扫描 (-sF)</option>
+          <option value="xmas">Xmas扫描 (-sX)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>端口范围</label>
+        <input type="text" id="nmap-ports" value="1-1000" placeholder="1-1000 或 80,443,8080">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>扫描速度 (T0-T5)</label>
+        <select id="nmap-timing">
+          <option value="0">T0 偏执</option>
+          <option value="1">T1 猥琐</option>
+          <option value="2">T2 文雅</option>
+          <option value="3" selected>T3 正常</option>
+          <option value="4">T4 激进</option>
+          <option value="5">T5 疯狂</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>NSE脚本</label>
+        <input type="text" id="nmap-scripts" value="" placeholder="default,vuln 或 http-enum">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label><input type="checkbox" id="nmap-version" checked style="width:auto"> 服务版本识别 (-sV)</label>
+      </div>
+      <div class="form-group">
+        <label><input type="checkbox" id="nmap-os" style="width:auto"> 操作系统检测 (-O)</label>
+      </div>
+    </div>
+    <button class="btn" onclick="runNmapScan()">🚀 启动扫描</button>
+    <button class="btn btn-secondary" onclick="buildNmapCommand()">📝 预览命令</button>
+  </div>
+  <div class="card">
+    <h3>扫描结果</h3>
+    <pre id="nmap-result">等待扫描...</pre>
+  </div>
+  <div class="card">
+    <h3>NSE脚本库</h3>
+    <div id="nmap-scripts-list">加载中...</div>
+  </div>
+</div>
+
+<!-- ==================== SQLMap ==================== -->
+<div class="tab-panel" id="panel-sqlmap">
+  <div class="card">
+    <h3>SQLMap 注入检测</h3>
+    <div class="form-group">
+      <label>目标URL</label>
+      <input type="text" id="sqlmap-url" value="http://127.0.0.1/page.php?id=1" placeholder="http://target/page.php?id=1">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>POST数据（可选）</label>
+        <input type="text" id="sqlmap-data" value="" placeholder="user=admin&pass=123">
+      </div>
+      <div class="form-group">
+        <label>指定参数 (-p)</label>
+        <input type="text" id="sqlmap-param" value="id" placeholder="id">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>数据库类型</label>
+        <select id="sqlmap-dbms">
+          <option value="">自动检测</option>
+          <option value="MySQL">MySQL</option>
+          <option value="PostgreSQL">PostgreSQL</option>
+          <option value="Microsoft SQL Server">MSSQL</option>
+          <option value="Oracle">Oracle</option>
+          <option value="SQLite">SQLite</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>注入技术 (BEUSTQ)</label>
+        <input type="text" id="sqlmap-technique" value="BEUSTQ">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>级别 (1-5)</label>
+        <select id="sqlmap-level">
+          <option value="1" selected>1 (默认)</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5 (极限)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>风险 (1-3)</label>
+        <select id="sqlmap-risk">
+          <option value="1" selected>1 (默认)</option>
+          <option value="2">2</option>
+          <option value="3">3 (危险)</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="runSQLMapScan()">💉 开始注入检测</button>
+    <button class="btn btn-secondary" onclick="buildSQLMapCommand()">📝 预览命令</button>
+  </div>
+  <div class="card">
+    <h3>检测结果</h3>
+    <pre id="sqlmap-result">等待检测...</pre>
+  </div>
+</div>
+
+<!-- ==================== Metasploit ==================== -->
+<div class="tab-panel" id="panel-msf">
+  <div class="card">
+    <h3>Metasploit 模块利用</h3>
+    <div class="form-group">
+      <label>Exploit模块路径</label>
+      <select id="msf-module">
+        <option value="exploit/unix/ftp/vsftpd_234_backdoor">VSFTPD 2.3.4 后门</option>
+        <option value="exploit/windows/smb/ms17_010_eternalblue">MS17-010 EternalBlue</option>
+        <option value="exploit/multi/http/apache_normalize_path_rce">Apache路径绕过RCE</option>
+        <option value="exploit/linux/http/apache_mod_cgi_bash_env">Shellshock Bash注入</option>
+        <option value="exploit/windows/dcerpc/ms03_026_dcom">MS03-026 DCOM溢出</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>目标地址 (RHOSTS)</label>
+        <input type="text" id="msf-rhosts" value="127.0.0.1">
+      </div>
+      <div class="form-group">
+        <label>目标端口 (RPORT)</label>
+        <input type="number" id="msf-rport" value="21">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Payload</label>
+        <select id="msf-payload">
+          <option value="meterpreter/reverse_tcp">Meterpreter/reverse_tcp</option>
+          <option value="meterpreter/reverse_https">Meterpreter/reverse_https</option>
+          <option value="reverse_tcp">Shell/reverse_tcp</option>
+          <option value="bind_tcp">Shell/bind_tcp</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>本地端口 (LPORT)</label>
+        <input type="number" id="msf-lport" value="4444">
+      </div>
+    </div>
+    <button class="btn btn-danger" onclick="runMsfExploit()">🎯 执行Exploit</button>
+    <button class="btn btn-secondary" onclick="searchMsfModules()">🔍 搜索模块</button>
+  </div>
+  <div class="card">
+    <h3>活动会话</h3>
+    <div id="msf-sessions">暂无活动会话</div>
+  </div>
+  <div class="card">
+    <h3>执行结果</h3>
+    <pre id="msf-result">等待执行...</pre>
+  </div>
+</div>
+
+<!-- ==================== 其他工具 ==================== -->
+<div class="tab-panel" id="panel-other">
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>Nikto Web扫描</h3>
+      <div class="form-group">
+        <label>目标</label>
+        <input type="text" id="nikto-target" value="127.0.0.1">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>端口</label>
+          <input type="number" id="nikto-port" value="80">
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="nikto-ssl" style="width:auto"> SSL</label>
+        </div>
+      </div>
+      <button class="btn btn-sm" onclick="runNikto()">启动Nikto</button>
+    </div>
+    <div class="card">
+      <h3>Hydra 密码爆破</h3>
+      <div class="form-group">
+        <label>目标</label>
+        <input type="text" id="hydra-target" value="127.0.0.1">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>服务</label>
+          <select id="hydra-service">
+            <option value="ssh">SSH</option>
+            <option value="ftp">FTP</option>
+            <option value="mysql">MySQL</option>
+            <option value="rdp">RDP</option>
+            <option value="http-post-form">HTTP表单</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>线程数</label>
+          <input type="number" id="hydra-threads" value="4">
+        </div>
+      </div>
+      <button class="btn btn-sm" onclick="runHydra()">启动Hydra</button>
+    </div>
+    <div class="card">
+      <h3>John 哈希破解</h3>
+      <div class="form-group">
+        <label>哈希文件</label>
+        <input type="text" id="john-hashfile" value="hashes.txt">
+      </div>
+      <div class="form-group">
+        <label>哈希格式</label>
+        <select id="john-format">
+          <option value="raw-md5">MD5</option>
+          <option value="raw-sha1">SHA1</option>
+          <option value="raw-sha256">SHA256</option>
+          <option value="nt">NTLM</option>
+          <option value="bcrypt">BCrypt</option>
+        </select>
+      </div>
+      <button class="btn btn-sm" onclick="runJohn()">启动John</button>
+    </div>
+    <div class="card">
+      <h3>nuclei 模板扫描</h3>
+      <div class="form-group">
+        <label>目标URL</label>
+        <input type="text" id="nuclei-target" value="http://127.0.0.1">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>严重级别</label>
+          <select id="nuclei-severity">
+            <option value="">全部</option>
+            <option value="critical">严重</option>
+            <option value="high">高危</option>
+            <option value="medium">中危</option>
+            <option value="low">低危</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>速率限制</label>
+          <input type="number" id="nuclei-rate" value="150">
+        </div>
+      </div>
+      <button class="btn btn-sm" onclick="runNuclei()">启动nuclei</button>
+      <button class="btn btn-secondary btn-sm" onclick="updateNucleiTemplates()">更新模板</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>扫描结果</h3>
+    <pre id="other-result">选择工具并执行...</pre>
+  </div>
+</div>
+
+<!-- ==================== 工具编排 ==================== -->
+<div class="tab-panel" id="panel-workflow">
+  <div class="card">
+    <h3>创建工作流</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>工作流名称</label>
+        <input type="text" id="wf-name" value="授权环境扫描任务">
+      </div>
+      <div class="form-group">
+        <label>目标</label>
+        <input type="text" id="wf-target" value="127.0.0.1">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>工作流模板</label>
+      <select id="wf-template">
+        <option value="recon_workflow">侦察工作流</option>
+        <option value="scanning_workflow">扫描工作流</option>
+        <option value="pentest_workflow">渗透工作流</option>
+        <option value="vuln_verify_workflow">漏洞验证工作流</option>
+        <option value="report_workflow">报告生成工作流</option>
+      </select>
+    </div>
+    <button class="btn" onclick="createWorkflow()">创建工作流</button>
+    <button class="btn btn-secondary" onclick="loadWorkflowTemplates()">查看模板</button>
+  </div>
+  <div class="card">
+    <h3>工作流实例</h3>
+    <div id="wf-instances">暂无工作流实例</div>
+  </div>
+  <div class="card">
+    <h3>监控仪表盘</h3>
+    <div id="wf-monitor">加载中...</div>
+  </div>
+</div>
+
+<!-- ==================== 漏洞报告 ==================== -->
+<div class="tab-panel" id="panel-report">
+  <div class="card">
+    <h3>漏洞清单</h3>
+    <div id="vuln-list">暂无漏洞数据</div>
+  </div>
+  <div class="card">
+    <h3>资产清单</h3>
+    <div id="asset-list">暂无资产数据</div>
+  </div>
+  <div class="card">
+    <h3>任务队列</h3>
+    <div id="task-queue">暂无任务</div>
+  </div>
+</div>
+
+<!-- ==================== 系统设置 ==================== -->
+<div class="tab-panel" id="panel-settings">
+  <div class="card">
+    <h3>工具配置</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nmap路径</label>
+        <input type="text" id="cfg-nmap-path" value="nmap">
+      </div>
+      <div class="form-group">
+        <label>SQLMap路径</label>
+        <input type="text" id="cfg-sqlmap-path" value="sqlmap">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>msfrpcd主机</label>
+        <input type="text" id="cfg-msf-host" value="127.0.0.1">
+      </div>
+      <div class="form-group">
+        <label>msfrpcd端口</label>
+        <input type="number" id="cfg-msf-port" value="55553">
+      </div>
+    </div>
+    <button class="btn" onclick="saveConfig()">保存配置</button>
+  </div>
+  <div class="card">
+    <h3>版本检测</h3>
+    <div id="version-info">
+      <button class="btn btn-secondary" onclick="detectAllVersions()">检测所有工具版本</button>
+      <pre id="version-result" style="margin-top:12px">点击按钮检测...</pre>
+    </div>
+  </div>
+  <div class="card">
+    <h3>关于</h3>
+    <p style="color:var(--text-secondary);font-size:13px">
+      真实工具集成深度增强模块 v28.1.0<br>
+      包含：Nmap深度集成 / SQLMap深度集成 / Metasploit深度集成 / Nikto/Hydra/John/nuclei / 工具编排与工作流 / 控制台数据聚合层<br><br>
+      <strong>⚠️ 免责声明：</strong>本系统仅用于经过授权的网络安全评估与渗透测试环境。未经授权的扫描和攻击行为是违法的。
+    </p>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/v1/real-tools-deep';
+
+// Tab切换
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    onTabSwitch(btn.dataset.tab);
+  });
+});
+
+function onTabSwitch(tab) {
+  if (tab === 'overview') loadOverview();
+  if (tab === 'nmap') loadNmapScripts();
+  if (tab === 'workflow') loadWorkflowInstances();
+  if (tab === 'report') loadReportData();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function api(path, method='GET', body=null) {
+  try {
+    const opts = { method, headers: {'Content-Type': 'application/json'} };
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(API + path, opts);
+    const data = await r.json();
+    return data;
+  } catch(e) {
+    return { success: false, error: e.message };
+  }
+}
+
+// ===== 总览 =====
+async function loadOverview() {
+  const d = await api('/dashboard/overview');
+  if (!d.success) return;
+  const s = d.data.statistics;
+  document.getElementById('stat-scans').textContent = s.total_scans;
+  document.getElementById('stat-vulns').textContent = s.total_vulns;
+  document.getElementById('stat-assets').textContent = s.total_assets;
+  document.getElementById('stat-workflows').textContent = s.active_workflows + s.completed_workflows;
+  // 工具状态表
+  const tools = d.data.tools;
+  let html = '<table><tr><th>工具</th><th>版本</th><th>状态</th></tr>';
+  for (const [name, info] of Object.entries(tools)) {
+    const avail = info.available !== false;
+    html += `<tr><td>${name}</td><td>${info.version||'-'}</td>` +
+      `<td>${avail?'<span class="badge-tag badge-green">可用</span>':'<span class="badge-tag badge-gray">模拟</span>'}</td></tr>`;
+  }
+  html += '</table>';
+  document.getElementById('tool-status-table').innerHTML = html;
+}
+
+// ===== Nmap =====
+async function runNmapScan() {
+  const body = {
+    targets: document.getElementById('nmap-targets').value.split(',').map(s=>s.trim()).filter(Boolean),
+    scan_type: document.getElementById('nmap-scan-type').value,
+    ports: document.getElementById('nmap-ports').value,
+    timing: parseInt(document.getElementById('nmap-timing').value),
+    version_detection: document.getElementById('nmap-version').checked,
+    os_detection: document.getElementById('nmap-os').checked,
+    scripts: document.getElementById('nmap-scripts').value,
+  };
+  document.getElementById('nmap-result').textContent = '扫描中...';
+  const d = await api('/nmap/scan', 'POST', body);
+  document.getElementById('nmap-result').textContent = JSON.stringify(d.data || d, null, 2);
+}
+
+async function buildNmapCommand() {
+  const body = {
+    target: document.getElementById('nmap-targets').value.split(',')[0].trim(),
+    scan_type: document.getElementById('nmap-scan-type').value,
+    ports: document.getElementById('nmap-ports').value,
+    timing: parseInt(document.getElementById('nmap-timing').value),
+    version_detection: document.getElementById('nmap-version').checked,
+    os_detection: document.getElementById('nmap-os').checked,
+    script: document.getElementById('nmap-scripts').value,
+  };
+  const d = await api('/nmap/build-command', 'POST', body);
+  showToast('命令: ' + (d.data?.command || d.error || ''));
+}
+
+async function loadNmapScripts() {
+  const d = await api('/nmap/scripts/list');
+  if (!d.success) return;
+  let html = '<table><tr><th>脚本名</th><th>描述</th><th>分类</th></tr>';
+  d.data.scripts.forEach(s => {
+    html += `<tr><td><code>${s.name}</code></td><td>${s.description}</td><td>${(s.categories||[]).join(', ')}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('nmap-scripts-list').innerHTML = html;
+}
+
+// ===== SQLMap =====
+async function runSQLMapScan() {
+  const body = {
+    target_url: document.getElementById('sqlmap-url').value,
+    post_data: document.getElementById('sqlmap-data').value,
+    param: document.getElementById('sqlmap-param').value,
+    dbms: document.getElementById('sqlmap-dbms').value,
+    technique: document.getElementById('sqlmap-technique').value,
+    level: parseInt(document.getElementById('sqlmap-level').value),
+    risk: parseInt(document.getElementById('sqlmap-risk').value),
+  };
+  document.getElementById('sqlmap-result').textContent = '检测中...';
+  const d = await api('/sqlmap/scan', 'POST', body);
+  document.getElementById('sqlmap-result').textContent = JSON.stringify(d.data || d, null, 2);
+}
+
+async function buildSQLMapCommand() {
+  const body = {
+    target_url: document.getElementById('sqlmap-url').value,
+    technique: document.getElementById('sqlmap-technique').value,
+    level: parseInt(document.getElementById('sqlmap-level').value),
+    risk: parseInt(document.getElementById('sqlmap-risk').value),
+  };
+  const d = await api('/sqlmap/build-command', 'POST', body);
+  showToast('命令: ' + (d.data?.command || d.error || ''));
+}
+
+// ===== Metasploit =====
+async function runMsfExploit() {
+  const body = {
+    module_path: document.getElementById('msf-module').value,
+    rhosts: document.getElementById('msf-rhosts').value,
+    rport: parseInt(document.getElementById('msf-rport').value),
+    payload: document.getElementById('msf-payload').value,
+    lport: parseInt(document.getElementById('msf-lport').value),
+    lhost: '0.0.0.0',
+  };
+  document.getElementById('msf-result').textContent = '执行中...';
+  const d = await api('/msf/exploit', 'POST', body);
+  document.getElementById('msf-result').textContent = JSON.stringify(d.data || d, null, 2);
+  loadMsfSessions();
+}
+
+async function loadMsfSessions() {
+  const d = await api('/msf/sessions');
+  if (!d.success) return;
+  if (d.data.sessions.length === 0) {
+    document.getElementById('msf-sessions').innerHTML = '暂无活动会话';
+    return;
+  }
+  let html = '<table><tr><th>ID</th><th>模块</th><th>目标</th><th>状态</th><th>类型</th></tr>';
+  d.data.sessions.forEach(s => {
+    html += `<tr><td>${s.session_id}</td><td>${s.module}</td><td>${s.target}</td>` +
+      `<td><span class="badge-tag badge-green">${s.status}</span></td><td>${s.type}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('msf-sessions').innerHTML = html;
+}
+
+async function searchMsfModules() {
+  const d = await api('/msf/modules/search?category=exploits');
+  if (!d.success) return;
+  let html = '<table><tr><th>路径</th><th>名称</th><th>平台</th><th>等级</th></tr>';
+  d.data.results.forEach(m => {
+    html += `<tr><td><code>${m.path}</code></td><td>${m.name||''}</td><td>${m.platform||''}</td><td>${m.rank||''}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('msf-result').textContent = '';
+  document.getElementById('msf-result').innerHTML = html;
+}
+
+// ===== 其他工具 =====
+async function runNikto() {
+  const body = {
+    target: document.getElementById('nikto-target').value,
+    port: parseInt(document.getElementById('nikto-port').value),
+    ssl: document.getElementById('nikto-ssl').checked,
+  };
+  document.getElementById('other-result').textContent = 'Nikto扫描中...';
+  const d = await api('/other/nikto/scan', 'POST', body);
+  document.getElementById('other-result').textContent = JSON.stringify(d.data?.result || d, null, 2);
+}
+
+async function runHydra() {
+  const body = {
+    target: document.getElementById('hydra-target').value,
+    service: document.getElementById('hydra-service').value,
+    threads: parseInt(document.getElementById('hydra-threads').value),
+  };
+  document.getElementById('other-result').textContent = 'Hydra爆破中...';
+  const d = await api('/other/hydra/crack', 'POST', body);
+  document.getElementById('other-result').textContent = JSON.stringify(d.data?.result || d, null, 2);
+}
+
+async function runJohn() {
+  const body = {
+    hash_file: document.getElementById('john-hashfile').value,
+    hash_format: document.getElementById('john-format').value,
+  };
+  document.getElementById('other-result').textContent = 'John破解中...';
+  const d = await api('/other/john/crack', 'POST', body);
+  document.getElementById('other-result').textContent = JSON.stringify(d.data?.result || d, null, 2);
+}
+
+async function runNuclei() {
+  const body = {
+    target: document.getElementById('nuclei-target').value,
+    severity: document.getElementById('nuclei-severity').value,
+    rate_limit: parseInt(document.getElementById('nuclei-rate').value),
+  };
+  document.getElementById('other-result').textContent = 'nuclei扫描中...';
+  const d = await api('/other/nuclei/scan', 'POST', body);
+  document.getElementById('other-result').textContent = JSON.stringify(d.data?.result || d, null, 2);
+}
+
+async function updateNucleiTemplates() {
+  const d = await api('/other/nuclei/update-templates', 'POST');
+  showToast('模板更新: ' + (d.data?.status || d.error || ''));
+}
+
+// ===== 工作流 =====
+async function createWorkflow() {
+  const body = {
+    name: document.getElementById('wf-name').value,
+    template: document.getElementById('wf-template').value,
+    target: document.getElementById('wf-target').value,
+  };
+  const d = await api('/workflow/create', 'POST', body);
+  if (d.success) {
+    showToast('工作流已创建: ' + d.data.instance_id);
+    const d2 = await api('/workflow/execute/' + d.data.instance_id, 'POST');
+    document.getElementById('wf-instances').textContent = JSON.stringify(d2.data || d2, null, 2);
+  }
+}
+
+async function loadWorkflowInstances() {
+  const d = await api('/workflow/instances');
+  if (!d.success) return;
+  if (d.data.instances.length === 0) {
+    document.getElementById('wf-instances').innerHTML = '暂无工作流实例';
+  } else {
+    let html = '<table><tr><th>ID</th><th>名称</th><th>模板</th><th>目标</th><th>状态</th><th>进度</th></tr>';
+    d.data.instances.forEach(i => {
+      const st = i.status === 'done' ? 'badge-green' : i.status === 'error' ? 'badge-red' : 'badge-yellow';
+      html += `<tr><td>${i.instance_id.slice(0,8)}</td><td>${i.name}</td><td>${i.template}</td>` +
+        `<td>${i.target}</td><td><span class="badge-tag ${st}">${i.status}</span></td>` +
+        `<td>${i.progress}%</td></tr>`;
+    });
+    html += '</table>';
+    document.getElementById('wf-instances').innerHTML = html;
+  }
+  // 监控
+  const m = await api('/workflow/monitor');
+  if (m.success) {
+    document.getElementById('wf-monitor').innerHTML =
+      `<div class="grid grid-4">` +
+      `<div class="stat-box"><div class="num">${m.data.total_instances}</div><div class="label">总实例</div></div>` +
+      `<div class="stat-box yellow"><div class="num">${m.data.running}</div><div class="label">运行中</div></div>` +
+      `<div class="stat-box green"><div class="num">${m.data.completed}</div><div class="label">已完成</div></div>` +
+      `<div class="stat-box red"><div class="num">${m.data.failed}</div><div class="label">失败</div></div>` +
+      `</div>`;
+  }
+}
+
+async function loadWorkflowTemplates() {
+  const d = await api('/workflow/templates');
+  if (d.success) {
+    document.getElementById('wf-instances').textContent = JSON.stringify(d.data, null, 2);
+  }
+}
+
+// ===== 报告 =====
+async function loadReportData() {
+  const v = await api('/dashboard/vulnerabilities');
+  document.getElementById('vuln-list').innerHTML =
+    v.success && v.data.length ? JSON.stringify(v.data, null, 2) : '暂无漏洞数据';
+  const a = await api('/dashboard/assets');
+  document.getElementById('asset-list').innerHTML =
+    a.success && a.data.length ? JSON.stringify(a.data, null, 2) : '暂无资产数据';
+  const t = await api('/dashboard/tasks');
+  document.getElementById('task-queue').innerHTML =
+    t.success && t.data.length ? JSON.stringify(t.data, null, 2) : '暂无任务';
+}
+
+// ===== 设置 =====
+async function saveConfig() {
+  showToast('配置已保存（模拟）');
+}
+
+async function detectAllVersions() {
+  const d = await api('/other/versions');
+  document.getElementById('version-result').textContent = JSON.stringify(d.data || d, null, 2);
+}
+
+// 初始化
+loadOverview();
+</script>
+</body>
+</html>

@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOC 安全运营中心控制台</title>
+<style>
+/* ========== 基础主题 ========== */
+:root{
+  --bg:#0d1117; --card:#161b22; --border:#30363d; --text:#c9d1d9;
+  --muted:#8b949e; --primary:#58a6ff; --green:#3fb950; --yellow:#d29922;
+  --red:#f85149; --purple:#bc8cff; --cyan:#39d2c0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",sans-serif;
+  font-size:14px;line-height:1.5;}
+a{color:var(--primary);text-decoration:none}
+/* ========== 布局 ========== */
+.topbar{background:var(--card);border-bottom:1px solid var(--border);
+  padding:12px 20px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:10}
+.topbar h1{font-size:18px;color:var(--primary);white-space:nowrap}
+.topbar .badge{background:var(--border);padding:2px 10px;border-radius:10px;font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tab{padding:8px 16px;cursor:pointer;border-radius:6px;color:var(--muted);
+  border:1px solid transparent;font-size:13px}
+.tab:hover{color:var(--text)}
+.tab.active{background:#1f6feb33;color:var(--primary);border-color:#1f6feb66}
+.container{padding:20px;max-width:1500px;margin:0 auto}
+.page{display:none}
+.page.active{display:block}
+/* ========== 卡片 ========== */
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.card h3{font-size:14px;color:var(--text);margin-bottom:12px;border-left:3px solid var(--primary);padding-left:8px}
+.grid{display:grid;gap:16px}
+.grid.cols-6{grid-template-columns:repeat(6,1fr)}
+.grid.cols-3{grid-template-columns:repeat(3,1fr)}
+.grid.cols-2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:1100px){.grid.cols-6{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.grid.cols-6,.grid.cols-3,.grid.cols-2{grid-template-columns:1fr}}
+/* ========== 指标卡 ========== */
+.metric{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px}
+.metric .v{font-size:26px;font-weight:600;color:var(--text)}
+.metric .l{font-size:12px;color:var(--muted);margin-top:4px}
+.metric.alert .v{color:var(--red)}
+.metric.ok .v{color:var(--green)}
+.metric.warn .v{color:var(--yellow)}
+/* ========== 表格 ========== */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:500;background:#0d1117}
+tr:hover td{background:#1f6feb11}
+/* ========== 徽章 ========== */
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
+.tag.critical,.tag.urgent,.tag.high{background:#f8514922;color:var(--red)}
+.tag.medium{background:#d2992222;color:var(--yellow)}
+.tag.low,.tag.info{background:#3fb95022;color:var(--green)}
+.tag.new,.tag.active,.tag.open{background:#58a6ff22;color:var(--primary)}
+.tag.analyzing,.tag.in_progress{background:#bc8cff22;color:var(--purple)}
+.tag.resolved,.tag.closed,.tag.completed,.tag.suppressed{background:#8b949e22;color:var(--muted)}
+.tag.false_positive{background:#39d2c022;color:var(--cyan)}
+/* ========== 按钮 ========== */
+button{background:#21262d;color:var(--text);border:1px solid var(--border);
+  padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px}
+button:hover{background:#30363d;border-color:var(--primary)}
+button.primary{background:#1f6feb;border-color:#1f6feb;color:#fff}
+button.danger{background:#da3633;border-color:#da3633;color:#fff}
+button.sm{padding:3px 8px;font-size:12px}
+/* ========== 表单 ========== */
+input,select,textarea{background:#0d1117;color:var(--text);border:1px solid var(--border);
+  border-radius:6px;padding:7px 10px;font-size:13px;width:100%}
+label{font-size:12px;color:var(--muted);display:block;margin:8px 0 4px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.toolbar input,.toolbar select{width:auto;min-width:130px}
+/* ========== 看板 ========== */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.kanban{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.kanban{grid-template-columns:1fr}}
+.kan-col{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:10px;min-height:120px}
+.kan-col h4{font-size:13px;color:var(--muted);margin-bottom:8px;text-transform:uppercase}
+.kan-item{background:var(--card);border:1px solid var(--border);border-radius:6px;
+  padding:8px;margin-bottom:8px;cursor:pointer;font-size:12px}
+/* ========== 弹窗 ========== */
+.modal-mask{display:none;position:fixed;inset:0;background:#000a;z-index:100;
+  align-items:flex-start;justify-content:center;padding:40px 20px;overflow:auto}
+.modal-mask.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:10px;
+  width:100%;max-width:760px;padding:20px}
+.modal h2{font-size:16px;margin-bottom:14px;color:var(--primary)}
+.modal .close{float:right;cursor:pointer;color:var(--muted);font-size:20px}
+/* ========== Canvas ========== */
+canvas{background:#0d1117;border-radius:6px;width:100%}
+/* ========== 时间线 ========== */
+.tl{border-left:2px solid var(--border);margin-left:8px;padding-left:16px}
+.tl-item{margin-bottom:12px;position:relative}
+.tl-item::before{content:"";position:absolute;left:-22px;top:5px;width:10px;height:10px;
+  border-radius:50%;background:var(--primary);border:2px solid var(--bg)}
+.tl-time{font-size:11px;color:var(--muted)}
+.tl-action{color:var(--primary);font-weight:500}
+.empty{color:var(--muted);text-align:center;padding:30px;font-size:13px}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--primary);
+  padding:10px 16px;border-radius:6px;z-index:200;display:none}
+.heatmap-cell{display:inline-block;width:18px;height:18px;margin:1px;border-radius:2px}
+.kv{font-size:12px;color:var(--muted)}
+.kv b{color:var(--text)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>🛡 SOC 安全运营中心</h1>
+  <span class="badge">防御视角 · NIST SP 800-61</span>
+  <div class="tabs">
+    <div class="tab active" data-page="dashboard">仪表盘</div>
+    <div class="tab" data-page="incidents">事件管理</div>
+    <div class="tab" data-page="alerts">告警管理</div>
+    <div class="tab" data-page="tickets">工单管理</div>
+    <div class="tab" data-page="response">应急响应</div>
+    <div class="tab" data-page="settings">设置</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ========== 仪表盘 ========== -->
+  <div class="page active" id="page-dashboard">
+    <div class="grid cols-6" id="overviewCards"></div>
+    <div class="grid cols-2">
+      <div class="card"><h3>事件趋势（近14天）</h3><canvas id="chartIncident" height="220"></canvas></div>
+      <div class="card"><h3>告警趋势（近7天）</h3><canvas id="chartAlert" height="220"></canvas></div>
+    </div>
+    <div class="grid cols-2">
+      <div class="card"><h3>工单看板</h3><div id="ticketBoard"></div></div>
+      <div class="card">
+        <h3>SLA合规率 / MTTR·MTTD</h3>
+        <div id="slaBox"></div>
+        <div id="mttrBox" style="margin-top:10px"></div>
+      </div>
+    </div>
+    <div class="card"><h3>资产 × 事件类型 风险热力图</h3><div id="heatmap"></div></div>
+  </div>
+
+  <!-- ========== 事件管理 ========== -->
+  <div class="page" id="page-incidents">
+    <div class="card">
+      <div class="toolbar">
+        <input id="incKeyword" placeholder="搜索标题/描述">
+        <select id="incStatus"><option value="">全部状态</option>
+          <option>new</option><option>analyzing</option><option>resolved</option>
+          <option>closed</option><option>false_positive</option></select>
+        <select id="incSeverity"><option value="">全部级别</option>
+          <option>critical</option><option>high</option><option>medium</option>
+          <option>low</option><option>info</option></select>
+        <button onclick="loadIncidents()">查询</button>
+        <button class="primary" onclick="showIncidentForm()">+ 新建事件</button>
+      </div>
+      <div id="incidentTable"></div>
+    </div>
+  </div>
+
+  <!-- ========== 告警管理 ========== -->
+  <div class="page" id="page-alerts">
+    <div class="card">
+      <div class="toolbar">
+        <input id="alKeyword" placeholder="搜索告警">
+        <select id="alStatus"><option value="">全部状态</option>
+          <option>active</option><option>acknowledged</option>
+          <option>suppressed</option><option>resolved</option></select>
+        <button onclick="loadAlerts()">查询</button>
+        <button class="primary" onclick="showAlertForm()">+ 新建告警</button>
+      </div>
+      <div id="alertTable"></div>
+    </div>
+    <div class="card">
+      <h3>告警规则</h3>
+      <div id="ruleTable"></div>
+    </div>
+  </div>
+
+  <!-- ========== 工单管理 ========== -->
+  <div class="page" id="page-tickets">
+    <div class="card">
+      <div class="toolbar">
+        <button class="primary" onclick="showTicketForm()">+ 新建工单</button>
+        <span class="kv">模板：<span id="tplList"></span></span>
+      </div>
+      <div class="kanban" id="ticketKanban"></div>
+    </div>
+  </div>
+
+  <!-- ========== 应急响应 ========== -->
+  <div class="page" id="page-response">
+    <div class="card">
+      <h3>应急预案</h3>
+      <div id="planList"></div>
+      <div class="toolbar" style="margin-top:12px">
+        <input id="respIncidentId" placeholder="事件ID" style="width:260px">
+        <button class="primary" onclick="startResponse()">启动应急响应</button>
+        <button onclick="loadResponseTasks()">刷新任务</button>
+      </div>
+      <div id="taskList"></div>
+    </div>
+    <div class="card">
+      <h3>复盘报告</h3>
+      <div class="toolbar">
+        <input id="reportIncidentId" placeholder="事件ID" style="width:260px">
+        <button onclick="genReport()">生成复盘报告</button>
+      </div>
+      <pre id="reportBox" style="background:#0d1117;padding:10px;border-radius:6px;
+        overflow:auto;max-height:400px;font-size:12px"></pre>
+    </div>
+  </div>
+
+  <!-- ========== 设置 ========== -->
+  <div class="page" id="page-settings">
+    <div class="card">
+      <h3>关于</h3>
+      <p class="kv">SOC安全运营中心 · 版本 1.0<br>
+      覆盖：事件/告警/工单/应急响应(NIST SP 800-61)/仪表盘<br>
+      本系统仅用于防御性安全运营与授权评估。</p>
+    </div>
+    <div class="card">
+      <h3>运维操作</h3>
+      <button onclick="doAutoEscalate()">立即执行告警自动升级检查</button>
+      <button onclick="doSlaCheck()">立即执行SLA检查</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== 弹窗 ========== -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <span class="close" onclick="closeModal()">&times;</span>
+    <div id="modalBody"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ========== 全局状态与API ========== */
+const API = "/api/v1/soc";
+let curPage = "dashboard";
+
+async function api(path, opts={}){
+  const r = await fetch(API+path, {
+    headers:{"Content-Type":"application/json", ...(opts.headers||{})},
+    ...opts
+  });
+  try{ return await r.json(); }catch(e){ return {success:false,error:"响应解析失败"}; }
+}
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.style.display="block";
+  setTimeout(()=>t.style.display="none",2500);
+}
+function esc(s){return (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+/* ========== Tab切换 ========== */
+document.querySelectorAll(".tab").forEach(el=>{
+  el.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+    el.classList.add("active");
+    const p=el.dataset.page;
+    document.getElementById("page-"+p).classList.add("active");
+    curPage=p;
+    if(p==="dashboard") loadDashboard();
+    if(p==="incidents") loadIncidents();
+    if(p==="alerts") loadAlerts();
+    if(p==="tickets") loadTickets();
+    if(p==="response") loadPlans();
+  };
+});
+
+/* ========== 仪表盘 ========== */
+async function loadDashboard(){
+  const [ov, tr, sla, mttr] = await Promise.all([
+    api("/dashboard/overview"), api("/dashboard/trends"),
+    api("/dashboard/sla"), api("/dashboard/mttr")
+  ]);
+  // 概览卡片
+  if(ov.success){
+    const d=ov.data;
+    const cards=[
+      {l:"活跃事件",v:d.active_incidents,c:"alert"},
+      {l:"活跃告警",v:d.active_alerts,c:"alert"},
+      {l:"待处理工单",v:d.pending_tickets,c:"warn"},
+      {l:"今日新增事件",v:d.today_new_incidents,c:""},
+      {l:"平均响应(h)",v:d.avg_response_hours,c:""},
+      {l:"平均解决(h)",v:d.avg_resolution_hours,c:"ok"}
+    ];
+    document.getElementById("overviewCards").innerHTML=cards.map(c=>
+      `<div class="metric ${c.c}"><div class="v">${c.v}</div><div class="l">${c.l}</div></div>`
+    ).join("");
+  }
+  // 趋势图
+  if(tr.success){
+    drawLine("chartIncident", tr.data.incidents.daily.map(x=>x.count),
+      tr.data.incidents.daily.map(x=>x.date.slice(5)));
+    drawLine("chartAlert", tr.data.alerts.daily.map(x=>x.count),
+      tr.data.alerts.daily.map(x=>x.date.slice(5)));
+    // 工单看板
+    const cols=tr.data.tickets.columns||{};
+    const names={open:"待处理",in_progress:"进行中",resolved:"已解决",closed:"已关闭"};
+    document.getElementById("ticketBoard")=
+      document.getElementById("ticketBoard"); // noop
+    document.getElementById("ticketBoard").innerHTML=Object.keys(names).map(k=>{
+      const items=cols[k]||[];
+      return `<div style="margin-bottom:8px"><b>${names[k]}</b> (${items.length})
+        ${items.slice(0,4).map(i=>`<div class="kv" style="margin:4px 0">· ${esc(i.title)}</div>`).join("")}
+        </div>`;
+    }).join("");
+    // 热力图
+    const hm=tr.data.risk_heatmap;
+    if(hm && hm.matrix && hm.matrix.length){
+      let html=`<div class="kv" style="margin-bottom:6px">资产 \\ 类型：${hm.categories.map(esc).join(" / ")}</div>`;
+      hm.matrix.forEach((row,i)=>{
+        html+=`<div style="margin-bottom:4px"><span class="kv" style="display:inline-block;width:120px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle">${esc(hm.assets[i])}</span>`;
+        row.forEach(v=>{
+          const a=Math.min(1,v/8);
+          html+=`<span class="heatmap-cell" title="${v}" style="background:rgba(88,166,255,${a.toFixed(2)})"></span>`;
+        });
+        html+="</div>";
+      });
+      document.getElementById("heatmap").innerHTML=html;
+    }else{
+      document.getElementById("heatmap").innerHTML='<div class="empty">暂无风险数据</div>';
+    }
+  }
+  if(sla.success){
+    document.getElementById("slaBox").innerHTML=
+      `<div class="kv">工单SLA合规率：<b style="color:var(--green)">${sla.data.ticket_sla_compliance_pct}%</b>
+       （活跃${sla.data.active_tickets}，超时${sla.data.overdue_tickets}）</div>
+       <div class="kv" style="margin-top:4px">事件响应达标率：<b style="color:var(--primary)">${sla.data.incident_response_compliance_pct}%</b></div>`;
+  }
+  if(mttr.success){
+    document.getElementById("mttrBox").innerHTML=
+      `<div class="kv">MTTD(检测)：<b>${mttr.data.mttd_hours}h</b> ·
+       MTTR(响应)：<b>${mttr.data.mttr_respond_hours}h</b> ·
+       MTTR(解决)：<b>${mttr.data.mttr_resolve_hours}h</b></div>`;
+  }
+}
+
+/* 简易折线图 */
+function drawLine(id, values, labels){
+  const cv=document.getElementById(id); if(!cv) return;
+  const dpr=window.devicePixelRatio||1;
+  const W=cv.clientWidth||400, H=220;
+  cv.width=W*dpr; cv.height=H*dpr;
+  const ctx=cv.getContext("2d"); ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  if(!values.length){ctx.fillStyle="#8b949e";ctx.fillText("暂无数据",W/2-30,H/2);return;}
+  const max=Math.max(...values,1);
+  const pad=30, bw=(W-pad*2)/Math.max(values.length-1,1);
+  // 轴
+  ctx.strokeStyle="#30363d"; ctx.beginPath();
+  ctx.moveTo(pad,10); ctx.lineTo(pad,H-20); ctx.lineTo(W-10,H-20); ctx.stroke();
+  // 折线
+  ctx.strokeStyle="#58a6ff"; ctx.lineWidth=2; ctx.beginPath();
+  values.forEach((v,i)=>{
+    const x=pad+i*bw, y=H-20-(v/max)*(H-40);
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+  });
+  ctx.stroke();
+  // 点
+  ctx.fillStyle="#58a6ff";
+  values.forEach((v,i)=>{
+    const x=pad+i*bw, y=H-20-(v/max)*(H-40);
+    ctx.beginPath(); ctx.arc(x,y,3,0,7); ctx.fill();
+  });
+  // x标签
+  ctx.fillStyle="#8b949e"; ctx.font="10px sans-serif";
+  const step=Math.ceil(values.length/8);
+  labels.forEach((l,i)=>{
+    if(i%step===0) ctx.fillText(l, pad+i*bw-12, H-6);
+  });
+}
+
+/* ========== 事件 ========== */
+async function loadIncidents(){
+  const q=new URLSearchParams();
+  const k=document.getElementById("incKeyword").value;
+  const s=document.getElementById("incStatus").value;
+  const v=document.getElementById("incSeverity").value;
+  if(k)q.set("keyword",k); if(s)q.set("status",s); if(v)q.set("severity",v);
+  const r=await api("/incidents?"+q.toString());
+  if(!r.success){document.getElementById("incidentTable").innerHTML='<div class="empty">'+esc(r.error)+'</div>';return;}
+  const items=r.data.items||[];
+  let html=`<table><tr><th>标题</th><th>级别</th><th>状态</th><th>类型</th><th>来源</th>
+    <th>指派</th><th>发现时间</th><th>操作</th></tr>`;
+  items.forEach(it=>{
+    html+=`<tr>
+      <td><a href="#" onclick="showIncidentDetail('${it.id}')">${esc(it.title)}</a></td>
+      <td><span class="tag ${it.severity}">${esc(it.severity)}</span></td>
+      <td><span class="tag ${it.status}">${esc(it.status)}</span></td>
+      <td>${esc(it.category)}</td><td>${esc(it.source)}</td>
+      <td>${esc(it.assigned_to||"-")}</td>
+      <td class="kv">${esc((it.discovered_at||"").slice(0,16))}</td>
+      <td>
+        <button class="sm" onclick="assignInc('${it.id}')">指派</button>
+        <button class="sm" onclick="escInc('${it.id}')">升级</button>
+      </td></tr>`;
+  });
+  html+="</table>";
+  if(!items.length) html='<div class="empty">暂无事件</div>';
+  document.getElementById("incidentTable").innerHTML=html;
+}
+
+function showIncidentForm(){
+  document.getElementById("modalBody").innerHTML=`
+    <h2>新建安全事件</h2>
+    <label>标题</label><input id="ni_title">
+    <label>描述</label><textarea id="ni_desc" rows="3"></textarea>
+    <div class="form-row">
+      <div><label>严重级别</label><select id="ni_sev">
+        <option>medium</option><option>low</option><option>high</option>
+        <option>critical</option><option>info</option></select></div>
+      <div><label>分类</label><select id="ni_cat">
+        <option>other</option><option>intrusion</option><option>malware</option>
+        <option>data_breach</option><option>ddos</option>
+        <option>insider_threat</option><option>misconfiguration</option></select></div>
+    </div>
+    <div class="form-row">
+      <div><label>来源</label><select id="ni_src">
+        <option>manual</option><option>ids</option><option>scan</option>
+        <option>threat_intel</option><option>external</option></select></div>
+      <div><label>关联资产ID</label><input id="ni_asset"></div>
+    </div>
+    <div style="margin-top:14px;text-align:right">
+      <button onclick="closeModal()">取消</button>
+      <button class="primary" onclick="submitIncident()">创建</button></div>`;
+  openModal();
+}
+async function submitIncident(){
+  const body={title:document.getElementById("ni_title").value,
+    description:document.getElementById("ni_desc").value,
+    severity:document.getElementById("ni_sev").value,
+    category:document.getElementById("ni_cat").value,
+    source:document.getElementById("ni_src").value,
+    asset_id:document.getElementById("ni_asset").value||null};
+  const r=await api("/incidents",{method:"POST",body:JSON.stringify(body)});
+  if(r.success){toast("事件创建成功");closeModal();loadIncidents();}
+  else toast("失败:"+r.error);
+}
+async function showIncidentDetail(id){
+  const [d,t]=await Promise.all([api("/incidents/"+id),api("/incidents/"+id+"/timeline")]);
+  if(!d.success)return;
+  const it=d.data;
+  const tl=(t.data||[]).map(x=>`<div class="tl-item">
+    <div class="tl-time">${esc(x.timestamp)}</div>
+    <div class="tl-action">${esc(x.action)}</div>
+    <div class="kv">操作人：${esc(x.operator||"system")}</div></div>`).join("");
+  document.getElementById("modalBody").innerHTML=`
+    <h2>${esc(it.title)}</h2>
+    <p class="kv">级别：<span class="tag ${it.severity}">${it.severity}</span>
+      状态：<span class="tag ${it.status}">${it.status}</span>
+      分类：${esc(it.category)} 来源：${esc(it.source)}</p>
+    <p class="kv" style="margin:8px 0">${esc(it.description)}</p>
+    <h3 style="color:var(--muted);margin:12px 0 6px">时间线</h3>
+    <div class="tl">${tl||'<div class="empty">暂无记录</div>'}</div>`;
+  openModal();
+}
+async function assignInc(id){
+  const n=prompt("输入指派给："); if(!n)return;
+  const r=await api(`/incidents/${id}/assign`,{method:"POST",body:JSON.stringify({assignee:n})});
+  toast(r.success?"已指派":r.error); loadIncidents();
+}
+async function escInc(id){
+  const r=await api(`/incidents/${id}/escalate`,{method:"POST",body:JSON.stringify({reason:"人工升级"})});
+  toast(r.success?"已升级":r.error); loadIncidents();
+}
+
+/* ========== 告警 ========== */
+async function loadAlerts(){
+  const q=new URLSearchParams();
+  const k=document.getElementById("alKeyword").value;
+  const s=document.getElementById("alStatus").value;
+  if(k)q.set("keyword",k); if(s)q.set("status",s);
+  const [r,rl]=await Promise.all([api("/alerts?"+q.toString()),api("/alerts/rules")]);
+  if(r.success){
+    const items=r.data.items||[];
+    let html=`<table><tr><th>标题</th><th>级别</th><th>状态</th><th>来源</th>
+      <th>时间</th><th>操作</th></tr>`;
+    items.forEach(it=>{
+      html+=`<tr><td>${esc(it.title)}</td>
+        <td><span class="tag ${it.severity}">${esc(it.severity)}</span></td>
+        <td><span class="tag ${it.status}">${esc(it.status)}</span></td>
+        <td>${esc(it.source)}</td>
+        <td class="kv">${esc((it.triggered_at||"").slice(0,16))}</td>
+        <td>
+          <button class="sm" onclick="ackAlert('${it.id}')">确认</button>
+          <button class="sm" onclick="supAlert('${it.id}')">抑制</button></td></tr>`;
+    });
+    html+="</table>";
+    document.getElementById("alertTable").innerHTML=html||'<div class="empty">暂无告警</div>';
+  }
+  if(rl.success){
+    const rules=rl.data||[];
+    document.getElementById("ruleTable").innerHTML=rules.length?
+      `<table><tr><th>名称</th><th>级别</th><th>阈值</th><th>启用</th></tr>`+
+      rules.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.severity)}</td>
+        <td>${x.threshold}</td><td>${x.enabled?"是":"否"}</td></tr>`).join("")+"</table>"
+      :'<div class="empty">暂无规则</div>';
+  }
+}
+function showAlertForm(){
+  document.getElementById("modalBody").innerHTML=`
+    <h2>新建告警</h2>
+    <label>标题</label><input id="na_title">
+    <label>描述</label><textarea id="na_desc" rows="3"></textarea>
+    <label>严重级别</label><select id="na_sev">
+      <option>medium</option><option>low</option><option>high</option>
+      <option>critical</option><option>info</option></select>
+    <div style="margin-top:14px;text-align:right">
+      <button onclick="closeModal()">取消</button>
+      <button class="primary" onclick="submitAlert()">创建</button></div>`;
+  openModal();
+}
+async function submitAlert(){
+  const body={title:document.getElementById("na_title").value,
+    description:document.getElementById("na_desc").value,
+    severity:document.getElementById("na_sev").value,source:"manual"};
+  const r=await api("/alerts",{method:"POST",body:JSON.stringify(body)});
+  if(r.success){toast("告警已创建");closeModal();loadAlerts();}else toast(r.error);
+}
+async function ackAlert(id){
+  const r=await api(`/alerts/${id}/acknowledge`,{method:"POST"});
+  toast(r.success?"已确认":r.error); loadAlerts();
+}
+async function supAlert(id){
+  const r=await api(`/alerts/${id}/suppress`,{method:"POST"});
+  toast(r.success?"已抑制":r.error); loadAlerts();
+}
+
+/* ========== 工单 ========== */
+async function loadTickets(){
+  const [r,tpl]=await Promise.all([api("/tickets"),api("/tickets/templates")]);
+  if(r.success){
+    const items=r.data.items||[];
+    const groups={open:[],in_progress:[],resolved:[],closed:[]};
+    items.forEach(t=>{(groups[t.status]||groups.open).push(t);});
+    const names={open:"待处理",in_progress:"进行中",resolved:"已解决",closed:"已关闭"};
+    document.getElementById("ticketKanban").innerHTML=Object.keys(names).map(k=>
+      `<div class="kan-col"><h4>${names[k]} (${groups[k].length})</h4>`+
+      groups[k].map(t=>`<div class="kan-item" onclick="showTicketDetail('${t.id}')">
+        <span class="tag ${t.priority}">${t.priority}</span> ${esc(t.title)}
+        <div class="kv" style="margin-top:4px">👤 ${esc(t.assigned_to||"未分配")}</div></div>`).join("")+
+      `</div>`).join("");
+  }
+  if(tpl.success){
+    document.getElementById("tplList").innerHTML=(tpl.data||[]).map(x=>esc(x.name)).join("，")||"无";
+  }
+}
+function showTicketForm(){
+  document.getElementById("modalBody").innerHTML=`
+    <h2>新建工单</h2>
+    <label>标题</label><input id="nt_title">
+    <label>描述</label><textarea id="nt_desc" rows="3"></textarea>
+    <div class="form-row">
+      <div><label>优先级</label><select id="nt_pri">
+        <option>medium</option><option>low</option><option>high</option><option>urgent</option></select></div>
+      <div><label>类型</label><select id="nt_type">
+        <option>other</option><option>vuln_fix</option><option>hardening</option>
+        <option>incident_response</option></select></div>
+    </div>
+    <div style="margin-top:14px;text-align:right">
+      <button onclick="closeModal()">取消</button>
+      <button class="primary" onclick="submitTicket()">创建</button></div>`;
+  openModal();
+}
+async function submitTicket(){
+  const body={title:document.getElementById("nt_title").value,
+    description:document.getElementById("nt_desc").value,
+    priority:document.getElementById("nt_pri").value,
+    type:document.getElementById("nt_type").value};
+  const r=await api("/tickets",{method:"POST",body:JSON.stringify(body)});
+  if(r.success){toast("工单已创建");closeModal();loadTickets();}else toast(r.error);
+}
+async function showTicketDetail(id){
+  const r=await api("/tickets/"+id); if(!r.success)return;
+  const t=r.data;
+  const comments=(t.comments||[]).map(c=>`<div class="kv" style="margin:6px 0">
+    <b>${esc(c.author)}</b> ${esc((c.created_at||"").slice(0,16))}<br>${esc(c.content)}</div>`).join("");
+  document.getElementById("modalBody").innerHTML=`
+    <h2>${esc(t.title)}</h2>
+    <p class="kv"><span class="tag ${t.priority}">${t.priority}</span>
+      <span class="tag ${t.status}">${t.status}</span>
+      类型：${esc(t.type)} · 处理人：${esc(t.assigned_to||"未分配")}</p>
+    <p class="kv" style="margin:8px 0">${esc(t.description)}</p>
+    <h3 style="color:var(--muted);margin:10px 0 6px">评论</h3>${comments||'<div class="empty">暂无评论</div>'}
+    <label style="margin-top:10px">新评论</label>
+    <textarea id="cmt_content" rows="2"></textarea>
+    <div style="margin-top:8px;text-align:right">
+      <button class="primary" onclick="submitComment('${t.id}')">发表</button></div>`;
+  openModal();
+}
+async function submitComment(id){
+  const c=document.getElementById("cmt_content").value;
+  const r=await api(`/tickets/${id}/comment`,{method:"POST",body:JSON.stringify({content:c})});
+  if(r.success){toast("评论已发表");closeModal();loadTickets();}else toast(r.error);
+}
+
+/* ========== 应急响应 ========== */
+async function loadPlans(){
+  const r=await api("/incident-response/plans");
+  if(r.success){
+    const plans=r.data||[];
+    document.getElementById("planList").innerHTML=plans.length?
+      `<table><tr><th>名称</th><th>事件类型</th><th>级别</th></tr>`+
+      plans.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.incident_type)}</td>
+        <td>${esc(p.severity)}</td></tr>`).join("")+"</table>"
+      :'<div class="empty">暂无预案（系统将使用默认NIST流程）</div>';
+  }
+}
+async function startResponse(){
+  const id=document.getElementById("respIncidentId").value.trim();
+  if(!id){toast("请输入事件ID");return;}
+  const r=await api(`/incident-response/${id}/start`,{method:"POST",body:JSON.stringify({})});
+  if(r.success){toast(`已生成${r.data.task_count}个任务`);loadResponseTasks();}
+  else toast(r.error);
+}
+async function loadResponseTasks(){
+  const id=document.getElementById("respIncidentId").value.trim();
+  if(!id)return;
+  const r=await api(`/incident-response/${id}/tasks`);
+  if(r.success){
+    const tasks=r.data||[];
+    document.getElementById("taskList").innerHTML=
+      `<h3 style="color:var(--muted);margin:12px 0 6px">响应任务</h3>`+
+      (tasks.length?`<table><tr><th>步骤</th><th>负责人</th><th>状态</th><th>操作</th></tr>`+
+      tasks.map(t=>`<tr><td>${esc(t.step_name)}</td><td>${esc(t.assignee)}</td>
+        <td><span class="tag ${t.status}">${t.status}</span></td>
+        <td>${t.status!=="completed"?`<button class="sm primary" onclick="completeTask('${id}','${t.id}')">完成</button>`:""}</td></tr>`).join("")+"</table>"
+      :'<div class="empty">暂无任务，请先启动响应</div>');
+  }
+}
+async function completeTask(incId,taskId){
+  const r=await api(`/incident-response/${incId}/tasks/${taskId}/complete`,{method:"POST"});
+  toast(r.success?"任务已完成":r.error); loadResponseTasks();
+}
+async function genReport(){
+  const id=document.getElementById("reportIncidentId").value.trim();
+  if(!id){toast("请输入事件ID");return;}
+  const r=await api(`/incident-response/${id}/report`,{method:"POST"});
+  document.getElementById("reportBox").textContent=
+    r.success?JSON.stringify(r.data,null,2):("错误:"+r.error);
+}
+
+/* ========== 设置操作 ========== */
+async function doAutoEscalate(){
+  // 后端无直接端点，这里复用告警逻辑提示
+  toast("请在后端调度中调用 alert_manager.auto_escalate()");
+}
+async function doSlaCheck(){
+  toast("请在后端调度中调用 ticket_manager.check_sla()");
+}
+
+/* ========== 弹窗 ========== */
+function openModal(){document.getElementById("modalMask").classList.add("show");}
+function closeModal(){document.getElementById("modalMask").classList.remove("show");}
+document.getElementById("modalMask").onclick=e=>{
+  if(e.target.id==="modalMask") closeModal();
+};
+
+/* 初始加载 */
+loadDashboard();
+window.addEventListener("resize",()=>{
+  if(curPage==="dashboard"){loadDashboard();}
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SRC Pro · 漏洞平台做深</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#121821; --panel2:#18212d; --border:#243040;
+  --fg:#e6edf3; --muted:#8b98a8; --accent:#4fc3f7; --ok:#2ecc71;
+  --warn:#f1c40f; --high:#ff7043; --crit:#ff1744; --ai:#ce93d8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  font-size:13px;line-height:1.5;}
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 18px;background:linear-gradient(90deg,#10161d,#16202c);
+  border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;}
+header h1{font-size:16px;margin:0;color:var(--accent)}
+header .sub{color:var(--muted);font-size:12px;margin-left:10px}
+button{background:#1c2733;color:var(--fg);border:1px solid var(--border);
+  padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px}
+button:hover{background:#243240}
+button.primary{background:#1565c0;border-color:#1976d2}
+button.danger{background:#b71c1c;border-color:#c62828}
+.tabbar{display:flex;gap:2px;padding:8px 18px;background:#0e141b;
+  border-bottom:1px solid var(--border);overflow-x:auto}
+.tabbar .tab{padding:6px 14px;cursor:pointer;border-radius:4px;
+  color:var(--muted);white-space:nowrap}
+.tabbar .tab.active{background:#1c2733;color:var(--accent)}
+main{padding:14px 18px}
+.panel{background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;padding:12px;margin-bottom:12px}
+.panel h3{margin:0 0 8px;font-size:13px;color:var(--accent)}
+.grid{display:grid;gap:12px}
+.grid.c2{grid-template-columns:1fr 1fr}
+.grid.c3{grid-template-columns:1fr 1fr 1fr}
+.grid.c4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1100px){.grid.c3,.grid.c4{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.grid.c2,.grid.c3,.grid.c4{grid-template-columns:1fr}}
+.kpi{background:var(--panel2);border:1px solid var(--border);
+  border-radius:6px;padding:10px 12px}
+.kpi .v{font-size:22px;font-weight:600}
+.kpi .l{color:var(--muted);font-size:11px}
+.kpi.crit .v{color:var(--crit)} .kpi.high .v{color:var(--high)}
+.kpi.ok .v{color:var(--ok)} .kpi.ai .v{color:var(--ai)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:5px 8px;border-bottom:1px solid var(--border);
+  text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+.badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px}
+.badge.critical{background:#5b1320;color:#ff8a80}
+.badge.high{background:#4e2a1a;color:#ffab91}
+.badge.medium{background:#4a3d16;color:#ffd54f}
+.badge.low{background:#1f3a4a;color:#81d4fa}
+.badge.info{background:#263238;color:#b0bec5}
+.bar{height:8px;background:#1c2733;border-radius:4px;overflow:hidden}
+.bar > i{display:block;height:100%;background:var(--accent)}
+.stage{display:flex;align-items:center;gap:8px;padding:6px 0;
+  border-bottom:1px dashed var(--border)}
+.stage .dot{width:10px;height:10px;border-radius:50%;
+  background:#2a3441;flex:none}
+.stage.done .dot{background:var(--ok)}
+.stage.active .dot{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.log{background:#0a0e13;border:1px solid var(--border);border-radius:4px;
+  padding:8px;height:260px;overflow:auto;font-family:Consolas,monospace;
+  font-size:11px;white-space:pre-wrap}
+.log .l{color:#4fc3f7}.log .ok{color:#2ecc71}
+.log .warn{color:#f1c40f}.log .err{color:#ff5252}
+.log .ai{color:#ce93d8}.log .think{color:#b39ddb}
+.thought{background:#1a1425;border-left:3px solid var(--ai);
+  padding:6px 10px;margin:4px 0;border-radius:3px;color:var(--ai);
+  font-style:italic;font-size:12px}
+.vulnitem{padding:6px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;gap:8px}
+.muted{color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input,select,textarea{background:#0e141b;color:var(--fg);
+  border:1px solid var(--border);padding:5px 8px;border-radius:4px;font-size:12px}
+canvas{background:#0a0e13;border-radius:4px;max-width:100%}
+.hidden{display:none}
+footer{padding:8px 18px;color:var(--muted);font-size:11px;
+  border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🛡 SRC Pro <span class="sub">漏洞平台做深 · 八阶段闭环</span></h1></div>
+  <div class="row">
+    <button class="primary" onclick="startRun()">▶ 启动八阶段巡检</button>
+    <button onclick="refreshAll()">🔄 刷新大屏</button>
+    <span id="taskBadge" class="muted">未启动任务</span>
+  </div>
+</header>
+
+<div class="tabbar">
+  <div class="tab active" data-tab="screen">📊 SRC 大屏</div>
+  <div class="tab" data-tab="platform">🏢 平台管理</div>
+  <div class="tab" data-tab="submit">📝 漏洞提交</div>
+  <div class="tab" data-tab="review">🔍 漏洞审核</div>
+  <div class="tab" data-tab="bounty">💰 赏金管理</div>
+  <div class="tab" data-tab="community">👥 白帽社区</div>
+  <div class="tab" data-tab="enterprise">🏬 企业门户</div>
+  <div class="tab" data-tab="kb">📚 知识库</div>
+  <div class="tab" data-tab="analysis">📈 数据分析</div>
+  <div class="tab" data-tab="ai">🤖 AI 分析</div>
+  <div class="tab" data-tab="report">📄 报告</div>
+</div>
+
+<main>
+<!-- ====================== SRC 大屏 ====================== -->
+<section id="tab-screen">
+  <div class="grid c4">
+    <div class="kpi"><div class="l">漏洞总数</div><div class="v" id="kpiTotal">-</div></div>
+    <div class="kpi crit"><div class="l">Critical</div><div class="v" id="kpiCrit">-</div></div>
+    <div class="kpi high"><div class="l">待审核</div><div class="v" id="kpiPending">-</div></div>
+    <div class="kpi ok"><div class="l">已修复</div><div class="v" id="kpiFixed">-</div></div>
+    <div class="kpi"><div class="l">白帽数</div><div class="v" id="kpiHackers">-</div></div>
+    <div class="kpi"><div class="l">企业数</div><div class="v" id="kpiEnts">-</div></div>
+    <div class="kpi ai"><div class="l">总赏金(¥)</div><div class="v" id="kpiBounty">-</div></div>
+    <div class="kpi high"><div class="l">High</div><div class="v" id="kpiHigh">-</div></div>
+  </div>
+  <div class="grid c2" style="margin-top:12px">
+    <div class="panel"><h3>漏洞趋势（24h）</h3>
+      <canvas id="trendCanvas" width="520" height="200"></canvas></div>
+    <div class="panel"><h3>严重程度分布</h3><div id="sevDist"></div></div>
+  </div>
+  <div class="grid c2">
+    <div class="panel"><h3>白帽赏金榜 Top</h3><div id="rankList"></div></div>
+    <div class="panel"><h3>实时漏洞流</h3><div id="recentVulns"></div></div>
+  </div>
+  <div class="panel"><h3>八阶段进度 / 实时日志 / 思考过程</h3>
+    <div id="stageList"></div>
+    <div class="log" id="logBox"></div>
+    <div id="thoughtBox"></div>
+  </div>
+</section>
+
+<!-- ====================== 平台管理 ====================== -->
+<section id="tab-platform" class="hidden">
+  <div class="grid c2">
+    <div class="panel"><h3>平台统计</h3><div id="pmStats"></div></div>
+    <div class="panel"><h3>平台规则</h3><div id="pmRules"></div></div>
+  </div>
+  <div class="panel"><h3>白帽列表</h3><div id="hackerTable"></div></div>
+  <div class="panel"><h3>企业列表</h3><div id="entTable"></div></div>
+  <div class="panel"><h3>平台公告</h3><div id="annList"></div></div>
+</section>
+
+<!-- ====================== 漏洞提交 ====================== -->
+<section id="tab-submit" class="hidden">
+  <div class="panel"><h3>提交新漏洞</h3>
+    <div class="row">
+      <input id="fTitle" placeholder="漏洞标题" style="width:260px">
+      <select id="fType">
+        <option>A03 注入</option><option>A01 失效的访问控制</option>
+        <option>A02 加密失败</option><option>A05 安全配置错误</option>
+        <option>文件上传/RCE</option></select>
+      <select id="fSev">
+        <option value="critical">critical</option><option value="high">high</option>
+        <option value="medium" selected>medium</option><option value="low">low</option>
+        <option value="info">info</option></select>
+      <button class="primary" onclick="doSubmit()">提交</button>
+    </div>
+    <textarea id="fRepro" placeholder="复现步骤" style="width:100%;margin-top:8px;height:60px"></textarea>
+  </div>
+  <div class="panel"><h3>漏洞列表</h3><div id="vulnTable"></div></div>
+</section>
+
+<!-- ====================== 漏洞审核 ====================== -->
+<section id="tab-review" class="hidden">
+  <div class="panel"><h3>审核统计</h3><div id="revStats"></div></div>
+  <div class="panel"><h3>审核队列</h3><div id="revTable"></div></div>
+</section>
+
+<!-- ====================== 赏金管理 ====================== -->
+<section id="tab-bounty" class="hidden">
+  <div class="grid c2">
+    <div class="panel"><h3>赏金统计</h3><div id="bountyStats"></div></div>
+    <div class="panel"><h3>排行榜</h3><div id="bountyRank"></div></div>
+  </div>
+</section>
+
+<!-- ====================== 白帽社区 ====================== -->
+<section id="tab-community" class="hidden">
+  <div class="panel"><h3>荣誉墙</h3><div id="honorWall"></div></div>
+  <div class="panel"><h3>讨论区</h3><div id="postList"></div></div>
+</section>
+
+<!-- ====================== 企业门户 ====================== -->
+<section id="tab-enterprise" class="hidden">
+  <div class="panel"><h3>企业安全态势</h3><div id="entDash"></div></div>
+  <div class="panel"><h3>修复进度</h3><div id="entFix"></div></div>
+</section>
+
+<!-- ====================== 知识库 ====================== -->
+<section id="tab-kb" class="hidden">
+  <div class="panel"><h3>知识库统计</h3><div id="kbStats"></div></div>
+  <div class="panel"><h3>搜索</h3>
+    <div class="row"><input id="kbKw" placeholder="关键词"><button onclick="kbSearch()">搜索</button></div>
+    <div id="kbResult" style="margin-top:8px"></div></div>
+</section>
+
+<!-- ====================== 数据分析 ====================== -->
+<section id="tab-analysis" class="hidden">
+  <div class="grid c2">
+    <div class="panel"><h3>修复时效</h3><div id="anaFix"></div></div>
+    <div class="panel"><h3>ROI 分析</h3><div id="anaRoi"></div></div>
+  </div>
+  <div class="panel"><h3>风险评估</h3><div id="anaRisk"></div></div>
+</section>
+
+<!-- ====================== AI 分析 ====================== -->
+<section id="tab-ai" class="hidden">
+  <div class="row"><button class="primary" onclick="aiBatch()">🤖 AI 批量审核</button>
+    <button onclick="aiForecast()">趋势预测</button></div>
+  <div class="panel" style="margin-top:8px"><h3>AI 审核结果</h3>
+    <div id="aiResult"></div></div>
+</section>
+
+<!-- ====================== 报告 ====================== -->
+<section id="tab-report" class="hidden">
+  <div class="row"><button class="primary" onclick="genReport()">生成 SRC 运营报告</button></div>
+  <div class="panel" style="margin-top:8px"><h3>报告文件</h3>
+    <div id="reportFiles"></div></div>
+</section>
+</main>
+
+<footer>SRC Pro · 方向2 漏洞平台做深 · 深色主题控制台</footer>
+
+<script>
+const API="/api/v1/src-platform-pro";
+let ws=null, curTask=null;
+async function jget(p){const r=await fetch(API+p);return r.json();}
+async function jpost(p,b){const r=await fetch(API+p,{method:"POST",
+  headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{})});return r.json();}
+function el(id){return document.getElementById(id);}
+function sevBadge(s){return `<span class="badge ${s}">${s}</span>`;}
+
+// tabs
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
+  el("tab-"+t.dataset.tab).classList.remove("hidden");
+});
+
+async function refreshAll(){
+  const k=(await jget("/dashboard/kpi")).data||{};
+  el("kpiTotal").textContent=k.total_vulns??"-";
+  el("kpiCrit").textContent=k.critical??0;
+  el("kpiPending").textContent=k.pending_review??0;
+  el("kpiFixed").textContent=k.fixed??0;
+  el("kpiHackers").textContent=k.hackers??0;
+  el("kpiEnts").textContent=k.enterprises??0;
+  el("kpiBounty").textContent=k.total_bounty??0;
+  el("kpiHigh").textContent=k.high??0;
+  drawTrend();
+  const sev=(await jget("/analysis/risk")).data||{};
+  el("sevDist").innerHTML=Object.entries(sev.by_severity||{})
+    .map(([k,v])=>`<div class="row"><span style="width:90px">${k}</span>
+      <span class="bar" style="flex:1"><i style="width:${Math.min(100,v*10)}%"></i></span>
+      <b>${v}</b></div>`).join("");
+  const rb=(await jget("/bounty/leaderboard?limit=10")).data||{};
+  el("rankList").innerHTML=(rb.board||[]).map(r=>
+    `<div class="row"><span class="badge">${r.rank}</span>
+      <span style="flex:1">${r.hacker_id}</span>
+      <b>¥${r.bounty}</b><span class="muted">${r.count}条</span></div>`).join("");
+  const rv=(await jget("/dashboard/recent?limit=15")).data||{};
+  el("recentVulns").innerHTML=(rv.vulns||[]).map(v=>
+    `<div class="vulnitem"><span>${v.title}</span>${sevBadge(v.severity)}</div>`).join("");
+}
+
+async function drawTrend(){
+  const d=(await jget("/analysis/trend?window=24h")).data||{series:[]};
+  const c=el("trendCanvas"),x=c.getContext("2d");
+  x.clearRect(0,0,c.width,c.height);
+  const s=d.series||[];const max=Math.max(1,...s.map(p=>p.value));
+  const bw=c.width/s.length;
+  s.forEach((p,i)=>{const h=p.value/max*170;
+    x.fillStyle="#4fc3f7";x.fillRect(i*bw+2,c.height-25-h,bw-4,h);});
+}
+
+async function startRun(){
+  const r=await jpost("/start",{name:"SRC 全流程运营巡检"});
+  curTask=r.data.task_id;el("taskBadge").textContent="任务: "+curTask;
+  connectWS(curTask);
+}
+function connectWS(tid){
+  if(ws)ws.close();
+  const proto=location.protocol==="https:"?"wss":"ws";
+  ws=new WebSocket(`${proto}://${location.host}${API}/ws/${tid}`);
+  ws.onmessage=ev=>{const m=JSON.parse(ev.data);handleEv(m);};
+}
+function handleEv(m){
+  if(m.type==="log"){
+    const box=el("logBox");const cls=m.level.toLowerCase();
+    box.innerHTML+=`<div class="${cls==='ok'?'ok':cls==='warn'?'warn':cls==='err'?'err':cls==='ai'?'ai':cls==='think'?'think':'l'}">${m.timestamp} ${m.level} ${m.message}</div>`;
+    box.scrollTop=box.scrollHeight;
+  }
+  if(m.type==="thought"){el("thoughtBox").innerHTML=`<div class="thought">💭 ${m.thought}</div>`;}
+  if(m.type==="progress"){
+    const sl=document.querySelectorAll("#stageList .stage");
+    document.querySelectorAll("#stageList .stage").forEach(s=>{s.classList.remove("active","done");});
+    el("stageList").innerHTML=STAGE_DEFS.map(s=>{
+      let cls="stage";if(s.progress<=m.overall)cls+=" done";
+      if(s.key===m.stage)cls+=" active";
+      return `<div class="${cls}"><span class="dot"></span>
+        <span style="flex:1">${s.label}</span>
+        <span class="muted">${Math.min(100,s.progress>m.overall?0:100)}%</span></div>`;}).join("");
+  }
+  if(m.type==="result"){setTimeout(refreshAll,500);}
+}
+const STAGE_DEFS=[{key:"platform_management",label:"1.平台管理",progress:10},
+{key:"submission",label:"2.漏洞提交",progress:22},{key:"review",label:"3.漏洞审核",progress:38},
+{key:"bounty",label:"4.赏金管理",progress:52},{key:"community",label:"5.白帽社区",progress:64},
+{key:"enterprise",label:"6.企业门户",progress:76},{key:"knowledge",label:"7.漏洞知识库",progress:88},
+{key:"analysis",label:"8.数据分析",progress:100}];
+
+async function doSubmit(){
+  const r=await jpost("/vulns",{title:el("fTitle").value,vuln_type:el("fType").value,
+    severity:el("fSev").value,repro_steps:el("fRepro").value,
+    poc:"",impact:"",fix_advice:""});
+  if(!r.success){alert(r.error);}else{alert("已提交: "+r.data.vuln_id);loadVulns();}
+}
+async function loadVulns(){
+  const r=await jget("/vulns?limit=50");
+  el("vulnTable").innerHTML="<table><tr><th>ID</th><th>标题</th><th>类型</th><th>等级</th><th>状态</th></tr>"+
+    (r.data.vulns||[]).map(v=>`<tr><td class="muted">${v.vuln_id.slice(0,12)}</td><td>${v.title}</td>
+      <td>${v.vuln_type}</td><td>${sevBadge(v.severity)}</td><td>${v.status}</td></tr>`).join("")+"</table>";
+}
+
+async function loadPlatform(){
+  const pm=(await jget("/platform/stats")).data||{};
+  el("pmStats").innerHTML=`<table><tr><td>平台数</td><td>${pm.platforms}</td></tr>
+    <tr><td>白帽总数</td><td>${pm.hackers_total}</td></tr>
+    <tr><td>待审白帽</td><td>${pm.hackers_pending}</td></tr>
+    <tr><td>企业数</td><td>${pm.enterprises_total}</td></tr></table>`;
+  const hk=(await jget("/hackers")).data||{};
+  el("hackerTable").innerHTML="<table><tr><th>昵称</th><th>等级</th><th>积分</th><th>状态</th></tr>"+
+    (hk.hackers||[]).map(h=>`<tr><td>${h.nickname}</td><td>${h.level}</td>
+      <td>${h.points}</td><td>${h.status}</td></tr>`).join("")+"</table>";
+  const en=(await jget("/enterprises")).data||{};
+  el("entTable").innerHTML="<table><tr><th>企业</th><th>联系人</th><th>状态</th></tr>"+
+    (en.enterprises||[]).map(e=>`<tr><td>${e.name}</td><td>${e.contact}</td><td>${e.status}</td></tr>`).join("")+"</table>";
+  const an=(await jget("/platform/announcements")).data||{};
+  el("annList").innerHTML=(an.announcements||[]).map(a=>`<div class="vulnitem">
+    <span><b>${a.title}</b> <span class="muted">${a.content}</span></span></div>`).join("");
+}
+async function loadReview(){
+  const s=(await jget("/reviews/stats")).data||{};
+  el("revStats").innerHTML=`<table><tr><td>审核总数</td><td>${s.total}</td></tr>
+    <tr><td>误报</td><td>${s.false_positives}</td></tr>
+    <tr><td>重复</td><td>${s.duplicates}</td></tr>
+    <tr><td>SLA逾期</td><td>${s.sla_overdue}</td></tr></table>`;
+  const r=(await jget("/reviews")).data||{};
+  el("revTable").innerHTML="<table><tr><th>审核ID</th><th>阶段</th><th>CVSS</th><th>误报</th></tr>"+
+    (r.reviews||[]).map(v=>`<tr><td class="muted">${v.review_id.slice(0,12)}</td><td>${v.stage}</td>
+      <td>${(v.cvss||{}).baseScore||"-"}</td><td>${v.is_false_positive?"是":"否"}</td></tr>`).join("")+"</table>";
+}
+async function loadBounty(){
+  const s=(await jget("/bounty/stats")).data||{};
+  el("bountyStats").innerHTML=`<table><tr><td>累计发放</td><td>¥${s.total_gross}</td></tr>
+    <tr><td>代扣个税</td><td>¥${s.total_tax}</td></tr>
+    <tr><td>实发</td><td>¥${s.total_net}</td></tr></table>`;
+  const r=(await jget("/bounty/leaderboard?limit=10")).data||{};
+  el("bountyRank").innerHTML=(r.board||[]).map(x=>
+    `<div class="vulnitem"><span>#${x.rank} ${x.hacker_id}</span>
+      <b>¥${x.bounty}</b></div>`).join("");
+}
+async function loadCommunity(){
+  const h=(await jget("/community/honor")).data||{};
+  el("honorWall").innerHTML=(h.honor||[]).map(x=>
+    `<div class="vulnitem"><span>🏆 ${x.title}</span><b>${x.hacker}</b></div>`).join("");
+  const p=(await jget("/community/posts")).data||{};
+  el("postList").innerHTML=(p.posts||[]).map(x=>
+    `<div class="vulnitem"><span><b>${x.title}</b> <span class="muted">${x.category}</span></span>
+      <span class="muted">${x.author}</span></div>`).join("");
+}
+async function loadEnterprise(){
+  const ents=(await jget("/enterprises")).data||{enterprises:[]};
+  const eid=(ents.enterprises[0]||{}).enterprise_id||"ent_seed";
+  const d=(await jget("/enterprise/"+eid+"/dashboard")).data||{};
+  el("entDash").innerHTML=`<table><tr><td>漏洞总数</td><td>${d.total}</td></tr>
+    <tr><td>安全评分</td><td>${d.security_score}</td></tr>
+    <tr><td>修复率</td><td>${d.fix_rate}</td></tr></table>`;
+  const f=(await jget("/enterprise/"+eid+"/fix-progress")).data||{};
+  el("entFix").innerHTML="<table>"+Object.entries(f.progress||{}).map(([k,v])=>
+    `<tr><td>${k}</td><td>${v}</td></tr>`).join("")+"</table>";
+}
+async function loadKb(){
+  const s=(await jget("/knowledge/stats")).data||{};
+  el("kbStats").innerHTML=`<table><tr><td>案例</td><td>${s.cases}</td></tr>
+    <tr><td>PoC</td><td>${s.pocs}</td></tr><tr><td>修复方案</td><td>${s.fixes}</td></tr></table>`;
+}
+async function kbSearch(){
+  const r=await jget("/knowledge/search?keyword="+encodeURIComponent(el("kbKw").value));
+  el("kbResult").innerHTML="<pre class='muted'>"+JSON.stringify(r.data,null,2).slice(0,2000)+"</pre>";
+}
+async function loadAnalysis(){
+  const f=(await jget("/analysis/fix-efficiency")).data||{};
+  el("anaFix").innerHTML=`<table><tr><td>修复率</td><td>${f.fix_rate}</td></tr>
+    <tr><td>平均修复(时)</td><td>${f.avg_fix_hours}</td></tr>
+    <tr><td>SLA达标</td><td>${f.sla_compliance}</td></tr></table>`;
+  const ro=(await jget("/analysis/roi")).data||{};
+  el("anaRoi").innerHTML=`<table><tr><td>赏金投入</td><td>¥${ro.bounty_spent}</td></tr>
+    <tr><td>风险规避</td><td>¥${ro.estimated_risk_avoided}</td></tr>
+    <tr><td>ROI</td><td>${ro.roi}x</td></tr></table>`;
+  const r=(await jget("/analysis/risk")).data||{};
+  el("anaRisk").innerHTML=`<p>风险等级：<b>${r.risk_level}</b> (score=${r.risk_score})</p>`;
+}
+async function aiBatch(){
+  const r=await jpost("/ai/batch",{limit:20});
+  const d=r.data||{};
+  el("aiResult").innerHTML=`<p>共分析 ${d.total} 条，疑似误报 ${d.false_positive_suspected}，
+    高危 ${d.high_or_critical}，平均分 ${d.avg_score}</p>`+
+    (d.results||[]).slice(0,10).map(x=>
+      `<div class="thought">《${(x.vuln_id||"").slice(0,12)}》${x.predicted_type} →
+       ${x.severity_assessment.recommended_severity}（${x.verdict}）<br><span class="muted">${x.thought}</span></div>`).join("");
+}
+async function aiForecast(){
+  const r=await jget("/ai/forecast");
+  el("aiResult").innerHTML="<pre class='muted'>"+JSON.stringify(r.data,null,2)+"</pre>";
+}
+async function genReport(){
+  const r=await jpost("/report/generate",{fmt:"both"});
+  const f=await jget("/report/latest");
+  el("reportFiles").innerHTML=(f.data.files||[]).map(x=>`<div class="vulnitem"><span>${x}</span></div>`).join("");
+}
+
+// init
+refreshAll();loadVulns();loadPlatform();loadReview();loadBounty();
+loadCommunity();loadEnterprise();loadKb();loadAnalysis();
+</script>
+</body>
+</html>

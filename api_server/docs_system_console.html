@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文档体系中心 — AI Hacking Agent</title>
+<style>
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --border-color: #30363d;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --accent: #00d4aa;
+  --accent-dim: #00d4aa33;
+  --accent2: #58a6ff;
+  --warning: #d29922;
+  --danger: #f85149;
+  --success: #3fb950;
+  --radius: 8px;
+  --mono: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  font-size: 14px;
+}
+.header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header h1 {
+  font-size: 20px;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header h1::before {
+  content: '📚';
+  font-size: 24px;
+}
+.header .stats {
+  display: flex;
+  gap: 20px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.header .stats span { color: var(--accent); font-weight: 600; }
+
+.tabs {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 24px;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+}
+.tab-btn {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text-primary); background: var(--bg-tertiary); }
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.content { padding: 24px; max-width: 1400px; margin: 0 auto; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card h3 {
+  color: var(--accent);
+  margin-bottom: 12px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card h4 {
+  color: var(--accent2);
+  margin: 12px 0 8px;
+  font-size: 14px;
+}
+.card p, .card li {
+  color: var(--text-secondary);
+  line-height: 1.7;
+  font-size: 13px;
+}
+.card ul { padding-left: 20px; margin: 8px 0; }
+.card pre {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent);
+  margin: 8px 0;
+}
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 900px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-green { background: #3fb95022; color: var(--success); }
+.badge-yellow { background: #d2992222; color: var(--warning); }
+.badge-red { background: #f8514922; color: var(--danger); }
+.badge-blue { background: #58a6ff22; color: var(--accent2); }
+
+.stat-box {
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  padding: 16px;
+  text-align: center;
+}
+.stat-box .num { font-size: 28px; font-weight: 700; color: var(--accent); }
+.stat-box .label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th, td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+th { color: var(--accent); font-weight: 600; }
+td { color: var(--text-secondary); }
+tr:hover td { background: var(--bg-tertiary); }
+
+.btn {
+  padding: 8px 16px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.btn:hover { background: var(--accent); color: var(--bg-primary); }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+}
+.loading::after {
+  content: '...';
+  animation: dots 1.5s steps(4) infinite;
+}
+@keyframes dots { 0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; } }
+
+.method-GET { color: var(--success); font-weight: 700; }
+.method-POST { color: var(--warning); font-weight: 700; }
+.method-PUT { color: var(--accent2); font-weight: 700; }
+.method-DELETE { color: var(--danger); font-weight: 700; }
+
+.ascii-art {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--accent);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.section-title {
+  font-size: 18px;
+  color: var(--text-primary);
+  margin: 24px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>文档体系中心</h1>
+  <div class="stats">
+    <div>模块: <span>6</span></div>
+    <div>API端点: <span>38</span></div>
+    <div>安全方向: <span>32</span></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab(0)">架构文档</button>
+  <button class="tab-btn" onclick="switchTab(1)">API文档</button>
+  <button class="tab-btn" onclick="switchTab(2)">用户手册</button>
+  <button class="tab-btn" onclick="switchTab(3)">部署运维</button>
+  <button class="tab-btn" onclick="switchTab(4)">知识库</button>
+  <button class="tab-btn" onclick="switchTab(5)">文档管理</button>
+</div>
+
+<div class="content">
+
+<!-- ==================== Tab 0: 架构文档 ==================== -->
+<div class="tab-panel active" id="panel-0">
+  <div class="section-title">系统架构总览</div>
+  <div id="arch-overview"><div class="loading">加载架构总览</div></div>
+
+  <div class="section-title">模块架构文档</div>
+  <div id="arch-modules"><div class="loading">扫描项目模块中</div></div>
+
+  <div class="section-title">API架构 &amp; 数据架构</div>
+  <div class="grid-2">
+    <div id="arch-api"><div class="loading">加载API架构</div></div>
+    <div id="arch-data"><div class="loading">加载数据架构</div></div>
+  </div>
+
+  <div class="section-title">部署架构</div>
+  <div id="arch-deploy"><div class="loading">加载部署架构</div></div>
+</div>
+
+<!-- ==================== Tab 1: API文档 ==================== -->
+<div class="tab-panel" id="panel-1">
+  <div class="section-title">自动API文档（实时扫描项目路由）</div>
+  <div id="api-auto"><div class="loading">扫描项目API路由</div></div>
+
+  <div class="section-title">交互式调试 &amp; 分类搜索</div>
+  <div class="grid-2">
+    <div id="api-debug"><div class="loading">加载调试信息</div></div>
+    <div id="api-cats"><div class="loading">加载API分类</div></div>
+  </div>
+
+  <div class="section-title">变更日志 &amp; 最佳实践</div>
+  <div class="grid-2">
+    <div id="api-changelog"><div class="loading">加载变更日志</div></div>
+    <div id="api-practices"><div class="loading">加载最佳实践</div></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 2: 用户手册 ==================== -->
+<div class="tab-panel" id="panel-2">
+  <div class="section-title">快速上手</div>
+  <div id="guide-quickstart"><div class="loading">加载快速上手</div></div>
+
+  <div class="section-title">功能使用手册（32大安全方向）</div>
+  <div id="guide-features"><div class="loading">加载功能手册</div></div>
+
+  <div class="section-title">场景教程 &amp; 管理员/开发者指南</div>
+  <div class="grid-3">
+    <div id="guide-scenarios"><div class="loading">加载场景教程</div></div>
+    <div id="guide-admin"><div class="loading">加载管理员指南</div></div>
+    <div id="guide-dev"><div class="loading">加载开发者指南</div></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 3: 部署运维 ==================== -->
+<div class="tab-panel" id="panel-3">
+  <div class="section-title">安装部署 &amp; 配置参考</div>
+  <div class="grid-2">
+    <div id="deploy-install"><div class="loading">加载安装文档</div></div>
+    <div id="deploy-config"><div class="loading">加载配置参考</div></div>
+  </div>
+
+  <div class="section-title">运维操作 &amp; 监控告警</div>
+  <div class="grid-2">
+    <div id="deploy-ops"><div class="loading">加载运维手册</div></div>
+    <div id="deploy-monitor"><div class="loading">加载监控告警</div></div>
+  </div>
+
+  <div class="section-title">故障排查指南</div>
+  <div id="deploy-trouble"><div class="loading">加载故障排查</div></div>
+</div>
+
+<!-- ==================== Tab 4: 知识库 ==================== -->
+<div class="tab-panel" id="panel-4">
+  <div class="section-title">安全知识库</div>
+  <div id="kb-security"><div class="loading">加载安全知识库</div></div>
+
+  <div class="section-title">最佳实践 &amp; 案例库</div>
+  <div class="grid-2">
+    <div id="kb-practices"><div class="loading">加载最佳实践</div></div>
+    <div id="kb-cases"><div class="loading">加载案例库</div></div>
+  </div>
+
+  <div class="section-title">FAQ &amp; 术语表</div>
+  <div class="grid-2">
+    <div id="kb-faq"><div class="loading">加载FAQ</div></div>
+    <div id="kb-glossary"><div class="loading">加载术语表</div></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 5: 文档管理 ==================== -->
+<div class="tab-panel" id="panel-5">
+  <div class="section-title">文档仪表盘</div>
+  <div id="mgmt-dashboard"><div class="loading">加载仪表盘</div></div>
+
+  <div class="section-title">版本管理 &amp; 质量检查</div>
+  <div class="grid-2">
+    <div id="mgmt-versions"><div class="loading">加载版本列表</div></div>
+    <div id="mgmt-quality"><div class="loading">加载质量报告</div></div>
+  </div>
+
+  <div class="section-title">文档搜索 &amp; 贡献指南 &amp; 导出</div>
+  <div class="grid-3">
+    <div id="mgmt-search"><div class="loading">加载搜索</div></div>
+    <div id="mgmt-contribute"><div class="loading">加载贡献指南</div></div>
+    <div id="mgmt-export"><div class="loading">加载导出选项</div></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const API = '/api/v1/docs-center';
+let loadedTabs = {};
+
+function switchTab(idx) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+  document.querySelectorAll('.tab-panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+  if (!loadedTabs[idx]) { loadTab(idx); loadedTabs[idx] = true; }
+}
+
+async function fetchAPI(path) {
+  try {
+    const resp = await fetch(API + path);
+    const json = await resp.json();
+    return json;
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+function el(id) { return document.getElementById(id); }
+
+function renderCard(title, innerHTML) {
+  return `<div class="card"><h3>${title}</h3>${innerHTML}</div>`;
+}
+
+async function loadTab(idx) {
+  switch(idx) {
+    case 0: loadArch(); break;
+    case 1: loadApiDocs(); break;
+    case 2: loadGuides(); break;
+    case 3: loadDeploy(); break;
+    case 4: loadKB(); break;
+    case 5: loadMgmt(); break;
+  }
+}
+
+// ---- Tab 0: Architecture ----
+async function loadArch() {
+  const [ov, mods, api, data, dep] = await Promise.all([
+    fetchAPI('/architecture/overview'),
+    fetchAPI('/architecture/modules'),
+    fetchAPI('/architecture/api'),
+    fetchAPI('/architecture/data'),
+    fetchAPI('/architecture/deployment'),
+  ]);
+
+  if (ov.success) {
+    const d = ov.data;
+    let html = `<div class="grid-4">`;
+    Object.entries(d.stats || {}).forEach(([k, v]) => {
+      html += `<div class="stat-box"><div class="num">${v}</div><div class="label">${k}</div></div>`;
+    });
+    html += `</div>`;
+    html += renderCard('设计原则', '<ul>' + (d.design_principles||[]).map(p => `<li><b>${p.name}</b>: ${p.description}</li>`).join('') + '</ul>');
+    html += renderCard('技术栈', Object.entries(d.tech_stack||{}).map(([cat, items]) =>
+      `<h4>${cat}</h4><ul>${items.map(i => `<li>${i.name} ${i.version||''} — ${i.role}</li>`).join('')}</ul>`).join(''));
+    html += renderCard('架构决策记录', '<table><tr><th>ID</th><th>标题</th><th>决策</th></tr>' +
+      (d.architecture_decision_records||[]).map(a => `<tr><td>${a.id}</td><td>${a.title}</td><td>${a.decision}</td></tr>`).join('') + '</table>');
+    el('arch-overview').innerHTML = html;
+  } else {
+    el('arch-overview').innerHTML = renderCard('错误', '<p style="color:var(--danger)">' + ov.error + '</p>');
+  }
+
+  if (mods.success) {
+    const d = mods.data;
+    let html = `<p>共扫描到 <b style="color:var(--accent)">${d.total_modules}</b> 个路由模块</p>`;
+    html += '<table><tr><th>模块</th><th>API前缀</th><th>端点</th><th>行数</th><th>大小</th></tr>';
+    (d.modules||[]).slice(0, 20).forEach(m => {
+      html += `<tr><td>${m.name}</td><td style="font-family:var(--mono);font-size:11px">${m.api_prefix}</td><td>${m.endpoints_approx||'~'}</td><td>${m.lines}</td><td>${m.size_kb}KB</td></tr>`;
+    });
+    html += '</table>';
+    if ((d.modules||[]).length > 20) html += `<p style="margin-top:8px;color:var(--text-secondary)">... 共${d.modules.length}个模块，仅显示前20个</p>`;
+    el('arch-modules').innerHTML = html;
+  }
+
+  if (api.success) {
+    const d = api.data;
+    el('arch-api').innerHTML = renderCard('API架构设计',
+      `<h4>RESTful设计</h4><p>Base: ${d.restful_design.base_url}</p>` +
+      `<h4>版本策略</h4><p>${d.versioning.strategy}，当前${d.versioning.current_version}</p>` +
+      `<h4>认证方式</h4><p>${d.auth.method}</p>` +
+      `<h4>错误处理</h4><p>统一响应: ${d.error_handling.unified_format}</p>` +
+      `<h4>设计规范</h4><ul>${(d.api_design_rules||[]).map(r=>`<li><b>${r.rule}</b>: ${r.detail}</li>`).join('')}</ul>`);
+  }
+
+  if (data.success) {
+    const d = data.data;
+    el('arch-data').innerHTML = renderCard('数据架构',
+      `<h4>存储模式</h4><p>${d.database_design.mode}</p>` +
+      `<h4>核心概念表</h4><ul>${(d.database_design.core_tables_conceptual||[]).map(t=>`<li>${t}</li>`).join('')}</ul>` +
+      `<h4>数据流向</h4><p>${d.data_flow}</p>`);
+  }
+
+  if (dep.success) {
+    const d = dep.data;
+    el('arch-deploy').innerHTML = renderCard('部署架构',
+      `<div class="grid-2">` +
+      `<div><h4>单机部署</h4><p>${d.single_machine.startup}</p></div>` +
+      `<div><h4>Docker</h4><p>${d.containerization.dockerfile_basic?.length||'~'}行Dockerfile</p></div>` +
+      `</div>` +
+      `<h4>部署流程</h4><ol>${(d.deployment_flow||[]).map(s=>`<li>${s}</li>`).join('')}</ol>`);
+  }
+}
+
+// ---- Tab 1: API Docs ----
+async function loadApiDocs() {
+  const [auto, dbg, cats, cl, bp] = await Promise.all([
+    fetchAPI('/api-docs/auto'),
+    fetchAPI('/api-docs/debug'),
+    fetchAPI('/api-docs/categories'),
+    fetchAPI('/api-docs/changelog'),
+    fetchAPI('/api-docs/best-practices'),
+  ]);
+
+  if (auto.success) {
+    const d = auto.data;
+    let html = `<div class="grid-3">`;
+    html += `<div class="stat-box"><div class="num">${d.total_endpoints}</div><div class="label">总端点数</div></div>`;
+    html += `<div class="stat-box"><div class="num">${d.scan_info.route_files_found}</div><div class="label">路由文件数</div></div>`;
+    html += `<div class="stat-box"><div class="num">v19.0</div><div class="label">API版本</div></div>`;
+    html += `</div>`;
+    html += '<table style="margin-top:12px"><tr><th>方法</th><th>路径</th><th>标签</th><th>文件</th></tr>';
+    (d.endpoints||[]).slice(0, 25).forEach(ep => {
+      html += `<tr><td class="method-${ep.method}">${ep.method}</td><td style="font-family:var(--mono);font-size:11px">${ep.path}</td><td><span class="badge badge-blue">${ep.tag}</span></td><td style="font-size:11px">${ep.source_file}</td></tr>`;
+    });
+    html += '</table>';
+    el('api-auto').innerHTML = html;
+  }
+
+  if (dbg.success) {
+    el('api-debug').innerHTML = renderCard('交互式调试台',
+      `<p>${dbg.data.features?.map(f=>`<b>${f.name}</b>: ${f.description}<br>`).join('')||''}</p>` +
+      `<h4>代码示例 (Python)</h4><pre>${dbg.data.code_snippets?.python||''}</pre>`);
+  }
+
+  if (cats.success) {
+    const d = cats.data;
+    let html = `<p>总端点数: <b style="color:var(--accent)">${d.total_endpoints}</b></p>`;
+    html += '<h4>按HTTP方法</h4><ul>';
+    Object.entries(d.by_method||{}).forEach(([m, c]) => html += `<li class="method-${m}">${m}: ${c}个</li>`);
+    html += '</ul><h4>按标签分类（前10）</h4>';
+    html += '<table><tr><th>标签</th><th>端点数</th></tr>';
+    Object.entries(d.by_tag||{}).slice(0, 10).forEach(([tag, count]) => html += `<tr><td>${tag}</td><td>${count}</td></tr>`);
+    html += '</table>';
+    el('api-cats').innerHTML = html;
+  }
+
+  if (cl.success) {
+    el('api-changelog').innerHTML = renderCard('API变更日志',
+      (cl.data.versions||[]).map(v => `<h4>${v.version} (${v.date})</h4><ul>${(v.changes||[]).map(c=>`<li><span class="badge ${c.type==='new'?'badge-green':c.type==='deprecation'?'badge-yellow':'badge-blue'}">${c.type}</span> ${c.endpoint} — ${c.desc}</li>`).join('')}</ul>`).join(''));
+  }
+
+  if (bp.success) {
+    el('api-practices').innerHTML = renderCard('API最佳实践',
+      (bp.data.practices||[]).map(c => `<h4>${c.category}</h4><ul>${(c.items||[]).map(i=>`<li><b>${i.title}</b>: ${i.desc}</li>`).join('')}</ul>`).join(''));
+  }
+}
+
+// ---- Tab 2: User Guides ----
+async function loadGuides() {
+  const [qs, feat, scen, adm, dev] = await Promise.all([
+    fetchAPI('/user-guides/quickstart'),
+    fetchAPI('/user-guides/features'),
+    fetchAPI('/user-guides/scenarios'),
+    fetchAPI('/user-guides/admin'),
+    fetchAPI('/user-guides/developer'),
+  ]);
+
+  if (qs.success) {
+    el('guide-quickstart').innerHTML = renderCard('快速上手',
+      (qs.data.sections||[]).map(s => `<h4>步骤${s.step}: ${s.title}</h4><pre>${s.content}</pre>`).join('') +
+      `<h4>入门检查清单</h4><ul>${(qs.data.checklist||[]).map(c=>`<li>☑ ${c}</li>`).join('')}</ul>`);
+  }
+
+  if (feat.success) {
+    const d = feat.data;
+    let html = `<p>共 <b style="color:var(--accent)">${d.total_modules}</b> 个安全方向功能手册</p>`;
+    html += '<div class="grid-3">';
+    (d.modules||[]).forEach(m => {
+      html += `<div class="card" style="margin-bottom:8px"><h4>${m.name}</h4><p style="font-size:12px">${m.description}</p><p style="font-family:var(--mono);font-size:11px;color:var(--accent2)">${m.api_prefix}</p></div>`;
+    });
+    html += '</div>';
+    el('guide-features').innerHTML = html;
+  }
+
+  if (scen.success) {
+    el('guide-scenarios').innerHTML = renderCard('场景教程',
+      (scen.data.scenarios||[]).map(s => `<h4>${s.name}</h4><p>难度: <span class="badge badge-yellow">${s.difficulty}</span> 时长: ${s.duration}</p><ol>${(s.steps||[]).map(st=>`<li>${st}</li>`).join('')}</ol>`).join(''));
+  }
+
+  if (adm.success) {
+    el('guide-admin').innerHTML = renderCard('管理员指南',
+      (adm.data.sections||[]).map(sec => `<h4>${sec.name}</h4><ul>${(sec.items||[]).map(i=>`<li>${typeof i==='string'?i:i.config+': '+i.desc}</li>`).join('')}</ul>`).join(''));
+  }
+
+  if (dev.success) {
+    el('guide-dev').innerHTML = renderCard('开发者指南',
+      (dev.data.sections||[]).map(sec => `<h4>${sec.name}</h4><ul>${(sec.items||[]).map(i=>`<li>${i}</li>`).join('')}</ul>`).join(''));
+  }
+}
+
+// ---- Tab 3: Deployment ----
+async function loadDeploy() {
+  const [inst, cfg, ops, mon, trb] = await Promise.all([
+    fetchAPI('/deployment/install'),
+    fetchAPI('/deployment/config'),
+    fetchAPI('/deployment/ops'),
+    fetchAPI('/deployment/monitoring'),
+    fetchAPI('/deployment/troubleshooting'),
+  ]);
+
+  if (inst.success) {
+    el('deploy-install').innerHTML = renderCard('安装部署',
+      (inst.data.platforms||[]).map(p => `<h4>${p.platform}</h4><ol>${(p.steps||[]).slice(0,5).map(s=>`<li>${s}</li>`).join('')}</ol>`).join(''));
+  }
+
+  if (cfg.success) {
+    el('deploy-config').innerHTML = renderCard('配置参考',
+      '<table><tr><th>配置项</th><th>默认值</th><th>说明</th></tr>' +
+      (cfg.data.config_sections||[]).flatMap(s=>s.items).map(i => `<tr><td style="font-family:var(--mono);font-size:11px">${i.key}</td><td>${i.default}</td><td>${i.desc}</td></tr>`).join('') +
+      '</table>');
+  }
+
+  if (ops.success) {
+    el('deploy-ops').innerHTML = renderCard('运维操作',
+      (ops.data.operations||[]).map(o => `<h4>${o.name}</h4><pre>${(o.commands||[]).join('\n')}</pre>`).join(''));
+  }
+
+  if (mon.success) {
+    el('deploy-monitor').innerHTML = renderCard('监控与告警',
+      `<h4>关键指标</h4><ul>${(mon.data.metrics||[]).map(m=>`<li><b>${m.name}</b> (${m.unit}): ${m.desc}</li>`).join('')}</ul>` +
+      `<h4>告警规则</h4><ul>${(mon.data.alert_rules||[]).map(a=>`<li><span class="badge badge-red">${a.severity}</span> ${a.name}: ${a.condition}</li>`).join('')}</ul>`);
+  }
+
+  if (trb.success) {
+    el('deploy-trouble').innerHTML = renderCard('故障排查',
+      (trb.data.common_issues||[]).map(i => `<h4>症状: ${i.symptom}</h4><ul>${(i.solutions||[]).map(s=>`<li>${s}</li>`).join('')}</ul>`).join('') +
+      `<h4>故障树</h4><pre>${trb.data.fault_tree}</pre>`);
+  }
+}
+
+// ---- Tab 4: Knowledge Base ----
+async function loadKB() {
+  const [sec, bp, cs, faq, gl] = await Promise.all([
+    fetchAPI('/knowledge/security-base'),
+    fetchAPI('/knowledge/best-practices'),
+    fetchAPI('/knowledge/cases'),
+    fetchAPI('/knowledge/faq'),
+    fetchAPI('/knowledge/glossary'),
+  ]);
+
+  if (sec.success) {
+    const d = sec.data;
+    el('kb-security').innerHTML = renderCard('安全知识库',
+      `<div class="grid-2">` +
+      `<div><h4>漏洞知识库 (${d.vulnerability_knowledge?.length||0})</h4><table><tr><th>漏洞</th><th>严重度</th></tr>${(d.vulnerability_knowledge||[]).slice(0,8).map(v=>`<tr><td>${v.name}</td><td><span class="badge ${v.severity==='critical'?'badge-red':v.severity==='high'?'badge-yellow':'badge-blue'}">${v.severity}</span></td></tr>`).join('')}</table></div>` +
+      `<div><h4>攻击技术 (${d.attack_techniques?.length||0})</h4><ul>${(d.attack_techniques||[]).slice(0,8).map(t=>`<li><b>${t.name}</b> [${t.tactic}]</li>`).join('')}</ul></div>` +
+      `</div>`);
+  }
+
+  if (bp.success) {
+    el('kb-practices').innerHTML = renderCard('最佳实践',
+      (bp.data.assessment_practices||[]).map(c => `<h4>${c.category}</h4><ul>${(c.items||[]).map(i=>`<li>${i}</li>`).join('')}</ul>`).join(''));
+  }
+
+  if (cs.success) {
+    el('kb-cases').innerHTML = renderCard('案例库',
+      (cs.data.cases||[]).map(c => `<h4>${c.name}</h4><p>类型: ${c.type} | 行业: ${c.industry} | 时长: ${c.duration}</p><p>${c.findings_summary}</p>`).join(''));
+  }
+
+  if (faq.success) {
+    el('kb-faq').innerHTML = renderCard('FAQ',
+      (faq.data.categories||[]).map(c => `<h4>${c.category}</h4><ul>${(c.questions||[]).map(q=>`<li><b>Q:</b> ${q.q}<br><b>A:</b> ${q.a}</li>`).join('')}</ul>`).join(''));
+  }
+
+  if (gl.success) {
+    el('kb-glossary').innerHTML = renderCard('术语表',
+      `<p>共 <b style="color:var(--accent)">${gl.data.total_terms}</b> 个术语</p>` +
+      '<table><tr><th>术语</th><th>全称</th><th>释义</th></tr>' +
+      (gl.data.terms||[]).slice(0, 20).map(t => `<tr><td style="color:var(--accent2);font-weight:600">${t.term}</td><td style="font-size:12px">${t.full}</td><td style="font-size:12px">${t.desc}</td></tr>`).join('') +
+      '</table>');
+  }
+}
+
+// ---- Tab 5: Management ----
+async function loadMgmt() {
+  const [dash, ver, qual, sea, con, exp] = await Promise.all([
+    fetchAPI('/management/dashboard'),
+    fetchAPI('/management/versions'),
+    fetchAPI('/management/quality'),
+    fetchAPI('/management/search?q=API'),
+    fetchAPI('/management/contribute'),
+    fetchAPI('/management/export-formats'),
+  ]);
+
+  if (dash.success) {
+    const d = dash.data;
+    el('mgmt-dashboard').innerHTML = `<div class="grid-4">` +
+      `<div class="stat-box"><div class="num">${d.stats?.total_documents||0}</div><div class="label">文档总数</div></div>` +
+      `<div class="stat-box"><div class="num">${d.stats?.total_versions||0}</div><div class="label">版本总数</div></div>` +
+      `<div class="stat-box"><div class="num">${d.stats?.avg_quality_score||0}</div><div class="label">平均质量分</div></div>` +
+      `<div class="stat-box"><div class="num">${d.stats?.contributors||0}</div><div class="label">贡献者</div></div>` +
+      `</div>` +
+      `<div class="grid-2" style="margin-top:16px">` +
+      `<div class="card"><h4>分类分布</h4><ul>${Object.entries(d.category_distribution||{}).map(([k,v])=>`<li>${k}: ${v}</li>`).join('')}</ul></div>` +
+      `<div class="card"><h4>待补充文档</h4><ul>${(d.missing_docs||[]).map(m=>`<li><span class="badge badge-yellow">${m.priority}</span> ${m.doc} (${m.category})</li>`).join('')}</ul></div>` +
+      `</div>`;
+  }
+
+  if (ver.success) {
+    el('mgmt-versions').innerHTML = renderCard('文档版本',
+      '<table><tr><th>文档</th><th>当前版本</th><th>更新时间</th></tr>' +
+      (ver.data.docs||[]).map(d => `<tr><td>${d.title}</td><td><span class="badge badge-blue">${d.current_version}</span></td><td>${d.updated_at}</td></tr>`).join('') +
+      '</table>');
+  }
+
+  if (qual.success) {
+    el('mgmt-quality').innerHTML = renderCard('质量检查',
+      `<p>平均质量分: <b style="color:var(--accent)">${qual.data.average_score}</b></p>` +
+      `<h4>评级分布</h4><ul>${Object.entries(qual.data.grade_distribution||{}).map(([k,v])=>`<li>${k}: ${v}个</li>`).join('')}</ul>`);
+  }
+
+  if (sea.success) {
+    el('mgmt-search').innerHTML = renderCard('文档搜索',
+      `<p>搜索: <b>${sea.data.query}</b> → ${sea.data.total_results} 结果</p>` +
+      (sea.data.results||[]).map(r=>`<p>📄 ${r.title} (v${r.version}) <span style="color:var(--text-secondary);font-size:11px">相关度: ${r.relevance_score}</span></p>`).join('') +
+      `<h4>热门关键词</h4><p>${(sea.data.hot_keywords||[]).map(k=>`<span class="badge badge-blue" style="margin-right:4px">${k}</span>`).join('')}</p>`);
+  }
+
+  if (con.success) {
+    el('mgmt-contribute').innerHTML = renderCard('贡献指南',
+      `<h4>贡献流程</h4><ol>${(con.data.workflow||[]).map(w=>`<li>${w}</li>`).join('')}</ol>` +
+      `<h4>写作规范</h4><ul>${(con.data.writing_standards||[]).map(w=>`<li>${w}</li>`).join('')}</ul>`);
+  }
+
+  if (exp.success) {
+    el('mgmt-export').innerHTML = renderCard('文档导出',
+      (exp.data.formats||[]).map(f=>`<p>📄 <b>${f.format.toUpperCase()}</b>: ${f.desc}</p>`).join(''));
+  }
+}
+
+// Auto-load first tab
+loadTab(0);
+loadedTabs[0] = true;
+</script>
+</body>
+</html>

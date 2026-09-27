@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>真实攻击链可视化控制台</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; padding: 20px; }
+  h1 { color: #f85149; margin-bottom: 4px; font-size: 22px; }
+  .sub { color: #8b949e; margin-bottom: 20px; font-size: 13px; }
+  .chain { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .stage { flex: 1; min-width: 140px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px; text-align: center; position: relative; }
+  .stage.done { border-color: #238636; }
+  .stage.running { border-color: #f0b72f; }
+  .stage.current { background: #1f6feb22; }
+  .stage .num { font-size: 11px; color: #8b949e; }
+  .stage .name { font-weight: 700; margin: 4px 0; }
+  .stage .status { font-size: 11px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
+  .card h2 { font-size: 15px; color: #f0b72f; margin-bottom: 12px; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+  input { background: #0d1117; color: #c9d1d9; border: 1px solid #30363d; border-radius: 4px; padding: 8px; width: 100%; margin-bottom: 8px; }
+  button { background: #da3633; color: #fff; border: 0; border-radius: 4px; padding: 8px 14px; cursor: pointer; margin: 2px; }
+  button.blue { background: #1f6feb; }
+  button.secondary { background: #30363d; }
+  pre { background: #010409; border: 1px solid #30363d; border-radius: 4px; padding: 10px; overflow: auto; max-height: 350px; font-size: 12px; }
+  .full { grid-column: 1 / -1; }
+  .tl-item { border-left: 2px solid #f0b72f; padding: 4px 8px; margin-bottom: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>⚔️ 真实攻击链完整实现</h1>
+<div class="sub">信息收集 → 漏洞发现 → 漏洞利用 → 权限提升 → 横向移动 → 痕迹清理（真实子进程调用）</div>
+
+<div class="chain" id="chain">
+  <div class="stage" data-s="recon"><div class="num">01</div><div class="name">信息收集</div><div class="status">idle</div></div>
+  <div class="stage" data-s="discovery"><div class="num">02</div><div class="name">漏洞发现</div><div class="status">idle</div></div>
+  <div class="stage" data-s="exploitation"><div class="num">03</div><div class="name">漏洞利用</div><div class="status">idle</div></div>
+  <div class="stage" data-s="privesc"><div class="num">04</div><div class="name">权限提升</div><div class="status">idle</div></div>
+  <div class="stage" data-s="lateral"><div class="num">05</div><div class="name">横向移动</div><div class="status">idle</div></div>
+  <div class="stage" data-s="cleanup"><div class="num">06</div><div class="name">痕迹清理</div><div class="status">idle</div></div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>🎯 一键跑链</h2>
+    <input id="target" placeholder="目标域名或 IP，如 example.com" value="example.com">
+    <button onclick="runFullChain()">🚀 跑完整链</button>
+    <button class="blue" onclick="createRun()">仅创建 Run</button>
+    <pre id="run-out"></pre>
+  </div>
+
+  <div class="card">
+    <h2>🔍 信息收集</h2>
+    <input id="recon-target" placeholder="目标" value="example.com">
+    <button class="blue" onclick="recon('subfinder')">subfinder</button>
+    <button class="blue" onclick="recon('crt-sh')">crt.sh</button>
+    <button class="blue" onclick="recon('port-scan')">nmap 端口</button>
+    <button class="blue" onclick="recon('service')">服务识别</button>
+    <button class="blue" onclick="recon('fingerprint')">Web 指纹</button>
+    <pre id="recon-out"></pre>
+  </div>
+
+  <div class="card">
+    <h2>🐞 漏洞发现</h2>
+    <input id="disc-url" placeholder="http://target" value="http://example.com">
+    <button class="blue" onclick="disc('nuclei')">nuclei</button>
+    <button class="blue" onclick="disc('nikto')">nikto</button>
+    <button class="blue" onclick="disc('dirbust')">目录枚举</button>
+    <pre id="disc-out"></pre>
+  </div>
+
+  <div class="card">
+    <h2>💥 漏洞利用</h2>
+    <input id="exp-url" placeholder="注入点 URL" value="http://example.com/page?id=1">
+    <button onclick="exp('sqli')">SQLi dump</button>
+    <button onclick="exp('xss')">XSS 验证</button>
+    <button onclick="exp('lfi')">LFI 读文件</button>
+    <button onclick="exp('redis')">Redis 未授权</button>
+    <button onclick="exp('es')">ES 未授权</button>
+    <pre id="exp-out"></pre>
+  </div>
+
+  <div class="card">
+    <h2>⬆️ 权限提升</h2>
+    <button onclick="privescEnum()">枚举提权向量</button>
+    <pre id="priv-out"></pre>
+  </div>
+
+  <div class="card">
+    <h2>↔️ 横向移动</h2>
+    <input id="lat-cidr" placeholder="CIDR" value="192.168.1.0/24">
+    <input id="lat-user" placeholder="用户名" value="admin">
+    <input id="lat-pass" placeholder="密码" value="P@ssw0rd">
+    <button onclick="lateral('spray')">SMB 喷洒</button>
+    <button onclick="lateral('pivot')">Pivot</button>
+    <pre id="lat-out"></pre>
+  </div>
+
+  <div class="card full">
+    <h2>📜 攻击链时间线</h2>
+    <div id="tl"></div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1/attack-chain';
+let runId = null;
+
+async function j(url, opt) {
+  const r = await fetch(url, opt);
+  return r.json();
+}
+async function post(path, body) {
+  return j(API + path, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+}
+
+function show(id, data) { document.getElementById(id).textContent = JSON.stringify(data, null, 2); }
+
+async function runFullChain() {
+  const target = document.getElementById('target').value;
+  const res = await post('/run/full', {target});
+  runId = res.data.run_id;
+  show('run-out', res);
+}
+async function createRun() {
+  const target = document.getElementById('target').value;
+  const res = await post('/run/create', {target});
+  runId = res.data.run_id;
+  show('run-out', res);
+}
+
+async function recon(kind) {
+  const t = document.getElementById('recon-target').value;
+  let path, body;
+  if (kind === 'subfinder') { path='/recon/subfinder'; body={domain:t}; }
+  else if (kind === 'crt-sh') { path='/recon/crt-sh'; body={domain:t}; }
+  else if (kind === 'port-scan') { path='/recon/port-scan'; body={target:t}; }
+  else if (kind === 'service') { path='/recon/service-detect'; body={target:t}; }
+  else { path='/recon/fingerprint'; body={url:t}; }
+  show('recon-out', await post(path, body));
+}
+
+async function disc(kind) {
+  const u = document.getElementById('disc-url').value;
+  let path, body;
+  if (kind === 'nuclei') { path='/discovery/nuclei'; body={url:u}; }
+  else if (kind === 'nikto') { path='/discovery/nikto'; body={url:u}; }
+  else { path='/discovery/dirbust'; body={url:u}; }
+  show('disc-out', await post(path, body));
+}
+
+async function exp(kind) {
+  const u = document.getElementById('exp-url').value;
+  let path, body;
+  if (kind === 'sqli') { path='/exploit/sqli-dump'; body={url:u}; }
+  else if (kind === 'xss') { path='/exploit/xss-verify'; body={url:u, param:'id'}; }
+  else if (kind === 'lfi') { path='/exploit/lfi-read'; body={url_template:u+'?file={path}'}; }
+  else if (kind === 'redis') { path='/exploit/redis-unauth'; body={host:u}; }
+  else { path='/exploit/es-unauth'; body={host:u}; }
+  show('exp-out', await post(path, body));
+}
+
+async function privescEnum() {
+  show('priv-out', await j(API + '/privesc/enum', {method:'POST'}));
+}
+
+async function lateral(kind) {
+  const body = {cidr: document.getElementById('lat-cidr').value, username: document.getElementById('lat-user').value, password: document.getElementById('lat-pass').value};
+  const path = kind === 'spray' ? '/lateral/smb-spray' : '/lateral/pivot';
+  show('lat-out', await post(path, body));
+}
+</script>
+</body>
+</html>

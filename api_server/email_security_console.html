@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>邮件安全运营控制台 · Email Security SOC</title>
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1f2630; --border:#2d333b;
+    --fg:#e6edf3; --muted:#8b949e; --accent:#3fb950; --warn:#d29922;
+    --danger:#f85149; --info:#58a6ff; --purple:#bc8cff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--fg);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.5}
+  header{background:linear-gradient(90deg,#161b22,#0d1117);border-bottom:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;gap:14px}
+  header h1{font-size:18px;font-weight:600}
+  header .tag{font-size:12px;color:var(--muted);border:1px solid var(--border);padding:2px 8px;border-radius:10px}
+  .tabs{display:flex;gap:4px;background:var(--bg2);padding:0 18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .tab{padding:12px 16px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;font-size:14px}
+  .tab:hover{color:var(--fg)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  main{padding:18px 22px;max-width:1500px;margin:0 auto}
+  .pane{display:none}
+  .pane.active{display:block}
+  .grid{display:grid;gap:14px}
+  .grid.c2{grid-template-columns:1fr 1fr}
+  .grid.c3{grid-template-columns:repeat(3,1fr)}
+  .grid.c4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:1100px){.grid.c2,.grid.c3,.grid.c4{grid-template-columns:1fr}}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+  .card h3{font-size:14px;margin-bottom:10px;color:var(--info)}
+  .stat{font-size:26px;font-weight:700}
+  .stat.green{color:var(--accent)} .stat.yellow{color:var(--warn)}
+  .stat.red{color:var(--danger)} .stat.blue{color:var(--info)}
+  .label{font-size:12px;color:var(--muted)}
+  textarea,input,select{width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:Consolas,monospace;font-size:13px}
+  textarea{min-height:170px;resize:vertical}
+  button{background:var(--accent);color:#04260d;border:0;border-radius:6px;padding:8px 16px;cursor:pointer;font-weight:600}
+  button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  button:hover{opacity:.9}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:7px 9px;border-bottom:1px solid var(--border);text-align:left}
+  th{color:var(--muted);font-weight:600;font-size:12px}
+  tr:hover td{background:var(--bg3)}
+  .badge{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600}
+  .b-critical{background:#f8514922;color:var(--danger)}
+  .b-high{background:#d2992222;color:var(--warn)}
+  .b-medium{background:#58a6ff22;color:var(--info)}
+  .b-low{background:#8b949e22;color:var(--muted)}
+  .b-open{background:#f8514922;color:var(--danger)}
+  .b-ok{background:#3fb95022;color:var(--accent)}
+  pre{background:#0a0e13;border:1px solid var(--border);border-radius:6px;padding:10px;overflow:auto;max-height:340px;font-size:12px}
+  .bar{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin:4px 0}
+  .bar>span{display:block;height:100%;background:var(--accent)}
+  .kv{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--border);font-size:13px}
+  .kv b{color:var(--muted);font-weight:500}
+  .chain{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0}
+  .chain .node{background:var(--bg3);border:1px solid var(--border);padding:5px 10px;border-radius:6px;font-size:12px}
+  .chain .arr{color:var(--muted)}
+  .muted{color:var(--muted);font-size:12px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .score-ring{width:110px;height:110px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;margin:0 auto}
+  .sec-title{font-size:15px;font-weight:600;margin:18px 0 10px;color:var(--purple)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡 邮件安全运营控制台</h1>
+  <span class="tag">Email Security SOC · v18.1</span>
+  <span class="tag" id="authTag">SPF/DKIM/DMARC/ARC/MTA-STS</span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-pane="p-phish">🎣 钓鱼检测</div>
+  <div class="tab" data-pane="p-bec">💼 BEC 检测</div>
+  <div class="tab" data-pane="p-auth">🔐 邮件认证</div>
+  <div class="tab" data-pane="p-sandbox">📦 附件沙箱</div>
+  <div class="tab" data-pane="p-intel">🕵 威胁情报</div>
+  <div class="tab" data-pane="p-dash">📊 运营仪表盘</div>
+</div>
+
+<main>
+<!-- ===================== 钓鱼检测 ===================== -->
+<section id="p-phish" class="pane active">
+  <div class="grid c2">
+    <div class="card">
+      <h3>邮件分析（粘贴原始邮件：头+正文）</h3>
+      <label class="muted">From 地址</label>
+      <input id="phFrom" value="service@paypa1-support.xyz">
+      <div style="height:8px"></div>
+      <label class="muted">原始邮件</label>
+      <textarea id="phRaw">From: "PayPal" <service@paypa1-support.xyz>
+Reply-To: noreply@appleid-secure.xyz
+Subject: URGENT: Your account has been limited
+Authentication-Results: spf=fail; dkim=none; dmarc=none
+
+Dear Customer,
+
+We detected unusual login. Your account will be SUSPENDED within 24 hours.
+Please verify NOW by clicking:
+http://secure-paypa1.com/login?verify=123
+Or visit http://bit.ly/abc123 immediately.
+Please do not ignore this final warning. Thank you.</textarea>
+      <div style="height:10px"></div>
+      <div class="row">
+        <button onclick="phAnalyze()">开始分析</button>
+        <button class="ghost" onclick="phRules()">加载规则库</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>风险评分</h3>
+      <div id="phScore" class="score-ring" style="border:6px solid var(--danger)">--</div>
+      <div style="text-align:center;margin-top:8px" id="phLevel">未分析</div>
+      <div style="height:14px"></div>
+      <div id="phDims"></div>
+    </div>
+  </div>
+
+  <div class="sec-title">可疑链接 / 附件 / 处置建议</div>
+  <div class="grid c2">
+    <div class="card"><h3>可疑链接</h3><div id="phUrls"><span class="muted">—</span></div></div>
+    <div class="card"><h3>处置建议</h3><div id="phAdvice"><span class="muted">—</span></div></div>
+  </div>
+
+  <div class="sec-title">钓鱼检测规则库</div>
+  <div class="card">
+    <table id="phRulesTable"><thead><tr><th>ID</th><th>规则</th><th>类别</th><th>权重</th></tr></thead><tbody></tbody></table>
+  </div>
+</section>
+
+<!-- ===================== BEC ===================== -->
+<section id="p-bec" class="pane">
+  <div class="grid c2">
+    <div class="card">
+      <h3>BEC 邮件分析</h3>
+      <label class="muted">邮件正文</label>
+      <textarea id="becText">Hi, I am currently in a confidential meeting.
+I need you to make an URGENT wire transfer today.
+New beneficiary bank account has been changed: 6222021234567890123.
+Please keep this confidential between us and do not call me.
+Process now and we will paper it later. Thanks.</textarea>
+      <div style="height:10px"></div>
+      <button onclick="becAnalyze()">BEC 分析</button>
+    </div>
+    <div class="card">
+      <h3>分析结果</h3>
+      <div id="becResult"><span class="muted">未分析</span></div>
+    </div>
+  </div>
+
+  <div class="sec-title">攻击链可视化</div>
+  <div class="card"><div id="becChain"><span class="muted">—</span></div></div>
+
+  <div class="sec-title">供应商监控</div>
+  <div class="card"><table id="becSuppliers"><thead><tr><th>ID</th><th>供应商</th><th>状态</th><th>改账户</th><th>异常分</th></tr></thead><tbody></tbody></table></div>
+
+  <div class="sec-title">BEC 规则库（50+）</div>
+  <div class="card">
+    <div class="row" style="margin-bottom:8px">
+      <button class="ghost" onclick="becLoadRules()">加载规则</button>
+      <span class="muted" id="becRuleCount"></span>
+    </div>
+    <table id="becRulesTable"><thead><tr><th>ID</th><th>规则</th><th>类别</th><th>严重度</th><th>权重</th></tr></thead><tbody></tbody></table>
+  </div>
+</section>
+
+<!-- ===================== 邮件认证 ===================== -->
+<section id="p-auth" class="pane">
+  <div class="grid c2">
+    <div class="card">
+      <h3>认证综合检查</h3>
+      <label class="muted">邮件服务器主机</label>
+      <input id="authHost" value="mail.example.com">
+      <div style="height:8px"></div>
+      <label class="muted">SPF 记录</label>
+      <input id="authSpf" value="v=spf1 include:_spf.example.com -all">
+      <div style="height:8px"></div>
+      <label class="muted">DMARC 记录</label>
+      <input id="authDmarc" value="v=DMARC1; p=quarantine; rua=mailto:d@example.com;">
+      <div style="height:10px"></div>
+      <button onclick="authRun()">运行综合检查</button>
+      <button class="ghost" onclick="authSmtp()">SMTP 配置检查</button>
+    </div>
+    <div class="card">
+      <h3>认证评分</h3>
+      <div id="authScore" class="score-ring" style="border:6px solid var(--info)">--</div>
+      <div style="text-align:center" id="authGrade">未检查</div>
+      <div style="height:12px"></div>
+      <div id="authBreakdown"></div>
+    </div>
+  </div>
+  <div class="sec-title">SMTP 安全配置</div>
+  <div class="card" id="authSmtpResult"><span class="muted">—</span></div>
+</section>
+
+<!-- ===================== 附件沙箱 ===================== -->
+<section id="p-sandbox" class="pane">
+  <div class="grid c2">
+    <div class="card">
+      <h3>附件分析（文件名 / Base64 载荷）</h3>
+      <label class="muted">文件名</label>
+      <input id="sbFile" value="invoice.docm">
+      <div style="height:8px"></div>
+      <label class="muted">Base64 载荷（可留空）</label>
+      <textarea id="sbB64">TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</textarea>
+      <div style="height:10px"></div>
+      <button onclick="sbAnalyze()">提交沙箱分析</button>
+      <button class="ghost" onclick="sbYara()">YARA 规则</button>
+      <button class="ghost" onclick="sbHashDb()">哈希库</button>
+    </div>
+    <div class="card">
+      <h3>静态分析 / 哈希</h3>
+      <div id="sbStatic"><span class="muted">—</span></div>
+    </div>
+  </div>
+  <div class="sec-title">动态行为报告（模拟）</div>
+  <div class="grid c2">
+    <div class="card"><h3>行为树 / 网络 / IOC</h3><div id="sbDynamic"><span class="muted">—</span></div></div>
+    <div class="card"><h3>YARA 命中 / 规则库</h3><div id="sbYara"><span class="muted">—</span></div></div>
+  </div>
+</section>
+
+<!-- ===================== 威胁情报 ===================== -->
+<section id="p-intel" class="pane">
+  <div class="row" style="margin-bottom:10px">
+    <button onclick="intelLoad('urls')">URL 库</button>
+    <button onclick="intelLoad('hashes')">哈希库</button>
+    <button onclick="intelLoad('domains')">域名库</button>
+    <button onclick="intelLoad('ips')">IP 库</button>
+    <button class="ghost" onclick="intelExport()">导出 JSON</button>
+    <button class="ghost" onclick="intelPersonas()">BEC 画像</button>
+  </div>
+  <div class="card">
+    <h3>IOC 列表</h3>
+    <table id="intelTable"><thead><tr><th>IOC</th><th>类型</th><th>信誉分</th><th>首次发现</th><th>来源</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="grid c2" style="margin-top:14px">
+    <div class="card">
+      <h3>实时威胁匹配</h3>
+      <label class="muted">URL（每行一个）</label>
+      <textarea id="matchUrls" style="min-height:70px">http://secure-paypa1.com/login
+http://c2-emotet-dyn.net/beacon</textarea>
+      <div style="height:8px"></div>
+      <button onclick="intelMatch()">匹配</button>
+      <div style="height:10px"></div>
+      <div id="intelMatchResult"><span class="muted">—</span></div>
+    </div>
+    <div class="card">
+      <h3>IOC 富化</h3>
+      <label class="muted">IOC 值</label>
+      <input id="enrichVal" value="office365-auth.top">
+      <div style="height:8px"></div>
+      <button onclick="intelEnrich()">富化</button>
+      <div style="height:10px"></div>
+      <div id="enrichResult"><span class="muted">—</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 运营仪表盘 ===================== -->
+<section id="p-dash" class="pane">
+  <div class="grid c4">
+    <div class="card"><div class="label">今日邮件总量</div><div class="stat blue" id="kTotal">–</div></div>
+    <div class="card"><div class="label">钓鱼拦截</div><div class="stat red" id="kPhish">–</div></div>
+    <div class="card"><div class="label">BEC 拦截</div><div class="stat yellow" id="kBec">–</div></div>
+    <div class="card"><div class="label">认证失败率</div><div class="stat green" id="kAuth">–</div></div>
+  </div>
+
+  <div class="sec-title">告警列表</div>
+  <div class="card">
+    <table id="dashAlerts"><thead><tr><th>ID</th><th>类型</th><th>发件人</th><th>主题</th><th>分</th><th>状态</th><th>操作</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <div class="sec-title">威胁趋势（7 天）</div>
+  <div class="card" id="dashTrends"><span class="muted">—</span></div>
+
+  <div class="sec-title">安全度量</div>
+  <div class="card" id="dashMetrics"><span class="muted">—</span></div>
+
+  <div class="sec-title">模拟钓鱼演练</div>
+  <div class="card">
+    <div class="row" style="margin-bottom:8px">
+      <input id="simName" placeholder="演练名称" style="width:200px">
+      <input id="simTpl" placeholder="模板" style="width:200px" value="伪造HR工资单">
+      <button onclick="simCreate()">创建演练</button>
+      <button class="ghost" onclick="simList()">刷新列表</button>
+    </div>
+    <table id="simTable"><thead><tr><th>ID</th><th>名称</th><th>模板</th><th>对象</th><th>点击</th><th>状态</th></tr></thead><tbody></tbody></table>
+  </div>
+</section>
+</main>
+
+<script>
+const API = '/api/v1/email-security';
+async function post(url, body){
+  const r = await fetch(API+url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body||{})});
+  return r.json();
+}
+async function get(url){
+  const r = await fetch(API+url);
+  return r.json();
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function badge(sev){const m={critical:'b-critical',high:'b-high',medium:'b-medium',low:'b-low'};return `<span class="badge ${m[sev]||'b-low'}">${esc(sev)}</span>`;}
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.pane).classList.add('active');
+});
+
+// ---------- phishing ----------
+async function phAnalyze(){
+  const res = await post('/phishing/analyze', {raw_email: document.getElementById('phRaw').value, from_addr: document.getElementById('phFrom').value, attachments:[]});
+  const r = res.data && res.data.result;
+  if(!r){alert(res.error||'分析失败');return;}
+  const sc=document.getElementById('phScore');
+  sc.textContent=r.risk_score;
+  sc.style.borderColor = r.risk_score>=75?'var(--danger)':r.risk_score>=55?'var(--warn)':'var(--info)';
+  document.getElementById('phLevel').textContent=r.risk_level_name;
+  const dims=r.dimensions;
+  document.getElementById('phDims').innerHTML = Object.keys(dims).map(k=>{
+    const v=dims[k];return `<div class="kv"><b>${esc(k)}</b><span>${v.score}</span></div>`;
+  }).join('');
+  const urls=(dims.url.suspicious_urls||[]);
+  document.getElementById('phUrls').innerHTML = urls.length? urls.map(u=>`<div class="kv"><b>${esc(u.host)}</b><span>${esc(u.url)}</span></div>`).join(''):'<span class="muted">无可疑链接</span>';
+  document.getElementById('phAdvice').innerHTML = (r.disposition_advice||[]).map(a=>`<div>• ${esc(a)}</div>`).join('');
+}
+async function phRules(){
+  const res=await get('/phishing/rules');
+  const tb=document.querySelector('#phRulesTable tbody');
+  tb.innerHTML=(res.data||[]).map(x=>`<tr><td>${x.id}</td><td>${esc(x.name)}</td><td>${x.category}</td><td>${x.weight}</td></tr>`).join('');
+}
+
+// ---------- BEC ----------
+async function becAnalyze(){
+  const res=await post('/bec/analyze', {email_text: document.getElementById('becText').value, meta:{hour:22, amount:120000, usual_amount:20000}});
+  const r=res.data&&res.data.result; if(!r){alert(res.error);return;}
+  document.getElementById('becResult').innerHTML = `
+    <div class="kv"><b>BEC 评分</b><span class="stat ${r.bec_score>=70?'red':r.bec_score>=45?'yellow':'green'}">${r.bec_score}</span></div>
+    <div class="kv"><b>风险</b><span>${badge(r.risk_level)} ${esc(r.risk_level_name)}</span></div>
+    <div class="kv"><b>命中规则</b><span>${r.rules_hit}/${r.total_rules}</span></div>
+    <div class="kv"><b>冒充角色</b><span>${(r.attacker_profile.impersonated_roles||[]).join(', ')}</span></div>
+    <div class="kv"><b>语气</b><span>${r.attacker_profile.tone}</span></div>
+    <div style="margin-top:8px"><b>建议</b><div>${(r.disposition_advice||[]).map(a=>'• '+esc(a)).join('<br>')}</div></div>`;
+  document.getElementById('becChain').innerHTML = (r.attack_chain||[]).map((s,i,a)=>
+    `<span class="node">${i+1}. ${esc(s.stage)}: ${esc(s.detail)}</span>${i<a.length-1?'<span class="arr">→</span>':''}`).join('') || '<span class="muted">未识别到完整攻击链</span>';
+}
+async function becLoadRules(){
+  const res=await get('/bec/rules');
+  const d=res.data||{};
+  document.getElementById('becRuleCount').textContent=`共 ${d.total} 条规则，分类: ${JSON.stringify(d.categories)}`;
+  document.querySelector('#becRulesTable tbody').innerHTML=(d.rules||[]).map(x=>`<tr><td>${x.id}</td><td>${esc(x.name)}</td><td>${x.category}</td><td>${badge(x.severity)}</td><td>${x.weight}</td></tr>`).join('');
+}
+async function becSuppliers(){
+  const res=await get('/bec/suppliers');
+  document.querySelector('#becSuppliers tbody').innerHTML=(res.data||[]).map(s=>`<tr><td>${s.supplier_id}</td><td>${esc(s.name)}</td><td>${s.status}</td><td>${s.bank_account_changed?'⚠ 是':'否'}</td><td>${s.anomaly_score}</td></tr>`).join('');
+}
+becSuppliers();
+
+// ---------- auth ----------
+async function authRun(){
+  const res=await post('/auth/check', {signals:{host:document.getElementById('authHost').value, spf_record:document.getElementById('authSpf').value, dmarc_record:document.getElementById('authDmarc').value}});
+  const r=res.data&&res.data.result; if(!r){alert(res.error);return;}
+  const sc=document.getElementById('authScore');
+  sc.textContent=r.auth_score; sc.style.borderColor = r.auth_score>=85?'var(--accent)':r.auth_score>=70?'var(--info)':'var(--warn)';
+  document.getElementById('authGrade').textContent=`等级 ${r.grade} · ${r.grade_name}`;
+  document.getElementById('authBreakdown').innerHTML = `
+    <div class="kv"><b>SPF</b><span>${r.spf.result}</span></div>
+    <div class="kv"><b>DKIM</b><span>${r.dkim.result} · ${r.dkim.algorithm}</span></div>
+    <div class="kv"><b>DMARC</b><span>${r.dmarc.result} · ${r.dmarc.disposition}</span></div>
+    <div class="kv"><b>ARC</b><span>${r.arc.result}</span></div>
+    <div class="kv"><b>MTA-STS</b><span>${r.mta_sts.result} · ${r.mta_sts.mode}</span></div>
+    <div class="kv"><b>SMTP 加固</b><span>${r.smtp.hardening_score}</span></div>`;
+}
+async function authSmtp(){
+  const res=await get('/auth/smtp-check?host='+encodeURIComponent(document.getElementById('authHost').value));
+  const d=res.data||{};
+  document.getElementById('authSmtpResult').innerHTML = `
+    <div class="kv"><b>开放中继</b><span>${d.open_relay?'❌ 是':'✅ 否'}</span></div>
+    <div class="kv"><b>强制认证</b><span>${d.auth_required?'✅':'❌'}</span></div>
+    <div class="kv"><b>STARTTLS</b><span>${d.starttls?'✅':'❌'}</span></div>
+    <div class="kv"><b>VRFY</b><span>${d.vrfy_enabled?'⚠ 启用':'✅ 禁用'}</span></div>
+    <div class="kv"><b>加固分</b><span>${d.hardening_score}</span></div>
+    <div style="margin-top:8px">${(d.issues||[]).map(i=>`<div>• <b>${esc(i.item)}</b> [${i.severity}] — ${esc(i.advice)}</div>`).join('')}</div>`;
+}
+
+// ---------- sandbox ----------
+async function sbAnalyze(){
+  const res=await post('/sandbox/analyze', {filename:document.getElementById('sbFile').value, payload_b64:document.getElementById('sbB64').value, attachments:[]});
+  const r=res.data&&res.data.result; if(!r){alert(res.error);return;}
+  const s=r.static;
+  document.getElementById('sbStatic').innerHTML=`
+    <div class="kv"><b>文件</b><span>${esc(s.filename)}</span></div>
+    <div class="kv"><b>类型</b><span>${s.file_type}</span></div>
+    <div class="kv"><b>大小</b><span>${s.size_bytes} B</span></div>
+    <div class="kv"><b>MD5</b><span><code>${s.hashes.md5}</code></span></div>
+    <div class="kv"><b>SHA256</b><span><code>${s.hashes.sha256.slice(0,32)}…</code></span></div>
+    <div class="kv"><b>宏/PE/脚本</b><span>${s.has_macro?'宏 ':''}${s.is_pe?'PE ':''}${s.is_script?'脚本':''}</span></div>
+    <div class="kv"><b>结论</b><span class="badge ${r.final_score>=75?'b-critical':'b-medium'}">${esc(r.verdict_name)}</span></div>
+    <div class="kv"><b>评分</b><span>${r.final_score}</span></div>`;
+  const d=r.dynamic;
+  document.getElementById('sbDynamic').innerHTML=`
+    <div class="kv"><b>动态结论</b><span>${d.verdict} (${d.risk_score})</span></div>
+    <div class="kv"><b>C2</b><span>${(d.iocs.ips||[]).join(', ')||'无'}</span></div>
+    <div class="kv"><b>落地文件</b><span>${(d.iocs.files||[]).join(', ')||'无'}</span></div>
+    <div class="kv"><b>行为节点</b><span>${(d.behavior_tree||[]).length}</span></div>
+    <pre>${(d.timeline||[]).map(t=>t.t+'  '+t.event).join('\n')}</pre>`;
+  document.getElementById('sbYara').innerHTML = (r.yara.hits||[]).map(h=>`<div class="kv"><b>${badge(h.severity)}</b><span>${esc(h.name)}</span></div>`).join('')||'<span class="muted">无命中</span>';
+}
+async function sbYara(){const res=await get('/sandbox/yara-rules');alert((res.data||[]).map(x=>`${x.id} ${x.name} [${x.category}]`).join('\n'));}
+async function sbHashDb(){const res=await get('/sandbox/hash-db');document.getElementById('sbYara').innerHTML='<pre>'+esc(JSON.stringify(res.data,null,2))+'</pre>';}
+
+// ---------- intel ----------
+let intelBucket='urls';
+async function intelLoad(type){
+  intelBucket=type;
+  const res=await get('/intel/iocs?type='+type);
+  const d=res.data||{}; const list=(d.iocs&&d.iocs[type])||[];
+  document.querySelector('#intelTable tbody').innerHTML=list.map(x=>`<tr><td><code>${esc(x.ioc||x.md5)}</code></td><td>${esc(x.type)}</td><td>${x.score||'-'}</td><td>${x.first_seen||'-'}</td><td>${esc(x.source||'-')}</td></tr>`).join('');
+}
+async function intelMatch(){
+  const urls=document.getElementById('matchUrls').value.split('\n').filter(x=>x.trim());
+  const res=await post('/intel/match',{urls:urls});
+  const d=res.data||{};
+  document.getElementById('intelMatchResult').innerHTML=`<div class="kv"><b>判定</b><span class="badge b-${d.verdict==='malicious'?'critical':'medium'}">${d.verdict}</span></div>`+
+    (d.hits||[]).map(h=>`<div class="kv"><b>${esc(h.ioc)}</b><span>${h.type} · ${h.score}</span></div>`).join('');
+}
+async function intelEnrich(){
+  const res=await get('/intel/enrich?value='+encodeURIComponent(document.getElementById('enrichVal').value)+'&kind=domain');
+  const d=res.data||{};
+  document.getElementById('enrichResult').innerHTML=`
+    <div class="kv"><b>国家/城市</b><span>${d.geo.country} / ${d.geo.city}</span></div>
+    <div class="kv"><b>ASN</b><span>${d.asn}</span></div>
+    <div class="kv"><b>注册(天)</b><span>${d.whois_created_days_ago}</span></div>
+    <div class="kv"><b>黑名单命中</b><span>${d.blacklist_hits}</span></div>
+    <div class="kv"><b>信誉</b><span>${d.reputation}/100</span></div>`;
+}
+async function intelExport(){const res=await get('/intel/export?format=json');const blob=new Blob([JSON.stringify(res.data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='email_iocs.json';a.click();}
+async function intelPersonas(){const res=await get('/bec/personas');document.getElementById('intelMatchResult').innerHTML=(res.data||[]).map(p=>`<div class="kv"><b>${esc(p.persona_id)}</b><span>冒充 ${esc(p.impersonates)} · ${(p.tactics||[]).join('/')}</span></div>`).join('');}
+intelLoad('urls');
+
+// ---------- dashboard ----------
+async function dashLoad(){
+  const ov=await get('/dashboard/overview');
+  const c=ov.data.cards;
+  document.getElementById('kTotal').textContent=c.total_today;
+  document.getElementById('kPhish').textContent=c.phishing_blocked+' ('+c.phishing_block_rate+'%)';
+  document.getElementById('kBec').textContent=c.bec_blocked;
+  document.getElementById('kAuth').textContent=c.auth_fail_rate+'%';
+  const ar=await get('/dashboard/alerts');
+  document.querySelector('#dashAlerts tbody').innerHTML=(ar.data.alerts||[]).map(a=>`<tr><td>${a.alert_id}</td><td>${a.type}</td><td>${esc(a.from)}</td><td>${esc(a.subject)}</td><td>${a.score}</td><td>${a.status}</td><td><button class="ghost" onclick="alertAct('${a.alert_id}')">分诊</button></td></tr>`).join('');
+  const tr=await get('/dashboard/trends'); const days=tr.data.daily;
+  document.getElementById('dashTrends').innerHTML='<table><thead><tr><th>日期</th><th>钓鱼</th><th>BEC</th><th>恶意附件</th></tr></thead><tbody>'+
+    days.map(d=>`<tr><td>${d.date}</td><td>${d.phishing}</td><td>${d.bec}</td><td>${d.malware}</td></tr>`).join('')+'</tbody></table>';
+  const m=await get('/dashboard/metrics');
+  document.getElementById('dashMetrics').innerHTML=Object.entries(m.data).map(([k,v])=>`<div class="kv"><b>${k}</b><span>${Array.isArray(v)?v.join(' → '):v}</span></div>`).join('');
+  simList();
+}
+async function alertAct(id){const a=prompt('动作: confirm / false_positive / escalate / resolve','confirm');if(!a)return;const res=await post('/dashboard/alerts/'+id+'/action',{action:a,note:'控制台分诊'});alert(JSON.stringify(res.data));dashLoad();}
+async function simList(){
+  const res=await get('/dashboard/simulations');
+  document.querySelector('#simTable tbody').innerHTML=(res.data||[]).map(s=>`<tr><td>${s.campaign_id}</td><td>${esc(s.name)}</td><td>${esc(s.template)}</td><td>${esc(s.target_group)}</td><td>${s.click_rate*100}%</td><td>${s.status}</td></tr>`).join('');
+}
+async function simCreate(){
+  const res=await post('/dashboard/simulations',{name:document.getElementById('simName').value||'未命名',template:document.getElementById('simTpl').value,target_group:'全员'});
+  alert('已创建 '+res.data.campaign_id); simList();
+}
+dashLoad();
+</script>
+</body>
+</html>

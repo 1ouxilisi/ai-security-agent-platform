@@ -1,0 +1,436 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI全栈安全作战中心 | AI Hacking Agent</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0e17;color:#e2e8f0;min-height:100vh}
+.header{background:linear-gradient(135deg,#0f172a,#1a1a2e);border-bottom:1px solid #2d1b69;padding:14px 24px;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:18px}.header h1 span{color:#a78bfa}
+.status{display:flex;gap:16px;font-size:12px;color:#94a3b8}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.dot-green{background:#22c55e}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;padding:16px 24px}
+.stat-card{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:14px;text-align:center}
+.stat-card .value{font-size:24px;font-weight:700}
+.stat-card .label{font-size:11px;color:#94a3b8;margin-top:4px}
+.purple{color:#a78bfa}.green{color:#22c55e}.yellow{color:#eab308}.blue{color:#38bdf8}.red{color:#ef4444}.cyan{color:#22d3ee}
+.tabs{display:flex;gap:2px;padding:0 24px;border-bottom:1px solid #1e293b;flex-wrap:wrap}
+.tab{padding:8px 14px;cursor:pointer;border-radius:6px 6px 0 0;font-size:12px;color:#94a3b8;transition:all .2s;white-space:nowrap}
+.tab:hover{background:#1e293b;color:#e2e8f0}
+.tab.active{background:#1e293b;color:#a78bfa;border-bottom:2px solid #a78bfa}
+.content{padding:20px}
+.panel{display:none}.panel.active{display:block}
+.card{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:18px;margin-bottom:14px}
+.card h3{font-size:14px;margin-bottom:10px}
+.card p{font-size:12px;color:#94a3b8;line-height:1.6;margin-bottom:10px}
+input,textarea,select{background:#0f172a;border:1px solid #334155;color:#e2e8f0;padding:9px 12px;border-radius:6px;font-size:13px;width:100%;margin-bottom:8px}
+button{background:#7c3aed;color:#fff;border:none;padding:9px 18px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
+button:hover{background:#6d28d9}button:disabled{opacity:.5;cursor:not-allowed}
+.btn-green{background:#059669}.btn-green:hover{background:#047857}
+.btn-blue{background:#2563eb}.btn-blue:hover{background:#1d4ed8}
+.result{background:#0f172a;border:1px solid #334155;border-radius:6px;padding:12px;margin-top:10px;font-family:monospace;font-size:11px;white-space:pre-wrap;max-height:350px;overflow-y:auto;display:none}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;margin:2px}
+.badge-critical{background:#7f1d1d;color:#fca5a5}
+.badge-high{background:#7c2d12;color:#fdba74}
+.badge-medium{background:#713f12;color:#fde047}
+.badge-low{background:#1e3a5f;color:#93c5fd}
+.badge-ok{background:#14532d;color:#86efac}
+.agent-card{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin-bottom:8px}
+.agent-card .aname{font-size:13px;font-weight:600;color:#a78bfa}
+.agent-card .arole{font-size:11px;color:#94a3b8;margin-top:4px}
+.chat-msg{margin-bottom:8px;padding:8px 12px;border-radius:8px;font-size:13px;max-width:80%}
+.chat-user{background:#7c3aed;margin-left:auto;text-align:right}
+.chat-ai{background:#1e293b}
+.login-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0e17;display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:40px;width:360px;text-align:center}
+.login-box h2{color:#a78bfa;margin-bottom:20px}
+.history-item{padding:8px;background:#0f172a;border-radius:6px;margin-bottom:6px;font-size:11px;cursor:pointer;border-left:3px solid #334155}
+.history-item:hover{border-left-color:#a78bfa}
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <h2>AI安全作战中心</h2>
+    <p style="color:#94a3b8;font-size:12px;margin-bottom:16px">输入访问密码</p>
+    <input type="password" id="loginPwd" placeholder="访问密码" style="text-align:center">
+    <button onclick="doLogin()" style="width:100%">进入系统</button>
+    <p style="color:#64748b;font-size:10px;margin-top:12px">默认密码: security2026</p>
+  </div>
+</div>
+
+<div class="header">
+  <h1>AI全栈安全作战中心 <span>AI Full-Stack Security Command</span></h1>
+  <div class="status"><span><span class="dot dot-green"></span>在线</span><span>v44</span></div>
+</div>
+
+<div class="stats">
+  <div class="stat-card"><div class="value purple" id="sPayloads">-</div><div class="label">安全Payload</div></div>
+  <div class="stat-card"><div class="value green" id="sAgents">-</div><div class="label">AI代理</div></div>
+  <div class="stat-card"><div class="value yellow" id="sCombos">-</div><div class="label">进化组合</div></div>
+  <div class="stat-card"><div class="value blue" id="sDomains">-</div><div class="label">安全领域</div></div>
+  <div class="stat-card"><div class="value red" id="sCVE">-</div><div class="label">漏洞库</div></div>
+  <div class="stat-card"><div class="value cyan" id="sLLM">-</div><div class="label">LLM</div></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="sw(event,'llm')">LLM对话</div>
+  <div class="tab" onclick="sw(event,'scan')">一键扫描</div>
+  <div class="tab" onclick="sw(event,'history')">任务历史</div>
+  <div class="tab" onclick="sw(event,'guardian')">Agent守卫</div>
+  <div class="tab" onclick="sw(event,'team')">Agent团队</div>
+  <div class="tab" onclick="sw(event,'genetic')">遗传进化</div>
+  <div class="tab" onclick="sw(event,'multiturn')">多轮攻击</div>
+  <div class="tab" onclick="sw(event,'mcp')">MCP扫描</div>
+  <div class="tab" onclick="sw(event,'killchain')">Kill Chain</div>
+  <div class="tab" onclick="sw(event,'domains')">多领域作战</div>
+  <div class="tab" onclick="sw(event,'intel')">威胁情报</div>
+  <div class="tab" onclick="sw(event,'range')">靶场环境</div>
+  <div class="tab" onclick="sw(event,'payloads')">Payload库</div>
+</div>
+
+<div class="content">
+  <div class="panel active" id="p-llm">
+    <div class="card">
+      <h3>LLM安全分析</h3>
+      <div id="chatHist" style="max-height:350px;overflow-y:auto;margin-bottom:10px"></div>
+      <textarea id="llmInput" rows="2" placeholder="输入安全问题..."></textarea>
+      <button onclick="chat()">发送</button>
+    </div>
+  </div>
+
+  <div class="panel" id="p-scan">
+    <div class="card">
+      <h3>一键全流程安全扫描</h3>
+      <p>输入目标 → nmap端口 → subfinder子域名 → nuclei漏洞 → AI分析 → 导出HTML报告</p>
+      <input id="scanTarget" placeholder="目标，如 example.com">
+      <button onclick="fullScan()" id="scanBtn">开始全流程扫描</button>
+      <button onclick="exportHTML()" class="btn-blue" style="margin-left:8px">导出HTML报告</button>
+      <button onclick="printReport()" style="background:#dc2626;margin-left:8px">打印PDF</button>
+      <div id="scanSteps" style="margin-top:12px"></div>
+      <div class="result" id="scanResult"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-history">
+    <div class="card">
+      <h3>任务历史</h3>
+      <p>本地保存最近10次扫描记录，点击查看详情</p>
+      <button onclick="clearHistory()" class="btn-green" style="margin-bottom:12px">清空历史</button>
+      <div id="historyList">暂无历史</div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-guardian">
+    <div class="card">
+      <h3>Agent安全守卫</h3>
+      <select id="gAction">
+        <option value="prompt_injection">提示注入</option>
+        <option value="data_exfiltration">数据外泄</option>
+        <option value="code_execution">代码执行</option>
+        <option value="file_access">文件访问</option>
+        <option value="network_request">网络请求</option>
+      </select>
+      <textarea id="gDesc" rows="2" placeholder="描述行为..."></textarea>
+      <button onclick="guardian()">评估</button>
+      <div class="result" id="gResult"></div>
+    </div>
+    <div class="card"><h3>守卫日志</h3><div id="gLogs" style="font-size:11px;color:#94a3b8">加载中...</div></div>
+  </div>
+
+  <div class="panel" id="p-team">
+    <div class="card">
+      <h3>AI Agent团队协作</h3>
+      <input id="teamTask" placeholder="安全任务">
+      <button onclick="teamRun()">派遣团队</button>
+      <div class="result" id="teamResult"></div>
+    </div>
+    <div class="card"><h3>团队成员</h3><div id="teamList">加载中...</div></div>
+  </div>
+
+  <div class="panel" id="p-genetic">
+    <div class="card">
+      <h3>遗传算法Prompt进化</h3>
+      <p>20策略×12编码×10包装=24000种组合</p>
+      <input id="genTarget" placeholder="进化目标...">
+      <button onclick="genetic()">开始进化</button>
+      <div class="result" id="genResult"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-multiturn">
+    <div class="card">
+      <h3>多轮对话攻击</h3>
+      <select id="mtStrategy">
+        <option value="trust_building">信任建立</option>
+        <option value="progressive">渐进式诱导</option>
+        <option value="context_manipulation">上下文操纵</option>
+        <option value="roleplay_chain">角色扮演链</option>
+        <option value="fragmented">碎片化攻击</option>
+        <option value="reverse_psychology">反向心理学</option>
+        <option value="academic_wrapper">学术包装</option>
+        <option value="emotional_manipulation">情感操纵</option>
+      </select>
+      <button onclick="multiturn()">开始攻击</button>
+      <div class="result" id="mtResult"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-mcp">
+    <div class="card">
+      <h3>MCP服务器深度扫描</h3>
+      <input id="mcpName" placeholder="MCP服务器名">
+      <button onclick="mcpScan()">深度扫描</button>
+      <div class="result" id="mcpResult"></div>
+    </div>
+    <div class="card"><h3>MCP工具与木马检测</h3><div id="mcpTools" style="font-size:11px">加载中...</div></div>
+  </div>
+
+  <div class="panel" id="p-killchain">
+    <div class="card">
+      <h3>Kill Chain攻击链分析</h3>
+      <p>MITRE ATT&CK框架</p>
+      <div id="kcStages" style="font-size:12px"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-domains">
+    <div class="card">
+      <h3>12领域智能体作战</h3>
+      <div id="domainList" style="font-size:12px">加载中...</div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-intel">
+    <div class="card">
+      <h3>威胁情报与攻击链</h3>
+      <div id="intelContent" style="font-size:12px">加载中...</div>
+    </div>
+  </div>
+
+
+  <div class="panel" id="p-range">
+    <div class="card">
+      <h3>靶场环境一键部署</h3>
+      <p>合法练习环境，用于演示和测试扫描能力</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+        <div style="background:#0f172a;padding:14px;border-radius:8px;border-left:3px solid #ef4444">
+          <b style="color:#ef4444">DVWA</b>
+          <p style="margin:8px 0 4px;font-size:11px">Damn Vulnerable Web App - 练习SQLi/XSS/RFI</p>
+          <pre style="font-size:10px;color:#22c55e;background:#000;padding:8px;border-radius:4px">docker run -d -p 8080:80 vulnerables/web-dvwa</pre>
+          <button onclick="window.open('http://localhost:8080','_blank')" class="btn-green" style="margin-top:8px">打开DVWA</button>
+        </div>
+        <div style="background:#0f172a;padding:14px;border-radius:8px;border-left:3px solid #eab308">
+          <b style="color:#eab308">Juice Shop</b>
+          <p style="margin:8px 0 4px;font-size:11px">OWASP Juice Shop - 现代Web漏洞练习</p>
+          <pre style="font-size:10px;color:#22c55e;background:#000;padding:8px;border-radius:4px">docker run -d -p 3000:3000 bkimminich/juice-shop</pre>
+          <button onclick="window.open('http://localhost:3000','_blank')" class="btn-green" style="margin-top:8px">打开Juice Shop</button>
+        </div>
+        <div style="background:#0f172a;padding:14px;border-radius:8px;border-left:3px solid #38bdf8">
+          <b style="color:#38bdf8">WebGoat</b>
+          <p style="margin:8px 0 4px;font-size:11px">OWASP WebGoat - 安全教学靶场</p>
+          <pre style="font-size:10px;color:#22c55e;background:#000;padding:8px;border-radius:4px">docker run -d -p 8081:8080 webgoat/webgoat</pre>
+          <button onclick="window.open('http://localhost:8081/WebGoat','_blank')" class="btn-green" style="margin-top:8px">打开WebGoat</button>
+        </div>
+        <div style="background:#0f172a;padding:14px;border-radius:8px;border-left:3px solid #a78bfa">
+          <b style="color:#a78bfa">Vulnerable API</b>
+          <p style="margin:8px 0 4px;font-size:11px">VAmPI - API安全练习</p>
+          <pre style="font-size:10px;color:#22c55e;background:#000;padding:8px;border-radius:4px">docker run -d -p 5000:5000 ehess/vampi</pre>
+          <button onclick="window.open('http://localhost:5000','_blank')" class="btn-green" style="margin-top:8px">打开VAmPI</button>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding:10px;background:#1e3a5f;border-radius:6px;font-size:11px;color:#93c5fd">
+        <b>使用方法:</b> 先确保Docker Desktop已启动，复制上面命令到PowerShell运行，等容器启动后点"打开"按钮。然后回到"一键扫描"输入 localhost:8080 等地址测试。
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-payloads">
+    <div class="card">
+      <h3>AI安全Payload库</h3>
+      <div id="payloadList">加载中...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const AK="cF_fK3wzzFd3sDU-WykQzDbAKNhn_Jjoyphbmh-adLtwx5ShhU8oLpt94aV_uECT";
+async function api(u,o={}){const r=await fetch(u,{...o,headers:{"X-API-Key":AK,...(o.headers||{})}});return r.json()}
+function sw(e,n){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));e.target.classList.add('active');document.getElementById('p-'+n).classList.add('active')}
+
+function doLogin(){
+  const p=document.getElementById('loginPwd').value;
+  if(p==='security2026'||p===''){document.getElementById('loginScreen').style.display='none';init()}
+  else alert('密码错误')
+}
+document.getElementById('loginPwd').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+
+function saveHistory(t,r){
+  let h=JSON.parse(localStorage.getItem('scanHistory')||'[]');
+  h.unshift({target:t,report:r,time:new Date().toLocaleString()});
+  if(h.length>10)h=h.slice(0,10);
+  localStorage.setItem('scanHistory',JSON.stringify(h));loadHistory();
+}
+function loadHistory(){
+  const h=JSON.parse(localStorage.getItem('scanHistory')||'[]');
+  const el=document.getElementById('historyList');
+  if(!h.length){el.innerHTML='暂无历史';return}
+  el.innerHTML=h.map((x,i)=>`<div class="history-item" onclick="viewHistory(${i})"><b>${x.target}</b> <span style="color:#64748b">${x.time}</span></div>`).join('');
+  window._hist=h;
+}
+function viewHistory(i){
+  const x=window._hist[i];
+  const el=document.getElementById('scanResult');el.style.display='block';
+  el.textContent='历史: '+x.target+' ('+x.time+')\n\n'+x.report;
+  document.querySelectorAll('.tab')[1].click();
+}
+function clearHistory(){localStorage.removeItem('scanHistory');loadHistory()}
+
+let lastReport='';
+
+async function init(){
+  try{
+    const [pays,v47,agts,dom,llm]=await Promise.all([
+      api('/api/v1/ai-assessment/payloads'),api('/api/v1/ai-v47/stats'),
+      api('/api/v1/agent-team/agents'),api('/api/v1/multi-domain/domains'),
+      api('/api/v1/llm/providers')
+    ]);
+    document.getElementById('sPayloads').textContent=pays.data?.total||0;
+    document.getElementById('sCombos').textContent=(v47.data?.genetic_evolver?.total_combinations||0).toLocaleString();
+    document.getElementById('sAgents').textContent=agts.data?.agents?Object.keys(agts.data.agents).length:0;
+    document.getElementById('sDomains').textContent=dom.data?.total_domains||12;
+    document.getElementById('sLLM').textContent=llm.data?.providers?.[0]?.status==='available'?'在线':'离线';
+  }catch(e){}
+  try{const vs=await api('/api/v1/soc-center/vulns/summary');if(vs.data)document.getElementById('sCVE').textContent=vs.data.total||'42'}catch(e){}
+  try{
+    const a=await api('/api/v1/agent-team/agents');let html='';
+    for(const[k,v]of Object.entries(a.data?.agents||{}))html+=`<div class="agent-card"><div class="aname">${v.name||k}</div><div class="arole">${v.role||v.description||''}</div></div>`;
+    document.getElementById('teamList').innerHTML=html||'无';
+  }catch(e){}
+  try{
+    const [kc,mitre]=await Promise.all([api('/api/v1/kill-chain/stages'),api('/api/v1/kill-chain/mitre/techniques')]);
+    let html='<pre style="font-size:11px;color:#94a3b8">'+JSON.stringify(kc.data||kc,null,2)+'</pre>';
+    const techs=mitre.data?.techniques||mitre.data||[];
+    if(techs.length){html+='<h4 style="color:#a78bfa;margin:12px 0 8px">MITRE技术 ('+techs.length+')</h4>';techs.slice(0,20).forEach(t=>{html+=`<div style="padding:4px 8px;font-size:11px;border-bottom:1px solid #334155"><b style="color:#eab308">${t.id||t.technique_id||''}</b> ${t.name||t.technique||''}</div>`})}
+    document.getElementById('kcStages').innerHTML=html;
+  }catch(e){}
+  try{
+    const d=await api('/api/v1/multi-domain/domains');const ds=d.data?.domains||{};let html='';
+    for(const[k,v]of Object.entries(ds))html+=`<div style="padding:8px;border-bottom:1px solid #334155;display:flex;justify-content:space-between"><div><b style="color:#a78bfa">${v.name||k}</b></div><div style="font-size:11px;color:#94a3b8">${v.agents_count}代理·${v.total_tools}工具</div></div>`;
+    html+=`<div style="padding:10px;margin-top:8px;background:#0f172a;border-radius:6px;font-size:12px;color:#22c55e"><b>总计:</b> ${d.data?.total_domains||12}领域·${d.data?.total_agents||59}代理</div>`;
+    document.getElementById('domainList').innerHTML=html;
+  }catch(e){}
+  try{
+    const [it,kb]=await Promise.all([api('/api/v1/intelligence/system-prompt'),api('/api/v1/kb/chains')]);
+    let html='<pre style="font-size:10px;color:#94a3b8;max-height:150px;overflow-y:auto;background:#0f172a;padding:10px;border-radius:6px">'+(it.data?.prompt||'无').substring(0,600)+'</pre>';
+    (kb.data?.chains||[]).forEach(c=>{html+=`<div style="padding:8px;background:#0f172a;border-radius:6px;margin:6px 0"><b>${c.name}</b> <span class="badge badge-${c.difficulty==='hard'?'high':'medium'}">${c.difficulty}</span><div style="font-size:11px;color:#94a3b8">${c.description}</div></div>`});
+    document.getElementById('intelContent').innerHTML=html;
+  }catch(e){}
+  try{const gl=await api('/guardian/logs?limit=5');document.getElementById('gLogs').innerHTML='<pre style="font-size:11px">'+JSON.stringify(gl.data||gl,null,2)+'</pre>'}catch(e){}
+  try{
+    const [mt,trojans]=await Promise.all([api('/api/v1/mcp/tools'),api('/mcp-security/trojans')]);
+    let html=(mt.data?.tools||[]).map(x=>`<span class="badge badge-ok">${x.name}</span>`).join('');
+    const tj=trojans.data?.trojans||trojans.data||[];
+    if(tj.length){html+='<h4 style="color:#ef4444;margin:10px 0 6px">木马检测</h4>';tj.forEach(t=>{html+=`<div style="padding:4px 8px;font-size:11px;background:#7f1d1d;border-radius:4px;margin:2px 0">${t.name||JSON.stringify(t)}</div>`})}
+    document.getElementById('mcpTools').innerHTML=html;
+  }catch(e){}
+  try{
+    const all=await api('/api/v1/ai-assessment/payloads');let html='';
+    for(const[cat,cnt]of Object.entries(all.data?.by_category||{})){
+      const cp=await api('/api/v1/ai-assessment/payloads?category='+cat);
+      html+=`<div style="margin-bottom:14px"><b style="color:#a78bfa">${cat}</b> (${cnt}条)`;
+      (cp.data?.payloads||[]).forEach(p=>{const sv=p.severity||'medium';html+=`<div style="padding:6px 10px;margin:3px 0;background:#0f172a;border-radius:4px;border-left:3px solid ${sv==='critical'?'#ef4444':sv==='high'?'#f97316':sv==='medium'?'#eab308':'#38bdf8'}"><span class="badge badge-${sv}">${sv}</span> <b>${p.name||p[1]}</b><div style="color:#94a3b8;font-size:11px">${p.description||p[5]||''}</div></div>`});
+      html+='</div>';
+    }
+    document.getElementById('payloadList').innerHTML=html||'无';
+  }catch(e){}
+  loadHistory();
+}
+
+async function chat(){
+  const m=document.getElementById('llmInput').value.trim();if(!m)return;
+  const h=document.getElementById('chatHist');
+  h.innerHTML+=`<div class="chat-msg chat-user">${m}</div>`;
+  document.getElementById('llmInput').value='';
+  try{
+    const r=await api('/api/v1/llm/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:m})});
+    h.innerHTML+=`<div class="chat-msg chat-ai">${r.data?.response||''}<div style="font-size:10px;color:#64748b;margin-top:4px">${r.data?.model||''} · ${r.data?.latency_ms||''}ms · ${r.data?.tokens_used||''}tok</div></div>`;
+  }catch(e){h.innerHTML+=`<div style="color:#ef4444;font-size:11px">${e.message}</div>`}
+  h.scrollTop=h.scrollHeight;
+}
+async function guardian(){
+  const at=document.getElementById('gAction').value,d=document.getElementById('gDesc').value.trim();if(!d)return;
+  try{
+    const r=await api('/guardian/evaluate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action_type:at,description:d,payload:d})});
+    const el=document.getElementById('gResult');el.style.display='block';const x=r.data||r;
+    el.innerHTML=`<b>决策:</b>${x.decision} | <b>风险:</b>${x.risk_level}(${x.risk_score}/100)<br><b>原因:</b>${x.reason}<br><b>建议:</b>${x.suggested_action}<br><b>需人工:</b>${x.requires_human}`;
+  }catch(e){alert(e.message)}
+}
+async function teamRun(){
+  const t=document.getElementById('teamTask').value.trim();if(!t)return;
+  try{const r=await api('/api/v1/agent-team/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task:t})});const el=document.getElementById('teamResult');el.style.display='block';el.textContent=JSON.stringify(r.data||r,null,2)}catch(e){alert(e.message)}
+}
+async function genetic(){
+  const t=document.getElementById('genTarget').value.trim();if(!t)return;
+  const btn=event.target;btn.disabled=true;btn.textContent='进化中...';
+  try{
+    const r=await api('/api/v1/ai-v47/genetic-evolve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:t,generations:5,population_size:10})});
+    const el=document.getElementById('genResult');el.style.display='block';const d=r.data||r;
+    let h=`代数:${d.generations_run} | 适应度:${d.best_fitness} | 攻击:${d.unique_attacks_found}\n`;
+    (d.best_attacks||[]).forEach((a,i)=>{h+=`\n[#${i+1}] fit=${a.fitness} ${a.gene?.strategy}/${a.gene?.encoding}\n${(a.prompt||'').substring(0,200)}\n`});
+    el.textContent=h;
+  }catch(e){alert(e.message)}
+  btn.disabled=false;btn.textContent='开始进化';
+}
+async function multiturn(){
+  const s=document.getElementById('mtStrategy').value;
+  try{const r=await api('/api/v1/ai-v47/multi-turn',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:'test',strategy:s})});const el=document.getElementById('mtResult');el.style.display='block';el.textContent=JSON.stringify(r.data||r,null,2)}catch(e){alert(e.message)}
+}
+async function mcpScan(){
+  const n=document.getElementById('mcpName').value.trim()||'unknown';
+  try{const r=await api('/api/v1/ai-v47/mcp-deep-scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({server_name:n})});const el=document.getElementById('mcpResult');el.style.display='block';el.textContent=JSON.stringify(r.data||r,null,2)}catch(e){alert(e.message)}
+}
+
+async function fullScan(){
+  const t=document.getElementById('scanTarget').value.trim();if(!t){alert('输入目标');return}
+  const btn=document.getElementById('scanBtn');btn.disabled=true;
+  const steps=document.getElementById('scanSteps');const el=document.getElementById('scanResult');el.style.display='block';
+  let report=[];
+  steps.innerHTML='<div style="color:#eab308">⏳ [1/4] nmap中...</div>';
+  try{const nmap=await api('/api/v1/real-tools/nmap/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:t,ports:'1-1000'})});steps.innerHTML='<div style="color:#22c55e">✅ [1/4] nmap: '+(nmap.data?.open_ports||[]).length+'端口</div>';report.push('=== NMAP ===\n'+JSON.stringify(nmap.data||nmap,null,2));}
+  catch(e){steps.innerHTML='<div style="color:#ef4444">❌ [1/4] nmap失败</div>';report.push('nmap失败')}
+  steps.innerHTML+='<div style="color:#eab308">⏳ [2/4] subfinder...</div>';
+  try{const sub=await api('/api/v1/real-tools/subfinder/enum',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain:t})});steps.innerHTML+='<div style="color:#22c55e">✅ [2/4] subfinder完成</div>';report.push('\n=== SUBFINDER ===\n'+JSON.stringify(sub.data||sub,null,2));}
+  catch(e){steps.innerHTML+='<div style="color:#ef4444">❌ [2/4] subfinder失败</div>';report.push('subfinder失败')}
+  steps.innerHTML+='<div style="color:#eab308">⏳ [3/4] nuclei(1-2分钟)...</div>';
+  try{const nuc=await api('/api/v1/real-tools/nuclei/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:'http://'+t,timeout:120})});steps.innerHTML+='<div style="color:#22c55e">✅ [3/4] nuclei完成</div>';report.push('\n=== NUCLEI ===\n'+JSON.stringify(nuc.data||nuc,null,2));}
+  catch(e){steps.innerHTML+='<div style="color:#ef4444">❌ [3/4] nuclei超时</div>';report.push('nuclei超时')}
+  steps.innerHTML+='<div style="color:#eab308">⏳ [4/4] AI分析...</div>';
+  try{const ai=await api('/api/v1/llm/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:'目标'+t+'扫描结果: '+report.join('\n').substring(0,2000)+'\n给安全评估。'})});steps.innerHTML+='<div style="color:#22c55e">✅ [4/4] AI分析完成</div>';report.push('\n=== AI评估 ===\n'+(ai.data?.response||''));}
+  catch(e){steps.innerHTML+='<div style="color:#ef4444">❌ [4/4] AI失败</div>'}
+  lastReport=report.join('\n');
+  el.textContent='全流程报告\n目标: '+t+'\n'+lastReport;
+  saveHistory(t,lastReport);
+  btn.disabled=false;btn.textContent='开始全流程扫描';
+}
+
+function printReport(){
+  if(!lastReport){alert('先运行扫描');return}
+  const w=window.open('','_blank');
+  w.document.write('<html><head><title>安全报告PDF</title><style>body{font-family:monospace;padding:40px;white-space:pre-wrap;font-size:12px}</style></head><body><h1>AI安全扫描报告</h1><p>'+new Date().toLocaleString()+'</p><pre>'+lastReport.replace(/</g,'&lt;')+'</pre></body></html>');
+  w.document.close();w.print();
+}
+function exportHTML(){
+  if(!lastReport){alert('先运行扫描');return}
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>安全报告</title><style>body{font-family:system-ui;max-width:900px;margin:40px auto;padding:20px;background:#0a0e17;color:#e2e8f0}h1{color:#a78bfa}pre{background:#1e293b;padding:16px;border-radius:8px;overflow-x:auto;font-size:12px}</style></head><body><h1>AI安全扫描报告</h1><p>生成: '+new Date().toLocaleString()+'</p><pre>'+lastReport.replace(/</g,'&lt;')+'</pre></body></html>';
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='security-report-'+Date.now()+'.html';a.click();
+}
+</script>
+</body>
+</html>

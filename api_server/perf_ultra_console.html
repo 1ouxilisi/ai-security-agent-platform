@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>性能极致优化 · Perf Ultra</title>
+<style>
+:root{
+  --bg:#0d1117; --card:#161b22; --inset:#010409; --border:#30363d;
+  --fg:#e6edf3; --muted:#8b949e; --faint:#6e7681;
+  --accent:#58a6ff; --ok:#3fb950; --warn:#d29922; --bad:#f85149; --info:#39d2c0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);
+  font-family:"Inter","Microsoft YaHei",system-ui,sans-serif;font-size:14px}
+header{padding:18px 26px;background:linear-gradient(90deg,#1f6feb33,#1f6feb00);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:20px}
+header .sub{color:var(--muted);font-size:13px}
+header .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+main{padding:22px 26px;max-width:1400px;margin:0 auto}
+.grid{display:grid;gap:16px}
+.g-score{grid-template-columns:repeat(5,1fr)}
+.g-2{grid-template-columns:1fr 1fr}
+.g-3{grid-template-columns:repeat(3,1fr)}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+.panel h2{font-size:15px;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.kpi .v{font-size:30px;font-weight:800}
+.kpi .l{color:var(--muted);font-size:12px;margin-top:4px}
+.kpi.ok{border-color:var(--ok)} .kpi.bad{border-color:var(--bad)}
+.score{padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--card)}
+.score .ic{font-size:26px}
+.score .t{font-weight:700;margin:6px 0 4px}
+.score .d{color:var(--muted);font-size:12px}
+.score.pass{border-left:4px solid var(--ok)}
+.score.fail{border-left:4px solid var(--bad)}
+button{background:var(--accent);color:#0d1117;border:none;padding:9px 16px;border-radius:8px;
+  cursor:pointer;font-weight:600;font-size:13px}
+button:hover{filter:brightness(1.1)}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--border)}
+button.ghost:hover{border-color:var(--accent);color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:600}
+.bar{height:10px;background:var(--inset);border-radius:6px;overflow:hidden;margin:6px 0}
+.bar > i{display:block;height:100%;background:var(--accent)}
+.tag{font-size:11px;padding:2px 8px;border-radius:10px}
+.tag.pass{background:#3fb95022;color:var(--ok)}
+.tag.fail{background:#f8514922;color:var(--bad)}
+pre{background:var(--inset);border:1px solid var(--border);border-radius:8px;padding:10px;
+  font-size:12px;overflow:auto;max-height:220px}
+input{background:var(--inset);border:1px solid var(--border);color:var(--fg);
+  padding:8px 10px;border-radius:8px;min-width:220px}
+.mono{font-family:Consolas,monospace;color:var(--info)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+@media(max-width:1100px){.g-score{grid-template-columns:repeat(2,1fr)}.g-2,.g-3{grid-template-columns:1fr}}
+@media(max-width:700px){.g-score{grid-template-columns:1fr}.main{padding:14px}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🚀 性能极致优化控制台</h1>
+    <div class="sub">方向4 · 启动快 · 响应快 · 抗并发 · 缓存 · DB 优化 · 静态资源</div>
+  </div>
+  <div class="right">
+    <button class="ghost" onclick="loadAll()">🔄 刷新</button>
+    <span class="tag pass" id="uptimeTag">uptime --</span>
+  </div>
+</header>
+
+<main>
+  <div class="grid g-score" style="margin-bottom:16px" id="scoreGrid"></div>
+
+  <div class="grid g-2" style="margin-bottom:16px">
+    <div class="panel">
+      <h2>⏱️ 启动速度优化</h2>
+      <div class="row">
+        <div class="kpi"><div class="v mono" id="startupMs">--</div><div class="l">当前启动 (ms)</div></div>
+        <div class="kpi"><div class="v mono" id="savedMs">--</div><div class="l">懒加载节省 (ms)</div></div>
+        <div class="kpi"><div class="v mono" id="heavyMod">--</div><div class="l">延迟加载模块</div></div>
+      </div>
+      <div class="row"><button onclick="warmupAll()">🔥 预热重模块</button>
+        <button class="ghost" onclick="showLazy()">查看懒加载状态</button></div>
+      <pre id="lazyOut">点击「查看懒加载状态」…</pre>
+    </div>
+
+    <div class="panel">
+      <h2>📈 API 响应分位</h2>
+      <div class="row">
+        <div class="kpi"><div class="v mono" id="p50">--</div><div class="l">P50 (ms)</div></div>
+        <div class="kpi"><div class="v mono" id="p95">--</div><div class="l">P95 (ms)</div></div>
+        <div class="kpi"><div class="v mono" id="p99">--</div><div class="l">P99 (ms)</div></div>
+      </div>
+      <div class="bar"><i id="p95bar" style="width:0;background:var(--ok)"></i></div>
+      <div style="color:var(--muted);font-size:12px">目标 P95 &lt; 50ms · 同请求走缓存直接返回</div>
+    </div>
+  </div>
+
+  <div class="grid g-2" style="margin-bottom:16px">
+    <div class="panel">
+      <h2>🧵 并发处理 / 请求队列</h2>
+      <div class="row">
+        <div class="kpi"><div class="v mono" id="qMax">--</div><div class="l">并发上限</div></div>
+        <div class="kpi"><div class="v mono" id="qRun">--</div><div class="l">运行中</div></div>
+        <div class="kpi"><div class="v mono" id="qDone">--</div><div class="l">已完成</div></div>
+      </div>
+      <div class="row">
+        <button onclick="stressTest(100)">💥 100 并发压测</button>
+        <button class="ghost" onclick="enqueueDemo()">丢入一个耗时任务</button>
+      </div>
+      <pre id="stressOut">尚未压测。</pre>
+    </div>
+
+    <div class="panel">
+      <h2>💾 响应缓存 (LRU + TTL)</h2>
+      <div class="row">
+        <div class="kpi"><div class="v mono" id="chHit">--</div><div class="l">命中</div></div>
+        <div class="kpi"><div class="v mono" id="chMiss">--</div><div class="l">未命中</div></div>
+        <div class="kpi"><div class="v mono" id="chRate">--</div><div class="l">命中率</div></div>
+      </div>
+      <div class="row">
+        <button onclick="cacheDemo()">🔁 缓存命中演示</button>
+        <button class="ghost" onclick="clearCache()">清空缓存</button>
+      </div>
+      <pre id="cacheOut">点击「缓存命中演示」：第一次 miss，第二次应 hit。</pre>
+    </div>
+  </div>
+
+  <div class="grid g-2" style="margin-bottom:16px">
+    <div class="panel">
+      <h2>🗄️ 数据库优化</h2>
+      <div class="row">
+        <div class="kpi"><div class="v mono" id="dbTables">--</div><div class="l">表</div></div>
+        <div class="kpi"><div class="v mono" id="dbIdx">--</div><div class="l">索引</div></div>
+        <div class="kpi"><div class="v mono" id="dbRows">--</div><div class="l">总行数</div></div>
+      </div>
+      <div class="row">
+        <input id="sqlInput" placeholder="SELECT * FROM vulns WHERE severity='critical'" />
+        <button onclick="explainSql()">EXPLAIN</button>
+      </div>
+      <pre id="explainOut">输入 SQL 点 EXPLAIN 看是否命中索引。</pre>
+    </div>
+
+    <div class="panel">
+      <h2>📦 静态资源优化</h2>
+      <div id="staticBody"></div>
+      <div class="bar" style="margin-top:10px"><i id="compressBar"></i></div>
+      <div style="color:var(--muted);font-size:12px" id="compressTxt"></div>
+    </div>
+  </div>
+
+  <div class="grid g-2" style="margin-bottom:16px">
+    <div class="panel">
+      <h2>🧩 批量接口合并</h2>
+      <p style="color:var(--muted);font-size:12px;margin-bottom:10px">
+        多个小请求合并为一次 <span class="mono">/all</span>，减少往返：4 个请求 → 1 个请求。
+      </p>
+      <div class="row">
+        <button onclick="batchDemo()">📦 调用合并接口 /all</button>
+        <span class="tag pass" id="batchTag">--</span>
+      </div>
+      <pre id="batchOut">点上面按钮，一次性拿回 总览+打分卡+缓存+队列。</pre>
+    </div>
+
+    <div class="panel">
+      <h2>📊 优化前后对比</h2>
+      <table>
+        <thead><tr><th>指标</th><th>优化前</th><th>优化后</th></tr></thead>
+        <tbody>
+          <tr><td>冷启动</td><td class="mono">~30s</td><td class="mono" style="color:var(--ok)">&lt;10s</td></tr>
+          <tr><td>P95 响应</td><td class="mono">~320ms</td><td class="mono" style="color:var(--ok)">&lt;50ms</td></tr>
+          <tr><td>并发承载</td><td class="mono">~20</td><td class="mono" style="color:var(--ok)">100+</td></tr>
+          <tr><td>静态资源</td><td class="mono">320KB</td><td class="mono" style="color:var(--ok)">64KB</td></tr>
+          <tr><td>重复查询</td><td>每次查库</td><td style="color:var(--ok)">LRU 缓存</td></tr>
+          <tr><td>路由注册</td><td>全部启动时</td><td style="color:var(--ok)">懒加载</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>📋 慢路由 TOP</h2>
+    <table><thead><tr><th>路由</th><th>P95 (ms)</th><th>平均 (ms)</th><th>样本数</th></tr></thead>
+    <tbody id="slowBody"></tbody></table>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <h2>🔌 API 端点速查（/api/v1/perf-ultra）</h2>
+    <table>
+      <thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+      <tbody id="epBody"></tbody>
+    </table>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <h2>🧭 说明与目标</h2>
+    <p style="color:var(--muted);font-size:13px;line-height:1.9">
+      本控制台对应方向4「性能极致优化」：通过<b style="color:var(--fg)">延迟加载</b>把非核心模块移出启动路径，
+      冷启动目标从 ~30s 降到 <b style="color:var(--ok)">&lt;10s</b>；通过
+      <b style="color:var(--fg)">LRU+TTL 响应缓存</b>让相同请求直接命中，P95 目标 <b style="color:var(--ok)">&lt;50ms</b>；
+      通过<b style="color:var(--fg)">信号量 + 后台队列</b>支持 100 并发不崩；通过
+      <b style="color:var(--fg)">索引建议 / 执行计划 / DB 缓存层</b>优化查询；静态资源走 gzip+brotli+长缓存头。
+      数据每 5 秒自动刷新一次。所有存储均为内存字典模拟，重启即还原。
+    </p>
+  </div>
+</main>
+
+<script>
+const API='/api/v1/perf-ultra';
+async function g(u){const r=await fetch(u);return r.json();}
+async function p(u,b){const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});return r.json();}
+function set(id,v){const e=document.getElementById(id); if(e) e.textContent=v;}
+
+async function loadScore(){
+  const d=await g(API+'/scorecard'); if(!d.success)return;
+  document.getElementById('scoreGrid').innerHTML=Object.values(d.data).map(s=>`
+    <div class="score ${s.ok?'pass':'fail'}">
+      <div class="ic">${s.ok?'✅':'⛔'}</div>
+      <div class="t">${s.label}</div>
+      <div class="d">${s.detail}</div>
+    </div>`).join('');
+}
+async function loadStartup(){
+  const d=await g(API+'/startup'); if(!d.success)return;
+  set('startupMs', d.data.current_startup_ms);
+  set('savedMs', d.data.savings_ms);
+  set('heavyMod', d.data.heavy_modules);
+}
+async function loadLatency(){
+  const d=await g(API+'/monitor/latency'); if(!d.success)return;
+  set('p50', d.data.p50); set('p95', d.data.p95); set('p99', d.data.p99);
+  const pct=Math.min(100, d.data.p95/50*100);
+  const bar=document.getElementById('p95bar'); bar.style.width=pct+'%';
+  bar.style.background = d.data.p95<50 ? 'var(--ok)' : 'var(--bad)';
+}
+async function loadQueue(){
+  const d=await g(API+'/queue/health'); if(!d.success)return;
+  set('qMax', d.data.max_concurrent); set('qRun', d.data.running); set('qDone', d.data.completed);
+}
+async function loadCache(){
+  const d=await g(API+'/cache/stats'); if(!d.success)return;
+  set('chHit', d.data.hits); set('chMiss', d.data.misses); set('chRate', d.data.hit_rate+'%');
+}
+async function loadDb(){
+  const d=await g(API+'/db/stats'); if(!d.success)return;
+  set('dbTables', d.data.tables); set('dbIdx', d.data.indexes); set('dbRows', d.data.total_rows);
+}
+async function loadStatic(){
+  const d=await g(API+'/static'); if(!d.success)return;
+  const s=d.data;
+  document.getElementById('staticBody').innerHTML=`
+    <table><tr><th>gzip/brotli</th><td>${s.gzip_enabled?'✅ 已开':'—'}</td></tr>
+    <tr><th>Cache-Control</th><td class="mono">${s.cache_control}</td></tr>
+    <tr><th>压缩前/后</th><td>${s.hits.before_compress_kb}KB → ${s.hits.after_compress_kb}KB</td></tr>
+    <tr><th>CDN</th><td>${s.cdn}</td></tr></table>`;
+  document.getElementById('compressBar').style.width=s.hits.saved+'%';
+  set('compressTxt', `压缩节省 ${s.hits.saved}% 体积`);
+}
+async function loadSlow(){
+  const d=await g(API+'/monitor/slow-routes'); if(!d.success)return;
+  document.getElementById('slowBody').innerHTML=d.data.map(r=>`<tr>
+    <td class="mono">${r.route}</td><td>${r.p95}</td><td>${r.avg}</td><td>${r.count}</td></tr>`).join('') || '<tr><td colspan=4 style="color:var(--muted)">暂无样本</td></tr>';
+}
+
+async function showLazy(){
+  const d=await g(API+'/lazy/status'); if(!d.success)return;
+  document.getElementById('lazyOut').textContent=JSON.stringify(d.data,null,2);
+}
+async function warmupAll(){
+  const out=document.getElementById('lazyOut');
+  out.textContent='预热中…';
+  const d=await p(API+'/lazy/warmup',{modules:[]});
+  out.textContent=JSON.stringify(d.data,null,2);
+}
+async function stressTest(n){
+  const out=document.getElementById('stressOut');
+  out.textContent=`发起 ${n} 并发…`;
+  const d=await g(API+'/queue/stress?n='+n);
+  out.textContent=`✅ 已入队 ${n} 个任务\n队列健康：${JSON.stringify(d.data.health_after_enqueue,null,2)}`;
+  setTimeout(loadQueue,800);
+}
+async function enqueueDemo(){
+  const d=await p(API+'/queue/enqueue',{kind:'demo',work_ms:80});
+  document.getElementById('stressOut').textContent='已入队：'+d.data.task_id;
+  setTimeout(loadQueue,1000);
+}
+async function cacheDemo(){
+  const out=document.getElementById('cacheOut');
+  out.textContent='第一次调用（应 miss）…';
+  const d=await g(API+'/cache/demo');
+  out.textContent=`第1次 来自缓存: ${d.data.first_call_cache_hit}\n第2次 来自缓存: ${d.data.second_call_cache_hit}\n结论：${d.data.proof}`;
+  loadCache();
+}
+async function clearCache(){ await g(API+'/cache/clear'); loadCache(); }
+async function explainSql(){
+  const sql=document.getElementById('sqlInput').value;
+  const d=await p(API+'/db/explain',{sql});
+  document.getElementById('explainOut').textContent=JSON.stringify(d.data,null,2);
+}
+
+const EPS=[
+ ['GET','/overview','性能总览'],['GET','/scorecard','五项打分卡'],['GET','/health','健康探针'],
+ ['GET','/startup','启动优化'],['GET','/lazy/status','懒加载状态'],['POST','/lazy/warmup','预热'],
+ ['GET','/lazy/simulate','启动对比模拟'],['POST','/startup/mark','记录启动耗时'],
+ ['GET','/cache/stats','缓存统计'],['GET','/cache/get','读缓存'],['POST','/cache/set','写缓存'],
+ ['DELETE','/cache/invalidate','失效单条'],['DELETE','/cache/clear','清空缓存'],['GET','/cache/demo','命中演示'],
+ ['GET','/queue/health','队列健康'],['POST','/queue/enqueue','入队任务'],['GET','/queue/tasks','任务列表'],
+ ['GET','/queue/tasks/{id}','任务详情'],['GET','/queue/stress','并发压测'],
+ ['GET','/db/schema','表结构'],['GET','/db/index-recommendations','索引建议'],['POST','/db/explain','执行计划'],
+ ['GET','/db/cache-layer','DB缓存层'],['GET','/db/stats','DB统计'],
+ ['GET','/monitor/summary','监控摘要'],['GET','/monitor/latency','分位'],['POST','/monitor/record','上报耗时'],
+ ['GET','/monitor/slow-routes','慢路由'],['GET','/static','静态资源'],['GET','/all','批量合并'],
+];
+document.getElementById('epBody').innerHTML=EPS.map(e=>`<tr>
+ <td><span class="tag pass">${e[0]}</span></td>
+ <td class="mono">/api/v1/perf-ultra${e[1]}</td><td>${e[2]}</td></tr>`).join('');
+
+async function batchDemo(){
+  const t0=performance.now();
+  const d=await g(API+'/all');
+  const ms=Math.round(performance.now()-t0);
+  document.getElementById('batchOut').textContent='一次请求拿到 4 块数据，耗时 '+ms+'ms\n'+JSON.stringify(Object.keys(d.data),null,2);
+  document.getElementById('batchTag').textContent=ms+'ms 往返';
+}
+async function loadAll(){
+  const s=await g(API+'/monitor/summary');
+  if(s.success){ set('uptimeTag','uptime '+s.data.uptime_sec+'s'); }
+  await Promise.all([loadScore(),loadStartup(),loadLatency(),loadQueue(),loadCache(),loadDb(),loadStatic(),loadSlow()]);
+}
+loadAll();
+setInterval(loadAll, 5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>漏洞赏金 / SRC 管理控制台 · Round 18</title>
+<style>
+  :root {
+    --bg:#0b0f17; --panel:#131a26; --panel2:#1a2333; --border:#233049;
+    --text:#d6deee; --muted:#7a8aa8; --accent:#39c5bb; --accent2:#ff6b6b;
+    --crit:#ff4d4f; --high:#fa8c16; --med:#fadb14; --low:#52c41a; --info:#1890ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; font-size:14px; }
+  header { background:linear-gradient(90deg,#0d1522,#16223a); padding:14px 22px;
+    border-bottom:1px solid var(--border); display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  header h1 { margin:0; font-size:18px; color:var(--accent); }
+  .tag { background:var(--panel2); padding:3px 10px; border-radius:10px; font-size:12px; color:var(--muted); }
+  nav { display:flex; flex-wrap:wrap; gap:4px; padding:10px 22px; background:#0e1522; border-bottom:1px solid var(--border); }
+  nav button { background:transparent; color:var(--muted); border:1px solid var(--border);
+    padding:7px 14px; cursor:pointer; border-radius:6px; font-size:13px; }
+  nav button.active { background:var(--accent); color:#001; border-color:var(--accent); font-weight:600; }
+  main { padding:18px 22px; max-width:1440px; margin:0 auto; }
+  .tab { display:none; } .tab.active { display:block; }
+  .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  @media (max-width:1000px){ .grid,.grid3,.grid4 { grid-template-columns:1fr; } }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:14px; margin-bottom:14px; }
+  .card h3 { margin:0 0 10px; font-size:14px; color:var(--accent); }
+  label { display:block; font-size:12px; color:var(--muted); margin:8px 0 4px; }
+  input, textarea, select { width:100%; background:#0c1320; color:var(--text);
+    border:1px solid var(--border); border-radius:5px; padding:7px 9px; font-size:13px; }
+  textarea { min-height:80px; font-family:Consolas,monospace; }
+  button.action { background:var(--accent); color:#001; border:none; padding:8px 16px;
+    border-radius:5px; cursor:pointer; font-weight:600; margin-top:10px; }
+  button.action:hover { opacity:.9; }
+  button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  button.danger { background:var(--crit); color:#fff; border:none; }
+  .status { font-size:12px; color:var(--muted); margin-top:8px; }
+  pre { background:#0a101c; border:1px solid var(--border); border-radius:6px;
+    padding:10px; overflow:auto; max-height:420px; font-size:12px; white-space:pre-wrap; word-break:break-all; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th, td { border-bottom:1px solid var(--border); padding:6px 8px; text-align:left; }
+  th { color:var(--accent); background:#0e1626; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+  .pill.critical,.pill.crit { background:rgba(255,77,79,.18); color:var(--crit); }
+  .pill.high { background:rgba(250,140,22,.18); color:var(--high); }
+  .pill.medium,.pill.med { background:rgba(250,219,20,.18); color:var(--med); }
+  .pill.low { background:rgba(82,196,26,.18); color:var(--low); }
+  .pill.info { background:rgba(24,144,255,.18); color:var(--info); }
+  .pill.neutral { background:var(--panel2); color:var(--muted); }
+  .kv { display:flex; gap:18px; flex-wrap:wrap; margin-bottom:10px; }
+  .kv div b { color:var(--accent); font-size:20px; display:block; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .muted { color:var(--muted); font-size:12px; }
+  .bar { height:8px; background:var(--panel2); border-radius:4px; overflow:hidden; margin:4px 0; }
+  .bar > span { display:block; height:100%; background:var(--accent); }
+  .kpi { background:var(--panel2); border-radius:8px; padding:12px; border:1px solid var(--border); }
+  .kpi .v { font-size:22px; color:var(--accent); font-weight:700; }
+  .kpi .l { font-size:12px; color:var(--muted); }
+  .steps { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; }
+  .steps .s { padding:5px 10px; border:1px solid var(--border); border-radius:14px; font-size:12px; color:var(--muted); }
+  .steps .s.active { background:var(--accent); color:#001; border-color:var(--accent); }
+  .steps .s.done { background:var(--low); color:#001; border-color:var(--low); }
+  .mini { font-size:11px; color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🐞 漏洞赏金 / SRC 管理控制台</h1>
+  <span class="tag">Round 18 · bug-bounty</span>
+  <span class="muted" style="margin-left:auto">合法 SRC 运营视角 · 管理白帽提交与奖励发放</span>
+</header>
+
+<nav id="nav">
+  <button data-tab="projects" class="active">📁 项目管理</button>
+  <button data-tab="submissions">📨 漏洞提交</button>
+  <button data-tab="community">🧑‍💻 白帽社区</button>
+  <button data-tab="finance">💰 赏金财务</button>
+  <button data-tab="lifecycle">🔁 生命周期</button>
+  <button data-tab="dashboard">📊 运营仪表盘</button>
+</nav>
+
+<main>
+<!-- ============ 项目管理 ============ -->
+<section class="tab active" id="tab-projects">
+  <div class="grid">
+    <div class="card">
+      <h3>新建 SRC 项目</h3>
+      <label>项目名称</label><input id="p-name" placeholder="XX 电商 SRC">
+      <label>描述</label><textarea id="p-desc" placeholder="覆盖主站、App、开放API"></textarea>
+      <div class="row">
+        <div style="flex:1"><label>类型</label>
+          <select id="p-type"><option>public">公开</option><option>private</option><option>invite_only</option><option>vdp</option></select></div>
+        <div style="flex:1"><label>行业</label>
+          <select id="p-industry"><option>互联网</option><option>金融</option><option>电商</option><option>游戏</option><option>政务</option><option>其他</option></select></div>
+      </div>
+      <label>规则说明</label><textarea id="p-rules" placeholder="禁止 DoS / 社工 / 真实数据"></textarea>
+      <label>奖励概览</label><input id="p-reward" placeholder="高危 1w-5w, 严重 5w-20w">
+      <button class="action" onclick="createProject()">创建项目</button>
+      <div class="status" id="p-status"></div>
+    </div>
+    <div class="card">
+      <h3>项目列表</h3>
+      <div class="row" style="margin-bottom:8px">
+        <button class="action ghost" onclick="loadProjects()">刷新</button>
+        <select id="p-filter" style="width:auto" onchange="loadProjects()">
+          <option value="">全部状态</option><option>draft</option><option>recruiting</option>
+          <option>active</option><option>paused</option><option>closed</option><option>archived</option>
+        </select>
+      </div>
+      <div id="p-list"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>项目详情 / 范围 / 公告 / 规则</h3>
+    <div class="row">
+      <select id="p-detail" style="width:auto;min-width:280px"></select>
+      <button class="action ghost" onclick="loadProjectDetail()">加载详情</button>
+      <button class="action ghost" onclick="transitionProject('active')">→ 进行中</button>
+      <button class="action ghost" onclick="transitionProject('paused')">→ 暂停</button>
+      <button class="action danger" onclick="transitionProject('closed')">→ 结束</button>
+    </div>
+    <div class="grid" style="margin-top:10px">
+      <div>
+        <h3 style="color:var(--info)">测试范围</h3>
+        <div id="p-scopes"></div>
+        <div class="row" style="margin-top:8px">
+          <input id="s-value" placeholder="*.example.com" style="flex:1">
+          <select id="s-type" style="width:auto"><option>domain</option><option>ip</option><option>app</option><option>api</option></select>
+          <button class="action" onclick="addScope()">加入范围</button>
+        </div>
+      </div>
+      <div>
+        <h3 style="color:var(--info)">奖励规则</h3>
+        <div id="p-rules"></div>
+        <h3 style="color:var(--info);margin-top:10px">公告</h3>
+        <div class="row">
+          <input id="a-title" placeholder="公告标题" style="flex:1">
+          <button class="action" onclick="publishAnn()">发布</button>
+        </div>
+        <div id="p-ann" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <h3 style="color:var(--info);margin-top:10px">项目统计 & 更新日志</h3>
+    <div class="grid">
+      <div id="p-stats"></div>
+      <div id="p-changelog"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 漏洞提交 ============ -->
+<section class="tab" id="tab-submissions">
+  <div class="grid">
+    <div class="card">
+      <h3>提交漏洞（白帽视角）</h3>
+      <label>项目 ID</label><input id="v-proj" value="demo_proj_1">
+      <label>标题</label><input id="v-title" placeholder="例: 订单接口 IDOR">
+      <div class="row">
+        <div style="flex:1"><label>类型</label>
+          <select id="v-type"><option>idor</option><option>xss</option><option>sqli</option><option>ssrf</option><option>rce</option><option>business_logic</option><option>info_disclosure</option><option>other</option></select></div>
+        <div style="flex:1"><label>严重程度</label>
+          <select id="v-sev"><option>info</option><option>low</option><option>medium</option><option>high</option><option>critical</option></select></div>
+      </div>
+      <label>目标</label><input id="v-target" placeholder="https://api.example.com/xxx">
+      <label>复现步骤</label><textarea id="v-repro" placeholder="1) ... 2) ..."></textarea>
+      <label>影响</label><textarea id="v-impact" placeholder="可越权查看他人数据"></textarea>
+      <label>修复建议</label><input id="v-fix" placeholder="服务端校验归属">
+      <label>指纹（用于重复检测）</label><input id="v-fp" placeholder="order_id=integer">
+      <button class="action" onclick="submitVuln()">提交并自动分类</button>
+      <button class="action ghost" onclick="dupCheck()">重复检测</button>
+      <div class="status" id="v-status"></div>
+    </div>
+    <div class="card">
+      <h3>重复检测 / 自动评分</h3>
+      <pre id="v-dup">（提交或点"重复检测"查看）</pre>
+      <h3>评分建议</h3>
+      <div class="row">
+        <select id="sc-sev" style="width:auto"><option>medium</option><option>high</option><option>critical</option><option>low</option></select>
+        <select id="sc-scope" style="width:auto"><option>local</option><option>dept</option><option>corp</option><option>global</option></select>
+        <select id="sc-diff" style="width:auto"><option>trivial</option><option>easy</option><option>medium</option><option>hard</option></select>
+        <select id="sc-q" style="width:auto"><option>poor</option><option>fair</option><option>good</option><option>excellent</option></select>
+        <button class="action ghost" onclick="suggestScore()">评分建议</button>
+      </div>
+      <pre id="sc-out" style="margin-top:8px">（待运行）</pre>
+    </div>
+  </div>
+  <div class="card">
+    <h3>漏洞队列与审核工作流</h3>
+    <div class="row" style="margin-bottom:8px">
+      <button class="action ghost" onclick="loadVulns()">刷新</button>
+      <select id="v-filter" style="width:auto" onchange="loadVulns()">
+        <option value="">全部状态</option><option>new</option><option>triage</option><option>confirmed</option>
+        <option>fixing</option><option>fixed</option><option>closed</option><option>duplicate</option><option>invalid</option>
+      </select>
+      <select id="v-select" style="flex:1;min-width:300px" onchange="loadVulnDetail()"></select>
+      <button class="action ghost" onclick="loadVulnDetail()">详情</button>
+    </div>
+    <div class="steps" id="v-steps"></div>
+    <div id="v-detail"></div>
+    <div class="grid" style="margin-top:10px">
+      <div class="card" style="margin-bottom:0">
+        <h3>审核操作</h3>
+        <label>步骤</label>
+        <select id="rv-step"><option>triage</option><option>tech_verify</option><option>risk_confirm</option><option>bounty_review</option><option>fix_confirm</option><option>closed</option></select>
+        <label>状态</label>
+        <select id="rv-status"><option>triage</option><option>confirmed</option><option>fixing</option><option>fixed</option><option>closed</option><option>duplicate</option><option>invalid</option><option>need_more_info</option></select>
+        <label>审核人</label><input id="rv-by" value="admin">
+        <label>备注</label><input id="rv-note" placeholder="审核意见">
+        <button class="action" onclick="doReview()">提交审核</button>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <h3>评论 / 历史</h3>
+        <div class="row">
+          <input id="cmt-body" placeholder="评论内容" style="flex:1">
+          <button class="action" onclick="addComment()">发表</button>
+        </div>
+        <div id="cmt-list" style="margin-top:8px"></div>
+        <h3 style="margin-top:10px">状态历史</h3>
+        <pre id="v-hist" style="max-height:200px"></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 白帽社区 ============ -->
+<section class="tab" id="tab-community">
+  <div class="grid">
+    <div class="card">
+      <h3>白帽注册</h3>
+      <label>昵称</label><input id="h-nick" placeholder="p0wn_master">
+      <label>技能标签（逗号分隔）</label><input id="h-skills" placeholder="web,api,idor">
+      <label>地区</label><input id="h-region" placeholder="北京">
+      <button class="action" onclick="regHunter()">注册</button>
+      <div class="status" id="h-status"></div>
+    </div>
+    <div class="card">
+      <h3>排行榜</h3>
+      <div class="row">
+        <select id="lb-metric" style="width:auto">
+          <option value="points">积分</option><option value="total_bounty">奖金</option>
+          <option value="valid">有效漏洞</option><option value="quality">质量分</option>
+        </select>
+        <button class="action ghost" onclick="loadBoard()">加载</button>
+      </div>
+      <div id="lb-list" style="margin-top:8px"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>白帽列表 & 等级权限</h3>
+    <div class="row">
+      <button class="action ghost" onclick="loadHunters()">加载白帽</button>
+      <button class="action ghost" onclick="loadPerms()">查看等级权限</button>
+    </div>
+    <div class="grid" style="margin-top:10px">
+      <div id="h-list"></div>
+      <div id="h-perms"></div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>技术 Writeup</h3>
+      <label>标题</label><input id="wu-title">
+      <label>内容</label><textarea id="wu-content"></textarea>
+      <label>标签（逗号）</label><input id="wu-tags" placeholder="idor,api">
+      <button class="action" onclick="postWriteup()">发布公开</button>
+      <div id="wu-list" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <h3>争议处理</h3>
+      <label>漏洞 ID</label><input id="dp-vid">
+      <label>申诉理由</label><textarea id="dp-reason"></textarea>
+      <button class="action" onclick="openDispute()">提交申诉</button>
+      <div id="dp-list" style="margin-top:10px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 赏金财务 ============ -->
+<section class="tab" id="tab-finance">
+  <div class="grid">
+    <div class="card">
+      <h3>赏金评定</h3>
+      <div class="row">
+        <select id="e-sev" style="width:auto"><option>critical</option><option>high</option><option>medium</option><option>low</option></select>
+        <select id="e-scope" style="width:auto"><option>local</option><option>dept</option><option>corp</option><option>global</option></select>
+        <select id="e-diff" style="width:auto"><option>trivial</option><option>easy</option><option>medium</option><option>hard</option></select>
+        <select id="e-q" style="width:auto"><option>poor</option><option>fair</option><option>good</option><option>excellent</option></select>
+        <input id="e-mul" type="number" step="0.05" value="1.0" style="width:90px" title="等级倍数">
+        <button class="action" onclick="estimateBounty()">估算</button>
+      </div>
+      <pre id="e-out" style="margin-top:8px">（待运行）</pre>
+    </div>
+    <div class="card">
+      <h3>发放奖励</h3>
+      <label>项目 ID</label><input id="pay-proj" value="demo_proj_1">
+      <label>白帽 ID</label><input id="pay-hunter" value="hunter_001">
+      <label>漏洞 ID</label><input id="pay-vuln" placeholder="vuln_xxx">
+      <div class="row">
+        <div style="flex:1"><label>方式</label>
+          <select id="pay-method"><option>cash</option><option>points</option><option>gift</option><option>certificate</option></select></div>
+        <div style="flex:1"><label>金额</label><input id="pay-amt" type="number" value="2000"></div>
+      </div>
+      <label>备注</label><input id="pay-note">
+      <button class="action" onclick="issuePayment()">发放</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>发放记录 & 财务统计</h3>
+    <div class="row">
+      <button class="action ghost" onclick="loadPayments()">发放记录</button>
+      <button class="action ghost" onclick="loadFinance()">财务汇总</button>
+      <button class="action ghost" onclick="loadBudget()">预算状态</button>
+    </div>
+    <div id="pay-list" style="margin-top:8px"></div>
+    <pre id="fin-out" style="margin-top:8px"></pre>
+  </div>
+  <div class="card">
+    <h3>预算管理</h3>
+    <div class="row">
+      <input id="bg-pid" value="demo_proj_1" style="flex:1">
+      <input id="bg-total" type="number" value="500000" style="width:140px">
+      <button class="action" onclick="setBudget()">设置/调整预算</button>
+    </div>
+    <pre id="bg-out" style="margin-top:8px"></pre>
+  </div>
+</section>
+
+<!-- ============ 漏洞生命周期 ============ -->
+<section class="tab" id="tab-lifecycle">
+  <div class="grid">
+    <div class="card">
+      <h3>修复分配</h3>
+      <label>漏洞 ID</label><input id="fx-vid">
+      <label>修复人</label><input id="fx-assignee" value="dev_backend_01">
+      <label>截止日期</label><input id="fx-due" type="date">
+      <button class="action" onclick="assignFix()">分配</button>
+      <div id="fx-list" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <h3>SLA 检查</h3>
+      <label>严重程度</label>
+      <select id="sla-sev"><option>critical</option><option>high</option><option>medium</option><option>low</option></select>
+      <label>提交时间</label><input id="sla-sub" value="2026-09-14 09:00:00">
+      <label>响应时间</label><input id="sla-resp" placeholder="留空表示未响应">
+      <label>修复时间</label><input id="sla-fix" placeholder="留空表示未修复">
+      <button class="action" onclick="checkSLA()">检查 SLA</button>
+      <pre id="sla-out" style="margin-top:8px"></pre>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>漏洞知识库</h3>
+      <div class="row">
+        <input id="kb-q" placeholder="搜索关键词" style="flex:1">
+        <button class="action ghost" onclick="searchKb()">搜索</button>
+      </div>
+      <div id="kb-list" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h3>外部平台集成 & 报告导出</h3>
+      <label>平台</label>
+      <select id="ext-pf"><option>hackerone</option><option>bugcrowd</option><option>butian</option><option>vulbox</option></select>
+      <label>API Endpoint</label><input id="ext-url" placeholder="https://api.example.com/v1">
+      <label>API Key 引用</label><input id="ext-key" placeholder="ref:secret/xxx">
+      <button class="action" onclick="configExt()">配置</button>
+      <button class="action ghost" onclick="syncExt()">立即同步</button>
+      <h3 style="margin-top:12px">导出报告</h3>
+      <div class="row">
+        <select id="ex-kind" style="width:auto"><option>project_report</option><option>hunter_report</option><option>audit</option></select>
+        <select id="ex-fmt" style="width:auto"><option>json</option><option>csv</option><option>markdown</option><option>pdf</option></select>
+        <button class="action" onclick="exportReport()">导出</button>
+      </div>
+      <pre id="ex-out" style="margin-top:8px"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 运营仪表盘 ============ -->
+<section class="tab" id="tab-dashboard">
+  <div class="card">
+    <h3>运营态势</h3>
+    <div class="grid4" id="dash-kpi"></div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>实时动态</h3>
+      <div id="dash-feed"></div>
+    </div>
+    <div class="card">
+      <h3>运营度量</h3>
+      <div id="dash-metrics"></div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>漏洞分布</h3>
+      <div id="dash-vuln"></div>
+    </div>
+    <div class="card">
+      <h3>白帽生态</h3>
+      <div id="dash-hunter"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>项目健康度</h3>
+    <div id="dash-health"></div>
+  </div>
+</section>
+</main>
+
+<script>
+const BASE = "/api/v1/bug-bounty";
+async function api(path, opts={}) {
+  try {
+    const r = await fetch(BASE + path, {
+      headers: {"Content-Type":"application/json"},
+      ...opts,
+    });
+    const j = await r.json();
+    return j;
+  } catch (e) {
+    return {success:false, error:String(e)};
+  }
+}
+function pill(sev){ return `<span class="pill ${sev||'neutral'}">${sev||'-'}</span>`; }
+function esc(s){ return String(s==null?'':s).replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
+
+// Tabs
+document.querySelectorAll("nav button").forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    document.getElementById("tab-"+b.dataset.tab).classList.add("active");
+    if(b.dataset.tab==="dashboard") loadDash();
+  };
+});
+
+// ---- Projects ----
+async function createProject(){
+  const body={
+    name: document.getElementById("p-name").value,
+    description: document.getElementById("p-desc").value,
+    type: document.getElementById("p-type").value,
+    industry: document.getElementById("p-industry").value,
+    rules: document.getElementById("p-rules").value,
+    reward_overview: document.getElementById("p-reward").value,
+  };
+  const r=await api("/projects",{method:"POST",body:JSON.stringify(body)});
+  document.getElementById("p-status").textContent = r.success? ("已创建: "+r.data.id) : r.error;
+  loadProjects();
+}
+async function loadProjects(){
+  const st=document.getElementById("p-filter").value;
+  const r=await api("/projects"+(st?`?status=${st}`:""));
+  const list=document.getElementById("p-list");
+  const sel=document.getElementById("p-detail");
+  if(!r.success){ list.textContent=r.error; return; }
+  list.innerHTML = r.data.map(p=>`<div class="card" style="margin-bottom:8px">
+    <b>${esc(p.name)}</b> ${pill(p.status)} <span class="muted">${esc(p.industry)} / ${esc(p.type)}</span>
+    <div class="mini">${esc(p.description||'')}</div></div>`).join("");
+  sel.innerHTML = '<option value="">选择项目</option>' + r.data.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+}
+async function loadProjectDetail(){
+  const pid=document.getElementById("p-detail").value;
+  if(!pid) return;
+  const [sc,rules,ann,stats,chg]=await Promise.all([
+    api(`/projects/${pid}/scopes`), api(`/projects/${pid}/bounty-rules`),
+    api(`/projects/${pid}/announcements`), api(`/projects/${pid}/stats`),
+    api(`/projects/${pid}/changelog`),
+  ]);
+  document.getElementById("p-scopes").innerHTML = sc.success? sc.data.map(s=>`<div>${pill(s.is_excluded?'crit':'low')} ${esc(s.type)}: <code>${esc(s.value)}</code></div>`).join("") : sc.error;
+  document.getElementById("p-rules").innerHTML = rules.success? `<pre>${esc(JSON.stringify(rules.data,null,2))}</pre>` : rules.error;
+  document.getElementById("p-ann").innerHTML = ann.success? ann.data.map(a=>`<div class="mini">[${a.level}] ${esc(a.title)}</div>`).join("") : ann.error;
+  document.getElementById("p-stats").innerHTML = stats.success? `<pre>${esc(JSON.stringify(stats.data,null,2))}</pre>` : stats.error;
+  document.getElementById("p-changelog").innerHTML = chg.success? chg.data.map(c=>`<div class="mini">${c.time} <b>${esc(c.kind)}</b> ${esc(c.detail)}</div>`).join("") : chg.error;
+}
+async function transitionProject(st){
+  const pid=document.getElementById("p-detail").value;
+  if(!pid) return alert("先选择项目");
+  const r=await api(`/projects/${pid}/transition?new_status=${encodeURIComponent(st)}`,{method:"POST"});
+  alert(r.success? JSON.stringify(r.data) : r.error);
+  loadProjects();
+}
+async function addScope(){
+  const pid=document.getElementById("p-detail").value;
+  if(!pid) return alert("先选择项目");
+  const body={type:document.getElementById("s-type").value, value:document.getElementById("s-value").value};
+  const r=await api(`/projects/${pid}/scopes`,{method:"POST",body:JSON.stringify(body)});
+  loadProjectDetail();
+}
+async function publishAnn(){
+  const pid=document.getElementById("p-detail").value;
+  if(!pid) return alert("先选择项目");
+  const title=document.getElementById("a-title").value;
+  const r=await api(`/projects/${pid}/announcements`,{method:"POST",body:JSON.stringify({title,content:"",level:"info"})});
+  loadProjectDetail();
+}
+
+// ---- Submissions ----
+async function submitVuln(){
+  const body={
+    project_id:document.getElementById("v-proj").value,
+    title:document.getElementById("v-title").value,
+    vuln_type:document.getElementById("v-type").value,
+    severity:document.getElementById("v-sev").value,
+    target:document.getElementById("v-target").value,
+    repro_steps:document.getElementById("v-repro").value,
+    impact:document.getElementById("v-impact").value,
+    fix_suggestion:document.getElementById("v-fix").value,
+    fingerprint:document.getElementById("v-fp").value,
+    reporter_id:"hunter_demo",
+  };
+  const r=await api("/submissions",{method:"POST",body:JSON.stringify(body)});
+  document.getElementById("v-status").textContent = r.success? ("已提交 "+r.data.id) : r.error;
+  if(r.success) document.getElementById("v-dup").textContent = JSON.stringify(r.data.duplicate_check,null,2);
+  loadVulns();
+}
+async function dupCheck(){
+  const qs=new URLSearchParams({
+    title:document.getElementById("v-title").value,
+    target:document.getElementById("v-target").value,
+    vuln_type:document.getElementById("v-type").value,
+    fingerprint:document.getElementById("v-fp").value,
+  });
+  const r=await api("/duplicate-check?"+qs);
+  document.getElementById("v-dup").textContent = JSON.stringify(r.data,null,2);
+}
+async function suggestScore(){
+  const qs=new URLSearchParams({
+    severity:document.getElementById("sc-sev").value,
+    impact_scope:document.getElementById("sc-scope").value,
+    exploit_difficulty:document.getElementById("sc-diff").value,
+    report_quality:document.getElementById("sc-q").value,
+  });
+  const r=await api("/scoring/suggest?"+qs);
+  document.getElementById("sc-out").textContent = JSON.stringify(r.data,null,2);
+}
+async function loadVulns(){
+  const st=document.getElementById("v-filter").value;
+  const r=await api("/submissions"+(st?`?status=${st}`:""));
+  const sel=document.getElementById("v-select");
+  if(!r.success){ return; }
+  sel.innerHTML='<option value="">选择漏洞</option>'+r.data.map(v=>`<option value="${v.id}">[${v.severity}] ${esc(v.title)||v.id}</option>`).join("");
+}
+async function loadVulnDetail(){
+  const vid=document.getElementById("v-select").value;
+  if(!vid) return;
+  const [v,cmt,hist]=await Promise.all([
+    api(`/submissions/${vid}`), api(`/submissions/${vid}/comments`), api(`/submissions/${vid}/history`),
+  ]);
+  if(!v.success) return;
+  const d=v.data;
+  document.getElementById("v-detail").innerHTML=`<table>
+    <tr><th>ID</th><td>${d.id}</td><th>状态</th><td>${pill(d.status)}</td></tr>
+    <tr><th>严重</th><td>${pill(d.severity)}</td><th>优先级</th><td>${d.priority}</td></tr>
+    <tr><th>类型</th><td>${esc(d.vuln_type)}</td><th>路由</th><td>${esc(d.routing)}</td></tr>
+    <tr><th>目标</th><td colspan="3">${esc(d.target)}</td></tr>
+    <tr><th>影响</th><td colspan="3">${esc(d.impact)}</td></tr>
+    <tr><th>标签</th><td colspan="3">${(d.tags||[]).map(t=>`<span class="pill info">${esc(t)}</span>`).join(" ")}</td></tr>
+    <tr><th>评分</th><td colspan="3">CVSS 建议 ${d.score.cvss_suggest} (${d.score.severity_band})</td></tr>
+  </table>`;
+  const steps=["triage","tech_verify","risk_confirm","bounty_review","fix_confirm","closed"];
+  const cur=steps.indexOf(d.current_step);
+  document.getElementById("v-steps").innerHTML=steps.map((s,i)=>`<span class="s ${i<cur?'done':''} ${i===cur?'active':''}">${s}</span>`).join("");
+  document.getElementById("cmt-list").innerHTML = cmt.success? cmt.data.map(c=>`<div class="mini"><b>${esc(c.author)}</b> ${c.time}: ${esc(c.body)}</div>`).join("") : "";
+  document.getElementById("v-hist").textContent = JSON.stringify(hist.data,null,2);
+}
+async function doReview(){
+  const vid=document.getElementById("v-select").value;
+  if(!vid) return alert("选择漏洞");
+  const body={
+    step:document.getElementById("rv-step").value,
+    status:document.getElementById("rv-status").value,
+    reviewer:document.getElementById("rv-by").value,
+    note:document.getElementById("rv-note").value,
+  };
+  const r=await api(`/submissions/${vid}/review`,{method:"POST",body:JSON.stringify(body)});
+  loadVulnDetail();
+}
+async function addComment(){
+  const vid=document.getElementById("v-select").value;
+  if(!vid) return alert("选择漏洞");
+  const body={author:"admin",body:document.getElementById("cmt-body").value};
+  await api(`/submissions/${vid}/comments`,{method:"POST",body:JSON.stringify(body)});
+  document.getElementById("cmt-body").value="";
+  loadVulnDetail();
+}
+
+// ---- Community ----
+async function regHunter(){
+  const body={
+    nickname:document.getElementById("h-nick").value,
+    skill_tags:document.getElementById("h-skills").value.split(",").filter(x=>x),
+    region:document.getElementById("h-region").value,
+  };
+  const r=await api("/hunters",{method:"POST",body:JSON.stringify(body)});
+  document.getElementById("h-status").textContent = r.success? ("已注册 "+r.data.id) : r.error;
+  loadHunters();
+}
+async function loadHunters(){
+  const r=await api("/hunters");
+  document.getElementById("h-list").innerHTML = r.success? `<table><tr><th>ID</th><th>昵称</th><th>等级</th><th>积分</th><th>地区</th></tr>`+
+    r.data.map(h=>`<tr><td>${h.id}</td><td>${esc(h.nickname)}</td><td>${pill(h.level)}</td><td>${h.points}</td><td>${esc(h.region)}</td></tr>`).join("")+`</table>` : r.error;
+}
+async function loadPerms(){
+  const levels=["newbie","certified","advanced","core"];
+  const out=await Promise.all(levels.map(l=>api(`/permissions/${l}`)));
+  document.getElementById("h-perms").innerHTML = levels.map((l,i)=>`<div class="card" style="margin-bottom:6px">
+    <b>${l}</b><pre>${esc(JSON.stringify(out[i].data,null,2))}</pre></div>`).join("");
+}
+async function loadBoard(){
+  const m=document.getElementById("lb-metric").value;
+  const r=await api(`/leaderboard?metric=${m}&limit=10`);
+  document.getElementById("lb-list").innerHTML = r.success? `<table><tr><th>#</th><th>昵称</th><th>等级</th><th>${m}</th></tr>`+
+    r.data.map(x=>`<tr><td>${x.rank}</td><td>${esc(x.nickname)}</td><td>${pill(x.level)}</td><td>${x[m]}</td></tr>`).join("")+`</table>` : r.error;
+}
+async function postWriteup(){
+  const body={
+    title:document.getElementById("wu-title").value,
+    content:document.getElementById("wu-content").value,
+    tags:document.getElementById("wu-tags").value.split(",").filter(x=>x),
+    public:true,
+  };
+  await api("/writeups?hunter_id=hunter_demo",{method:"POST",body:JSON.stringify(body)});
+  loadWriteups();
+}
+async function loadWriteups(){
+  const r=await api("/writeups");
+  document.getElementById("wu-list").innerHTML = r.success? r.data.map(w=>`<div class="mini"><b>${esc(w.title)}</b> <span class="muted">❤️${w.likes}</span></div>`).join("") : "";
+}
+async function openDispute(){
+  const body={vuln_id:document.getElementById("dp-vid").value, reason:document.getElementById("dp-reason").value};
+  await api("/disputes?hunter_id=hunter_demo",{method:"POST",body:JSON.stringify(body)});
+  loadDisputes();
+}
+async function loadDisputes(){
+  const r=await api("/disputes");
+  document.getElementById("dp-list").innerHTML = r.success? r.data.map(d=>`<div class="mini">${d.id} ${pill(d.status)} ${esc(d.reason)}</div>`).join("") : "";
+}
+
+// ---- Finance ----
+async function estimateBounty(){
+  const qs=new URLSearchParams({
+    severity:document.getElementById("e-sev").value,
+    impact_scope:document.getElementById("e-scope").value,
+    exploit_difficulty:document.getElementById("e-diff").value,
+    report_quality:document.getElementById("e-q").value,
+    level_multiplier:document.getElementById("e-mul").value,
+  });
+  const r=await api("/bounty/estimate?"+qs);
+  document.getElementById("e-out").textContent = JSON.stringify(r.data,null,2);
+}
+async function issuePayment(){
+  const body={
+    project_id:document.getElementById("pay-proj").value,
+    hunter_id:document.getElementById("pay-hunter").value,
+    vuln_id:document.getElementById("pay-vuln").value,
+    method:document.getElementById("pay-method").value,
+    amount:parseFloat(document.getElementById("pay-amt").value||"0"),
+    note:document.getElementById("pay-note").value,
+  };
+  await api("/payments",{method:"POST",body:JSON.stringify(body)});
+  loadPayments();
+}
+async function loadPayments(){
+  const r=await api("/payments");
+  document.getElementById("pay-list").innerHTML = r.success? `<table><tr><th>ID</th><th>白帽</th><th>金额</th><th>税后</th><th>方式</th><th>状态</th></tr>`+
+    r.data.map(p=>`<tr><td>${p.id}</td><td>${p.hunter_id}</td><td>${p.gross}</td><td>${p.net}</td><td>${p.method}</td><td>${pill(p.status)}</td></tr>`).join("")+`</table>` : r.error;
+}
+async function loadFinance(){
+  const r=await api("/finance/summary");
+  document.getElementById("fin-out").textContent = JSON.stringify(r.data,null,2);
+}
+async function setBudget(){
+  const pid=document.getElementById("bg-pid").value;
+  const total=parseFloat(document.getElementById("bg-total").value||"0");
+  await api(`/budgets/${pid}`,{method:"PUT",body:JSON.stringify({total,warning_pct:0.8})});
+  loadBudget();
+}
+async function loadBudget(){
+  const pid=document.getElementById("bg-pid").value;
+  const r=await api(`/budgets/${pid}`);
+  document.getElementById("bg-out").textContent = JSON.stringify(r.data,null,2);
+}
+
+// ---- Lifecycle ----
+async function assignFix(){
+  const body={
+    vuln_id:document.getElementById("fx-vid").value,
+    assignee:document.getElementById("fx-assignee").value,
+    due_date:document.getElementById("fx-due").value,
+  };
+  await api("/fix/assign",{method:"POST",body:JSON.stringify(body)});
+  const r=await api("/fix/tasks");
+  document.getElementById("fx-list").innerHTML = r.success? `<table><tr><th>ID</th><th>漏洞</th><th>修复人</th><th>进度</th><th>状态</th></tr>`+
+    r.data.map(t=>`<tr><td>${t.id}</td><td>${t.vuln_id}</td><td>${t.assignee}</td><td><div class="bar"><span style="width:${t.progress}%"></span></div></td><td>${pill(t.status)}</td></tr>`).join("")+`</table>` : r.error;
+}
+async function checkSLA(){
+  const qs=new URLSearchParams({
+    severity:document.getElementById("sla-sev").value,
+    submitted_at:document.getElementById("sla-sub").value,
+  });
+  const resp=document.getElementById("sla-resp").value; if(resp) qs.set("responded_at",resp);
+  const fix=document.getElementById("sla-fix").value; if(fix) qs.set("fixed_at",fix);
+  const r=await api("/sla/check?"+qs);
+  document.getElementById("sla-out").textContent = JSON.stringify(r.data,null,2);
+}
+async function searchKb(){
+  const q=document.getElementById("kb-q").value;
+  const r=await api("/kb/search?q="+encodeURIComponent(q));
+  document.getElementById("kb-list").innerHTML = r.success? r.data.map(a=>`<div class="mini"><b>${esc(a.title)}</b> <span class="muted">👍${a.upvotes}</span></div>`).join("") : r.error;
+}
+async function configExt(){
+  const body={
+    platform:document.getElementById("ext-pf").value,
+    api_endpoint:document.getElementById("ext-url").value,
+    api_key_ref:document.getElementById("ext-key").value,
+    enabled:true,
+  };
+  await api("/external/config",{method:"POST",body:JSON.stringify(body)});
+}
+async function syncExt(){
+  const pf=document.getElementById("ext-pf").value;
+  const r=await api(`/external/${pf}/sync`,{method:"POST"});
+  alert(JSON.stringify(r.data||r.error));
+}
+async function exportReport(){
+  const body={
+    kind:document.getElementById("ex-kind").value,
+    fmt:document.getElementById("ex-fmt").value,
+    payload:{rows:[{id:1,a:1},{id:2,a:2}]},
+  };
+  const r=await api("/export",{method:"POST",body:JSON.stringify(body)});
+  document.getElementById("ex-out").textContent = r.success? r.data.preview : r.error;
+}
+
+// ---- Dashboard ----
+async function loadDash(){
+  const [ov,feed,vdist,eco,met,health]=await Promise.all([
+    api("/dashboard/overview"), api("/dashboard/activity?limit=15"),
+    api("/dashboard/vuln-distribution"), api("/dashboard/hunter-ecosystem"),
+    api("/dashboard/metrics"), api("/dashboard/health"),
+  ]);
+  const k=ov.data||{};
+  document.getElementById("dash-kpi").innerHTML = [
+    ["项目数",k.project_count],["活跃项目",k.active_project_count],
+    ["总提交",k.total_submissions],["有效率",(k.valid_rate*100).toFixed(1)+"%"],
+    ["总赏金",k.total_bounty],["白帽数",k.hunter_count],
+    ["在线白帽",k.online_hunters],["平均修复(h)",k.avg_fix_hours],
+  ].map(([l,v])=>`<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
+  document.getElementById("dash-feed").innerHTML = (feed.data||[]).map(f=>`<div class="mini">${f.time} [${f.kind}] ${esc(f.summary)}</div>`).join("")||"（暂无动态）";
+  document.getElementById("dash-metrics").innerHTML = `<pre>${esc(JSON.stringify(met.data,null,2))}</pre>`;
+  document.getElementById("dash-vuln").innerHTML = `<pre>${esc(JSON.stringify(vdist.data,null,2))}</pre>`;
+  document.getElementById("dash-hunter").innerHTML = `<pre>${esc(JSON.stringify(eco.data,null,2))}</pre>`;
+  document.getElementById("dash-health").innerHTML = (health.data||[]).map(h=>`<div class="mini">#${h.rank} <b>${esc(h.name)}</b> 健康分 ${h.health_score} 状态 ${pill(h.status)}</div>`).join("");
+}
+
+// init
+loadProjects(); loadHunters(); loadBoard(); loadWriteups(); loadDisputes(); loadPayments();
+</script>
+</body>
+</html>

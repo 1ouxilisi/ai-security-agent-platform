@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="page.defense.title">防御中心 - AI Hacking Agent</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:#0d1117; color:#e0e6ed; min-height:100vh; display:flex; flex-direction:column;
+  }
+  .topbar {
+    height:56px; background:#161b22; border-bottom:1px solid #30363d;
+    display:flex; align-items:center; padding:0 20px; gap:12px;
+  }
+  .topbar h1 { font-size:17px; color:#00d4ff; }
+  .topbar .sub { color:#8b949e; font-size:12px; }
+  .wrap { flex:1; display:flex; }
+  .sidebar { width:200px; background:#161b22; border-right:1px solid #30363d; padding:16px 0; }
+  .nav-item {
+    padding:11px 20px; cursor:pointer; color:#c9d1d9; font-size:14px;
+    border-left:3px solid transparent; transition:all .2s;
+  }
+  .nav-item:hover { background:#1f2630; }
+  .nav-item.active { border-left-color:#00d4ff; background:#1c2530; color:#00d4ff; }
+  .main { flex:1; padding:22px; overflow:auto; }
+  .panel { display:none; }
+  .panel.active { display:block; }
+  .card { background:#161b22; border:1px solid #30363d; border-radius:10px; padding:18px; margin-bottom:18px; }
+  .card h2 { font-size:15px; color:#00d4ff; margin-bottom:14px; }
+  textarea, input, select {
+    width:100%; background:#0d1117; border:1px solid #30363d; border-radius:6px;
+    color:#e0e6ed; padding:10px; font-size:13px; font-family:Consolas,monospace;
+  }
+  textarea { min-height:110px; resize:vertical; }
+  label { display:block; font-size:12px; color:#8b949e; margin:10px 0 5px; }
+  .btn {
+    background:#1f6feb; color:#fff; border:none; border-radius:6px; padding:9px 18px;
+    cursor:pointer; font-size:13px; margin-top:12px;
+  }
+  .btn:hover { background:#388bfd; }
+  .btn.ghost { background:#21262d; color:#c9d1d9; border:1px solid #30363d; }
+  .stats { display:flex; gap:12px; flex-wrap:wrap; margin-top:14px; }
+  .stat { background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:12px 16px; min-width:120px; }
+  .stat .num { font-size:22px; font-weight:700; color:#00d4ff; }
+  .stat .lbl { font-size:11px; color:#8b949e; margin-top:4px; }
+  table { width:100%; border-collapse:collapse; margin-top:12px; font-size:12px; }
+  th, td { text-align:left; padding:7px 9px; border-bottom:1px solid #21262d; }
+  th { color:#8b949e; }
+  .sev { padding:2px 8px; border-radius:10px; font-size:11px; }
+  .sev.critical { background:#5a1d1d; color:#ff7b72; }
+  .sev.high { background:#5a3416; color:#ffa657; }
+  .sev.warning, .sev.medium { background:#4d4011; color:#e3b341; }
+  .sev.info, .sev.low { background:#1f3a52; color:#79c0ff; }
+  .status-pass { color:#3fb950; }
+  .status-fail { color:#ff7b72; }
+  pre { background:#0d1117; border:1px solid #21262d; border-radius:6px; padding:10px;
+        font-size:12px; overflow:auto; max-height:320px; margin-top:12px; white-space:pre-wrap; }
+  .foot { padding:10px 20px; border-top:1px solid #30363d; background:#161b22; }
+  .foot button { margin-right:8px; }
+</style>
+<link rel="stylesheet" href="/static/css/responsive.css">
+</head>
+<body>
+<div class="topbar">
+  <h1 data-i18n="page.defense.title">🛡 防御中心</h1>
+  <span class="sub">IDS / 日志分析 / 基线检查 / 修复验证 / 威胁狩猎（纯检测视角）</span>
+</div>
+
+<div class="wrap">
+  <div class="sidebar">
+    <div class="nav-item active" data-p="ids">🚨 IDS 入侵检测</div>
+    <div class="nav-item" data-p="log">📄 日志分析</div>
+    <div class="nav-item" data-p="baseline">✅ 基线检查</div>
+    <div class="nav-item" data-p="remediation">🔧 修复验证</div>
+    <div class="nav-item" data-p="hunt">🎯 威胁狩猎</div>
+  </div>
+
+  <div class="main">
+
+    <!-- IDS -->
+    <div class="panel active" id="panel-ids">
+      <div class="card">
+        <h2>IDS 请求分析</h2>
+        <label>HTTP 请求字典（JSON）</label>
+        <textarea id="ids-input">{"method":"GET","path":"/search?q=1' OR '1'='1 UNION SELECT password--","source_ip":"203.0.113.66","dest_ip":"10.0.0.5","user_agent":"sqlmap/1.7"}</textarea>
+        <button class="btn" onclick="idsAnalyze()">分析请求</button>
+        <button class="btn ghost" onclick="idsAlerts('')">全部告警</button>
+        <button class="btn ghost" onclick="idsAlerts('critical')">仅严重告警</button>
+        <div id="ids-stats" class="stats"></div>
+        <div id="ids-result"></div>
+      </div>
+    </div>
+
+    <!-- 日志 -->
+    <div class="panel" id="panel-log">
+      <div class="card">
+        <h2>日志文件分析</h2>
+        <label>日志文件路径</label>
+        <input id="log-path" value="data/defense_sample_access.log">
+        <label>日志类型</label>
+        <select id="log-type">
+          <option value="auto">自动</option>
+          <option value="access">Nginx/Apache</option>
+          <option value="auth">Linux auth.log</option>
+          <option value="windows">Windows 安全日志</option>
+        </select>
+        <button class="btn" onclick="logAnalyze()">分析日志</button>
+        <button class="btn ghost" onclick="logStats()">刷新统计</button>
+        <div id="log-stats" class="stats"></div>
+        <div id="log-result"></div>
+      </div>
+    </div>
+
+    <!-- 基线 -->
+    <div class="panel" id="panel-baseline">
+      <div class="card">
+        <h2>安全配置基线检查</h2>
+        <label>类别（web/os/database/container，留空=全部）</label>
+        <input id="bl-cat" placeholder="留空检查全部">
+        <label>配置字典（JSON）</label>
+        <textarea id="bl-config">{"web":{"https_redirect":true,"hsts_enabled":true,"directory_listing":false,"security_headers":{"X-Frame-Options":"DENY","X-Content-Type-Options":"nosniff"}},"os":{"password_min_length":16,"password_complexity":true,"firewall_enabled":true},"database":{"default_password_changed":true,"audit_log_enabled":true},"container":{"privileged":false,"resource_limits":{"cpu":"1","memory":"512m"}}}</textarea>
+        <button class="btn" onclick="baselineCheck()">执行检查</button>
+        <div id="bl-stats" class="stats"></div>
+        <div id="bl-result"></div>
+      </div>
+    </div>
+
+    <!-- 修复验证 -->
+    <div class="panel" id="panel-remediation">
+      <div class="card">
+        <h2>漏洞修复验证（批量 JSON）</h2>
+        <label>漏洞列表（JSON 数组）</label>
+        <textarea id="rv-input">{"vulns":[{"vuln_info":{"vuln_id":"V1","title":"SQL注入","target":"a.com","severity":"high","vuln_type":"sql_injection"},"remediation_plan":{"config_checks":{"parameterized_query":true,"input_sanitized":true,"waf_rule":"active"}}},{"vuln_info":{"vuln_id":"V2","title":"缺失安全头","target":"b.com","severity":"medium","vuln_type":"missing_security_headers"},"remediation_plan":{"config_checks":{"headers_present":["HSTS"]},"required_headers":["HSTS","X-Frame-Options","X-Content-Type-Options"]}},{"vuln_info":{"vuln_id":"V3","title":"弱口令","target":"c.com","severity":"high","vuln_type":"weak_password"},"remediation_plan":{"config_checks":{"password_rotated":true}}}]}</textarea>
+        <button class="btn" onclick="rvVerify()">开始验证</button>
+        <div id="rv-result"></div>
+      </div>
+    </div>
+
+    <!-- 威胁狩猎 -->
+    <div class="panel" id="panel-hunt">
+      <div class="card">
+        <h2>威胁狩猎（事件列表 JSON）</h2>
+        <label>事件数组</label>
+        <textarea id="hunt-input">[{"user":"admin","dest_host":"PC-01","logon_type":3,"auth_package":"NTLM","ntlm_nt_hash_used":true,"protocol":"smb"},{"user":"admin","dest_host":"PC-02","logon_type":5,"protocol":"rdp"},{"user":"admin","dest_host":"PC-03","protocol":"smb"},{"process":"mimikatz.exe","target_process":"lsass.exe","access_granted":4096},{"event_type":"kerberoast","user":"admin","spn":"cifs/srv01","encryption_type":"rc4-hmac"},{"src_ip":"10.0.0.9","direction":"outbound","dest_ip":"203.0.113.9","bytes_out":83886080}]</textarea>
+        <button class="btn" onclick="huntRun()">执行狩猎</button>
+        <button class="btn ghost" onclick="huntFindings()">查看发现</button>
+        <div id="hunt-result"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="foot">
+  <button class="btn ghost" onclick="fillSample()">一键填充示例数据</button>
+  <span style="color:#8b949e;font-size:12px;margin-left:10px">所有检测均为离线模式匹配，不发起真实攻击。</span>
+</div>
+
+<script>
+const BASE = '/api/v1/defense';
+
+// 导航
+document.querySelectorAll('.nav-item').forEach(el=>{
+  el.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('panel-'+el.dataset.p).classList.add('active');
+  });
+});
+
+async function postJSON(url, body){
+  const r = await fetch(BASE+url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  return r.json();
+}
+async function getJSON(url){
+  const r = await fetch(BASE+url);
+  return r.json();
+}
+function show(elId, html){ document.getElementById(elId).innerHTML = html; }
+function sevBadge(s){ return '<span class="sev '+s+'">'+s+'</span>'; }
+
+function renderTable(rows, cols){
+  if(!rows||!rows.length) return '<pre>无数据</pre>';
+  let h='<table><tr>'+cols.map(c=>'<th>'+c.h+'</th>').join('')+'</tr>';
+  rows.forEach(r=>{ h+='<tr>'+cols.map(c=>'<td>'+c.f(r)+'</td>').join('')+'</tr>'; });
+  return h+'</table>';
+}
+
+// IDS
+async function idsAnalyze(){
+  let pkt; try{ pkt = JSON.parse(document.getElementById('ids-input').value); }
+  catch(e){ alert('JSON 解析失败: '+e); return; }
+  const d = await postJSON('/ids/analyze',{packet:pkt});
+  show('ids-stats','<div class="stat"><div class="num">'+d.count+'</div><div class="lbl">命中告警</div></div>');
+  show('ids-result', renderTable(d.alerts||[],[
+    {h:'级别',f:r=>sevBadge(r.severity)},
+    {h:'规则',f:r=>r.rule_id},
+    {h:'描述',f:r=>r.msg},
+    {h:'源IP',f:r=>r.source_ip},
+    {h:'证据',f:r=>r.evidence}
+  ]));
+}
+async function idsAlerts(sev){
+  const d = await getJSON('/ids/alerts'+(sev?('?severity='+sev):''));
+  show('ids-result', renderTable(d.alerts||[],[
+    {h:'级别',f:r=>sevBadge(r.severity)},{h:'规则',f:r=>r.rule_id},{h:'描述',f:r=>r.msg},{h:'证据',f:r=>r.evidence}
+  ]));
+}
+
+// 日志
+async function logAnalyze(){
+  const fp = document.getElementById('log-path').value;
+  const lt = document.getElementById('log-type').value;
+  const d = await postJSON('/log/analyze',{filepath:fp,log_type:lt});
+  const s = d.statistics||{};
+  show('log-stats',
+    '<div class="stat"><div class="num">'+(d.records||0)+'</div><div class="lbl">记录数</div></div>'+
+    '<div class="stat"><div class="num">'+(s.anomaly_count||0)+'</div><div class="lbl">异常</div></div>'+
+    '<div class="stat"><div class="num">'+((s.top_attack_ips||[]).length)+'</div><div class="lbl">攻击源</div></div>');
+  let ips=(s.top_attack_ips||[]).map(x=>({ip:x[0],cnt:x[1]}));
+  show('log-result',
+    '<h2 style="color:#00d4ff;font-size:14px;margin-top:10px">Top 攻击源 IP</h2>'+
+    renderTable(ips,[{h:'IP',f:r=>r.ip},{h:'次数',f:r=>r.cnt}])+
+    '<h2 style="color:#00d4ff;font-size:14px;margin-top:14px">异常</h2>'+
+    renderTable(d.anomalies||[],[{h:'类型',f:r=>r.type},{h:'级别',f:r=>sevBadge(r.severity)},{h:'说明',f:r=>r.message}]));
+}
+async function logStats(){
+  const d = await getJSON('/log/statistics');
+  show('log-result','<pre>'+JSON.stringify(d,null,2)+'</pre>');
+}
+
+// 基线
+async function baselineCheck(){
+  const cat = document.getElementById('bl-cat').value.trim();
+  let cfg; try{ cfg = JSON.parse(document.getElementById('bl-config').value||'{}'); }
+  catch(e){ alert('配置 JSON 解析失败: '+e); return; }
+  const d = await postJSON('/baseline/check',{category:cat||null,configs:cfg});
+  const r = d.report||{};
+  show('bl-stats',
+    '<div class="stat"><div class="num">'+r.total_checks+'</div><div class="lbl">检查项</div></div>'+
+    '<div class="stat"><div class="num status-pass">'+r.passed+'</div><div class="lbl">通过</div></div>'+
+    '<div class="stat"><div class="num status-fail">'+r.failed+'</div><div class="lbl">不通过</div></div>'+
+    '<div class="stat"><div class="num">'+((r.pass_rate*100||0).toFixed(1))+'%</div><div class="lbl">通过率</div></div>');
+  show('bl-result', renderTable(r.checks||[],[
+    {h:'ID',f:r=>r.check_id},
+    {h:'类别',f:r=>r.category},
+    {h:'检查项',f:r=>r.name},
+    {h:'风险',f:r=>sevBadge(r.risk_level)},
+    {h:'结果',f:r=>r.passed?'<span class="status-pass">通过</span>':'<span class="status-fail">不通过</span>'},
+    {h:'说明',f:r=>r.detail}
+  ]));
+}
+
+// 修复验证
+async function rvVerify(){
+  let body; try{ body = JSON.parse(document.getElementById('rv-input').value); }
+  catch(e){ alert('JSON 解析失败: '+e); return; }
+  const d = await postJSON('/remediation/verify', body);
+  const r = d.report||{};
+  show('rv-result',
+    '<div class="stats">'+
+    '<div class="stat"><div class="num">'+(r.summary.fixed||0)+'</div><div class="lbl">已修复</div></div>'+
+    '<div class="stat"><div class="num">'+(r.summary.partially_fixed||0)+'</div><div class="lbl">部分修复</div></div>'+
+    '<div class="stat"><div class="num">'+(r.summary.not_fixed||0)+'</div><div class="lbl">未修复</div></div></div>'+
+    renderTable(r.results||[],[
+      {h:'ID',f:r=>r.vuln_id},{h:'漏洞',f:r=>r.title},
+      {h:'结果',f:r=>sevBadge(r.result)},
+      {h:'回归风险',f:r=>sevBadge(r.regression_risk)},
+      {h:'证据',f:r=>(r.evidence||[]).join('; ')}
+    ]));
+}
+
+// 威胁狩猎
+async function huntRun(){
+  let ev; try{ ev = JSON.parse(document.getElementById('hunt-input').value); }
+  catch(e){ alert('JSON 解析失败: '+e); return; }
+  const d = await postJSON('/threat-hunt/run',{events:ev});
+  const r = d.report||{};
+  show('hunt-result',
+    '<div class="stats"><div class="stat"><div class="num">'+r.total_findings+'</div><div class="lbl">发现</div></div></div>'+
+    renderTable(r.findings||[],[
+      {h:'场景',f:r=>r.scenario},{h:'名称',f:r=>r.name},
+      {h:'级别',f:r=>sevBadge(r.severity)},{h:'证据',f:r=>r.evidence}
+    ]));
+}
+async function huntFindings(){
+  const d = await getJSON('/threat-hunt/findings');
+  show('hunt-result','<pre>'+JSON.stringify(d.report,null,2)+'</pre>');
+}
+
+// 一键填充（此处仅确保文本框为示例值）
+function fillSample(){
+  alert('已使用页面内置示例数据，可直接点击对应「执行」按钮。');
+}
+</script>
+<script src="/static/js/i18n.js"></script>
+<script src="/static/js/mobile-nav.js"></script>
+
+<!-- Round8: mobile + i18n boot -->
+<div id="lang-switcher" style="position:fixed;top:10px;right:10px;z-index:1300;display:flex;gap:6px;">
+  <button type="button" data-lang="zh-CN" class="lang-btn" style="min-height:44px;padding:8px 14px;background:#161b22;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;cursor:pointer;font-size:13px;">中文</button>
+  <button type="button" data-lang="en-US" class="lang-btn" style="min-height:44px;padding:8px 14px;background:#161b22;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;cursor:pointer;font-size:13px;">EN</button>
+</div>
+<script>
+(function(){
+  function bindLangSwitch(){
+    var btns = document.querySelectorAll('#lang-switcher .lang-btn');
+    btns.forEach(function(b){
+      b.addEventListener('click', function(){
+        var lang = b.getAttribute('data-lang');
+        if (window.i18n) window.i18n.setLanguage(lang);
+      });
+    });
+    function highlight(){
+      var cur = (window.i18n && window.i18n.getLanguage()) || 'zh-CN';
+      btns.forEach(function(b){
+        var active = b.getAttribute('data-lang') === cur;
+        b.style.borderColor = active ? '#58a6ff' : '#30363d';
+        b.style.color = active ? '#58a6ff' : '#c9d1d9';
+      });
+    }
+    window.addEventListener('i18n:change', highlight);
+    // initial highlight once i18n boots
+    var tries = 0;
+    var t = setInterval(function(){ if (window.i18n) { highlight(); clearInterval(t); } else if (++tries > 50) clearInterval(t); }, 100);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindLangSwitch);
+  else bindLangSwitch();
+})();
+</script>
+
+</body>
+</html>

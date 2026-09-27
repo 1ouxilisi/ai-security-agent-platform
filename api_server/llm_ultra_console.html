@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM极致优化控制台</title>
+<style>
+:root {
+  --bg: #0f172a; --bg2: #1e293b; --bg3: #334155;
+  --border: #475569; --text: #e2e8f0; --text2: #94a3b8;
+  --green: #10b981; --yellow: #f59e0b; --red: #ef4444;
+  --blue: #3b82f6; --purple: #8b5cf6;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; padding:20px; }
+h1 { font-size:1.6rem; margin-bottom:4px; }
+.subtitle { color:var(--text2); font-size:.85rem; margin-bottom:20px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin-bottom:20px; }
+.card { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:16px; }
+.card h3 { font-size:.9rem; color:var(--text2); margin-bottom:8px; text-transform:uppercase; letter-spacing:.5px; }
+.metric { font-size:2rem; font-weight:700; }
+.badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.75rem; font-weight:600; }
+.badge.green { background:#10b98122; color:var(--green); }
+.badge.blue { background:#3b82f622; color:var(--blue); }
+.badge.purple { background:#8b5cf622; color:var(--purple); }
+.badge.yellow { background:#f59e0b22; color:var(--yellow); }
+table { width:100%; border-collapse:collapse; font-size:.82rem; }
+th,td { padding:8px 10px; text-align:left; border-bottom:1px solid var(--border); }
+th { color:var(--text2); font-weight:600; font-size:.75rem; text-transform:uppercase; }
+tr:hover { background:var(--bg3); }
+.tabs { display:flex; gap:4px; margin-bottom:16px; flex-wrap:wrap; }
+.tab { padding:8px 16px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; cursor:pointer; font-size:.85rem; }
+.tab.active { background:var(--purple); border-color:var(--purple); color:#fff; }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+button { padding:8px 16px; background:var(--purple); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:.85rem; }
+button:hover { opacity:.9; }
+button.secondary { background:var(--bg3); }
+.chat-box { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px; height:300px; overflow-y:auto; margin-bottom:12px; }
+.chat-msg { margin-bottom:10px; padding:8px 12px; border-radius:6px; max-width:80%; }
+.chat-msg.user { background:var(--blue); margin-left:auto; }
+.chat-msg.ai { background:var(--bg3); }
+.chat-input { display:flex; gap:8px; }
+.chat-input input { flex:1; padding:10px; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); }
+pre { background:var(--bg); padding:12px; border-radius:6px; overflow-x:auto; font-size:.8rem; }
+</style>
+</head>
+<body>
+<h1>LLM极致优化控制台</h1>
+<p class="subtitle">方向3：LLM能力极致优化 — Prompt大师 + 上下文记忆 + 多轮对话 + 漏洞知识库 + 报告润色 + 优雅降级</p>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('overview')">总览</div>
+  <div class="tab" onclick="showTab('prompts')">Prompt大师</div>
+  <div class="tab" onclick="showTab('chat')">多轮对话</div>
+  <div class="tab" onclick="showTab('kb')">漏洞知识库</div>
+  <div class="tab" onclick="showTab('polisher')">报告润色</div>
+</div>
+
+<!-- Tab: Overview -->
+<div id="tab-overview" class="tab-content active">
+  <div class="grid" id="overview-cards">
+    <div class="card"><h3>优化Prompt模板</h3><div class="metric" style="color:var(--purple)" id="ov-prompts">--</div></div>
+    <div class="card"><h3>活跃会话</h3><div class="metric" style="color:var(--blue)" id="ov-sessions">--</div></div>
+    <div class="card"><h3>CVE知识库条目</h3><div class="metric" style="color:var(--green)" id="ov-kb">--</div></div>
+    <div class="card"><h3>已润色报告</h3><div class="metric" style="color:var(--yellow)" id="ov-polished">--</div></div>
+  </div>
+  <div class="card">
+    <h3>功能特性</h3>
+    <div id="features-list"></div>
+  </div>
+</div>
+
+<!-- Tab: Prompts -->
+<div id="tab-prompts" class="tab-content">
+  <div class="card">
+    <h3>Prompt模板列表</h3>
+    <div id="prompts-list"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>新旧对比（以漏洞分析为例）</h3>
+    <div id="prompt-compare"></div>
+  </div>
+</div>
+
+<!-- Tab: Chat -->
+<div id="tab-chat" class="tab-content">
+  <div class="card">
+    <h3>AI安全分析对话</h3>
+    <div class="chat-box" id="chat-box">
+      <div class="chat-msg ai">您好！我是AI安全分析助手。您可以问我任何安全相关问题，我会记住我们的对话上下文。</div>
+    </div>
+    <div class="chat-input">
+      <input type="text" id="chat-input" placeholder="输入问题，如：这个SQL注入怎么修？">
+      <button onclick="sendChat()">发送</button>
+    </div>
+    <div id="followup-suggestions" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- Tab: KB -->
+<div id="tab-kb" class="tab-content">
+  <div class="card">
+    <h3>CVE知识库</h3>
+    <table id="kb-table">
+      <thead><tr><th>CVE ID</th><th>名称</th><th>严重级</th><th>CVSS</th><th>有Exploit</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>自动关联测试</h3>
+    <div style="margin-bottom:8px">
+      <input type="text" id="kb-type-input" value="rce" style="padding:6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)">
+      <button onclick="correlate()" style="margin-left:8px">关联CVE</button>
+    </div>
+    <div id="kb-correlation"></div>
+  </div>
+</div>
+
+<!-- Tab: Polisher -->
+<div id="tab-polisher" class="tab-content">
+  <div class="card">
+    <h3>报告润色演示</h3>
+    <div style="margin-bottom:8px">
+      <textarea id="polish-input" rows="4" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:monospace">网站被黑了，发现好几个漏洞。1. SQL注入 - 太严重了 2. XSS - 必须马上修。赶紧处理吧！</textarea>
+      <button onclick="polish()" style="margin-top:8px">润色报告</button>
+    </div>
+    <div id="polish-result"></div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1/llm-ultra';
+let sessionId = 'console-' + Date.now();
+
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+async function fetchJSON(url, opts={}) {
+  const r = await fetch(url, opts);
+  return r.json();
+}
+
+async function loadOverview() {
+  const [ov, feat] = await Promise.all([
+    fetchJSON(API + '/dashboard/overview'),
+    fetchJSON(API + '/dashboard/features'),
+  ]);
+  if (ov.success) {
+    document.getElementById('ov-prompts').textContent = ov.data.modules.prompt_master.prompts.total_prompts;
+    document.getElementById('ov-sessions').textContent = ov.data.modules.context_memory.sessions;
+    document.getElementById('ov-kb').textContent = ov.data.modules.vuln_knowledge_base.total_entries;
+    document.getElementById('ov-polished').textContent = ov.data.modules.report_polisher.total_polished;
+  }
+  if (feat.success) {
+    document.getElementById('features-list').innerHTML = feat.data.direction_3_features.map(f => `
+      <div style="margin-bottom:12px;padding:8px;background:var(--bg);border-radius:6px">
+        <b style="color:var(--purple)">${f.name}</b>
+        <ul style="margin-left:16px;margin-top:4px;font-size:.82rem;color:var(--text2)">
+          ${f.details.map(d => `<li>${d}</li>`).join('')}
+        </ul>
+      </div>`).join('');
+  }
+}
+
+async function loadPrompts() {
+  const [list, comp] = await Promise.all([
+    fetchJSON(API + '/prompts'),
+    fetchJSON(API + '/prompts/vuln_analysis/compare'),
+  ]);
+  if (list.success) {
+    document.getElementById('prompts-list').innerHTML = `
+      <table><tr><th>Key</th><th>名称</th><th>规则数</th><th>使用次数</th></tr>
+      ${list.data.prompts.map(p => `<tr><td>${p.key}</td><td>${p.name}</td><td>${p.rules_count}</td><td>${p.usage_count}</td></tr>`).join('')}
+      </table>`;
+  }
+  if (comp.success) {
+    document.getElementById('prompt-compare').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="background:var(--bg);padding:12px;border-radius:6px">
+          <h4 style="color:var(--red);margin-bottom:8px">优化前</h4>
+          <pre style="white-space:pre-wrap">${comp.data.old.style}</pre>
+          <ul>${comp.data.old.issues.map(i => `<li>${i}</li>`).join('')}</ul>
+        </div>
+        <div style="background:var(--bg);padding:12px;border-radius:6px">
+          <h4 style="color:var(--green);margin-bottom:8px">优化后Pro版</h4>
+          <pre style="white-space:pre-wrap">角色: ${comp.data.new.role}</pre>
+          <ul>${comp.data.new.improvements.map(i => `<li>${i}</li>`).join('')}</ul>
+        </div>
+      </div>`;
+  }
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  addChatMsg('user', msg);
+  input.value = '';
+  const r = await fetchJSON(API + '/chat/send', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({message: msg, session_id: sessionId}),
+  });
+  if (r.success) {
+    addChatMsg('ai', r.data.assistant_reply);
+    document.getElementById('followup-suggestions').innerHTML =
+      '<span style="color:var(--text2);font-size:.8rem">追问建议: </span>' +
+      r.data.followup_suggestions.map(s =>
+        `<span class="badge blue" style="cursor:pointer;margin-left:4px" onclick="document.getElementById('chat-input').value='${s}';sendChat()">${s}</span>`
+      ).join('');
+  }
+}
+
+function addChatMsg(role, text) {
+  const box = document.getElementById('chat-box');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function loadKB() {
+  const r = await fetchJSON(API + '/kb/list');
+  if (!r.success) return;
+  document.querySelector('#kb-table tbody').innerHTML = r.data.items.map(i => `
+    <tr><td>${i.cve_id}</td><td>${i.name}</td><td>${i.severity}</td><td>${i.cvss}</td><td>${i.exploit_available ? '是' : '否'}</td></tr>
+  `).join('');
+}
+
+async function correlate() {
+  const vtype = document.getElementById('kb-type-input').value;
+  const r = await fetchJSON(API + '/kb/correlate', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({vuln_type: vtype, tech_stack: ''}),
+  });
+  if (r.success) {
+    document.getElementById('kb-correlation').innerHTML = `
+      <p>关联到 ${r.data.correlations.length} 个CVE:</p>
+      <table><tr><th>CVE</th><th>名称</th><th>原因</th></tr>
+      ${r.data.correlations.map(c => `<tr><td>${c.cve_id}</td><td>${c.name}</td><td>${c.correlation_reason}</td></tr>`).join('')}
+      </table>`;
+  }
+}
+
+async function polish() {
+  const content = document.getElementById('polish-input').value;
+  const r = await fetchJSON(API + '/polisher/polish', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({content: content, report_type: 'demo'}),
+  });
+  if (r.success) {
+    document.getElementById('polish-result').innerHTML = `
+      <div style="margin-top:12px">
+        <h4 style="color:var(--green)">润色结果</h4>
+        <pre>${r.data.polished_content}</pre>
+        <p>质量评分: <b>${r.data.quality_score}</b> (${r.data.quality_checks.grade})</p>
+        <p>修改 ${r.data.changes_made.length} 处</p>
+      </div>`;
+  }
+}
+
+// Load all
+loadOverview();
+loadPrompts();
+loadKB();
+
+// Enter key sends chat
+document.getElementById('chat-input').addEventListener('keypress', e => {
+  if (e.key === 'Enter') sendChat();
+});
+</script>
+</body>
+</html>

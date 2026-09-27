@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI智能决策引擎 - AI Hacking Agent</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0e17; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+.header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 20px 30px; border-bottom: 2px solid #38bdf8; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 22px; color: #38bdf8; }
+.header .status { font-size: 13px; color: #94a3b8; }
+.header .status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-right: 6px; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.container { padding: 20px 30px; max-width: 1600px; margin: 0 auto; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+.stat-card { background: #111827; border: 1px solid #1f2937; border-radius: 10px; padding: 18px; }
+.stat-card .label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-card .value { font-size: 28px; font-weight: 700; color: #38bdf8; margin-top: 6px; }
+.stat-card .sub { font-size: 11px; color: #64748b; margin-top: 4px; }
+.panel { background: #111827; border: 1px solid #1f2937; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+.panel h2 { font-size: 16px; color: #e2e8f0; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #1f2937; display: flex; align-items: center; gap: 8px; }
+.panel h2 .icon { width: 6px; height: 18px; background: #38bdf8; border-radius: 3px; }
+.form-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.form-group { flex: 1; min-width: 200px; }
+.form-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+.form-group input, .form-group select { width: 100%; padding: 10px 12px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; font-size: 14px; }
+.form-group input:focus, .form-group select:focus { outline: none; border-color: #38bdf8; }
+.btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: #0ea5e9; color: white; }
+.btn-primary:hover { background: #0284c7; }
+.btn-success { background: #22c55e; color: white; }
+.btn-success:hover { background: #16a34a; }
+.btn-warning { background: #f59e0b; color: white; }
+.btn-warning:hover { background: #d97706; }
+.btn-danger { background: #ef4444; color: white; }
+.btn-danger:hover { background: #dc2626; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #1f2937; }
+.tab { padding: 10px 20px; cursor: pointer; font-size: 14px; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+.tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+.tab:hover { color: #94a3b8; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 12px; background: #0f172a; color: #94a3b8; font-weight: 600; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #1f2937; }
+td { padding: 10px 12px; border-bottom: 1px solid #1f2937; color: #cbd5e1; }
+tr:hover { background: #0f172a; }
+.badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.badge-running { background: #0ea5e9; color: white; }
+.badge-completed { background: #22c55e; color: white; }
+.badge-pending { background: #64748b; color: white; }
+.badge-critical { background: #ef4444; color: white; }
+.badge-high { background: #f97316; color: white; }
+.badge-medium { background: #eab308; color: #1a1a1a; }
+.badge-low { background: #22c55e; color: white; }
+.badge-info { background: #64748b; color: white; }
+.phase-flow { display: flex; gap: 0; margin: 20px 0; align-items: center; }
+.phase-step { flex: 1; text-align: center; padding: 15px 10px; background: #0f172a; border: 1px solid #1f2937; position: relative; }
+.phase-step.active { background: #0c4a6e; border-color: #38bdf8; }
+.phase-step.completed { background: #14532d; border-color: #22c55e; }
+.phase-step .phase-name { font-size: 13px; font-weight: 600; color: #e2e8f0; }
+.phase-step .phase-desc { font-size: 11px; color: #64748b; margin-top: 4px; }
+.phase-arrow { color: #334155; font-size: 20px; padding: 0 5px; }
+.decision-log { max-height: 400px; overflow-y: auto; }
+.decision-item { padding: 12px; background: #0f172a; border-left: 3px solid #38bdf8; margin-bottom: 10px; border-radius: 0 6px 6px 0; }
+.decision-item .step-num { font-size: 11px; color: #64748b; font-weight: 600; }
+.decision-item .decision-text { font-size: 14px; color: #e2e8f0; margin-top: 4px; }
+.decision-item .action-text { font-size: 12px; color: #38bdf8; margin-top: 6px; font-family: monospace; }
+.decision-item .result-text { font-size: 12px; color: #94a3b8; margin-top: 6px; }
+.risk-meter { width: 100%; height: 24px; background: #1f2937; border-radius: 12px; overflow: hidden; position: relative; }
+.risk-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #eab308, #f97316, #ef4444); transition: width 0.5s; }
+.risk-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px; font-weight: 700; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+.loading { display: inline-block; width: 16px; height: 16px; border: 2px solid #334155; border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.empty-state { text-align: center; padding: 40px; color: #64748b; }
+.empty-state .icon { font-size: 48px; margin-bottom: 15px; }
+.code-block { background: #0a0e17; border: 1px solid #1f2937; border-radius: 6px; padding: 12px; font-family: 'Consolas', monospace; font-size: 12px; color: #94a3b8; overflow-x: auto; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+.finding-card { background: #0f172a; border: 1px solid #1f2937; border-radius: 8px; padding: 15px; margin-bottom: 10px; }
+.finding-card .finding-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.finding-card .finding-title { font-size: 14px; font-weight: 600; color: #e2e8f0; }
+.finding-card .finding-desc { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+.finding-card .finding-meta { display: flex; gap: 15px; margin-top: 10px; font-size: 11px; color: #64748b; }
+</style>
+</head>
+<body>
+<div class="header">
+    <div>
+        <h1>🤖 AI智能决策引擎</h1>
+        <div style="font-size:12px;color:#64748b;margin-top:4px;">AI驱动的闭环渗透测试 · 侦察→决策→执行→迭代→报告</div>
+    </div>
+    <div class="status"><span class="dot"></span>引擎就绪 · 硅基流动 Qwen2.5-7B</div>
+</div>
+
+<div class="container">
+    <!-- 统计卡片 -->
+    <div class="stats-grid">
+        <div class="stat-card"><div class="label">总会话</div><div class="value" id="stat-total">0</div><div class="sub">AI决策测试会话</div></div>
+        <div class="stat-card"><div class="label">已完成</div><div class="value" id="stat-completed">0</div><div class="sub">成功完成的测试</div></div>
+        <div class="stat-card"><div class="label">AI决策次数</div><div class="value" id="stat-decisions">0</div><div class="sub">AI智能决策总数</div></div>
+        <div class="stat-card"><div class="label">平均风险分</div><div class="value" id="stat-risk">0</div><div class="sub">0-100风险评分</div></div>
+    </div>
+
+    <!-- 标签页 -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('new')">🆕 新建测试</div>
+        <div class="tab" onclick="switchTab('sessions')">📋 会话列表</div>
+        <div class="tab" onclick="switchTab('active')">⚡ 活动会话</div>
+    </div>
+
+    <!-- 新建测试 -->
+    <div class="tab-content active" id="tab-new">
+        <div class="panel">
+            <h2><span class="icon"></span>创建AI驱动的渗透测试会话</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>目标（IP/域名/URL）</label>
+                    <input type="text" id="target" placeholder="例如：127.0.0.1 或 example.com" value="127.0.0.1">
+                </div>
+                <div class="form-group">
+                    <label>测试深度</label>
+                    <select id="depth">
+                        <option value="quick">快速（仅端口扫描）</option>
+                        <option value="standard" selected>标准（端口+漏洞扫描）</option>
+                        <option value="deep">深度（全流程+目录爆破）</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>最大迭代次数</label>
+                    <input type="number" id="max-iter" value="5" min="1" max="20">
+                </div>
+                <button class="btn btn-primary" onclick="createSession()">🚀 创建并启动</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2><span class="icon"></span>AI决策工作流</h2>
+            <div class="phase-flow">
+                <div class="phase-step active" id="phase-recon"><div class="phase-name">🔍 侦察阶段</div><div class="phase-desc">端口扫描·服务识别·指纹检测</div></div>
+                <div class="phase-arrow">→</div>
+                <div class="phase-step" id="phase-vuln"><div class="phase-name">💉 漏洞扫描</div><div class="phase-desc">Web漏洞·服务漏洞·配置检测</div></div>
+                <div class="phase-arrow">→</div>
+                <div class="phase-step" id="phase-deep"><div class="phase-name">🎯 深度测试</div><div class="phase-desc">目录爆破·参数测试·认证测试</div></div>
+                <div class="phase-arrow">→</div>
+                <div class="phase-step" id="phase-analysis"><div class="phase-name">📊 分析汇总</div><div class="phase-desc">攻击路径·风险评估·报告生成</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 会话列表 -->
+    <div class="tab-content" id="tab-sessions">
+        <div class="panel">
+            <h2><span class="icon"></span>所有测试会话 <button class="btn btn-sm btn-primary" style="float:right" onclick="loadSessions()">🔄 刷新</button></h2>
+            <div id="sessions-table">
+                <div class="empty-state"><div class="icon">📭</div>暂无会话，点击"新建测试"开始</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 活动会话详情 -->
+    <div class="tab-content" id="tab-active">
+        <div id="active-content">
+            <div class="empty-state"><div class="icon">⏸️</div>暂无活动会话，请先创建测试</div>
+        </div>
+    </div>
+</div>
+
+<script>
+const API_BASE = 'http://127.0.0.1:8001';
+const API_KEY = 'cF_fK3wzzFd3sDU-WykQzDbAKNhn_Jjoyphbmh-adLtwx5ShhU8oLpt94aV_uECT';
+let currentSessionId = null;
+let autoRunInterval = null;
+
+function apiCall(path, method='GET', body=null) {
+    const opts = { method, headers: { 'X-API-Key': API_KEY, 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    return fetch(API_BASE + path, opts).then(r => r.json());
+}
+
+function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+    if (name === 'sessions') loadSessions();
+    if (name === 'new') { currentSessionId = null; if(autoRunInterval){clearInterval(autoRunInterval);autoRunInterval=null;} }
+}
+
+async function loadDashboard() {
+    try {
+        const r = await apiCall('/api/v1/ai-decision/dashboard');
+        if (r.code === 0) {
+            document.getElementById('stat-total').textContent = r.data.total_sessions;
+            document.getElementById('stat-completed').textContent = r.data.completed;
+            document.getElementById('stat-decisions').textContent = r.data.total_ai_decisions;
+            document.getElementById('stat-risk').textContent = r.data.avg_risk_score;
+        }
+    } catch(e) { console.error(e); }
+}
+
+async function createSession() {
+    const target = document.getElementById('target').value.trim();
+    const depth = document.getElementById('depth').value;
+    const maxIter = parseInt(document.getElementById('max-iter').value);
+    if (!target) { alert('请输入目标'); return; }
+    
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span> 创建中...';
+    
+    try {
+        const r = await apiCall('/api/v1/ai-decision/sessions', 'POST', { target, max_iterations: maxIter, depth });
+        if (r.code === 0) {
+            currentSessionId = r.data.session_id;
+            alert('会话创建成功：' + currentSessionId + '\n将自动开始AI驱动的渗透测试...');
+            switchTabByName('active');
+            startAutoRun();
+        } else {
+            alert('创建失败：' + (r.error || '未知错误'));
+        }
+    } catch(e) {
+        alert('创建失败：' + e.message);
+    }
+    btn.disabled = false;
+    btn.innerHTML = '🚀 创建并启动';
+    loadDashboard();
+}
+
+function switchTabByName(name) {
+    document.querySelectorAll('.tab').forEach((t,i) => {
+        t.classList.remove('active');
+        if ((name==='new'&&i===0)||(name==='sessions'&&i===1)||(name==='active'&&i===2)) t.classList.add('active');
+    });
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+}
+
+async function startAutoRun() {
+    if (!currentSessionId) return;
+    let stepCount = 0;
+    const maxSteps = 10;
+    
+    async function runStep() {
+        if (stepCount >= maxSteps) { if(autoRunInterval){clearInterval(autoRunInterval);} return; }
+        stepCount++;
+        try {
+            const r = await apiCall('/api/v1/ai-decision/sessions/' + currentSessionId + '/step', 'POST', { observation: '自动迭代第' + stepCount + '步' });
+            if (r.code === 0) {
+                renderActiveSession(r.data);
+                if (r.data.status === 'completed') {
+                    if(autoRunInterval){clearInterval(autoRunInterval);autoRunInterval=null;}
+                    loadReport();
+                }
+            }
+        } catch(e) { console.error('Step error:', e); }
+    }
+    
+    await runStep();
+    autoRunInterval = setInterval(runStep, 3000);
+}
+
+function renderActiveSession(data) {
+    const phases = ['recon','vuln_scan','deep_test','analysis'];
+    const phaseNames = {recon:'侦察',vuln_scan:'漏洞扫描',deep_test:'深度测试',analysis:'分析汇总'};
+    const currentPhase = data.phase || 'recon';
+    
+    phases.forEach((p,i) => {
+        const el = document.getElementById('phase-' + p.replace('_',''));
+        if (!el) return;
+        el.classList.remove('active','completed');
+        const idx = phases.indexOf(currentPhase);
+        if (i < idx) el.classList.add('completed');
+        else if (i === idx) el.classList.add('active');
+    });
+    
+    const html = `
+    <div class="panel">
+        <h2><span class="icon"></span>会话详情：${currentSessionId} 
+            <span class="badge badge-${data.status}" style="margin-left:10px">${data.status}</span>
+            <button class="btn btn-sm btn-warning" style="float:right" onclick="manualStep()">⏭️ 手动执行下一步</button>
+            <button class="btn btn-sm btn-success" style="float:right;margin-right:8px" onclick="loadReport()">📄 生成报告</button>
+        </h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+            <div>
+                <div style="font-size:12px;color:#64748b;margin-bottom:6px">当前阶段</div>
+                <div style="font-size:18px;font-weight:600;color:#38bdf8">${phaseNames[currentPhase]||currentPhase}</div>
+            </div>
+            <div>
+                <div style="font-size:12px;color:#64748b;margin-bottom:6px">风险评分</div>
+                <div class="risk-meter"><div class="risk-fill" style="width:${data.risk_score}%"></div><div class="risk-label">${data.risk_score}/100</div></div>
+            </div>
+        </div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:8px">AI决策：${data.ai_decision?.decision || 'N/A'} | 动作：${data.ai_decision?.action || 'N/A'} | 置信度：${(data.ai_decision?.confidence*100).toFixed(0)}%</div>
+    </div>
+    <div class="panel">
+        <h2><span class="icon"></span>执行结果</h2>
+        <div class="code-block">${JSON.stringify(data.action_result, null, 2).substring(0, 2000)}</div>
+    </div>
+    <div id="report-section"></div>
+    `;
+    document.getElementById('active-content').innerHTML = html;
+}
+
+async function manualStep() {
+    if (!currentSessionId) return;
+    try {
+        const r = await apiCall('/api/v1/ai-decision/sessions/' + currentSessionId + '/step', 'POST', { observation: '手动执行' });
+        if (r.code === 0) {
+            renderActiveSession(r.data);
+            if (r.data.status === 'completed') loadReport();
+        }
+    } catch(e) { alert('执行失败：' + e.message); }
+}
+
+async function loadReport() {
+    if (!currentSessionId) return;
+    try {
+        const r = await apiCall('/api/v1/ai-decision/sessions/' + currentSessionId + '/report');
+        if (r.code === 0) {
+            const d = r.data;
+            const findingsHtml = (d.findings||[]).map(f => `
+                <div class="finding-card">
+                    <div class="finding-header">
+                        <span class="finding-title">${f.title}</span>
+                        <span class="badge badge-${f.severity==='严重'?'critical':f.severity==='高'?'high':f.severity==='中'?'medium':'low'}">${f.severity}</span>
+                    </div>
+                    <div class="finding-desc">${f.description||''}</div>
+                    <div class="finding-meta">
+                        ${f.cwe?`<span>CWE: ${f.cwe}</span>`:''}
+                        ${f.owasp?`<span>OWASP: ${f.owasp}</span>`:''}
+                        ${f.cvss?`<span>CVSS: ${f.cvss.base_score}</span>`:''}
+                    </div>
+                </div>
+            `).join('') || '<div class="empty-state" style="padding:20px">未发现漏洞</div>';
+            
+            document.getElementById('report-section').innerHTML = `
+            <div class="panel">
+                <h2><span class="icon"></span>📄 测试报告 - ${d.report_id}</h2>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px">
+                    <div><div style="font-size:11px;color:#64748b">目标</div><div style="font-size:14px;font-weight:600">${d.executive_summary.target}</div></div>
+                    <div><div style="font-size:11px;color:#64748b">风险等级</div><div style="font-size:14px;font-weight:600;color:${d.executive_summary.overall_risk_level==='严重'?'#ef4444':d.executive_summary.overall_risk_level==='高'?'#f97316':'#22c55e'}">${d.executive_summary.overall_risk_level}</div></div>
+                    <div><div style="font-size:11px;color:#64748b">发现问题</div><div style="font-size:14px;font-weight:600">${d.executive_summary.total_findings}</div></div>
+                    <div><div style="font-size:11px;color:#64748b">AI决策</div><div style="font-size:14px;font-weight:600">${d.executive_summary.ai_decisions_made}次</div></div>
+                </div>
+                <h3 style="font-size:14px;color:#e2e8f0;margin:15px 0 10px">发现的漏洞</h3>
+                ${findingsHtml}
+                <h3 style="font-size:14px;color:#e2e8f0;margin:20px 0 10px">修复优先级</h3>
+                ${(d.remediation_priority||[]).map((p,i)=>`<div style="padding:8px 12px;background:#0f172a;border-radius:4px;margin-bottom:6px;font-size:13px"><span style="color:#f59e0b;font-weight:600">${p.priority}</span> — ${p.title}</div>`).join('')}
+            </div>
+            `;
+        }
+    } catch(e) { console.error('Report error:', e); }
+}
+
+async function loadSessions() {
+    try {
+        const r = await apiCall('/api/v1/ai-decision/sessions');
+        if (r.code === 0 && r.data.sessions.length > 0) {
+            const html = `<table>
+                <thead><tr><th>会话ID</th><th>目标</th><th>状态</th><th>阶段</th><th>风险分</th><th>创建时间</th><th>操作</th></tr></thead>
+                <tbody>${r.data.sessions.map(s => `
+                    <tr>
+                        <td style="font-family:monospace;font-size:12px">${s.id}</td>
+                        <td>${s.target}</td>
+                        <td><span class="badge badge-${s.status}">${s.status}</span></td>
+                        <td>${s.current_phase}</td>
+                        <td>${s.risk_score}</td>
+                        <td style="font-size:11px">${s.created_at?.substring(0,19)||''}</td>
+                        <td><button class="btn btn-sm btn-primary" onclick="viewSession('${s.id}')">查看</button></td>
+                    </tr>
+                `).join('')}</tbody>
+            </table>`;
+            document.getElementById('sessions-table').innerHTML = html;
+        } else {
+            document.getElementById('sessions-table').innerHTML = '<div class="empty-state"><div class="icon">📭</div>暂无会话</div>';
+        }
+    } catch(e) { document.getElementById('sessions-table').innerHTML = '<div class="empty-state">加载失败</div>'; }
+}
+
+function viewSession(id) {
+    currentSessionId = id;
+    switchTabByName('active');
+    apiCall('/api/v1/ai-decision/sessions/' + id).then(r => {
+        if (r.code === 0) {
+            const d = r.data;
+            renderActiveSession({ phase: d.current_phase, status: d.status, risk_score: d.risk_score, ai_decision: (d.decisions?.[0])||{}, action_result: d.results||{} });
+            if (d.status === 'completed') loadReport();
+        }
+    });
+}
+
+// 初始化
+loadDashboard();
+setInterval(loadDashboard, 10000);
+</script>
+</body>
+</html>

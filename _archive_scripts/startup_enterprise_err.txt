@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "E:\BaiduNetdiskDownload\yuanbao\ai-hacking-agent\main.py", line 1087, in <module>
+    main()
+    ~~~~^^
+  File "E:\BaiduNetdiskDownload\yuanbao\ai-hacking-agent\main.py", line 1083, in main
+    args.func(args)
+    ~~~~~~~~~^^^^^^
+  File "E:\BaiduNetdiskDownload\yuanbao\ai-hacking-agent\main.py", line 519, in cmd_api_server
+    from api_server.app import run_api_server
+  File "E:\BaiduNetdiskDownload\yuanbao\ai-hacking-agent\api_server\app.py", line 1792
+    from enterprise.routes import router as enterprise_router
+    ^^^^
+SyntaxError: expected 'except' or 'finally' block

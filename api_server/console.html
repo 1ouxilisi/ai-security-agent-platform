@@ -1,0 +1,714 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>统一作战控制台 | AI Hacking Agent</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0e17;color:#e2e8f0;min-height:100vh}
+.header{background:linear-gradient(135deg,#0f172a,#1e293b);border-bottom:1px solid #1e3a5f;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:20px;font-weight:700;color:#f8fafc}
+.header h1 span{color:#38bdf8}
+.header .status{display:flex;gap:16px;font-size:12px}
+.header .status .item{display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.green{background:#34d399;box-shadow:0 0 8px #34d399}
+.dot.yellow{background:#fbbf24}
+.dot.red{background:#f87171}
+.container{padding:20px 24px;max-width:1600px;margin:0 auto}
+.grid{display:grid;gap:16px}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.card{background:#111827;border:1px solid #1e293b;border-radius:10px;padding:18px}
+.card h3{font-size:14px;font-weight:600;color:#f8fafc;margin-bottom:14px;padding-left:10px;border-left:3px solid #38bdf8}
+.stat-card{text-align:center}
+.stat-card .value{font-size:28px;font-weight:700;color:#38bdf8}
+.stat-card .label{font-size:11px;color:#94a3b8;margin-top:4px}
+.stat-card .value.green{color:#34d399}
+.stat-card .value.yellow{color:#fbbf24}
+.stat-card .value.red{color:#f87171}
+input,select,textarea{background:#0f172a;border:1px solid #334155;color:#e2e8f0;padding:8px 12px;border-radius:6px;font-size:13px;width:100%}
+input:focus,select:focus{outline:none;border-color:#38bdf8}
+button{background:#0ea5e9;color:white;border:none;padding:8px 18px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+button:hover{background:#0284c7}
+button:disabled{background:#334155;cursor:not-allowed}
+button.success{background:#059669}
+button.success:hover{background:#047857}
+.result-box{background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:12px;margin-top:12px;max-height:400px;overflow-y:auto;font-family:'Consolas',monospace;font-size:12px;line-height:1.6}
+.result-box::-webkit-scrollbar{width:6px}
+.result-box::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
+.tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600}
+.tag.critical{background:#7f1d1d;color:#fca5a5}
+.tag.high{background:#7c2d12;color:#fdba74}
+.tag.medium{background:#78350f;color:#fcd34d}
+.tag.low{background:#1e3a5f;color:#7dd3fc}
+.tag.info{background:#334155;color:#cbd5e1}
+.tool-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1e293b}
+.tool-item:last-child{border-bottom:none}
+.tool-item .name{font-size:13px;font-weight:500}
+.tool-item .path{font-size:11px;color:#64748b;margin-top:2px}
+.progress-bar{height:6px;background:#1e293b;border-radius:3px;overflow:hidden;margin-top:8px}
+.progress-bar .fill{height:100%;background:linear-gradient(90deg,#0ea5e9,#38bdf8);transition:width .3s}
+.tab-bar{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid #1e293b}
+.tab-bar .tab{padding:8px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:#94a3b8}
+.tab-bar .tab.active{color:#38bdf8;border-bottom-color:#38bdf8}
+.tab-content{display:none}
+.tab-content.active{display:block}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px;color:#94a3b8;font-weight:600;border-bottom:1px solid #1e293b}
+td{padding:8px;border-bottom:1px solid #0f172a}
+tr:hover{background:#0f172a}
+.manual-card{background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all .2s}
+.manual-card:hover{border-color:#38bdf8}
+.manual-card .title{font-size:13px;font-weight:600;color:#f8fafc}
+.manual-card .meta{font-size:11px;color:#64748b;margin-top:4px}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid #334155;border-top-color:#38bdf8;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.log-line{padding:2px 0}
+.log-line .time{color:#64748b}
+.log-line .agent{color:#38bdf8;font-weight:600}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>AI Hacking Agent <span>统一作战控制台</span></h1>
+  <div class="status">
+    <div class="item"><span class="dot green" id="svcDot"></span><span id="svcText">检测中</span></div>
+    <div class="item">路由: <span id="routeCount">-</span></div>
+    <div class="item">运行: <span id="uptime">-</span></div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="grid grid-4" style="margin-bottom:20px">
+    <div class="card stat-card"><div class="value" id="statTools">-</div><div class="label">真实工具</div></div>
+    <div class="card stat-card"><div class="value green" id="statAgents">-</div><div class="label">AI代理</div></div>
+    <div class="card stat-card"><div class="value yellow" id="statManuals">-</div><div class="label">武器手册</div></div>
+    <div class="card stat-card"><div class="value" id="statCVE">12257</div><div class="label">CVE漏洞库</div></div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab active" onclick="switchTab('recon')">快速侦察</div>
+    <div class="tab" onclick="switchTab('team')">AI代理队</div>
+    <div class="tab" onclick="switchTab('tools')">工具状态</div>
+    <div class="tab" onclick="switchTab('manual')">武器手册</div>
+    <div class="tab" onclick="switchTab('sqlmap')">SQL注入</div>
+    <div class="tab" onclick="switchTab('nikto')">Web扫描</div>
+    <div class="tab" onclick="switchTab('range')">靶场部署</div>
+    <div class="tab" onclick="switchTab('report')">报告生成</div>
+    <div class="tab" onclick="switchTab('history')">扫描历史</div>
+    <div class="tab" onclick="switchTab('monitor')">持续监控</div>
+    <div class="tab" onclick="switchTab('vulnmgmt')">漏洞管理</div>
+    <div class="tab" onclick="switchTab('assets')">资产管理</div>
+    <div class="tab" onclick="switchTab('sysconfig')">系统配置</div>
+    <div class="tab" onclick="switchTab('mcp')">MCP服务</div>
+  </div>
+
+  <div class="tab-content active" id="tab-recon">
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>一键完整侦察</h3>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input id="reconTarget" placeholder="输入IP地址或域名" style="flex:1">
+          <button onclick="runFullRecon()" id="btnRecon">开始侦察</button>
+        </div>
+        <div style="font-size:11px;color:#64748b">流程：子域名枚举 -> Nmap端口扫描 -> Nuclei漏洞扫描 -> 风险分析 -> 报告生成</div>
+        <div class="progress-bar" id="reconProgress" style="display:none"><div class="fill" style="width:0%"></div></div>
+        <div class="result-box" id="reconResult" style="display:none"></div>
+      </div>
+      <div class="card">
+        <h3>快速端口扫描</h3>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input id="nmapTarget" placeholder="输入IP地址" style="flex:1">
+          <select id="nmapMode" style="width:100px">
+            <option value="quick">快速</option>
+            <option value="detailed">详细</option>
+            <option value="vuln">漏洞</option>
+          </select>
+          <button onclick="runNmap()" id="btnNmap">扫描</button>
+        </div>
+        <div class="result-box" id="nmapResult" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-team">
+    <div class="card">
+      <h3>AI代理队 - 链式协作渗透测试</h3>
+      <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+        <input id="teamTarget" placeholder="输入目标IP或域名" style="flex:1">
+        <select id="teamDepth" style="width:100px">
+          <option value="quick">快速</option>
+          <option value="standard" selected>标准</option>
+          <option value="deep">深度</option>
+        </select>
+        <button onclick="runAgentTeam()" id="btnTeam" class="success">启动代理队</button>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:12px;font-size:12px;color:#94a3b8">
+        <span>侦察代理</span><span>-></span>
+        <span>扫描代理</span><span>-></span>
+        <span>分析代理</span><span>-></span>
+        <span>报告代理</span>
+      </div>
+      <div class="progress-bar" id="teamProgress" style="display:none"><div class="fill" style="width:0%"></div></div>
+      <div class="result-box" id="teamResult" style="display:none"></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-tools">
+    <div class="card">
+      <h3>真实安全工具状态</h3>
+      <div id="toolsList"><div class="spinner"></div> 检测中...</div>
+      <button onclick="checkTools()" style="margin-top:12px">重新检测</button>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-manual">
+    <div class="card">
+      <h3>武器手册知识库</h3>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <input id="manualSearch" placeholder="搜索手册..." style="flex:1" oninput="searchManuals()">
+        <select id="manualCategory" onchange="filterManuals()">
+          <option value="">全部类别</option>
+        </select>
+      </div>
+      <div id="manualList"></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-sqlmap">
+    <div class="card">
+      <h3>SQLMap SQL注入检测</h3>
+      <div class="row">
+        <input type="text" id="sqlmap-target" placeholder="目标URL，如 http://example.com/page?id=1">
+        <input type="text" id="sqlmap-data" placeholder="POST数据（可选）">
+      </div>
+      <div class="row">
+        <select id="sqlmap-level"><option value="1">Level 1</option><option value="2">Level 2</option><option value="3" selected>Level 3</option><option value="4">Level 4</option><option value="5">Level 5</option></select>
+        <select id="sqlmap-risk"><option value="1">Risk 1</option><option value="2" selected>Risk 2</option><option value="3">Risk 3</option></select>
+      </div>
+      <button onclick="runSqlmap()" id="btn-sqlmap">开始SQL注入检测</button>
+      <div class="result-box" id="sqlmap-result" style="display:none"></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-nikto">
+    <div class="card">
+      <h3>Nikto Web服务器漏洞扫描</h3>
+      <input type="text" id="nikto-target" placeholder="目标URL，如 http://127.0.0.1:8000">
+      <button onclick="runNikto()" id="btn-nikto">开始Web扫描</button>
+      <div class="result-box" id="nikto-result" style="display:none"></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-range">
+    <div class="card">
+      <h3>靶场一键部署</h3>
+      <p style="color:#94a3b8;font-size:13px;margin-bottom:14px">快速部署漏洞靶场（需要Docker环境）</p>
+      <div class="tool-item"><div><div class="name">DVWA - 漏洞Web应用</div><div class="path">vulnerables/web-dvwa | 端口: 8080</div></div><button onclick="deployRange('dvwa')">部署</button></div>
+      <div class="tool-item"><div><div class="name">OWASP Juice Shop</div><div class="path">bkimminich/juice-shop | 端口: 3000</div></div><button onclick="deployRange('juice')">部署</button></div>
+      <div class="tool-item"><div><div class="name">WebGoat - OWASP教学</div><div class="path">webgoat/webgoat-8.0 | 端口: 8081</div></div><button onclick="deployRange('webgoat')">部署</button></div>
+      <div class="result-box" id="range-result" style="display:none"></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-report">
+    <div class="card">
+      <h3>增强版报告生成</h3>
+      <div class="row">
+        <input type="text" id="report-target" placeholder="目标 IP 或域名">
+        <select id="report-depth"><option value="quick">快速</option><option value="standard" selected>标准</option><option value="deep">深度</option></select>
+      </div>
+      <button onclick="runReport()" id="btn-report">生成完整报告</button>
+      <div class="result-box" id="report-result" style="display:none"></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-history">
+    <div class="card">
+      <h3>扫描历史</h3>
+      <button onclick="loadHistory()">刷新历史</button>
+      <div id="history-stats" style="margin:10px 0"></div>
+      <div class="result-box" id="history-list" style="display:none"></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-monitor">
+    <div class="card">
+      <h3>持续监控</h3>
+      <div class="row">
+        <input type="text" id="monitor-target" placeholder="添加监控目标">
+        <input type="number" id="monitor-interval" value="60" placeholder="间隔(分钟)">
+      </div>
+      <button onclick="addMonitorTarget()">添加监控</button>
+      <div id="monitor-status" style="margin:10px 0"></div>
+      <div class="result-box" id="monitor-list" style="display:none"></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-vulnmgmt">
+    <div class="card">
+      <h3>漏洞管理工作流</h3>
+      <div id="vuln-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0;text-align:center"></div>
+      <div class="row">
+        <input type="text" id="vuln-title" placeholder="漏洞标题">
+        <select id="vuln-severity"><option value="critical">Critical</option><option value="high" selected>High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+        <input type="text" id="vuln-target" placeholder="目标">
+      </div>
+      <button onclick="createVuln()">创建漏洞</button>
+      <button onclick="loadVulnList()" style="margin-left:10px">刷新列表</button>
+      <div class="result-box" id="vuln-list" style="display:none;margin-top:10px"></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-assets">
+    <div class="card">
+      <h3>资产管理</h3>
+      <div id="asset-stats" style="margin:10px 0"></div>
+      <div class="row">
+        <input type="text" id="asset-name" placeholder="资产名称">
+        <input type="text" id="asset-target" placeholder="目标IP/域名/URL">
+        <select id="asset-type"><option value="ip">IP</option><option value="domain">域名</option><option value="url">URL</option><option value="network">网段</option></select>
+        <input type="text" id="asset-group" placeholder="分组" value="default">
+      </div>
+      <button onclick="createAsset()">添加资产</button>
+      <button onclick="loadAssetList()" style="margin-left:10px">刷新列表</button>
+      <div class="result-box" id="asset-list" style="display:none;margin-top:10px"></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-sysconfig">
+    <div class="card">
+      <h3>系统配置</h3>
+      <div id="sys-info" style="margin:10px 0;padding:10px;background:#1e293b;border-radius:8px;font-size:13px"></div>
+      <h4 style="margin:15px 0 8px">工具路径配置</h4>
+      <div id="tool-config" style="font-size:13px"></div>
+      <h4 style="margin:15px 0 8px">扫描配置</h4>
+      <div id="scan-config" style="font-size:13px"></div>
+      <h4 style="margin:15px 0 8px">通知/Webhook配置</h4>
+      <div class="row">
+        <input type="text" id="webhook-url" placeholder="Webhook URL (飞书/钉钉/企业微信)">
+      </div>
+      <button onclick="saveWebhookConfig()">保存Webhook配置</button>
+      <button onclick="testWebhook()" style="margin-left:10px">测试Webhook</button>
+      <div id="webhook-result" style="margin-top:10px"></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-mcp">
+    <div class="card">
+      <h3>MCP工具服务器</h3>
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:14px">Model Context Protocol - 让Claude Code/Cursor/Hermes/Cline等AI客户端直接调用本项目安全工具</p>
+      <div id="mcpToolsList"></div>
+      <div style="margin-top:14px;padding:12px;background:#0f172a;border-radius:6px;font-family:monospace;font-size:12px">
+        <div style="color:#34d399"># MCP配置</div>
+        <div style="color:#cbd5e1">"mcpServers": {</div>
+        <div style="color:#cbd5e1;padding-left:20px">"ai-hacking-agent": {</div>
+        <div style="color:#cbd5e1;padding-left:40px">"url": "http://127.0.0.1:8000/api/v1/mcp"</div>
+        <div style="color:#cbd5e1;padding-left:20px">}</div>
+        <div style="color:#cbd5e1">}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+const KEY = 'cF_fK3wzzFd3sDU-WykQzDbAKNhn_Jjoyphbmh-adLtwx5ShhU8oLpt94aV_uECT';
+const headers = {'X-API-Key': KEY, 'Content-Type': 'application/json'};
+
+async function api(path, opts={}) {
+  const res = await fetch(API + path, {headers, ...opts});
+  return res.json();
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+async function loadStatus() {
+  try {
+    const r = await api('/health');
+    document.getElementById('svcDot').className = 'dot green';
+    document.getElementById('svcText').textContent = '运行中';
+    document.getElementById('routeCount').textContent = r.routes?.total || '-';
+    const mins = Math.floor((r.uptime_seconds || 0) / 60);
+    document.getElementById('uptime').textContent = mins + '分钟';
+  } catch(e) {
+    document.getElementById('svcDot').className = 'dot red';
+    document.getElementById('svcText').textContent = '离线';
+  }
+}
+
+async function loadStats() {
+  try {
+    const tools = await api('/api/v1/mcp/tools');
+    document.getElementById('statTools').textContent = tools.data?.tools?.length || 0;
+    const agents = await api('/api/v1/agent-team/agents');
+    document.getElementById('statAgents').textContent = agents.data?.agents ? Object.keys(agents.data.agents).length : 0;
+    const manuals = await api('/api/v1/weapon-manual/list');
+    document.getElementById('statManuals').textContent = manuals.data?.manuals?.length || 0;
+  } catch(e) { console.error('loadStats:', e); }
+}
+async function runNmap() {
+  const target = document.getElementById('nmapTarget').value.trim();
+  if(!target) return alert('请输入目标IP');
+  const mode = document.getElementById('nmapMode').value;
+  const btn = document.getElementById('btnNmap');
+  btn.disabled = true; btn.textContent = '扫描中...';
+  try {
+    const r = await api('/api/v1/real-tools/nmap/scan', {method:'POST', body:JSON.stringify({target, mode, timeout:60})});
+    const box = document.getElementById('nmapResult');
+    box.style.display = 'block';
+    if(r.data?.error) {
+      box.innerHTML = '<span style="color:#f87171">错误: ' + r.data.error + '</span>';
+    } else {
+      let html = '<div style="color:#34d399;margin-bottom:8px">扫描完成 - 发现 ' + r.data.open_ports_count + ' 个开放端口</div>';
+      if(r.data.os) html += '<div style="color:#94a3b8">操作系统: ' + r.data.os + '</div>';
+      html += '<table><tr><th>端口</th><th>协议</th><th>服务</th><th>产品</th><th>版本</th></tr>';
+      r.data.open_ports.forEach(p => {
+        html += '<tr><td>' + p.port + '</td><td>' + p.protocol + '</td><td>' + p.service + '</td><td>' + (p.product||'-') + '</td><td>' + (p.version||'-') + '</td></tr>';
+      });
+      html += '</table>';
+      box.innerHTML = html;
+    }
+  } catch(e) { alert('扫描失败: ' + e.message); }
+  btn.disabled = false; btn.textContent = '扫描';
+}
+
+async function runFullRecon() {
+  const target = document.getElementById('reconTarget').value.trim();
+  if(!target) return alert('请输入目标');
+  const btn = document.getElementById('btnRecon');
+  btn.disabled = true; btn.textContent = '侦察中...';
+  document.getElementById('reconProgress').style.display = 'block';
+  document.getElementById('reconProgress').querySelector('.fill').style.width = '20%';
+  try {
+    const r = await api('/api/v1/recon-workflow/run', {method:'POST', body:JSON.stringify({target})});
+    document.getElementById('reconProgress').querySelector('.fill').style.width = '100%';
+    const box = document.getElementById('reconResult');
+    box.style.display = 'block';
+    const d = r.data;
+    let html = '<div style="color:#34d399;margin-bottom:8px">侦察完成</div>';
+    html += '<div class="grid grid-4" style="gap:8px;margin-bottom:12px">';
+    html += '<div style="text-align:center"><div style="font-size:20px;color:#38bdf8">' + (d.summary?.total_assets||0) + '</div><div style="font-size:10px;color:#64748b">资产</div></div>';
+    html += '<div style="text-align:center"><div style="font-size:20px;color:#fbbf24">' + (d.summary?.total_open_ports||0) + '</div><div style="font-size:10px;color:#64748b">开放端口</div></div>';
+    html += '<div style="text-align:center"><div style="font-size:20px;color:#f87171">' + (d.summary?.total_vulnerabilities||0) + '</div><div style="font-size:10px;color:#64748b">漏洞</div></div>';
+    html += '<div style="text-align:center"><div style="font-size:20px;color:#34d399">' + (d.summary?.agents_succeeded||0) + '</div><div style="font-size:10px;color:#64748b">工具成功</div></div>';
+    html += '</div>';
+    if(d.steps) {
+      Object.keys(d.steps).forEach(step => {
+        const s = d.steps[step];
+        html += '<div style="margin-bottom:6px"><span style="color:#38bdf8">[' + step + ']</span> ';
+        if(s.status === 'done') html += '<span style="color:#34d399">完成</span>';
+        else html += '<span style="color:#f87171">错误: ' + (s.error||'') + '</span>';
+        html += '</div>';
+      });
+    }
+    box.innerHTML = html;
+  } catch(e) { alert('侦察失败: ' + e.message); }
+  btn.disabled = false; btn.textContent = '开始侦察';
+}
+
+async function runAgentTeam() {
+  const target = document.getElementById('teamTarget').value.trim();
+  if(!target) return alert('请输入目标');
+  const depth = document.getElementById('teamDepth').value;
+  const btn = document.getElementById('btnTeam');
+  btn.disabled = true; btn.textContent = '代理队执行中...';
+  document.getElementById('teamProgress').style.display = 'block';
+  const fill = document.getElementById('teamProgress').querySelector('.fill');
+  fill.style.width = '10%';
+  try {
+    const r = await api('/api/v1/agent-team/run', {method:'POST', body:JSON.stringify({target, depth})});
+    fill.style.width = '100%';
+    const box = document.getElementById('teamResult');
+    box.style.display = 'block';
+    const d = r.data;
+    let html = '<div style="color:#34d399;margin-bottom:10px">代理队执行完成 - ' + (d.summary?.agents_succeeded||0) + '/' + ((d.summary?.agents_succeeded||0)+(d.summary?.agents_failed||0)) + ' 代理成功</div>';
+    html += '<div style="margin-bottom:10px">';
+    (d.chain_log||[]).forEach(log => {
+      html += '<div class="log-line"><span class="time">[' + new Date().toLocaleTimeString() + ']</span> <span class="agent">' + log + '</span></div>';
+    });
+    html += '</div>';
+    if(d.findings?.analysis?.risk_score) {
+      html += '<div style="padding:10px;background:#0f172a;border-radius:6px;margin-top:10px">';
+      html += '<span style="color:#fbbf24">风险评分: ' + d.findings.analysis.risk_score.score + '/100 (' + d.findings.analysis.risk_score.level + ')</span>';
+      html += '</div>';
+    }
+    box.innerHTML = html;
+  } catch(e) { alert('代理队执行失败: ' + e.message); }
+  btn.disabled = false; btn.textContent = '启动代理队';
+}
+
+async function checkTools() {
+  const r = await api('/api/v1/real-tools/check');
+  let html = '';
+  Object.keys(r.data).forEach(name => {
+    const t = r.data[name];
+    html += '<div class="tool-item">';
+    html += '<div><div class="name">' + name + '</div><div class="path">' + t.path + '</div></div>';
+    html += '<div><span class="tag ' + (t.available ? 'low' : 'critical') + '">' + (t.available ? '可用' : '未安装') + '</span></div>';
+    html += '</div>';
+  });
+  document.getElementById('toolsList').innerHTML = html;
+}
+
+let allManuals = [];
+async function loadManuals() {
+  const r = await api('/api/v1/weapon-manual/list');
+  allManuals = r.data?.manuals || [];
+  const cats = r.data?.categories || [];
+  const sel = document.getElementById('manualCategory');
+  cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+  renderManuals(allManuals);
+}
+
+function renderManuals(list) {
+  let html = '';
+  list.forEach(m => {
+    html += '<div class="manual-card" onclick="showManual(\'' + m.id + '\')">';
+    html += '<div class="title">' + m.id + ' - ' + m.name + '</div>';
+    html += '<div class="meta">' + m.category + ' | ' + m.phase + ' | 工具: ' + m.tool + ' | 风险: ' + m.risk_level + '</div>';
+    html += '</div>';
+  });
+  document.getElementById('manualList').innerHTML = html || '<div style="color:#64748b">无结果</div>';
+}
+
+function searchManuals() {
+  const kw = document.getElementById('manualSearch').value.toLowerCase();
+  renderManuals(allManuals.filter(m => m.name.toLowerCase().includes(kw) || m.id.toLowerCase().includes(kw)));
+}
+
+function filterManuals() {
+  const cat = document.getElementById('manualCategory').value;
+  renderManuals(cat ? allManuals.filter(m => m.category === cat) : allManuals);
+}
+
+async function showManual(id) {
+  const r = await api('/api/v1/weapon-manual/' + id);
+  const m = r.data;
+  let html = '<div style="margin-bottom:12px"><span class="tag ' + (m.risk_level==='高'?'high':m.risk_level==='中'?'medium':'low') + '">风险: ' + m.risk_level + '</span></div>';
+  html += '<div style="color:#94a3b8;margin-bottom:12px">' + m.description + '</div>';
+  if(m.commands) {
+    html += '<div style="font-weight:600;margin-bottom:6px;color:#38bdf8">常用命令:</div>';
+    m.commands.forEach(c => {
+      html += '<div style="background:#0f172a;padding:6px 10px;border-radius:4px;margin-bottom:4px;font-family:monospace;font-size:12px"><span style="color:#34d399">$</span> ' + c.cmd + '<br><span style="color:#64748b;font-size:11px">' + c.desc + '</span></div>';
+    });
+  }
+  if(m.payloads) {
+    html += '<div style="font-weight:600;margin-bottom:6px;color:#38bdf8">Payload:</div>';
+    m.payloads.forEach(p => { html += '<div style="background:#0f172a;padding:4px 8px;border-radius:4px;margin-bottom:2px;font-family:monospace;font-size:11px;color:#fbbf24">' + p + '</div>'; });
+  }
+  if(m.tips) {
+    html += '<div style="font-weight:600;margin-bottom:6px;color:#38bdf8">技巧:</div><ul style="padding-left:20px;color:#94a3b8;font-size:12px">';
+    m.tips.forEach(t => { html += '<li>' + t + '</li>'; });
+    html += '</ul>';
+  }
+  document.getElementById('manualList').innerHTML = '<button onclick="loadManuals()" style="margin-bottom:10px">返回列表</button>' + html;
+}
+
+async function loadMCPTools() {
+  const r = await api('/api/v1/mcp/tools');
+  let html = '<div style="margin-bottom:10px;color:#94a3b8">共 ' + r.data?.total + ' 个MCP工具可被AI客户端调用</div>';
+  (r.data?.tools||[]).forEach(t => {
+    html += '<div class="tool-item"><div><div class="name">' + t.name + '</div><div class="path">' + t.description.substring(0, 50) + '...</div></div></div>';
+  });
+  document.getElementById('mcpToolsList').innerHTML = html;
+}
+
+loadStatus();
+loadStats();
+checkTools();
+loadManuals();
+loadMCPTools();
+setInterval(loadStatus, 30000);
+
+async function runSqlmap() {
+  const target = document.getElementById('sqlmap-target').value.trim();
+  if(!target) { alert('请输入目标URL'); return; }
+  const btn = document.getElementById('btn-sqlmap');
+  btn.disabled = true; btn.innerHTML = '<span class="loading"></span> 检测中...';
+  document.getElementById('sqlmap-result').style.display = 'none';
+  try {
+    const r = await api('/api/v1/real-tools/sqlmap/scan','POST',{target,data:document.getElementById('sqlmap-data').value,level:parseInt(document.getElementById('sqlmap-level').value),risk:parseInt(document.getElementById('sqlmap-risk').value),timeout:180});
+    const d = r.data;
+    let html = d.vulnerable ? '<div style="color:#ef4444;font-weight:600">发现SQL注入!</div>' : '<div style="color:#4ade80;font-weight:600">未发现SQL注入</div>';
+    html += '<div style="margin:8px 0">可注入点: '+(d.total||0)+'个</div>';
+    (d.injectable||[]).forEach(i=>{ html += '<div style="padding:4px 0;color:#fca5a5">  '+i+'</div>'; });
+    document.getElementById('sqlmap-result').innerHTML = html;
+    document.getElementById('sqlmap-result').style.display = 'block';
+  } catch(e) { document.getElementById('sqlmap-result').innerHTML = '<div style="color:#ef4444">错误: '+e.message+'</div>'; document.getElementById('sqlmap-result').style.display = 'block'; }
+  btn.disabled = false; btn.innerHTML = '开始SQL注入检测';
+}
+async function runNikto() {
+  const target = document.getElementById('nikto-target').value.trim();
+  if(!target) { alert('请输入目标URL'); return; }
+  const btn = document.getElementById('btn-nikto');
+  btn.disabled = true; btn.innerHTML = '<span class="loading"></span> 扫描中...';
+  document.getElementById('nikto-result').style.display = 'none';
+  try {
+    const r = await api('/api/v1/real-tools/nikto/scan','POST',{target,timeout:120});
+    const d = r.data;
+    let html = '<div style="color:#38bdf8;font-weight:600">扫描完成 | 发现: '+(d.total||0)+'项</div>';
+    (d.findings||[]).forEach((f,i)=>{ html += '<div style="padding:4px 0">  ['+(i+1)+'] '+f+'</div>'; });
+    document.getElementById('nikto-result').innerHTML = html;
+    document.getElementById('nikto-result').style.display = 'block';
+  } catch(e) { document.getElementById('nikto-result').innerHTML = '<div style="color:#ef4444">错误: '+e.message+'</div>'; document.getElementById('nikto-result').style.display = 'block'; }
+  btn.disabled = false; btn.innerHTML = '开始Web扫描';
+}
+function deployRange(name) {
+  const cmds = {dvwa:'docker run -d -p 8080:80 vulnerables/web-dvwa',juice:'docker run -d -p 3000:3000 bkimminich/juice-shop',webgoat:'docker run -d -p 8081:8080 webgoat/webgoat-8.0'};
+  document.getElementById('range-result').innerHTML = '<div class="loading"></div> 正在部署 '+name+'...';
+  document.getElementById('range-result').style.display = 'block';
+  setTimeout(()=>{ document.getElementById('range-result').innerHTML = '<div style="color:#f59e0b">请在终端执行: '+cmds[name]+'</div>'; }, 1500);
+}
+
+async function runReport() {
+  const target = document.getElementById('report-target').value.trim();
+  if(!target) { alert('请输入目标'); return; }
+  const btn = document.getElementById('btn-report');
+  btn.disabled = true; btn.innerHTML = '<span class="loading"></span> 生成中...';
+  document.getElementById('report-result').style.display = 'none';
+  try {
+    const r = await api('/api/v1/report/generate','POST',{target,depth:document.getElementById('report-depth').value,include_remediation:true,include_attack_paths:true});
+    const d = r.data;
+    let html = '<div style="color:#38bdf8;font-weight:600;margin-bottom:10px">报告生成完成 | 耗时:'+d.meta.elapsed_seconds+'s</div>';
+    html += '<div style="margin-bottom:8px"><b>概览:</b> '+d.summary.open_ports+'端口, '+d.summary.vulnerabilities+'漏洞 (Critical:'+d.summary.critical+' High:'+d.summary.high+' Medium:'+d.summary.medium+')</div>';
+    html += '<div style="margin-bottom:8px"><b>风险:</b> '+d.risk_assessment.score+'/100 ('+d.risk_assessment.level+')</div>';
+    if(d.attack_paths && d.attack_paths.length){
+      html += '<div style="margin:10px 0 8px"><b>攻击路径 ('+d.attack_paths.length+'):</b></div>';
+      d.attack_paths.forEach(function(p){ html += '<div style="padding:4px 0">  ⚔️ '+p.name+' ['+p.probability+'/'+p.impact+']</div>'; html += '<div style="padding:2px 0 4px 20px;color:#94a3b8;font-size:12px">  '+(p.steps||[]).join(' → ')+'</div>'; });
+    }
+    if(d.vulnerabilities && d.vulnerabilities.length){
+      html += '<div style="margin:10px 0 8px"><b>漏洞详情+修复建议:</b></div>';
+      d.vulnerabilities.slice(0,10).forEach(function(v){
+        html += '<div style="padding:6px 0;border-bottom:1px solid #334155"><span class="badge badge-'+(v.severity||'info')+'">'+(v.severity||'?')+'</span> <b>'+(v.id||v.name||'')+'</b>';
+        if(v.risk) html += '<div style="color:#fca5a5;font-size:12px;margin-top:4px">风险: '+v.risk+'</div>';
+        if(v.fix) html += '<div style="color:#86efac;font-size:12px;margin-top:2px">修复: '+v.fix+'</div>';
+        html += '</div>';
+      });
+    }
+    html += '<div style="margin-top:10px"><b>修复建议:</b></div>';
+    d.recommendations.forEach(function(r,i){ html += '<div style="padding:2px 0">  '+(i+1)+'. '+r+'</div>'; });
+    document.getElementById('report-result').innerHTML = html;
+    document.getElementById('report-result').style.display = 'block';
+  } catch(e) { document.getElementById('report-result').innerHTML = '<div style="color:#ef4444">错误: '+e.message+'</div>'; document.getElementById('report-result').style.display = 'block'; }
+  btn.disabled = false; btn.innerHTML = '生成完整报告';
+}
+async function loadHistory() {
+  const r = await api('/api/v1/scan-history/stats/summary');
+  const d = r.data;
+  document.getElementById('history-stats').innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center"><div><div style="font-size:24px;color:#38bdf8">'+d.total_scans+'</div><div style="font-size:12px;color:#94a3b8">总扫描</div></div><div><div style="font-size:24px;color:#38bdf8">'+d.unique_targets+'</div><div style="font-size:12px;color:#94a3b8">目标数</div></div><div><div style="font-size:24px;color:#38bdf8">'+d.avg_risk_score+'</div><div style="font-size:12px;color:#94a3b8">平均风险</div></div><div><div style="font-size:24px;color:#38bdf8">'+d.total_vulns_found+'</div><div style="font-size:12px;color:#94a3b8">总漏洞</div></div></div>';
+  const r2 = await api('/api/v1/scan-history/list?page_size=20');
+  let html = '';
+  (r2.data.scans||[]).forEach(function(s){
+    html += '<div style="padding:8px 0;border-bottom:1px solid #334155"><b>#'+s.id+'</b> '+s.target+' ['+s.scan_type+'] - '+s.ports_count+'端口/'+s.vulns_count+'漏洞 - 风险:'+s.risk_score+' ('+s.risk_level+') - '+s.created_at.substring(0,19)+'</div>';
+  });
+  document.getElementById('history-list').innerHTML = html || '暂无扫描记录';
+  document.getElementById('history-list').style.display = 'block';
+}
+async function addMonitorTarget() {
+  const target = document.getElementById('monitor-target').value.trim();
+  if(!target) return;
+  const interval = parseInt(document.getElementById('monitor-interval').value)||60;
+  await api('/api/v1/monitor/targets/add','POST',{target,interval_minutes:interval});
+  document.getElementById('monitor-target').value = '';
+  loadMonitorList();
+}
+async function loadMonitorList() {
+  const r = await api('/api/v1/monitor/status');
+  const d = r.data;
+  document.getElementById('monitor-status').innerHTML = '<div>总目标:'+d.total_targets+' | 已启用:'+d.enabled_targets+' | 变更记录:'+d.total_changes+'</div>';
+  const r2 = await api('/api/v1/monitor/targets/list');
+  let html = '';
+  (r2.data.targets||[]).forEach(function(t){
+    html += '<div style="padding:8px 0;border-bottom:1px solid #334155"><b>'+t.target+'</b> 间隔:'+t.interval_minutes+'min '+(t.enabled?'✅启用':'❌禁用')+' 上次风险:'+t.last_risk_score+' 上次扫描:'+(t.last_scan_at||'从未')+' <button onclick="manualScan('+t.id+')" style="padding:4px 10px;font-size:12px">立即扫描</button></div>';
+  });
+  document.getElementById('monitor-list').innerHTML = html || '暂无监控目标';
+  document.getElementById('monitor-list').style.display = 'block';
+}
+async function manualScan(id) {
+  const r = await api('/api/v1/monitor/scan/'+id,'POST',{});
+  alert('扫描完成: '+JSON.stringify(r.data));
+  loadMonitorList();
+}
+loadHistory();
+loadMonitorList();
+
+async function loadVulnStats() {
+  const r = await api('/api/v1/vuln-management/dashboard/stats');
+  const d = r.data;
+  document.getElementById('vuln-stats').innerHTML = '<div><div style="font-size:24px;color:#38bdf8">'+d.total+'</div><div style="font-size:12px;color:#94a3b8">总漏洞</div></div><div><div style="font-size:24px;color:#f59e0b">'+d.open_vulns+'</div><div style="font-size:12px;color:#94a3b8">未修复</div></div><div><div style="font-size:24px;color:#ef4444">'+d.critical_high_open+'</div><div style="font-size:12px;color:#94a3b8">高危未修复</div></div><div><div style="font-size:24px;color:#10b981">'+(d.total-d.open_vulns)+'</div><div style="font-size:12px;color:#94a3b8">已处理</div></div>';
+}
+async function createVuln() {
+  const title = document.getElementById('vuln-title').value.trim();
+  if(!title) return alert('请输入漏洞标题');
+  await api('/api/v1/vuln-management/vulnerabilities','POST',{title,severity:document.getElementById('vuln-severity').value,target:document.getElementById('vuln-target').value});
+  document.getElementById('vuln-title').value = '';
+  loadVulnStats(); loadVulnList();
+}
+async function loadVulnList() {
+  const r = await api('/api/v1/vuln-management/vulnerabilities?page_size=20');
+  let html = '';
+  (r.data.vulnerabilities||[]).forEach(function(v){
+    html += '<div style="padding:8px 0;border-bottom:1px solid #334155"><span class="badge badge-'+v.severity+'">'+v.severity+'</span> <b>#'+v.id+' '+v.title+'</b> ['+v.status_label+'] - '+v.target+' <button onclick="changeVulnStatus('+v.id+',\'fixed\')" style="padding:2px 8px;font-size:11px;margin-left:10px">标记已修复</button></div>';
+  });
+  document.getElementById('vuln-list').innerHTML = html || '暂无漏洞';
+  document.getElementById('vuln-list').style.display = 'block';
+}
+async function changeVulnStatus(id, status) {
+  await api('/api/v1/vuln-management/vulnerabilities/'+id+'/status','POST',{status});
+  loadVulnList(); loadVulnStats();
+}
+async function loadAssetStats() {
+  const r = await api('/api/v1/assets/dashboard/stats');
+  const d = r.data;
+  document.getElementById('asset-stats').innerHTML = '<div>总资产: '+d.total_assets+' | 高危资产: '+d.high_risk+' | 类型: '+JSON.stringify(d.by_type)+'</div>';
+}
+async function createAsset() {
+  const name = document.getElementById('asset-name').value.trim();
+  const target = document.getElementById('asset-target').value.trim();
+  if(!name || !target) return alert('请输入名称和目标');
+  await api('/api/v1/assets/assets','POST',{name,target,asset_type:document.getElementById('asset-type').value,group_name:document.getElementById('asset-group').value});
+  document.getElementById('asset-name').value=''; document.getElementById('asset-target').value='';
+  loadAssetStats(); loadAssetList();
+}
+async function loadAssetList() {
+  const r = await api('/api/v1/assets/assets?page_size=20');
+  let html = '';
+  (r.data.assets||[]).forEach(function(a){
+    html += '<div style="padding:8px 0;border-bottom:1px solid #334155"><b>#'+a.id+' '+a.name+'</b> ('+a.asset_type+') - '+a.target+' [分组:'+a.group_name+'] 优先级:'+a.priority+' 风险:'+a.risk_score+'</div>';
+  });
+  document.getElementById('asset-list').innerHTML = html || '暂无资产';
+  document.getElementById('asset-list').style.display = 'block';
+}
+async function loadSysConfig() {
+  const r = await api('/api/v1/system-config/system/info');
+  const d = r.data;
+  document.getElementById('sys-info').innerHTML = '<b>版本:</b> '+d.version+' | <b>Python:</b> '+d.python_version.substring(0,20)+'... | <b>平台:</b> '+d.platform+' | <b>AI:</b> '+(d.ai_enabled?'已启用':'未启用')+' | <b>Webhook:</b> '+(d.webhook_enabled?'已启用':'未启用');
+  const r2 = await api('/api/v1/system-config/config');
+  const tools = r2.data.tools || {};
+  let tc = '';
+  for(const k in tools) { tc += '<div style="padding:3px 0"><b>'+k+':</b> '+tools[k]+'</div>'; }
+  document.getElementById('tool-config').innerHTML = tc;
+  const scan = r2.data.scan || {};
+  document.getElementById('scan-config').innerHTML = '<div>Nmap超时: '+scan.nmap_timeout+'s | Nuclei超时: '+scan.nuclei_timeout+'s | 默认深度: '+scan.default_depth+' | 扫描类型: '+scan.nmap_scan_type+'</div>';
+  const notif = r2.data.notification || {};
+  document.getElementById('webhook-url').value = notif.webhook_url || '';
+}
+async function saveWebhookConfig() {
+  const url = document.getElementById('webhook-url').value.trim();
+  await api('/api/v1/webhook/config','PUT',{webhook_enabled: !!url, webhook_url: url});
+  document.getElementById('webhook-result').innerHTML = '<div style="color:#10b981">Webhook配置已保存</div>';
+}
+async function testWebhook() {
+  const url = document.getElementById('webhook-url').value.trim();
+  if(!url) return alert('请先输入Webhook URL');
+  const r = await api('/api/v1/webhook/test','POST',{url});
+  document.getElementById('webhook-result').innerHTML = r.success ? '<div style="color:#10b981">Webhook测试成功!</div>' : '<div style="color:#ef4444">测试失败: '+JSON.stringify(r.data)+'</div>';
+}
+loadVulnStats();
+loadVulnList();
+loadAssetStats();
+loadAssetList();
+loadSysConfig();
+</script>
+</body>
+</html>

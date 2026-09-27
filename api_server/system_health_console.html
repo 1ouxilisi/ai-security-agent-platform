@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>系统健康 · 工具运行时与性能控制台</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2129; --border:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --green:#3fb950; --red:#f85149;
+    --yellow:#d29922; --blue:#58a6ff; --purple:#bc8cff; --cyan:#39d2c0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--fg);font-size:13px;line-height:1.5}
+  header{background:linear-gradient(90deg,#161b22,#1f6feb22);padding:14px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  header h1{font-size:18px;font-weight:600}
+  header h1 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--green);margin-right:8px;box-shadow:0 0 8px var(--green)}
+  .sub{color:var(--muted);font-size:12px}
+  nav{display:flex;gap:2px;padding:0 22px;background:var(--panel);border-bottom:1px solid var(--border);flex-wrap:wrap}
+  nav button{background:transparent;border:none;color:var(--muted);padding:12px 16px;cursor:pointer;font-size:13px;border-bottom:2px solid transparent}
+  nav button.active{color:var(--fg);border-bottom-color:var(--blue)}
+  nav button:hover{color:var(--fg)}
+  main{padding:18px 22px;max-width:1500px;margin:0 auto}
+  .tab{display:none}
+  .tab.active{display:block}
+  .grid{display:grid;gap:12px}
+  .g4{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .g3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(380px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px}
+  .card h3{font-size:13px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+  .stat{font-size:26px;font-weight:600}
+  .stat.ok{color:var(--green)} .stat.bad{color:var(--red)} .stat.warn{color:var(--yellow)}
+  .kv{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--border);font-size:12px}
+  .kv:last-child{border-bottom:none}
+  .kv .k{color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{padding:7px 9px;border-bottom:1px solid var(--border);text-align:left}
+  th{color:var(--muted);font-weight:500;background:var(--panel2)}
+  tr:hover{background:#1f6feb11}
+  .pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+  .pill.ok{background:#3fb95022;color:var(--green)}
+  .pill.bad{background:#f8514922;color:var(--red)}
+  .pill.warn{background:#d2992222;color:var(--yellow)}
+  .pill.info{background:#58a6ff22;color:var(--blue)}
+  .tool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+  .tool{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;transition:.15s}
+  .tool:hover{border-color:var(--blue)}
+  .tool.avail{border-left:3px solid var(--green)}
+  .tool.miss{border-left:3px solid var(--red)}
+  .tool .name{font-weight:600;font-size:12px}
+  .tool .ver{color:var(--muted);font-size:11px;margin-top:2px;word-break:break-all}
+  .cat-block{margin-bottom:14px}
+  .cat-block h4{color:var(--cyan);font-size:13px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+  .btn{background:#238636;color:#fff;border:none;padding:7px 14px;border-radius:5px;cursor:pointer;font-size:12px}
+  .btn:hover{background:#2ea043}
+  .btn.sec{background:var(--panel2);border:1px solid var(--border);color:var(--fg)}
+  .btn.sec:hover{background:var(--border)}
+  .toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+  .code{background:#0a0e13;border:1px solid var(--border);border-radius:5px;padding:8px 10px;font-family:Consolas,monospace;font-size:11px;color:var(--cyan);margin:4px 0;position:relative;word-break:break-all}
+  .code .copy{position:absolute;top:4px;right:4px;cursor:pointer;background:var(--panel2);border:1px solid var(--border);color:var(--muted);padding:1px 6px;border-radius:3px;font-size:10px}
+  .code .copy:hover{color:var(--fg)}
+  .bar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;margin:4px 0}
+  .bar > div{height:100%;background:linear-gradient(90deg,#1f6feb,#39d2c0)}
+  .anomaly{background:#f8514911;border-left:3px solid var(--red);padding:8px 12px;margin:6px 0;border-radius:4px;font-size:12px}
+  .anomaly.warn{background:#d2992211;border-left-color:var(--yellow)}
+  .muted{color:var(--muted)}
+  .footer{color:var(--muted);font-size:11px;text-align:center;padding:20px}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--panel);border:1px solid var(--green);padding:10px 16px;border-radius:6px;display:none;z-index:99}
+  .tab-pane-title{font-size:15px;font-weight:600;margin-bottom:14px}
+  .timeline{border-left:2px solid var(--border);padding-left:14px;margin:10px 0}
+  .tl-item{margin-bottom:10px;position:relative}
+  .tl-item::before{content:"";position:absolute;left:-19px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--blue)}
+  .tl-item.failed::before{background:var(--red)}
+  .tl-item .tl-name{font-weight:600}
+  .diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .diff-col{background:var(--panel2);padding:10px;border-radius:5px}
+  .diff-col.ext{border-top:2px solid var(--green)}
+  .diff-col.py{border-top:2px solid var(--yellow)}
+  .diff-col ul{margin-left:16px;margin-top:6px;font-size:12px}
+  .empty{color:var(--muted);text-align:center;padding:20px;font-style:italic}
+  @media(max-width:720px){.diff-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1><span class="dot"></span>系统健康 · 工具运行时与性能控制台</h1>
+  <div class="sub">Tool Runtime / Fallback / Install / Performance / Startup · 仅限授权安全测试环境使用</div></div>
+  <div class="sub" id="clock">-</div>
+</header>
+<nav id="nav">
+  <button data-tab="health" class="active">系统健康</button>
+  <button data-tab="tools">工具检测</button>
+  <button data-tab="fallback">降级提示</button>
+  <button data-tab="install">安装引导</button>
+  <button data-tab="perf">性能监控</button>
+  <button data-tab="startup">启动优化</button>
+</nav>
+<main>
+
+<!-- ========== Tab 1: 系统健康 ========== -->
+<div class="tab active" id="tab-health">
+  <div class="toolbar">
+    <button class="btn" onclick="loadHealth()">刷新</button>
+    <button class="btn sec" onclick="window.location.href='/api/v1/system-health/health/summary'">原始 JSON</button>
+    <span class="muted" id="health-meta"></span>
+  </div>
+  <div class="grid g4" id="health-cards"></div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3>服务 / 数据库</h3><div id="health-svc-db"></div></div>
+    <div class="card"><h3>API 健康（累计）</h3><div id="health-api"></div></div>
+  </div>
+  <div class="card" style="margin-top:12px"><h3>异常项高亮</h3><div id="health-anom"><div class="empty">无异常</div></div></div>
+  <div class="card" style="margin-top:12px"><h3>外部工具状态总览</h3><div id="health-tools"></div></div>
+</div>
+
+<!-- ========== Tab 2: 工具检测 ========== -->
+<div class="tab" id="tab-tools">
+  <div class="toolbar">
+    <button class="btn" onclick="refreshTools()">重新检测</button>
+    <button class="btn sec" onclick="loadTools()">加载结果</button>
+    <button class="btn sec" onclick="exportTools()">导出报告</button>
+    <span class="muted" id="tools-meta"></span>
+  </div>
+  <div class="card"><h3>分类工具详情</h3><div id="tools-list"><div class="empty">点击"加载结果"</div></div></div>
+</div>
+
+<!-- ========== Tab 3: 降级提示 ========== -->
+<div class="tab" id="tab-fallback">
+  <div class="toolbar">
+    <button class="btn" onclick="loadFallback()">加载降级映射</button>
+  </div>
+  <div class="card"><h3>外部工具 → Python 原生替代</h3><div id="fallback-map"><div class="empty">点击加载</div></div></div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3>功能差异对比（选择工具）</h3>
+      <div id="fallback-diff"></div>
+      <div style="margin-top:8px"><select id="diff-select" onchange="loadDiff(this.value)" style="background:var(--panel2);color:var(--fg);border:1px solid var(--border);padding:5px;border-radius:4px"></select></div>
+    </div>
+    <div class="card"><h3>降级触发记录</h3><div id="fallback-records"><div class="empty">暂无记录</div></div></div>
+  </div>
+</div>
+
+<!-- ========== Tab 4: 安装引导 ========== -->
+<div class="tab" id="tab-install">
+  <div class="toolbar">
+    <button class="btn" onclick="loadInstall()">加载缺失工具</button>
+    <button class="btn sec" onclick="reverifyAll()">全部重新检测</button>
+  </div>
+  <div class="card"><h3>缺失工具多平台安装命令</h3><div id="install-list"><div class="empty">点击加载</div></div></div>
+</div>
+
+<!-- ========== Tab 5: 性能监控 ========== -->
+<div class="tab" id="tab-perf">
+  <div class="toolbar">
+    <button class="btn" onclick="loadPerf()">刷新</button>
+    <span class="muted" id="perf-meta"></span>
+  </div>
+  <div class="grid g4" id="perf-cards"></div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3>端点响应时间（P50/P95/P99，ms）</h3><div id="perf-endpoints"></div></div>
+    <div class="card"><h3>慢调用记录（>1s）</h3><div id="perf-slow"></div></div>
+  </div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3>缓存命中率 / 资源</h3><div id="perf-cache"></div></div>
+    <div class="card"><h3>优化建议</h3><div id="perf-sugg"></div></div>
+  </div>
+</div>
+
+<!-- ========== Tab 6: 启动优化 ========== -->
+<div class="tab" id="tab-startup">
+  <div class="toolbar">
+    <button class="btn" onclick="warmup()">触发预热</button>
+    <button class="btn sec" onclick="loadStartup()">加载启动报告</button>
+  </div>
+  <div class="grid g3">
+    <div class="card"><h3>总耗时</h3><div class="stat" id="st-total">-</div></div>
+    <div class="card"><h3>慢的 3 个阶段</h3><div id="st-slow">-</div></div>
+    <div class="card"><h3>失败阶段</h3><div id="st-fail">-</div></div>
+  </div>
+  <div class="card" style="margin-top:12px"><h3>启动时间线</h3><div class="timeline" id="st-timeline"><div class="empty">未启动</div></div></div>
+  <div class="card" style="margin-top:12px"><h3>启动后健康检查</h3><div id="st-health"></div></div>
+</div>
+
+</main>
+<div class="footer">tool_runtime · 36 endpoints · 仅限授权安全测试环境</div>
+<div class="toast" id="toast">已复制</div>
+
+<script>
+const BASE = '/api/v1/system-health';
+const $ = id => document.getElementById(id);
+
+async function api(path, opts){
+  try{
+    const r = await fetch(BASE + path, Object.assign({headers:{'Content-Type':'application/json'}}, opts||{}));
+    const j = await r.json();
+    if(!j.success) throw new Error(j.error || '请求失败');
+    return j.data;
+  }catch(e){
+    console.error(path, e);
+    return null;
+  }
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function toast(t){const el=$('toast');el.textContent=t;el.style.display='block';setTimeout(()=>el.style.display='none',1500)}
+function copyCmd(btn){
+  const code = btn.parentElement.textContent.replace('复制','').trim();
+  navigator.clipboard.writeText(code).then(()=>toast('已复制: '+code.slice(0,40)));
+}
+
+// nav
+document.querySelectorAll('#nav button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    $('tab-'+b.dataset.tab).classList.add('active');
+  };
+});
+setInterval(()=>$('clock').textContent=new Date().toLocaleString(),1000);
+
+// ---- 健康总览 ----
+async function loadHealth(){
+  const d = await api('/health/summary');
+  if(!d) return;
+  $('health-meta').textContent = '更新于 ' + d.generated_at + ' · 总体: ' + d.overall;
+  const overall = d.overall === 'healthy' ? 'ok' : 'bad';
+  $('health-cards').innerHTML = `
+    <div class="card"><h3>服务状态</h3><div class="stat ${overall}">${esc(d.service.status)}</div>
+      <div class="kv"><span class="k">PID</span><span>${d.service.pid}</span></div>
+      <div class="kv"><span class="k">运行时长</span><span>${esc(d.service.uptime_human)}</span></div>
+      <div class="kv"><span class="k">Python</span><span>${esc(d.service.python_version)}</span></div></div>
+    <div class="card"><h3>数据库</h3><div class="stat ${d.database.connected?'ok':'bad'}">${d.database.connected?'正常':'未连接'}</div>
+      <div class="kv"><span class="k">表数量</span><span>${d.database.tables||0}</span></div>
+      <div class="kv"><span class="k">记录数</span><span>${d.database.rows_total||0}</span></div>
+      <div class="kv"><span class="k">大小</span><span>${((d.database.size_bytes||0)/1024).toFixed(1)} KB</span></div></div>
+    <div class="card"><h3>API 请求</h3><div class="stat">${d.api.requests}</div>
+      <div class="kv"><span class="k">错误率</span><span>${d.api.error_rate}%</span></div>
+      <div class="kv"><span class="k">P95</span><span>${d.api.p95_ms} ms</span></div>
+      <div class="kv"><span class="k">慢端点</span><span>${d.api.slow_endpoints}</span></div></div>
+    <div class="card"><h3>外部工具</h3><div class="stat ${d.tools.coverage>=50?'ok':'warn'}">${d.tools.coverage}%</div>
+      <div class="kv"><span class="k">可用</span><span style="color:var(--green)">${d.tools.available}</span></div>
+      <div class="kv"><span class="k">缺失</span><span style="color:var(--red)">${d.tools.missing}</span></div>
+      <div class="kv"><span class="k">总计</span><span>${d.tools.total}</span></div></div>`;
+  $('health-svc-db').innerHTML = `
+    <div class="kv"><span class="k">启动时间</span><span>${esc(d.service.start_time)}</span></div>
+    <div class="kv"><span class="k">平台</span><span>${esc(d.service.platform)}</span></div>
+    <div class="kv"><span class="k">线程数</span><span>${d.service.threads}</span></div>
+    <div class="kv"><span class="k">数据库文件</span><span>${esc(d.database.file||'-')}</span></div>`;
+  $('health-api').innerHTML = `
+    <div class="kv"><span class="k">P50</span><span>${d.api.p50_ms} ms</span></div>
+    <div class="kv"><span class="k">P95</span><span>${d.api.p95_ms} ms</span></div>
+    <div class="kv"><span class="k">P99</span><span>${d.api.p99_ms} ms</span></div>
+    <div class="kv"><span class="k">状态码分布</span><span>${esc(JSON.stringify(d.api.status_codes))}</span></div>`;
+  $('health-anom').innerHTML = d.anomalies.length ? d.anomalies.map(a=>`<div class="anomaly ${a.level==='warn'?'warn':''}"><b>[${esc(a.source)}]</b> ${esc(a.message)}</div>`).join('') : '<div class="empty">无异常</div>';
+  // tools grid
+  const g = await api('/tools/categories');
+  let html = '';
+  for(const cat of g.categories){
+    const items = g.grouped[cat]||[];
+    if(!items.length) continue;
+    html += `<div class="cat-block"><h4>${cat} (${items.filter(t=>t.available).length}/${items.length})</h4><div class="tool-grid">`;
+    for(const t of items){
+      html += `<div class="tool ${t.available?'avail':'miss'}"><div class="name">${esc(t.name)} <span class="pill ${t.available?'ok':'bad'}">${t.available?'OK':'缺失'}</span></div><div class="ver">${esc(t.version||'')}</div></div>`;
+    }
+    html += '</div></div>';
+  }
+  $('health-tools').innerHTML = html;
+}
+
+// ---- 工具检测 ----
+async function loadTools(){
+  const g = await api('/tools/categories');
+  const s = await api('/tools/summary');
+  if(!g) return;
+  $('tools-meta').textContent = `共 ${s.total} 个 · 可用 ${s.available} · 覆盖率 ${s.coverage}% · 耗时 ${s.scan_duration_ms}ms`;
+  let html = '';
+  for(const cat of g.categories){
+    const items = g.grouped[cat]||[];
+    if(!items.length) continue;
+    html += `<div class="cat-block"><h4>${cat}</h4><div class="tool-grid">`;
+    for(const t of items){
+      html += `<div class="tool ${t.available?'avail':'miss'}" onclick="showTool('${esc(t.name)}')">
+        <div class="name">${esc(t.name)} <span class="pill ${t.available?'ok':'bad'}">${t.available?'OK':'缺失'}</span></div>
+        <div class="ver">${esc(t.version||'无版本')}</div>
+        <div class="ver muted">${esc((t.executable_path||'').slice(0,40))}</div></div>`;
+    }
+    html += '</div></div>';
+  }
+  $('tools-list').innerHTML = html;
+}
+async function showTool(name){
+  const d = await api('/tools/'+name);
+  if(!d) return;
+  alert(`${d.name}\n分类: ${d.category}\n状态: ${d.available?'可用':'缺失'}\n路径: ${d.executable_path||'-'}\n版本: ${d.version||'-'}\n官网: ${d.website||'-'}`);
+}
+async function refreshTools(){
+  $('tools-meta').textContent='检测中...';
+  await api('/tools/refresh',{method:'POST'});
+  await loadTools();
+}
+async function exportTools(){
+  window.open(BASE+'/tools/export','_blank');
+}
+
+// ---- 降级 ----
+async function loadFallback(){
+  const m = await api('/fallback/map');
+  if(!m) return;
+  $('fallback-map').innerHTML = `<table><tr><th>外部工具</th><th>Python 原生替代</th><th>提示</th></tr>` +
+    Object.entries(m.mappings).map(([k,v])=>`<tr><td><b>${k}</b></td><td>${esc(v.python_impl)}</td><td class="muted">${esc(v.notice)}</td></tr>`).join('') + '</table>';
+  const sel = $('diff-select');
+  sel.innerHTML = Object.keys(m.mappings).map(k=>`<option value="${k}">${k}</option>`).join('');
+  loadDiff(Object.keys(m.mappings)[0]);
+  const rec = await api('/fallback/records');
+  $('fallback-records').innerHTML = rec.records.length ? `<table><tr><th>时间</th><th>工具</th><th>原因</th><th>替代</th></tr>`+
+    rec.records.map(r=>`<tr><td>${r.time}</td><td>${r.tool}</td><td>${r.reason}</td><td>${esc(r.alternative)}</td></tr>`).join('')+'</table>' : '<div class="empty">暂无降级记录</div>';
+}
+async function loadDiff(tool){
+  const d = await api('/fallback/diff/'+tool);
+  if(!d) return;
+  $('fallback-diff').innerHTML = `<div class="diff-grid">
+    <div class="diff-col ext"><b style="color:var(--green)">外部工具 (${tool})</b><ul>${d.external_features.map(f=>`<li>${esc(f)}</li>`).join('')}</ul>
+      <div class="kv"><span class="k">准确率</span><span>${d.accuracy_external}</span></div>
+      <div class="kv"><span class="k">速度</span><span>${d.speed_external}</span></div></div>
+    <div class="diff-col py"><b style="color:var(--yellow)">Python 原生 (${esc(d.python_impl)})</b><ul>${d.python_features.map(f=>`<li>${esc(f)}</li>`).join('')}</ul>
+      <div class="kv"><span class="k">准确率</span><span>${d.accuracy_python}</span></div>
+      <div class="kv"><span class="k">速度</span><span>${d.speed_python}</span></div></div></div>`;
+}
+
+// ---- 安装引导 ----
+async function loadInstall(){
+  const d = await api('/install/missing');
+  if(!d) return;
+  let html = `<div class="muted" style="margin-bottom:8px">缺失 ${d.count} 个工具</div>`;
+  for(const g of d.guides){
+    html += `<div class="cat-block"><h4>${esc(g.tool)} <span class="pill bad">缺失</span></h4>`;
+    html += `<div class="kv"><span class="k">验证命令</span><span class="code" style="display:inline-block;padding:2px 8px">${esc(g.verify||'-')}</span></div>`;
+    html += `<div class="kv"><span class="k">依赖</span><span>${(g.dependencies||[]).map(esc).join(', ')||'-'}</span></div>`;
+    html += '<div class="grid g3" style="margin-top:6px">';
+    for(const plat of ['windows','linux','macos']){
+      const items = g[plat]||[];
+      html += `<div><b style="color:var(--cyan)">${{windows:'Windows',linux:'Linux',macos:'macOS'}[plat]}</b>`;
+      for(const it of items){
+        html += `<div class="code">${esc(it.command)} <span class="copy" onclick="copyCmd(this)">复制</span></div><div class="muted" style="font-size:10px">${esc(it.manager)}${it.distro?' · '+it.distro:''}</div>`;
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    if(g.faq && g.faq.length){
+      html += '<div style="margin-top:6px">';
+      g.faq.forEach(f=>html+=`<div class="kv"><span class="k">Q: ${esc(f.q)}</span><span class="muted">${esc(f.a)}</span></div>`);
+      html += '</div>';
+    }
+    html += `<div style="margin-top:6px"><button class="btn sec" onclick="reverify('${esc(g.tool)}')">检测安装结果</button> <a class="muted" href="${esc(g.offline||'#')}" target="_blank">离线包 ↗</a></div>`;
+    html += '</div><hr style="border-color:var(--border);margin:10px 0">';
+  }
+  $('install-list').innerHTML = html || '<div class="empty">所有工具已安装</div>';
+}
+async function reverify(tool){
+  const d = await api('/install/verify/'+tool,{method:'POST'});
+  if(!d) return;
+  alert(tool + ': ' + (d.status==='available'?'安装成功！版本 '+d.detail.version:'仍未检测到'));
+  loadInstall();
+}
+async function reverifyAll(){await api('/tools/refresh',{method:'POST'});loadInstall();}
+
+// ---- 性能 ----
+async function loadPerf(){
+  const ov = await api('/performance/overview');
+  const eps = await api('/performance/endpoints');
+  const slow = await api('/performance/slow');
+  const cache = await api('/performance/cache');
+  const res = await api('/performance/resources');
+  const sug = await api('/performance/suggestions');
+  $('perf-cards').innerHTML = `
+    <div class="card"><h3>总请求</h3><div class="stat">${ov.total_requests}</div></div>
+    <div class="card"><h3>错误率</h3><div class="stat ${ov.error_rate>5?'bad':'ok'}">${ov.error_rate}%</div></div>
+    <div class="card"><h3>P95 响应</h3><div class="stat ${ov.global_p95_ms>1000?'warn':'ok'}">${ov.global_p95_ms} ms</div></div>
+    <div class="card"><h3>P99 响应</h3><div class="stat ${ov.global_p99_ms>1000?'warn':'ok'}">${ov.global_p99_ms} ms</div></div>`;
+  $('perf-endpoints').innerHTML = `<table><tr><th>端点</th><th>次数</th><th>P50</th><th>P95</th><th>P99</th><th>错误率</th></tr>`+
+    eps.endpoints.map(e=>`<tr><td class="muted">${esc(e.endpoint.slice(0,40))}</td><td>${e.calls}</td><td>${e.p50_ms}</td><td>${e.p95_ms}</td><td>${e.p99_ms}</td><td>${e.error_rate}%</td></tr>`).join('')+'</table>';
+  $('perf-slow').innerHTML = slow.slow_calls.length ? `<table><tr><th>时间</th><th>端点</th><th>ms</th></tr>`+
+    slow.slow_calls.map(s=>`<tr><td>${s.time}</td><td class="muted">${esc(s.endpoint.slice(0,40))}</td><td style="color:var(--yellow)">${s.duration_ms}</td></tr>`).join('')+'</table>' : '<div class="empty">暂无慢调用</div>';
+  $('perf-cache').innerHTML = `
+    <div class="kv"><span class="k">命中率</span><span style="color:var(--green)">${cache.hit_ratio}%</span></div>
+    <div class="kv"><span class="k">命中</span><span>${cache.hits}</span></div>
+    <div class="kv"><span class="k">未命中</span><span>${cache.misses}</span></div>
+    <div class="kv"><span class="k">内存 RSS</span><span>${res.memory_rss_mb||'-'} MB</span></div>
+    <div class="kv"><span class="k">CPU%</span><span>${res.cpu_percent||'-'}</span></div>
+    <div class="kv"><span class="k">系统内存</span><span>${res.system_memory_percent||'-'}%</span></div>`;
+  $('perf-sugg').innerHTML = sug.suggestions.map((s,i)=>`<div class="anomaly ${s.type==='ok'?'warn':''}" style="border-left-color:${s.type==='ok'?'var(--green)':'var(--yellow)'}"><b>#${s.rank}</b> [${s.type}] ${esc(s.suggestion)}</div>`).join('');
+}
+
+// ---- 启动 ----
+async function loadStartup(){
+  const r = await api('/startup/report');
+  if(!r) return;
+  $('st-total').textContent = r.total_duration_ms + ' ms';
+  $('st-slow').innerHTML = r.slowest_3.length ? r.slowest_3.map(s=>`<div class="kv"><span class="k">${esc(s.name)}</span><span>${s.duration_ms} ms</span></div>`).join('') : '<div class="empty">无阶段记录</div>';
+  $('st-fail').innerHTML = r.failed_stages.length ? r.failed_stages.map(s=>`<div class="anomaly"><b>${esc(s.name)}</b>: ${esc(s.error)}<div class="muted">${esc(s.fix_hint)}</div></div>`).join('') : '<span class="pill ok">全部成功</span>';
+  $('st-timeline').innerHTML = r.stages.length ? r.stages.map(s=>`<div class="tl-item ${s.status!=='ok'?'failed':''}"><div class="tl-name">${esc(s.name)} <span class="muted">${s.duration_ms} ms</span> <span class="pill ${s.status==='ok'?'ok':'bad'}">${s.status}</span></div></div>`).join('') : '<div class="empty">尚未记录启动阶段</div>';
+  $('st-health').innerHTML = r.health_report && r.health_report.checks ?
+    Object.entries(r.health_report.checks).map(([k,v])=>`<div class="kv"><span class="k">${esc(k)}</span><span>${esc(v)}</span></div>`).join('') : '<div class="empty">未运行健康检查，点击"触发预热"</div>';
+}
+async function warmup(){
+  const r = await api('/startup/warmup',{method:'POST'});
+  if(r) alert('预热完成，耗时 '+r.duration_ms+'ms');
+  loadStartup();
+}
+
+// 初始加载
+loadHealth();
+</script>
+</body>
+</html>

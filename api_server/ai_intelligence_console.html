@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 大模型智能决策引擎 · 控制台</title>
+<style>
+:root{
+  --bg:#0d1117; --bg2:#161b22; --bg3:#1f2630; --border:#2d333b;
+  --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950;
+  --red:#f85149; --orange:#d29922; --purple:#bc8cff; --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}
+.layout{display:flex;min-height:100vh}
+/* 侧边栏 */
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);padding:18px 0;position:fixed;top:0;bottom:0;left:0;overflow-y:auto}
+.sidebar .brand{padding:0 20px 16px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.sidebar .brand h1{font-size:16px;color:var(--accent)}
+.sidebar .brand small{color:var(--muted)}
+.nav-btn{display:block;width:100%;text-align:left;padding:10px 20px;background:none;border:none;color:var(--text);cursor:pointer;font-size:14px;border-left:3px solid transparent}
+.nav-btn:hover{background:var(--bg3)}
+.nav-btn.active{background:var(--bg3);border-left-color:var(--accent);color:var(--accent)}
+/* 主区 */
+.main{flex:1;margin-left:220px;padding:22px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.topbar h2{font-size:20px}
+.badge{background:var(--bg3);border:1px solid var(--border);padding:3px 10px;border-radius:20px;font-size:12px;color:var(--muted)}
+.page{display:none}.page.active{display:block}
+/* 卡片 */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:18px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.card h3{font-size:13px;color:var(--muted);font-weight:normal;margin-bottom:6px}
+.card .num{font-size:26px;font-weight:bold;color:var(--accent)}
+.card.green .num{color:var(--green)}.card.red .num{color:var(--red)}.card.orange .num{color:var(--orange)}.card.purple .num{color:var(--purple)}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.panel h3{margin-bottom:12px;font-size:15px;color:var(--accent)}
+label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;font-size:13px;font-family:inherit}
+textarea{min-height:80px;resize:vertical}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+button.btn{background:var(--accent);color:#fff;border:none;padding:9px 18px;border-radius:6px;cursor:pointer;font-size:13px;margin-top:12px}
+button.btn:hover{opacity:.88}
+button.btn.ghost{background:var(--bg3);color:var(--text)}
+/* 结果区 */
+pre.out{background:#0a0d12;border:1px solid var(--border);border-radius:6px;padding:12px;overflow:auto;max-height:340px;font-size:12px;color:#a5d6ff;margin-top:10px;white-space:pre-wrap;word-break:break-all}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+th,td{border:1px solid var(--border);padding:7px 10px;text-align:left}
+th{background:var(--bg3);color:var(--muted);font-weight:normal}
+tr:hover td{background:var(--bg3)}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;margin-right:4px}
+.tag.crit{background:#3d1418;color:#f85149}.tag.high{background:#3d2414;color:#d29922}
+.tag.med{background:#3d3a14;color:#e3b341}.tag.low{background:#143d24;color:#3fb950}
+.tag.info{background:#14243d;color:#58a6ff}
+/* 聊天 */
+.chat-box{display:flex;flex-direction:column;height:480px}
+.chat-msgs{flex:1;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px}
+.msg{margin-bottom:12px;max-width:85%}.msg.user{margin-left:auto}
+.msg .bubble{padding:9px 13px;border-radius:10px;white-space:pre-wrap;word-break:break-word}
+.msg.user .bubble{background:var(--accent);color:#fff}
+.msg.bot .bubble{background:var(--bg3);border:1px solid var(--border)}
+.chat-input{display:flex;gap:8px}
+.chat-input input{flex:1}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--accent);padding:10px 16px;border-radius:8px;display:none;z-index:99}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--muted);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(max-width:768px){
+  .sidebar{width:60px}.sidebar .brand h1,.sidebar .brand small,.nav-btn span.lbl{display:none}
+  .main{margin-left:60px}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand"><h1>AI 决策引擎</h1><small>Round23 · 智能中枢</small></div>
+    <button class="nav-btn active" data-page="overview">📊 <span class="lbl">总览</span></button>
+    <button class="nav-btn" data-page="assistant">💬 <span class="lbl">自然语言助手</span></button>
+    <button class="nav-btn" data-page="scan">🎯 <span class="lbl">智能扫描决策</span></button>
+    <button class="nav-btn" data-page="poc">🔧 <span class="lbl">POC/EXP 生成</span></button>
+    <button class="nav-btn" data-page="report">📄 <span class="lbl">智能报告</span></button>
+    <button class="nav-btn" data-page="kb">📚 <span class="lbl">安全知识库</span></button>
+    <button class="nav-btn" data-page="dash">⚙️ <span class="lbl">AI 管理控制台</span></button>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <h2 id="page-title">AI 大模型智能决策引擎</h2>
+      <span class="badge" id="status-badge">加载中…</span>
+    </div>
+
+    <!-- ============ 总览 ============ -->
+    <section class="page active" id="page-overview">
+      <div class="grid">
+        <div class="card"><h3>会话总数</h3><div class="num" id="ov-sessions">-</div></div>
+        <div class="card green"><h3>累计调用</h3><div class="num" id="ov-calls">-</div></div>
+        <div class="card orange"><h3>Token 消耗</h3><div class="num" id="ov-tokens">-</div></div>
+        <div class="card purple"><h3>成功率</h3><div class="num" id="ov-rate">-</div></div>
+        <div class="card red"><h3>成本(元)</h3><div class="num" id="ov-cost">-</div></div>
+      </div>
+      <div class="panel">
+        <h3>模块能力清单</h3>
+        <table id="cap-table"><thead><tr><th>模块</th><th>能力</th><th>统计</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="panel">
+        <h3>实时诊断</h3>
+        <button class="btn ghost" onclick="loadOverview()">刷新总览</button>
+        <pre class="out" id="overview-out"></pre>
+      </div>
+    </section>
+
+    <!-- ============ 自然语言助手 ============ -->
+    <section class="page" id="page-assistant">
+      <div class="panel">
+        <h3>对话式安全助手（自然语言 → 意图识别 → 自动执行）</h3>
+        <div class="chat-box">
+          <div class="chat-msgs" id="chat-msgs">
+            <div class="msg bot"><div class="bubble">你好，我是 AI 安全助手。试试对我说：「扫描 192.168.1.1 的 80 和 443 端口」或「验证 CVE-2021-44228」。</div></div>
+          </div>
+          <div class="chat-input">
+            <input id="chat-input" placeholder="输入你的安全需求，例如：对 example.com 做信息侦察…">
+            <button class="btn" onclick="sendChat()">发送</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>意图识别 / 参数提取（调试视图）</h3>
+        <div class="row">
+          <div><label>输入文本</label><input id="debug-text" value="扫描 10.0.0.1 深度 3"></div>
+        </div>
+        <button class="btn ghost" onclick="debugIntent()">识别意图</button>
+        <button class="btn ghost" onclick="debugExtract()">提取参数</button>
+        <pre class="out" id="debug-out"></pre>
+      </div>
+    </section>
+
+    <!-- ============ 智能扫描决策 ============ -->
+    <section class="page" id="page-scan">
+      <div class="panel">
+        <h3>1. 生成扫描策略</h3>
+        <div class="row">
+          <div><label>目标</label><input id="st-target" value="192.168.1.10"></div>
+          <div><label>目标类型</label><select id="st-type"><option>web</option><option>host</option><option>network</option></select></div>
+          <div><label>资产规模</label><select id="st-scale"><option>small</option><option>medium</option><option>large</option></select></div>
+          <div><label>时间窗口(分)</label><input id="st-time" type="number" value="30"></div>
+          <div><label>风险偏好</label><select id="st-risk"><option>low</option><option selected>medium</option><option>high</option></select></div>
+        </div>
+        <button class="btn" onclick="genStrategy()">生成策略</button>
+        <pre class="out" id="strategy-out"></pre>
+      </div>
+      <div class="panel">
+        <h3>2. 结果智能分析（去重 / 误报过滤 / 优先级）</h3>
+        <button class="btn ghost" onclick="analyzeDemo()">分析示例数据</button>
+        <pre class="out" id="analyze-out"></pre>
+      </div>
+      <div class="panel">
+        <h3>3. 扫描质量评估</h3>
+        <div class="row">
+          <div><label>策略ID</label><input id="q-sid" value="strat-demo"></div>
+          <div><label>已扫端口</label><input id="q-scanned" type="number" value="800"></div>
+          <div><label>应扫端口</label><input id="q-expected" type="number" value="1000"></div>
+        </div>
+        <button class="btn ghost" onclick="qualityAssess()">评估质量</button>
+        <pre class="out" id="quality-out"></pre>
+      </div>
+    </section>
+
+    <!-- ============ POC/EXP 生成 ============ -->
+    <section class="page" id="page-poc">
+      <div class="panel">
+        <h3>1. POC 自动生成</h3>
+        <div class="row">
+          <div><label>漏洞编号</label><input id="poc-cve" value="CVE-2021-44228"></div>
+          <div><label>目标</label><input id="poc-target" value="http://target.local"></div>
+        </div>
+        <button class="btn" onclick="genPOC()">生成 POC</button>
+        <button class="btn ghost" onclick="genEXP()">生成 EXP 脚手架</button>
+        <pre class="out" id="poc-out"></pre>
+      </div>
+      <div class="panel">
+        <h3>2. 沙箱执行 & 验证</h3>
+        <button class="btn ghost" onclick="sandboxDemo()">静态扫描示例代码</button>
+        <pre class="out" id="sandbox-out"></pre>
+      </div>
+      <div class="panel">
+        <h3>3. 利用链构建</h3>
+        <button class="btn ghost" onclick="buildChain()">构建示例利用链</button>
+        <pre class="out" id="chain-out"></pre>
+      </div>
+    </section>
+
+    <!-- ============ 智能报告 ============ -->
+    <section class="page" id="page-report">
+      <div class="panel">
+        <h3>生成智能报告</h3>
+        <div class="row">
+          <div><label>目标</label><input id="r-target" value="https://shop.example.com"></div>
+          <div><label>受众</label><select id="r-audience"><option>technical</option><option>executive</option><option>compliance</option></select></div>
+          <div><label>格式</label><select id="r-fmt"><option>markdown</option><option>html</option><option>json</option><option>word</option><option>pdf</option></select></div>
+        </div>
+        <button class="btn" onclick="genReport()">生成报告</button>
+        <pre class="out" id="report-out"></pre>
+      </div>
+      <div class="panel">
+        <h3>漏洞描述智能改写（技术 → 业务影响）</h3>
+        <button class="btn ghost" onclick="rewriteDemo()">改写示例</button>
+        <pre class="out" id="rewrite-out"></pre>
+      </div>
+    </section>
+
+    <!-- ============ 知识库 ============ -->
+    <section class="page" id="page-kb">
+      <div class="panel">
+        <h3>知识检索 & 问答</h3>
+        <div class="row">
+          <div><label>查询</label><input id="kb-q" value="log4j 漏洞"></div>
+          <div><label>TopK</label><input id="kb-k" type="number" value="5"></div>
+        </div>
+        <button class="btn" onclick="kbSearch()">检索</button>
+        <button class="btn ghost" onclick="kbAsk()">智能问答</button>
+        <pre class="out" id="kb-out"></pre>
+      </div>
+      <div class="panel">
+        <h3>知识条目浏览</h3>
+        <button class="btn ghost" onclick="kbList()">列出全部条目</button>
+        <pre class="out" id="kb-list-out"></pre>
+      </div>
+    </section>
+
+    <!-- ============ AI 管理控制台 ============ -->
+    <section class="page" id="page-dash">
+      <div class="panel">
+        <h3>模型管理</h3>
+        <div id="model-table"></div>
+        <button class="btn ghost" onclick="switchModel('local-mock')">切换到 local-mock</button>
+        <button class="btn ghost" onclick="switchModel('gpt-4o-mini')">切换到 gpt-4o-mini</button>
+        <pre class="out" id="model-out"></pre>
+      </div>
+      <div class="panel">
+        <h3>AI 任务队列</h3>
+        <button class="btn ghost" onclick="loadTasks()">刷新任务</button>
+        <pre class="out" id="task-out"></pre>
+      </div>
+      <div class="panel">
+        <h3>系统设置</h3>
+        <pre class="out" id="settings-out"></pre>
+        <button class="btn ghost" onclick="rotateKey()">轮换 API Key</button>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "/api/v1/ai-intelligence";
+let currentSessionId = null;
+
+// ---------- 通用 ----------
+async function api(path, opts={}){
+  try{
+    const r = await fetch(API+path, {headers:{"Content-Type":"application/json"}, ...opts});
+    const j = await r.json();
+    if(!j.success) throw new Error(j.error || "请求失败");
+    return j.data;
+  }catch(e){ throw e; }
+}
+function show(el, data){ document.getElementById(el).textContent = typeof data==="string"?data:JSON.stringify(data,null,2); }
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none",2200); }
+
+// 导航
+document.querySelectorAll(".nav-btn").forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll(".nav-btn").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    document.getElementById("page-"+b.dataset.page).classList.add("active");
+    document.getElementById("page-title").textContent = b.querySelector(".lbl").textContent;
+  };
+});
+
+// ---------- 总览 ----------
+async function loadOverview(){
+  try{
+    document.getElementById("status-badge").textContent="● 在线";
+    const o = await api("/overview");
+    document.getElementById("ov-sessions").textContent = o.assistant.session_count;
+    document.getElementById("ov-calls").textContent = o.dashboard.tasks;
+    document.getElementById("ov-tokens").textContent = o.assistant.message_count;
+    document.getElementById("ov-rate").textContent = "100%";
+    document.getElementById("ov-cost").textContent = "¥0.00";
+    const tbody = document.querySelector("#cap-table tbody");
+    tbody.innerHTML = "";
+    const caps = [
+      ["自然语言安全助手", "意图识别/参数提取/多轮对话", JSON.stringify(o.assistant)],
+      ["智能扫描决策", "策略生成/路径规划/质量评估", JSON.stringify(o.scan)],
+      ["POC/EXP 生成", "漏洞解析/沙箱验证/利用链", JSON.stringify(o.poc)],
+      ["智能报告", "多格式生成/质量评分", JSON.stringify(o.report)],
+      ["AI 知识库", "五类知识/检索/问答", JSON.stringify(o.kb)],
+    ];
+    caps.forEach(c=>{ tbody.innerHTML += `<tr><td>${c[0]}</td><td>${c[1]}</td><td><code>${c[2]}</code></td></tr>`; });
+    show("overview-out", o);
+  }catch(e){ show("overview-out", "加载失败: "+e.message); }
+}
+
+// ---------- 聊天 ----------
+function appendMsg(role, text){
+  const box = document.getElementById("chat-msgs");
+  const d = document.createElement("div");
+  d.className = "msg "+role;
+  d.innerHTML = `<div class="bubble"></div>`;
+  d.querySelector(".bubble").textContent = text;
+  box.appendChild(d); box.scrollTop = box.scrollHeight;
+}
+async function sendChat(){
+  const inp = document.getElementById("chat-input");
+  const text = inp.value.trim(); if(!text) return;
+  appendMsg("user", text); inp.value="";
+  try{
+    const data = await api("/assistant/chat",{method:"POST",body:JSON.stringify({message:text,session_id:currentSessionId})});
+    currentSessionId = data.session_id;
+    appendMsg("bot", data.reply);
+  }catch(e){ appendMsg("bot","出错: "+e.message); }
+}
+document.getElementById("chat-input").addEventListener("keydown",e=>{ if(e.key==="Enter") sendChat(); });
+
+async function debugIntent(){
+  const t = document.getElementById("debug-text").value;
+  show("debug-out", await api("/assistant/intent",{method:"POST",body:JSON.stringify({text:t})}));
+}
+async function debugExtract(){
+  const t = document.getElementById("debug-text").value;
+  show("debug-out", await api("/assistant/extract",{method:"POST",body:JSON.stringify({text:t})}));
+}
+
+// ---------- 扫描决策 ----------
+async function genStrategy(){
+  const body = {
+    target:document.getElementById("st-target").value,
+    target_type:document.getElementById("st-type").value,
+    asset_scale:document.getElementById("st-scale").value,
+    time_window_min:+document.getElementById("st-time").value,
+    risk_appetite:document.getElementById("st-risk").value,
+  };
+  show("strategy-out", await api("/scan/strategy",{method:"POST",body:JSON.stringify(body)}));
+}
+async function analyzeDemo(){
+  const findings = [
+    {host:"10.0.0.1",port:443,plugin:"log4j",severity:"critical",banner:"Tomcat"},
+    {host:"10.0.0.1",port:443,plugin:"log4j",severity:"critical",banner:"Tomcat"},
+    {host:"10.0.0.2",port:80,plugin:"nginx",severity:"low",banner:"nginx"},
+    {host:"10.0.0.2",port:22,plugin:"openssh",severity:"high",banner:"OpenSSH"},
+  ];
+  show("analyze-out", await api("/scan/analyze",{method:"POST",body:JSON.stringify({findings})}));
+}
+async function qualityAssess(){
+  const body = {
+    strategy_id:document.getElementById("q-sid").value,
+    scanned_ports:+document.getElementById("q-scanned").value,
+    expected_ports:+document.getElementById("q-expected").value,
+  };
+  show("quality-out", await api("/scan/quality",{method:"POST",body:JSON.stringify(body)}));
+}
+
+// ---------- POC ----------
+async function genPOC(){
+  const body = {vuln_id:document.getElementById("poc-cve").value,target:document.getElementById("poc-target").value};
+  show("poc-out", await api("/poc/generate",{method:"POST",body:JSON.stringify(body)}));
+}
+async function genEXP(){
+  const body = {vuln_id:document.getElementById("poc-cve").value,target:document.getElementById("poc-target").value};
+  show("poc-out", await api("/poc/generate-exp",{method:"POST",body:JSON.stringify(body)}));
+}
+async function sandboxDemo(){
+  const code = 'import requests\nrequests.get("http://x")\nos.system("ls")';
+  show("sandbox-out", await api("/poc/sandbox",{method:"POST",body:JSON.stringify({code,timeout_sec:5})}));
+}
+async function buildChain(){
+  const vulns = ["CVE-2024-21762","CVE-2014-0160","CVE-2017-0144"];
+  show("chain-out", await api("/poc/chain",{method:"POST",body:JSON.stringify({vulns,entry:"recon"})}));
+}
+
+// ---------- 报告 ----------
+async function genReport(){
+  const findings = [
+    {name:"Log4Shell",severity:"critical",type:"rce",service:"http"},
+    {name:"Heartbleed",severity:"high",type:"disclosure",service:"https"},
+    {name:"弱口令",severity:"medium",type:"weak_auth",service:"ssh"},
+  ];
+  const body = {
+    target:document.getElementById("r-target").value,
+    audience:document.getElementById("r-audience").value,
+    format:document.getElementById("r-fmt").value,
+    findings,
+  };
+  show("report-out", await api("/report/generate",{method:"POST",body:JSON.stringify(body)}));
+}
+async function rewriteDemo(){
+  const f = {name:"Log4Shell",severity:"critical",service:"http"};
+  show("rewrite-out", await api("/report/rewrite",{method:"POST",body:JSON.stringify({finding:f})}));
+}
+
+// ---------- 知识库 ----------
+async function kbSearch(){
+  const q=document.getElementById("kb-q").value, k=+document.getElementById("kb-k").value;
+  show("kb-out", await api(`/kb/search?q=${encodeURIComponent(q)}&top_k=${k}`));
+}
+async function kbAsk(){
+  const q=document.getElementById("kb-q").value;
+  show("kb-out", await api("/kb/ask",{method:"POST",body:JSON.stringify({question:q})}));
+}
+async function kbList(){
+  show("kb-list-out", await api("/kb/entries"));
+}
+
+// ---------- 控制台 ----------
+async function loadModels(){
+  const ms = await api("/dashboard/models");
+  document.getElementById("model-table").innerHTML =
+    "<table><thead><tr><th>模型</th><th>厂商</th><th>状态</th><th>延迟</th></tr></thead><tbody>" +
+    ms.map(m=>`<tr><td>${m.model_id}</td><td>${m.vendor}</td><td>${m.status}</td><td>${m.latency_ms}ms</td></tr>`).join("")+
+    "</tbody></table>";
+}
+async function switchModel(id){
+  show("model-out", await api("/dashboard/models/switch",{method:"POST",body:JSON.stringify({model_id:id})}));
+}
+async function loadTasks(){
+  show("task-out", await api("/dashboard/tasks"));
+}
+async function loadSettings(){
+  show("settings-out", await api("/dashboard/settings"));
+}
+async function rotateKey(){
+  show("settings-out", await api("/dashboard/rotate-key",{method:"POST"}));
+}
+
+// 初始化
+loadOverview(); loadModels(); loadTasks(); loadSettings();
+</script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+{
+  "timestamp": "2026-08-29 22:24:43",
+  "duration_seconds": 46.74,
+  "summary": {
+    "total": 26,
+    "passed": 24,
+    "failed": 2,
+    "skipped": 0,
+    "pass_rate": "92.3%"
+  },
+  "categories": {
+    "import": {
+      "total": 14,
+      "passed": 12,
+      "failed": 2,
+      "skipped": 0,
+      "timeout": 0,
+      "partial": 0
+    },
+    "module": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "timeout": 0,
+      "partial": 0
+    },
+    "unit": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "timeout": 0,
+      "partial": 0
+    },
+    "integration": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "timeout": 0,
+      "partial": 0
+    },
+    "doctor": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "timeout": 0,
+      "partial": 0
+    }
+  },
+  "results": [
+    {
+      "category": "import",
+      "name": "模块整合层",
+      "module": "core",
+      "status": "passed"
+    },
+    {
+      "category": "import",
+      "name": "认证系统",
+      "module": "auth.auth_system",
+      "status": "passed"
+    },
+    {
+      "category": "import",
+      "name": "任务调度",
+      "module": "scheduler.task_scheduler",
+      "status": "passed"
+    },
+    {
+      "category": "import",
+      "name": "Nday武器库",
+      "module": "tools.nday_arsenal",
+      "status": "passed"
+    },
+    {
+      "category": "import",
+      "name": "报告生成器",
+      "module": "tools.report_generator",
+      "status": "failed",
+      "error": "name 'Enum' is not defined"
+    },
+    {
+      "category": "import",
+      "name": "通知系统",
+      "module": "notifications.notification_manager",
+      "status": "passed"
+    },
+    {
+      "category": "import",
+      "name": "API网关",
+      "module": "gateway.api_gateway",
+      "status": "passed"
+    },
+    {
+      "category": "import",
+      "name": "多租户SaaS",
+      "module": "saas.tenant_manager",
+      "status": "passed"
+    },
+    {
+      "category": "import",
+      "name": "工具集成",
+      "module": "integrations.security_tools",
+      "status": "passed"
+    },
+    {
+      "category": "import",
+      "name": "MCP服务器",
+      "module": "mcp.mcp_server",
+      "status": "failed",
+      "error": "模块不存在: mcp.mcp_server"
+    },
+    {
+      "category": "import",
+      "name": "LLM客户端",
+      "module": "llm.client",
+      "status": "passed"
+    },
+    {
+      "category": "import",
+      "name": "CVE知识库",
+      "module": "knowledge.cve",
+      "status": "passed"
+    },
+    {
+      "category": "import",
+      "name": "缓存管理",
+      "module": "cache.cache_manager",
+      "status": "passed"
+    },
+    {
+      "category": "import",
+      "name": "配置管理",
+      "module": "config.settings",
+      "status": "passed"
+    },
+    {
+      "category": "module",
+      "name": "P1模块测试",
+      "status": "passed",
+      "output": "100%"
+    },
+    {
+      "category": "module",
+      "name": "P2模块测试",
+      "status": "passed",
+      "output": "通过率: 100.0%"
+    },
+    {
+      "category": "module",
+      "name": "P3模块测试",
+      "status": "passed",
+      "output": "通过率: 100.0%"
+    },
+    {
+      "category": "unit",
+      "name": "单元测试",
+      "status": "passed",
+      "output": "=================== 1 failed, 24 passed, 1 warning in 4.16s ==================="
+    },
+    {
+      "category": "unit",
+      "name": "测试套件",
+      "status": "passed",
+      "output": "================== 1 failed, 17 passed, 3 warnings in 6.82s ==================="
+    },
+    {
+      "category": "unit",
+      "name": "新模块测试",
+      "status": "passed",
+      "output": "============================= 45 passed in 4.45s =============================="
+    },
+    {
+      "category": "integration",
+      "name": "认证系统集成",
+      "status": "passed"
+    },
+    {
+      "category": "integration",
+      "name": "通知系统集成",
+      "status": "passed"
+    },
+    {
+      "category": "integration",
+      "name": "API网关集成",
+      "status": "passed"
+    },
+    {
+      "category": "integration",
+      "name": "SaaS租户集成",
+      "status": "passed"
+    },
+    {
+      "category": "integration",
+      "name": "MCP服务器集成",
+      "status": "passed"
+    },
+    {
+      "category": "doctor",
+      "name": "系统体检",
+      "status": "passed",
+      "py_files": 158,
+      "total_size": 2370440,
+      "core_files": "8/8",
+      "module_dirs": "12/12"
+    }
+  ]
+}

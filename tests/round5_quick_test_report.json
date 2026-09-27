@@ -1,0 +1,134 @@
+{
+  "total": 14,
+  "passed": 14,
+  "failed": 0,
+  "server_500": 0,
+  "results": [
+    {
+      "name": "health",
+      "method": "GET",
+      "path": "/health",
+      "status": 200,
+      "is_500": false,
+      "ok": true,
+      "preview": "{\"status\":\"healthy\",\"version\":\"5.0.0\",\"uptime_seconds\":0.78,\"timestamp\":\"2026-09-12T18:22:17.584207\",\"memory\":{\"current_mb\":0.0,\"peak_mb\":0.0,\"source\""
+    },
+    {
+      "name": "ai_status",
+      "method": "GET",
+      "path": "/api/v1/ai/status",
+      "status": 200,
+      "is_500": false,
+      "ok": true,
+      "preview": "{\"llm_available\":true,\"model\":\"glm-4-flash\",\"modules_loaded\":[\"natural_language\",\"vuln_verifier\",\"remediation_generator\",\"security_assistant\"],\"module"
+    },
+    {
+      "name": "pentest_status",
+      "method": "GET",
+      "path": "/api/v1/pentest/status",
+      "status": 200,
+      "is_500": false,
+      "ok": true,
+      "preview": "{\"module\":{\"name\":\"pentest\",\"version\":\"1.0.0\",\"description\":\"内网/域渗透安全审计（仅检测/枚举/评估/审计，无真实攻击能力）\",\"components\":{\"internal_tools\":true,\"domain_audit\":true"
+    },
+    {
+      "name": "tools_status",
+      "method": "GET",
+      "path": "/api/v1/pentest/tools/status",
+      "status": 200,
+      "is_500": false,
+      "ok": true,
+      "preview": "{\"tool_status\":{\"tools\":{\"crackmapexec\":{\"installed\":false,\"command_path\":null,\"version\":null,\"install_guide\":\"安装 CrackMapExec: pip install crackmapex"
+    },
+    {
+      "name": "ai_assistant",
+      "method": "POST",
+      "path": "/api/v1/ai/assistant",
+      "status": 200,
+      "is_500": false,
+      "ok": true,
+      "preview": "{\"status\":\"success\",\"reply\":\"SQL 注入指用户输入被拼接到 SQL 语句中并被数据库当作代码执行。影响：可越权读取/篡改数据，严重时拖库。利用方式：在参数中注入单引号/布尔条件触发报错或盲注。修复：使用参数化查询/预编译，关闭详细报错，最小化数据库账号权限。\",\"rel"
+    },
+    {
+      "name": "nl_chat",
+      "method": "POST",
+      "path": "/api/v1/ai/chat",
+      "status": 200,
+      "is_500": false,
+      "ok": true,
+      "preview": "{\"status\":\"success\",\"intent\":\"scan_target\",\"params\":{\"scan_type\":\"port\",\"target\":\"192.168.1.1\"},\"result\":{\"status\":\"ok\",\"kind\":\"scan\",\"target\":\"192.16"
+    },
+    {
+      "name": "vuln_verify",
+      "method": "POST",
+      "path": "/api/v1/ai/verify",
+      "status": 200,
+      "is_500": false,
+      "ok": true,
+      "preview": "{\"status\":\"success\",\"verification_result\":{\"vuln_description\":\"SQL注入漏洞\",\"target\":\"http://example.com/page?id=1\",\"cve\":\"\",\"detected_type\":\"sql_injectio"
+    },
+    {
+      "name": "remediation",
+      "method": "POST",
+      "path": "/api/v1/ai/remediation",
+      "status": 200,
+      "is_500": false,
+      "ok": true,
+      "preview": "{\"status\":\"success\",\"remediation_plan\":{\"vuln_type\":\"sql_injection\",\"category\":\"web\",\"priority\":\"medium\",\"difficulty\":\"medium\",\"steps\":[\"使用参数化查询/预编译语句"
+    },
+    {
+      "name": "domain_audit",
+      "method": "POST",
+      "path": "/api/v1/pentest/domain/audit",
+      "status": 200,
+      "is_500": false,
+      "ok": true,
+      "preview": "{\"audit_report\":{\"status\":\"success\",\"generated_at\":\"2026-09-12T18:22:58.112836\",\"assessment_only\":true,\"policy_note\":\"本报告仅基于检测/枚举/风险评估，未执行任何攻击\",\"secti"
+    },
+    {
+      "name": "lateral_detect",
+      "method": "POST",
+      "path": "/api/v1/pentest/lateral/detect",
+      "status": 200,
+      "is_500": false,
+      "ok": true,
+      "preview": "{\"detection_result\":{\"status\":\"success\",\"target_network\":\"127.0.0.1\",\"detected_at\":\"2026-09-12T18:23:08.325523\",\"channel_results\":{\"smb\":{\"channel\":\"s"
+    },
+    {
+      "name": "credential_audit",
+      "method": "POST",
+      "path": "/api/v1/pentest/credential/audit",
+      "status": 200,
+      "is_500": false,
+      "ok": true,
+      "preview": "{\"audit_result\":{\"status\":\"success\",\"generated_at\":\"2026-09-12T18:23:13.325931\",\"assessment_only\":true,\"findings\":[{\"item\":\"用户名本身是常见弱口令\",\"severity\":\"h"
+    },
+    {
+      "name": "ai_page",
+      "method": "GET",
+      "path": "/ai-assistant",
+      "status": 200,
+      "is_500": false,
+      "ok": true,
+      "preview": "<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>AI安全助手"
+    },
+    {
+      "name": "chat_history",
+      "method": "GET",
+      "path": "/api/v1/ai/chat/history",
+      "status": 200,
+      "is_500": false,
+      "ok": true,
+      "preview": "{\"status\":\"success\",\"session_id\":\"test_e2e\",\"total\":2,\"history\":[{\"role\":\"user\",\"content\":\"扫描192.168.1.1的端口\",\"ts\":\"2026-09-12T18:22:17.962665\"},{\"role"
+    },
+    {
+      "name": "bh_graph",
+      "method": "GET",
+      "path": "/api/v1/pentest/bloodhound/graph",
+      "status": 200,
+      "is_500": false,
+      "ok": true,
+      "preview": "{\"graph\":{\"status\":\"success\",\"graph\":{\"nodes\":[],\"edges\":[],\"collected_at\":null},\"has_data\":false},\"status\":\"success\",\"timestamp\":\"2026-09-12T18:23:13"
+    }
+  ]
+}

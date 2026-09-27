@@ -1,0 +1,21 @@
+{
+  "key-2b40e9f4": {
+    "key_id": "key-2b40e9f4",
+    "name": "测试密钥",
+    "description": "用于测试",
+    "status": "active",
+    "created_at": 1788080522.7457507,
+    "expires_at": 1819616522.7457252,
+    "last_used_at": null,
+    "rate_limit_per_minute": 60,
+    "daily_quota": 10000,
+    "total_calls": 0,
+    "today_calls": 0,
+    "allowed_ips": [],
+    "scopes": [
+      "scan:port",
+      "knowledge:cve"
+    ],
+    "api_key": "sk-544f1ff1764afe09565cc93d6a7da1b84ccb87b2d62b5154127a4073c3288f80"
+  }
+}

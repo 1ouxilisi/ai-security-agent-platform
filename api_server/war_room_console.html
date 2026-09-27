@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能作战中心 | AI Security Operations Center</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  background: #0a0e17;
+  color: #e0e6ed;
+  min-height: 100vh;
+}
+.header {
+  background: linear-gradient(135deg, #0d1b2a 0%, #1b2838 100%);
+  border-bottom: 2px solid #00d4ff;
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header h1 {
+  font-size: 22px;
+  color: #00d4ff;
+  letter-spacing: 2px;
+}
+.header .status {
+  display: flex;
+  gap: 24px;
+  font-size: 13px;
+}
+.status-item { display: flex; align-items: center; gap: 6px; }
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #00ff88;
+  box-shadow: 0 0 8px #00ff88;
+}
+.nav {
+  background: #0d1b2a;
+  padding: 0 32px;
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid #1a2942;
+}
+.nav-btn {
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  color: #8899aa;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.nav-btn:hover { color: #00d4ff; background: #112240; }
+.nav-btn.active {
+  color: #00d4ff;
+  border-bottom-color: #00d4ff;
+  background: #112240;
+}
+.main { padding: 24px 32px; }
+.panel {
+  background: #0d1b2a;
+  border: 1px solid #1a2942;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 16px;
+  color: #00d4ff;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #1a2942;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.stat-card {
+  background: #112240;
+  border-radius: 6px;
+  padding: 16px;
+  text-align: center;
+}
+.stat-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #00d4ff;
+}
+.stat-label { font-size: 12px; color: #8899aa; margin-top: 4px; }
+.btn {
+  padding: 8px 16px;
+  background: #00d4ff;
+  color: #0a0e17;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+.btn:hover { background: #00b8e6; box-shadow: 0 0 12px rgba(0,212,255,0.4); }
+.btn-danger { background: #ff4757; color: #fff; }
+.btn-danger:hover { background: #ff6b7a; }
+.btn-success { background: #00ff88; }
+.btn-warning { background: #ffa502; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+textarea, input, select {
+  background: #0a0e17;
+  border: 1px solid #1a2942;
+  color: #e0e6ed;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  width: 100%;
+}
+textarea { min-height: 100px; font-family: monospace; resize: vertical; }
+.log-area {
+  background: #050810;
+  border: 1px solid #1a2942;
+  border-radius: 4px;
+  padding: 12px;
+  font-family: 'Consolas', monospace;
+  font-size: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+.log-info { color: #00d4ff; }
+.log-success { color: #00ff88; }
+.log-warning { color: #ffa502; }
+.log-error { color: #ff4757; }
+.mitre-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.mitre-tactic {
+  background: #112240;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 11px;
+}
+.mitre-tactic-header {
+  color: #00d4ff;
+  font-weight: bold;
+  margin-bottom: 6px;
+  text-align: center;
+  border-bottom: 1px solid #1a2942;
+  padding-bottom: 4px;
+}
+.mitre-tech {
+  background: #0a0e17;
+  padding: 4px 6px;
+  margin-bottom: 3px;
+  border-radius: 3px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.mitre-tech:hover { background: #1a3a5c; color: #00d4ff; }
+.mitre-tech.critical { border-left: 3px solid #ff4757; }
+.mitre-tech.high { border-left: 3px solid #ffa502; }
+.mitre-tech.medium { border-left: 3px solid #00d4ff; }
+.flow-canvas {
+  background: #050810;
+  border: 1px solid #1a2942;
+  border-radius: 4px;
+  min-height: 200px;
+  padding: 20px;
+  position: relative;
+}
+.flow-node {
+  display: inline-block;
+  background: #112240;
+  border: 2px solid #00d4ff;
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin: 8px;
+  font-size: 12px;
+  position: relative;
+}
+.flow-node.success { border-color: #00ff88; }
+.flow-node.failed { border-color: #ff4757; }
+.flow-node.pending { border-color: #8899aa; opacity: 0.5; }
+.flow-arrow { color: #00d4ff; font-size: 20px; margin: 0 4px; }
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  margin: 2px;
+}
+.tag-critical { background: #ff4757; color: #fff; }
+.tag-high { background: #ffa502; color: #000; }
+.tag-medium { background: #00d4ff; color: #000; }
+.tag-low { background: #8899aa; color: #000; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #1a2942; }
+th { color: #00d4ff; background: #112240; }
+tr:hover { background: #112240; }
+.code-block {
+  background: #050810;
+  border: 1px solid #1a2942;
+  border-radius: 4px;
+  padding: 12px;
+  font-family: 'Consolas', monospace;
+  font-size: 12px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.rbg-score {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+}
+.rbg-team { padding: 16px; }
+.rbg-team.red .score { color: #ff4757; }
+.rbg-team.blue .score { color: #00d4ff; }
+.rbg-team.green .score { color: #00ff88; }
+.rbg-score .score { font-size: 36px; font-weight: bold; }
+.rbg-score .label { font-size: 14px; color: #8899aa; }
+.hidden { display: none; }
+.loading {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid #1a2942;
+  border-top-color: #00d4ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ 智能作战中心 | AI Security Operations Center v4.0</h1>
+  <div class="status">
+    <div class="status-item"><div class="status-dot"></div>系统在线</div>
+    <div class="status-item">12领域 | 59Agent | 186工具</div>
+    <div class="status-item" id="clock"></div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="switchTab('overview')">总览</button>
+  <button class="nav-btn" onclick="switchTab('kg')">知识图谱</button>
+  <button class="nav-btn" onclick="switchTab('rbg')">红蓝绿对抗</button>
+  <button class="nav-btn" onclick="switchTab('mitre')">MITRE矩阵</button>
+  <button class="nav-btn" onclick="switchTab('poc')">PoC生成器</button>
+  <button class="nav-btn" onclick="switchTab('agentic')">Agent安全</button>
+  <button class="nav-btn" onclick="switchTab('taskflow')">任务流编排</button>
+</div>
+
+<div class="main">
+
+  <!-- ========== 总览 ========== -->
+  <div id="tab-overview">
+    <div class="grid grid-4" style="margin-bottom:20px;">
+      <div class="stat-card"><div class="stat-value" id="stat-entities">0</div><div class="stat-label">知识图谱实体</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-mitre">0</div><div class="stat-label">MITRE技能</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-poc">0</div><div class="stat-label">PoC模板</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-flows">0</div><div class="stat-label">任务流模板</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">快速操作</div>
+      <div class="grid grid-3">
+        <div>
+          <label style="font-size:12px;color:#8899aa;">目标地址</label>
+          <input type="text" id="quick-target" value="example.com" style="margin:6px 0;">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#8899aa;">任务流</label>
+          <select id="quick-flow" style="margin:6px 0;">
+            <option value="web_pentest">Web渗透测试</option>
+            <option value="internal_pentest">内网渗透测试</option>
+            <option value="mobile_security">移动安全测试</option>
+            <option value="cloud_security">云安全评估</option>
+            <option value="ai_agent_security">AI智能体安全</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn" onclick="quickExecute()">🚀 一键执行</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">执行日志</div>
+      <div class="log-area" id="overview-log"><span class="log-info">[系统] 智能作战中心已就绪，等待指令...</span></div>
+    </div>
+  </div>
+
+  <!-- ========== 知识图谱 ========== -->
+  <div id="tab-kg" class="hidden">
+    <div class="grid grid-2">
+      <div class="panel">
+        <div class="panel-title">图谱统计 <button class="btn btn-sm" onclick="loadKGStats()">刷新</button></div>
+        <div id="kg-stats"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">攻击路径</div>
+        <div id="kg-paths"><span class="log-warning">点击"发现攻击路径"开始分析</span></div>
+        <button class="btn btn-sm" style="margin-top:10px;" onclick="findAttackPaths()">🔍 发现攻击路径</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">导入发现数据</div>
+      <textarea id="kg-findings" placeholder='[{"type":"open_port","ip":"192.168.1.1","port":80,"service":"http"}]'></textarea>
+      <button class="btn" style="margin-top:10px;" onclick="ingestFindings()">导入到知识图谱</button>
+    </div>
+  </div>
+
+  <!-- ========== 红蓝绿对抗 ========== -->
+  <div id="tab-rbg" class="hidden">
+    <div class="panel">
+      <div class="panel-title">红蓝绿三方对抗演练</div>
+      <div class="rbg-score">
+        <div class="rbg-team red"><div class="score" id="rbg-red">--</div><div class="label">🔴 红队 (攻击)</div></div>
+        <div class="rbg-team blue"><div class="score" id="rbg-blue">--</div><div class="label">🔵 蓝队 (检测)</div></div>
+        <div class="rbg-team green"><div class="score" id="rbg-green">--</div><div class="label">🟢 绿队 (修复)</div></div>
+      </div>
+      <div style="text-align:center;margin-top:16px;">
+        <div style="font-size:14px;color:#8899aa;">风险降低: <span id="rbg-risk" style="color:#00ff88;font-size:20px;font-weight:bold;">--</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">演练配置</div>
+      <div class="grid grid-2">
+        <div>
+          <label style="font-size:12px;color:#8899aa;">目标</label>
+          <input type="text" id="rbg-target" value="example.com" style="margin:6px 0;">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn btn-danger" onclick="runEngagement()">⚔️ 开始对抗演练</button>
+        </div>
+      </div>
+      <div id="rbg-detail" style="margin-top:16px;"></div>
+    </div>
+  </div>
+
+  <!-- ========== MITRE矩阵 ========== -->
+  <div id="tab-mitre" class="hidden">
+    <div class="panel">
+      <div class="panel-title">MITRE ATT&CK 技能矩阵 <button class="btn btn-sm" onclick="loadMITRE()">加载</button></div>
+      <div id="mitre-matrix" class="mitre-grid"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">发现→MITRE映射</div>
+      <textarea id="mitre-findings" placeholder='[{"type":"vulnerability","name":"SQL注入","severity":"critical"}]' style="min-height:60px;"></textarea>
+      <button class="btn btn-sm" style="margin-top:8px;" onclick="mapToMITRE()">映射到MITRE</button>
+      <div id="mitre-map-result" style="margin-top:12px;"></div>
+    </div>
+  </div>
+
+  <!-- ========== PoC生成器 ========== -->
+  <div id="tab-poc" class="hidden">
+    <div class="grid grid-2">
+      <div class="panel">
+        <div class="panel-title">PoC生成</div>
+        <div class="grid grid-2">
+          <div>
+            <label style="font-size:12px;color:#8899aa;">漏洞类型</label>
+            <select id="poc-type" style="margin:6px 0;">
+              <option value="sql_injection">SQL注入</option>
+              <option value="xss">XSS跨站脚本</option>
+              <option value="ssrf">SSRF</option>
+              <option value="command_injection">命令注入</option>
+              <option value="path_traversal">路径遍历</option>
+              <option value="hardcoded_key">硬编码密钥</option>
+              <option value="cors_misconfig">CORS配置错误</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;color:#8899aa;">目标</label>
+            <input type="text" id="poc-target" value="http://target.com/vuln" style="margin:6px 0;">
+          </div>
+        </div>
+        <button class="btn" style="margin-top:10px;" onclick="generatePoC()">生成PoC</button>
+        <div id="poc-result" style="margin-top:12px;"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">批量生成</div>
+        <textarea id="poc-batch-findings" placeholder='[{"type":"vulnerability","name":"SQL注入","target":"http://t.com"}]'></textarea>
+        <button class="btn btn-warning" style="margin-top:10px;" onclick="batchPoC()">批量生成PoC+修复</button>
+        <div id="poc-batch-result" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== Agent安全 ========== -->
+  <div id="tab-agentic" class="hidden">
+    <div class="panel">
+      <div class="panel-title">OWASP Agentic Top 10 检查清单</div>
+      <div id="agentic-checklist"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">运行Agent安全测试</div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:12px;color:#8899aa;">测试类别（逗号分隔，留空=全部）:</label>
+        <input type="text" id="agentic-cats" placeholder="prompt_injection,tool_misuse,data_exfiltration" style="margin:6px 0;">
+      </div>
+      <button class="btn btn-danger" onclick="runAgenticTest()">🛡️ 运行安全测试</button>
+      <div id="agentic-result" style="margin-top:16px;"></div>
+    </div>
+  </div>
+
+  <!-- ========== 任务流编排 ========== -->
+  <div id="tab-taskflow" class="hidden">
+    <div class="panel">
+      <div class="panel-title">内置任务流</div>
+      <div id="taskflow-list" class="grid grid-3"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">任务流执行</div>
+      <div class="grid grid-2">
+        <div>
+          <label style="font-size:12px;color:#8899aa;">选择任务流</label>
+          <select id="tf-select" style="margin:6px 0;">
+            <option value="web_pentest">Web渗透测试标准流程</option>
+            <option value="internal_pentest">内网渗透测试流程</option>
+            <option value="mobile_security">移动安全测试流程</option>
+            <option value="cloud_security">云安全评估流程</option>
+            <option value="ai_agent_security">AI智能体安全评估</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:#8899aa;">目标参数 (JSON)</label>
+          <input type="text" id="tf-context" value='{"target":"example.com"}' style="margin:6px 0;">
+        </div>
+      </div>
+      <button class="btn btn-success" style="margin-top:10px;" onclick="executeTaskflow()">▶️ 执行任务流</button>
+      <div id="tf-result" style="margin-top:16px;"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = '/api/v1/advanced';
+
+function log(msg, type='info') {
+  const el = document.getElementById('overview-log');
+  const time = new Date().toLocaleTimeString();
+  el.innerHTML += `<br><span class="log-${type}">[${time}] ${msg}</span>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById('tab-' + tab).classList.remove('hidden');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (tab === 'overview') loadOverview();
+  if (tab === 'kg') loadKGStats();
+  if (tab === 'mitre') loadMITRE();
+  if (tab === 'agentic') loadChecklist();
+  if (tab === 'taskflow') loadTaskflows();
+}
+
+async function apiCall(endpoint, method='GET', body=null) {
+  const opts = { method, headers: {'Content-Type': 'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + endpoint, opts);
+  return res.json();
+}
+
+async function loadOverview() {
+  try {
+    const [kg, mitre, poc, flows] = await Promise.all([
+      apiCall('/knowledge-graph/stats'),
+      apiCall('/mitre/stats'),
+      apiCall('/poc/types'),
+      apiCall('/taskflow/list'),
+    ]);
+    document.getElementById('stat-entities').textContent = kg.data?.total_entities || 0;
+    document.getElementById('stat-mitre').textContent = mitre.data?.total_skills || 0;
+    document.getElementById('stat-poc').textContent = poc.data?.poc_templates || 0;
+    document.getElementById('stat-flows').textContent = flows.data?.length || 0;
+  } catch(e) { log('加载总览失败: ' + e.message, 'error'); }
+}
+
+async function quickExecute() {
+  const target = document.getElementById('quick-target').value;
+  const flow = document.getElementById('quick-flow').value;
+  log(`开始执行 ${flow}，目标: ${target}`);
+  try {
+    const res = await apiCall('/taskflow/execute', 'POST', {flow_name: flow, context: {target}});
+    if (res.success) {
+      log(`执行完成: 成功${res.data.success}/失败${res.data.failed}/跳过${res.data.skipped}`, 'success');
+    }
+  } catch(e) { log('执行失败: ' + e.message, 'error'); }
+}
+
+async function loadKGStats() {
+  try {
+    const res = await apiCall('/knowledge-graph/stats');
+    const d = res.data;
+    let html = `<div class="grid grid-2">`;
+    html += `<div class="stat-card"><div class="stat-value">${d.total_entities}</div><div class="stat-label">实体总数</div></div>`;
+    html += `<div class="stat-card"><div class="stat-value">${d.total_relations}</div><div class="stat-label">关系总数</div></div>`;
+    html += `</div><div style="margin-top:12px;"><strong style="color:#00d4ff;">实体类型分布:</strong><br>`;
+    for (const [k,v] of Object.entries(d.entities_by_type || {})) {
+      html += `<span class="tag tag-medium">${k}: ${v}</span> `;
+    }
+    html += `</div>`;
+    document.getElementById('kg-stats').innerHTML = html;
+  } catch(e) { log('加载图谱统计失败', 'error'); }
+}
+
+async function findAttackPaths() {
+  try {
+    const res = await apiCall('/knowledge-graph/attack-paths');
+    const paths = res.data.paths;
+    if (paths.length === 0) {
+      document.getElementById('kg-paths').innerHTML = '<span class="log-info">未发现攻击路径（图谱数据不足）</span>';
+      return;
+    }
+    let html = '';
+    paths.forEach((p,i) => {
+      html += `<div style="padding:8px;margin:4px 0;background:#112240;border-radius:4px;border-left:3px solid #ff4757;">
+        <strong>路径 ${i+1}</strong> (风险: ${p.risk_score})<br>
+        <span style="font-size:12px;color:#8899aa;">${p.description}</span><br>
+        <span style="font-size:11px;">${p.entities.join(' → ')}</span>
+      </div>`;
+    });
+    document.getElementById('kg-paths').innerHTML = html;
+  } catch(e) { log('发现攻击路径失败', 'error'); }
+}
+
+async function ingestFindings() {
+  try {
+    const findings = JSON.parse(document.getElementById('kg-findings').value || '[]');
+    const res = await apiCall('/knowledge-graph/ingest', 'POST', {findings, target:'test'});
+    log(`导入 ${res.data.entities_ingested} 个实体到知识图谱`, 'success');
+    loadKGStats();
+  } catch(e) { log('导入失败: ' + e.message, 'error'); }
+}
+
+async function runEngagement() {
+  const target = document.getElementById('rbg-target').value;
+  const findings = [
+    {type:'vulnerability', name:'SQL注入', severity:'critical', target},
+    {type:'open_port', ip:'192.168.1.1', port:80, service:'http'},
+    {type:'hardcoded_key', name:'API_KEY', severity:'high'},
+  ];
+  log(`开始红蓝绿对抗演练，目标: ${target}`);
+  try {
+    const res = await apiCall('/rbg/engagement', 'POST', {findings, target});
+    const d = res.data;
+    document.getElementById('rbg-red').textContent = d.red_team.score.toFixed(0);
+    document.getElementById('rbg-blue').textContent = d.blue_team.score.toFixed(0);
+    document.getElementById('rbg-green').textContent = d.green_team.score.toFixed(0);
+    document.getElementById('rbg-risk').textContent = d.overall_risk_reduction.toFixed(1) + '%';
+    let detail = `<table><tr><th>队伍</th><th>行动数</th><th>成功</th><th>得分</th></tr>`;
+    detail += `<tr><td>🔴 红队</td><td>${d.red_team.actions_count}</td><td>${d.red_team.successful}</td><td>${d.red_team.score.toFixed(0)}</td></tr>`;
+    detail += `<tr><td>🔵 蓝队</td><td>${d.blue_team.alerts_count}</td><td>${d.blue_team.detected}</td><td>${d.blue_team.score.toFixed(0)}</td></tr>`;
+    detail += `<tr><td>🟢 绿队</td><td>${d.green_team.fixes_count}</td><td>${d.green_team.applied}</td><td>${d.green_team.score.toFixed(0)}</td></tr>`;
+    detail += `</table>`;
+    document.getElementById('rbg-detail').innerHTML = detail;
+    log('对抗演练完成', 'success');
+  } catch(e) { log('演练失败: ' + e.message, 'error'); }
+}
+
+async function loadMITRE() {
+  try {
+    const res = await apiCall('/mitre/skills');
+    const skills = res.data.skills;
+    const tactics = {};
+    skills.forEach(s => {
+      if (!tactics[s.tactic]) tactics[s.tactic] = [];
+      tactics[s.tactic].push(s);
+    });
+    let html = '';
+    const tacticOrder = ['Reconnaissance','Initial Access','Execution','Persistence','Privilege Escalation','Defense Evasion','Credential Access','Discovery','Lateral Movement','Collection','Command and Control','Exfiltration','Impact'];
+    tacticOrder.forEach(t => {
+      if (!tactics[t]) return;
+      html += `<div class="mitre-tactic"><div class="mitre-tactic-header">${t.substring(0,12)}</div>`;
+      tactics[t].slice(0,4).forEach(s => {
+        html += `<div class="mitre-tech ${s.severity}" title="${s.description}">${s.technique_id}<br>${s.name.substring(0,10)}</div>`;
+      });
+      html += `</div>`;
+    });
+    document.getElementById('mitre-matrix').innerHTML = html;
+  } catch(e) { log('加载MITRE失败', 'error'); }
+}
+
+async function mapToMITRE() {
+  try {
+    const findings = JSON.parse(document.getElementById('mitre-findings').value || '[]');
+    const res = await apiCall('/mitre/map', 'POST', {findings});
+    let html = '<table><tr><th>发现</th><th>MITRE技术</th><th>战术</th><th>缓解措施</th></tr>';
+    res.data.mapped.forEach(m => {
+      html += `<tr><td>${m.finding.name || m.finding.type}</td><td><strong>${m.mitre_technique}</strong> ${m.mitre_name}</td><td>${m.tactic}</td><td style="font-size:11px;">${m.mitigation || '-'}</td></tr>`;
+    });
+    html += '</table>';
+    document.getElementById('mitre-map-result').innerHTML = html;
+  } catch(e) { log('映射失败', 'error'); }
+}
+
+async function generatePoC() {
+  const type = document.getElementById('poc-type').value;
+  const target = document.getElementById('poc-target').value;
+  try {
+    const res = await apiCall('/poc/generate', 'POST', {vuln_type: type, target, param:'id'});
+    document.getElementById('poc-result').innerHTML = `
+      <div style="margin-bottom:8px;"><span class="tag tag-${res.data.confidence > 0.7 ? 'high':'medium'}">置信度 ${res.data.confidence}</span> <span class="tag tag-low">${res.data.language}</span></div>
+      <div class="code-block">${res.data.poc_code.substring(0,800)}</div>`;
+    log(`生成 ${type} PoC 成功`, 'success');
+  } catch(e) { log('PoC生成失败', 'error'); }
+}
+
+async function batchPoC() {
+  try {
+    const findings = JSON.parse(document.getElementById('poc-batch-findings').value || '[]');
+    const res = await apiCall('/poc/batch', 'POST', {findings, target:'test'});
+    let html = `<div style="margin-bottom:8px;">生成 <strong>${res.data.poc_count}</strong> 个PoC，<strong>${res.data.fix_count}</strong> 个修复方案</div>`;
+    res.data.fixes.forEach(f => {
+      html += `<div style="padding:8px;margin:4px 0;background:#112240;border-radius:4px;border-left:3px solid #00ff88;">
+        <strong>${f.vuln_type}</strong> <span class="tag tag-${f.priority==='P0'?'critical':'high'}">${f.priority}</span><br>
+        <span style="font-size:12px;">${f.description}</span>
+      </div>`;
+    });
+    document.getElementById('poc-batch-result').innerHTML = html;
+  } catch(e) { log('批量生成失败', 'error'); }
+}
+
+async function loadChecklist() {
+  try {
+    const res = await apiCall('/agentic/checklist');
+    let html = '<div class="grid grid-2">';
+    res.data.forEach(item => {
+      html += `<div style="padding:10px;background:#112240;border-radius:4px;border-left:3px solid ${item.severity==='critical'?'#ff4757':'#ffa502'};">
+        <strong>${item.id}: ${item.name}</strong><br>
+        <span style="font-size:12px;color:#8899aa;">${item.description}</span>
+        <span class="tag tag-${item.severity}" style="float:right;">${item.severity}</span>
+      </div>`;
+    });
+    html += '</div>';
+    document.getElementById('agentic-checklist').innerHTML = html;
+  } catch(e) { log('加载检查清单失败', 'error'); }
+}
+
+async function runAgenticTest() {
+  const catsStr = document.getElementById('agentic-cats').value;
+  const categories = catsStr ? catsStr.split(',').map(s=>s.trim()) : [];
+  log('运行Agent安全测试...');
+  try {
+    const res = await apiCall('/agentic/test', 'POST', {categories, target_agent:'default'});
+    const s = res.data.summary;
+    let html = `<div class="grid grid-4" style="margin-bottom:16px;">
+      <div class="stat-card"><div class="stat-value">${s.total_tests}</div><div class="stat-label">测试用例</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:#ff4757;">${s.vulnerable_found}</div><div class="stat-label">发现漏洞</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:#ffa502;">${s.risk_score}</div><div class="stat-label">风险评分</div></div>
+      <div class="stat-card"><div class="stat-value">${Object.keys(s.category_distribution).length}</div><div class="stat-label">测试类别</div></div>
+    </div>`;
+    html += '<table><tr><th>漏洞类型</th><th>标题</th><th>严重度</th><th>修复建议</th></tr>';
+    res.data.results.forEach(r => {
+      if (r.vulnerable) {
+        html += `<tr><td>${r.vuln_type}</td><td>${r.title}</td><td><span class="tag tag-${r.severity}">${r.severity}</span></td><td style="font-size:11px;">${r.remediation.substring(0,50)}</td></tr>`;
+      }
+    });
+    html += '</table>';
+    document.getElementById('agentic-result').innerHTML = html;
+    log(`Agent安全测试完成，发现 ${s.vulnerable_found} 个漏洞`, 'warning');
+  } catch(e) { log('测试失败', 'error'); }
+}
+
+async function loadTaskflows() {
+  try {
+    const res = await apiCall('/taskflow/list');
+    let html = '';
+    res.data.forEach(f => {
+      html += `<div style="padding:12px;background:#112240;border-radius:6px;cursor:pointer;" onclick="document.getElementById('tf-select').value='${f.id}'">
+        <strong style="color:#00d4ff;">${f.name}</strong><br>
+        <span style="font-size:11px;color:#8899aa;">${f.description}</span><br>
+        <span class="tag tag-medium">${f.task_count} 任务</span>
+      </div>`;
+    });
+    document.getElementById('taskflow-list').innerHTML = html;
+  } catch(e) { log('加载任务流失败', 'error'); }
+}
+
+async function executeTaskflow() {
+  const flow = document.getElementById('tf-select').value;
+  let context = {};
+  try { context = JSON.parse(document.getElementById('tf-context').value); } catch(e) {}
+  log(`执行任务流: ${flow}`);
+  try {
+    const res = await apiCall('/taskflow/execute', 'POST', {flow_name: flow, context});
+    const d = res.data;
+    let html = `<div class="grid grid-4" style="margin-bottom:16px;">
+      <div class="stat-card"><div class="stat-value">${d.total_tasks}</div><div class="stat-label">总任务</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:#00ff88;">${d.success}</div><div class="stat-label">成功</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:#ff4757;">${d.failed}</div><div class="stat-label">失败</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:#8899aa;">${d.skipped}</div><div class="stat-label">跳过</div></div>
+    </div>`;
+    html += '<div class="flow-canvas">';
+    for (const [tid, r] of Object.entries(d.results)) {
+      const cls = r.status === 'success' ? 'success' : (r.status === 'failed' ? 'failed' : 'pending');
+      html += `<div class="flow-node ${cls}">${tid}<br><span style="font-size:10px;">${r.status}</span></div>`;
+    }
+    html += '</div>';
+    document.getElementById('tf-result').innerHTML = html;
+    log(`任务流 ${flow} 执行完成`, 'success');
+  } catch(e) { log('执行失败: ' + e.message, 'error'); }
+}
+
+// 时钟
+setInterval(() => {
+  document.getElementById('clock').textContent = new Date().toLocaleString('zh-CN');
+}, 1000);
+
+// 初始化
+loadOverview();
+</script>
+</body>
+</html>

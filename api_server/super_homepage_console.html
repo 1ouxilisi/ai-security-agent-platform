@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>超级首页 · 安全作战指挥台</title>
+<style>
+:root{
+  --bg:#0d1117; --card:#161b22; --inset:#010409; --border:#30363d;
+  --fg:#e6edf3; --muted:#8b949e; --faint:#6e7681;
+  --accent:#58a6ff; --ok:#3fb950; --warn:#d29922; --bad:#f85149; --info:#39d2c0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg);color:var(--fg);
+  font-family:"Inter","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  font-size:15px;line-height:1.5;
+}
+a{color:var(--accent);text-decoration:none}
+/* ---------- 布局 ---------- */
+.wrap{display:flex;min-height:100vh}
+.sidebar{
+  width:240px;flex:0 0 240px;background:var(--card);
+  border-right:1px solid var(--border);padding:18px 14px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.main{flex:1;min-width:0;padding:26px 30px;max-width:1280px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;margin-bottom:18px}
+.brand .dot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+.quick-label{font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px}
+.qa{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
+  cursor:pointer;color:var(--fg);border:1px solid transparent;font-size:14px;
+}
+.qa:hover{background:var(--inset);border-color:var(--border)}
+.qa .ico{font-size:18px}
+.qa .kb{margin-left:auto;font-size:11px;color:var(--faint);background:var(--inset);padding:2px 6px;border-radius:6px}
+/* ---------- Hero ---------- */
+.hero{
+  background:linear-gradient(135deg,#1f6feb22,#1f6feb05 60%),var(--card);
+  border:1px solid var(--border);border-radius:16px;padding:30px;margin-bottom:22px;
+}
+.hero h1{font-size:clamp(26px,3.4vw,40px);margin-bottom:8px;letter-spacing:-.5px}
+.hero p{color:var(--muted);font-size:16px}
+.hero .cta{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:12px;
+  border:none;cursor:pointer;font-size:15px;font-weight:600;transition:.15s;
+}
+.btn.primary{background:var(--accent);color:#0d1117}
+.btn.primary:hover{background:#79b8ff;transform:translateY(-1px)}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--border)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+/* ---------- 统计 ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;
+  cursor:pointer;transition:.15s;
+}
+.stat:hover{border-color:var(--accent);box-shadow:0 8px 24px rgba(88,166,255,.12)}
+.stat .lab{color:var(--muted);font-size:13px}
+.stat .val{font-size:32px;font-weight:800;margin:6px 0}
+.stat .trend{font-size:12px}
+.stat .trend.up{color:var(--ok)} .stat .trend.down{color:var(--bad)}
+/* ---------- 功能卡片 ---------- */
+.section-title{font-size:18px;font-weight:700;margin:6px 0 14px;display:flex;align-items:center;gap:8px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:20px;cursor:pointer;transition:.18s;position:relative;overflow:hidden;
+}
+.card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(88,166,255,.16);border-color:var(--accent)}
+.card .ico{font-size:34px;margin-bottom:10px}
+.card h3{font-size:19px;margin-bottom:4px}
+.card .sub{color:var(--muted);font-size:13px;margin-bottom:10px}
+.card .desc{color:var(--muted);font-size:13px;min-height:38px}
+.card .hot{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:11px;background:var(--inset);border:1px solid var(--border);padding:3px 8px;border-radius:20px;color:var(--muted)}
+.card .bar{position:absolute;left:0;top:0;height:3px;width:100%}
+/* ---------- 双栏 ---------- */
+.cols{display:grid;grid-template-columns:1.6fr 1fr;gap:18px}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px}
+.panel h2{font-size:15px;margin-bottom:12px;color:var(--accent)}
+.act{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.act:last-child{border-bottom:none}
+.act .a-ico{font-size:18px}
+.act .a-txt{font-size:14px}
+.act .a-time{color:var(--faint);font-size:12px;margin-top:2px}
+/* ---------- 搜索 ---------- */
+.searchbox{position:relative;margin-bottom:22px}
+.searchbox input{
+  width:100%;padding:16px 18px 16px 48px;border-radius:14px;font-size:16px;
+  background:var(--card);border:1px solid var(--border);color:var(--fg);
+}
+.searchbox input:focus{outline:none;border-color:var(--accent)}
+.searchbox .mag{position:absolute;left:16px;top:15px;font-size:18px}
+.drop{
+  position:absolute;top:56px;left:0;right:0;background:var(--card);
+  border:1px solid var(--border);border-radius:12px;z-index:50;max-height:380px;overflow:auto;display:none;
+}
+.drop .cat{padding:8px 16px;font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:1px;background:var(--inset)}
+.drop .it{padding:10px 16px;cursor:pointer;display:flex;gap:10px;align-items:center}
+.drop .it:hover{background:var(--inset)}
+.drop .it .t{font-size:14px}.drop .it .s{color:var(--muted);font-size:12px}
+.drop .none{padding:16px;color:var(--muted)}
+.sev{font-size:10px;padding:2px 8px;border-radius:10px}
+.sev.critical{background:#f8514922;color:var(--bad)}
+.sev.high{background:#d2992222;color:var(--warn)}
+.sev.medium{background:#58a6ff22;color:var(--accent)}
+/* ---------- 引导浮层 ---------- */
+.guide-mask{position:fixed;inset:0;background:rgba(1,4,9,.7);z-index:200;display:none;align-items:center;justify-content:center}
+.guide-mask.show{display:flex}
+.guide-box{background:var(--card);border:1px solid var(--accent);border-radius:16px;padding:26px;width:min(440px,90vw);box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.guide-box .g-badge{display:inline-flex;width:34px;height:34px;border-radius:50%;background:var(--accent);color:#0d1117;font-weight:800;align-items:center;justify-content:center;margin-bottom:12px}
+.guide-box h3{font-size:20px;margin-bottom:8px}
+.guide-box p{color:var(--muted);margin-bottom:6px}
+.guide-box .tip{font-size:12px;color:var(--info);margin-top:10px}
+.guide-box .g-foot{display:flex;justify-content:space-between;align-items:center;margin-top:20px}
+.guide-skip{color:var(--faint);cursor:pointer;font-size:13px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--accent);padding:12px 18px;border-radius:10px;z-index:300;opacity:0;transition:.3s}
+.toast.show{opacity:1}
+/* ---------- 响应式 ---------- */
+@media (max-width:1279px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .cards{grid-template-columns:repeat(2,1fr)}
+  .cols{grid-template-columns:1fr}
+}
+@media (max-width:767px){
+  .wrap{flex-direction:column}
+  .sidebar{position:static;width:100%;height:auto;display:flex;flex-wrap:wrap;gap:6px;border-right:none;border-bottom:1px solid var(--border)}
+  .brand{width:100%}
+  .main{padding:16px}
+  .stats{grid-template-columns:1fr}
+  .cards{grid-template-columns:1fr}
+  .hero{padding:20px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside class="sidebar">
+    <div class="brand"><span class="dot"></span> 安全指挥台</div>
+    <div class="quick-label">⚡ 快速操作</div>
+    <div id="quickList"></div>
+    <div class="quick-label">导航</div>
+    <div id="navMini"></div>
+  </aside>
+
+  <main class="main">
+    <div class="hero" data-guide="home_hero">
+      <h1 id="heroTitle">安全作战指挥台</h1>
+      <p id="heroSub">打开就会用：扫描目标 → 查看结果 → 生成报告</p>
+      <div class="cta">
+        <button class="btn primary" onclick="go('/web-pentest-full')">⚡ 立即扫描目标</button>
+        <button class="btn primary" style="background:#2ea043" onclick="go('/simple-console')">🧊 极简模式（新手推荐）</button>
+        <button class="btn ghost" onclick="replayGuide()">▶ 重新播放新手引导</button>
+      </div>
+    </div>
+
+    <div class="searchbox">
+      <span class="mag">🔎</span>
+      <input id="searchInput" placeholder="搜索功能 / 漏洞 / 报告 / 目标…  (按 Ctrl+K)" autocomplete="off">
+      <div class="drop" id="searchDrop"></div>
+    </div>
+
+    <div class="section-title">📊 快速统计</div>
+    <div class="stats" id="statsGrid"></div>
+
+    <div class="section-title">⚔️ 核心功能</div>
+    <div class="cards" id="cardGrid"></div>
+
+    <div class="cols">
+      <div class="panel">
+        <h2>🕒 最近操作</h2>
+        <div id="activityList"></div>
+      </div>
+      <div class="panel">
+        <h2>🚀 今日概览</h2>
+        <div id="overviewPanel"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- 引导浮层 -->
+<div class="guide-mask" id="guideMask">
+  <div class="guide-box">
+    <div class="g-badge" id="gBadge">1</div>
+    <h3 id="gTitle">第一步</h3>
+    <p id="gContent"></p>
+    <div class="tip" id="gTip"></div>
+    <div class="g-foot">
+      <span class="guide-skip" onclick="skipGuide()">跳过引导</span>
+      <div>
+        <button class="btn ghost" onclick="prevStep()" id="gPrev">上一步</button>
+        <button class="btn primary" onclick="nextStep()" id="gNext">下一步</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/v1/super-homepage';
+const UID = 'demo-user-001';
+let guideSteps = [], guideIdx = 0;
+
+async function jget(url){ const r = await fetch(url); return r.json(); }
+async function jpost(url, body){ const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}); return r.json(); }
+function go(u){ location.href = u; }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
+
+// ---------- 渲染快速操作 ----------
+async function loadQuick(){
+  const d = await jget(API+'/quick-actions');
+  if(!d.success) return;
+  const el = document.getElementById('quickList');
+  el.innerHTML = d.data.map(a=>`<div class="qa" onclick="runQuick('${a.id}')">
+    <span class="ico">${a.icon}</span><span>${a.label}</span><span class="kb">${a.shortcut||''}</span></div>`).join('');
+}
+async function runQuick(id){
+  const d = await jpost(API+'/quick-actions/run',{action_id:id,user_id:UID});
+  if(d.success){ toast('已执行：'+d.data.action.label); setTimeout(()=>go(d.data.action.route),600); }
+}
+
+// ---------- 渲染统计 ----------
+async function loadStats(){
+  const d = await jget(API+'/quick-stats');
+  if(!d.success) return;
+  document.getElementById('statsGrid').innerHTML = d.data.map(s=>`
+    <div class="stat" data-guide="stats_${s.id}" onclick="toast('下钻：${s.label}')">
+      <div class="lab">${s.icon} ${s.label}</div>
+      <div class="val">${(s.value||0).toLocaleString()}<span style="font-size:14px;color:var(--muted)"> ${s.unit}</span></div>
+      <div class="trend ${s.trend.startsWith('+')?'up':'down'}">${s.trend}</div>
+    </div>`).join('');
+}
+
+// ---------- 渲染功能卡片 ----------
+async function loadCards(){
+  const d = await jget(API+'/feature-cards');
+  if(!d.success) return;
+  document.getElementById('cardGrid').innerHTML = d.data.map(c=>`
+    <div class="card" data-guide="feature_${c.id}" onclick="go('${c.route}')">
+      <div class="bar" style="background:${c.accent}"></div>
+      <div class="ico">${c.icon}</div>
+      <h3>${c.title}</h3>
+      <div class="sub">${c.subtitle}</div>
+      <div class="desc">${c.description}</div>
+      <div class="hot">${c.hot_keys.map(k=>`<span class="chip">${k}</span>`).join('')}</div>
+    </div>`).join('');
+}
+
+// ---------- 最近操作 ----------
+async function loadActivity(){
+  const d = await jget(API+'/recent-activity');
+  if(!d.success) return;
+  document.getElementById('activityList').innerHTML = d.data.map(a=>`
+    <div class="act"><span class="a-ico">${a.icon}</span>
+      <div><div class="a-txt">${a.text}</div><div class="a-time">${a.time}</div></div></div>`).join('');
+}
+
+// ---------- 概览 ----------
+async function loadOverview(){
+  const d = await jget(API+'/overview');
+  if(!d.success) return;
+  const o = d.data;
+  document.getElementById('overviewPanel').innerHTML = `
+    <div style="color:var(--muted);font-size:13px;line-height:2">
+      导航分组：<b style="color:var(--fg)">8</b> 组 / <b style="color:var(--fg)">${o.nav_item_count}</b> 个页面<br>
+      搜索索引：<b style="color:var(--fg)">${o.search_stats.index_size}</b> 条<br>
+      引导完成率：<b style="color:var(--ok)">${o.guide_stats.completion_rate}%</b><br>
+      响应式：<b style="color:var(--fg)">${o.responsive.mobile_breakpoint}px 断点</b>
+    </div>`;
+}
+
+// ---------- 全局搜索 ----------
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input', e=>{
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(()=>doSearch(e.target.value), 200);
+});
+async function doSearch(q){
+  const drop = document.getElementById('searchDrop');
+  if(!q.trim()){ drop.style.display='none'; return; }
+  const d = await jget(API+'/search?q='+encodeURIComponent(q));
+  if(!d.success){ return; }
+  const r = d.data.results;
+  let html='';
+  const names={feature:'功能',vuln:'漏洞',report:'报告',target:'目标'};
+  for(const cat in r){
+    html += `<div class="cat">${names[cat]||cat}</div>`;
+    html += r[cat].map(it=>`<div class="it" onclick="go('${it.route}')">
+      <div><div class="t">${it.title} ${it.severity?`<span class="sev ${it.severity}">${it.severity}</span>`:''}</div>
+      <div class="s">${it.subtitle}</div></div></div>`).join('');
+  }
+  drop.innerHTML = html || '<div class="none">无匹配结果</div>';
+  drop.style.display='block';
+}
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.searchbox')) document.getElementById('searchDrop').style.display='none';
+});
+document.addEventListener('keydown', e=>{
+  if((e.ctrlKey||e.metaKey) && e.key==='k'){ e.preventDefault(); document.getElementById('searchInput').focus(); }
+});
+
+// ---------- 智能引导 ----------
+async function loadGuide(){
+  const flow = await jget(API+'/guide/flow');
+  guideSteps = flow.data.steps;
+  const st = await jget(API+'/guide/state?user_id='+UID);
+  const done = localStorage.getItem('shp_guide_completed_v3')==='1';
+  if(!done && st.data.should_autostart){ startGuide(); }
+}
+function startGuide(){ guideIdx=0; showStep(); document.getElementById('guideMask').classList.add('show'); }
+function showStep(){
+  const s = guideSteps[guideIdx];
+  document.getElementById('gBadge').textContent = s.badge;
+  document.getElementById('gTitle').textContent = s.title;
+  document.getElementById('gContent').textContent = s.content;
+  document.getElementById('gTip').textContent = '💡 '+s.tip;
+  document.getElementById('gPrev').style.visibility = guideIdx===0?'hidden':'visible';
+  document.getElementById('gNext').textContent = guideIdx===guideSteps.length-1?'完成':'下一步';
+}
+async function nextStep(){
+  if(guideIdx < guideSteps.length-1){ guideIdx++; showStep(); await jpost(API+'/guide/next',{user_id:UID}); }
+  else { await jpost(API+'/guide/complete',{user_id:UID}); finish(); }
+}
+async function prevStep(){ if(guideIdx>0){ guideIdx--; showStep(); } }
+async function skipGuide(){ await jpost(API+'/guide/skip',{user_id:UID}); finish(); }
+function finish(){ localStorage.setItem('shp_guide_completed_v3','1'); document.getElementById('guideMask').classList.remove('show'); toast('欢迎使用！开始你的第一次扫描吧 🎉'); }
+async function replayGuide(){ localStorage.removeItem('shp_guide_completed_v3'); await jpost(API+'/guide/reset',{user_id:UID}); startGuide(); }
+
+// ---------- 启动 ----------
+(async function init(){
+  await Promise.all([loadQuick(),loadStats(),loadCards(),loadActivity(),loadOverview()]);
+  await loadGuide();
+})();
+</script>
+</body>
+</html>

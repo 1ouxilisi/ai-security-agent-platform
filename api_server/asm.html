@@ -1,0 +1,427 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>攻击面管理 ASM - AI安全平台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px 30px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 22px; color: #f8fafc; }
+        .header h1 span { color: #3b82f6; }
+        .header .status { font-size: 13px; color: #94a3b8; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .scan-panel { background: #1e293b; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #334155; }
+        .scan-panel h2 { font-size: 18px; margin-bottom: 16px; color: #f8fafc; }
+        .input-group { display: flex; gap: 12px; margin-bottom: 16px; }
+        .input-group input { flex: 1; padding: 12px 16px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 14px; }
+        .input-group input:focus { outline: none; border-color: #3b82f6; }
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-primary:disabled { background: #475569; cursor: not-allowed; }
+        .btn-secondary { background: #334155; color: #e2e8f0; }
+        .btn-secondary:hover { background: #475569; }
+        .options { display: flex; gap: 20px; flex-wrap: wrap; }
+        .option-group { display: flex; align-items: center; gap: 8px; }
+        .option-group label { font-size: 13px; color: #94a3b8; }
+        .option-group select { padding: 8px 12px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; font-size: 13px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: #1e293b; border-radius: 10px; padding: 20px; border: 1px solid #334155; }
+        .stat-card .label { font-size: 13px; color: #94a3b8; margin-bottom: 8px; }
+        .stat-card .value { font-size: 28px; font-weight: 700; }
+        .stat-card.critical .value { color: #ef4444; }
+        .stat-card.high .value { color: #f97316; }
+        .stat-card.medium .value { color: #eab308; }
+        .stat-card.low .value { color: #22c55e; }
+        .stat-card.info .value { color: #3b82f6; }
+        .section { background: #1e293b; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #334155; }
+        .section h2 { font-size: 18px; margin-bottom: 16px; color: #f8fafc; display: flex; align-items: center; gap: 10px; }
+        .section h2 .badge { font-size: 11px; padding: 4px 10px; border-radius: 20px; background: #3b82f6; color: white; }
+        .risk-list { list-style: none; }
+        .risk-item { padding: 14px 16px; background: #0f172a; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #334155; }
+        .risk-item.critical { border-left-color: #ef4444; }
+        .risk-item.high { border-left-color: #f97316; }
+        .risk-item.medium { border-left-color: #eab308; }
+        .risk-item.low { border-left-color: #22c55e; }
+        .risk-item .risk-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .risk-item .risk-title { font-size: 14px; font-weight: 600; color: #f8fafc; }
+        .risk-item .risk-severity { font-size: 11px; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
+        .risk-item.critical .risk-severity { background: #ef4444; color: white; }
+        .risk-item.high .risk-severity { background: #f97316; color: white; }
+        .risk-item.medium .risk-severity { background: #eab308; color: #1e293b; }
+        .risk-item.low .risk-severity { background: #22c55e; color: white; }
+        .risk-item .risk-desc { font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
+        .risk-item .risk-meta { font-size: 12px; color: #64748b; display: flex; gap: 16px; }
+        .risk-item .risk-recommendation { font-size: 12px; color: #3b82f6; margin-top: 6px; }
+        .attack-chain { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 10px; }
+        .chain-node { min-width: 140px; padding: 14px; background: #0f172a; border-radius: 8px; border: 1px solid #334155; text-align: center; position: relative; }
+        .chain-node.active { border-color: #3b82f6; background: #1e3a5f; }
+        .chain-node .node-id { font-size: 10px; color: #64748b; margin-bottom: 4px; }
+        .chain-node .node-name { font-size: 13px; font-weight: 600; color: #f8fafc; margin-bottom: 4px; }
+        .chain-node .node-count { font-size: 11px; color: #94a3b8; }
+        .chain-node::after { content: "→"; position: absolute; right: -14px; top: 50%; transform: translateY(-50%); color: #475569; font-size: 16px; }
+        .chain-node:last-child::after { display: none; }
+        .loading { text-align: center; padding: 40px; color: #94a3b8; }
+        .loading .spinner { width: 40px; height: 40px; border: 3px solid #334155; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .progress-bar { height: 6px; background: #33455e; border-radius: 3px; overflow: hidden; margin: 16px 0; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 3px; transition: width 0.3s; }
+        .phase-status { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+        .phase-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #94a3b8; }
+        .phase-item.done { color: #22c55e; }
+        .phase-item.running { color: #3b82f6; }
+        .phase-item .dot { width: 8px; height: 8px; border-radius: 50%; background: #475569; }
+        .phase-item.done .dot { background: #22c55e; }
+        .phase-item.running .dot { background: #3b82f6; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .empty-state { text-align: center; padding: 60px 20px; color: #64748b; }
+        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+        .tab-bar { display: flex; gap: 4px; margin-bottom: 20px; background: #0f172a; padding: 4px; border-radius: 8px; }
+        .tab { padding: 10px 20px; border: none; background: transparent; color: #94a3b8; font-size: 14px; cursor: pointer; border-radius: 6px; transition: all 0.2s; }
+        .tab.active { background: #3b82f6; color: white; }
+        .tab:hover:not(.active) { background: #1e293b; color: #e2e8f0; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .heatmap-table { width: 100%; border-collapse: collapse; }
+        .heatmap-table th, .heatmap-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #334155; font-size: 13px; }
+        .heatmap-table th { color: #94a3b8; font-weight: 600; background: #0f172a; }
+        .heatmap-table td { color: #e2e8f0; }
+        .risk-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .risk-badge.critical { background: #ef4444; color: white; }
+        .risk-badge.high { background: #f97316; color: white; }
+        .risk-badge.medium { background: #eab308; color: #1e293b; }
+        .risk-badge.low { background: #22c55e; color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛡️ 攻击面管理 <span>ASM</span></h1>
+        <div class="status">资产发现 → 暴露面评估 → 攻击路径分析 → 风险优先级排序</div>
+    </div>
+
+    <div class="container">
+        <!-- 扫描面板 -->
+        <div class="scan-panel">
+            <h2>🎯 新建攻击面评估</h2>
+            <div class="input-group">
+                <input type="text" id="targetInput" placeholder="输入目标：域名 / IP / IP段 / URL（例如：example.com 或 192.168.1.0/24）">
+                <button class="btn btn-primary" id="fullScanBtn" onclick="runFullAssessment()">完整评估</button>
+                <button class="btn btn-secondary" id="quickScanBtn" onclick="runQuickScan()">快速扫描</button>
+            </div>
+            <div class="options">
+                <div class="option-group">
+                    <label>端口范围：</label>
+                    <select id="portRange">
+                        <option value="top100">Top 100</option>
+                        <option value="top1000">Top 1000</option>
+                        <option value="1-1000">1-1000</option>
+                        <option value="1-65535">全端口</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label>超时(秒)：</label>
+                    <select id="timeout">
+                        <option value="3">3</option>
+                        <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label>线程数：</label>
+                    <select id="threads">
+                        <option value="20">20</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 扫描进度 -->
+        <div id="scanProgress" style="display:none;" class="section">
+            <h2>⏳ 扫描进行中...</h2>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width: 0%"></div></div>
+            <div class="phase-status" id="phaseStatus">
+                <div class="phase-item running"><span class="dot"></span>资产发现</div>
+                <div class="phase-item"><span class="dot"></span>暴露面评估</div>
+                <div class="phase-item"><span class="dot"></span>攻击路径分析</div>
+                <div class="phase-item"><span class="dot"></span>风险优先级排序</div>
+            </div>
+        </div>
+
+        <!-- 结果区域 -->
+        <div id="resultsArea" style="display:none;">
+            <!-- 统计卡片 -->
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <!-- 标签页 -->
+            <div class="section">
+                <div class="tab-bar">
+                    <button class="tab active" onclick="switchTab('risks')">⚠️ 风险清单</button>
+                    <button class="tab" onclick="switchTab('assets')">📊 资产发现</button>
+                    <button class="tab" onclick="switchTab('attack')">🔗 攻击路径</button>
+                    <button class="tab" onclick="switchTab('heatmap')">🔥 暴露面热力图</button>
+                    <button class="tab" onclick="switchTab('remediation')">✅ 修复计划</button>
+                </div>
+
+                <!-- 风险清单 -->
+                <div id="tab-risks" class="tab-content active">
+                    <ul class="risk-list" id="riskList"></ul>
+                </div>
+
+                <!-- 资产发现 -->
+                <div id="tab-assets" class="tab-content">
+                    <div id="assetsContent"></div>
+                </div>
+
+                <!-- 攻击路径 -->
+                <div id="tab-attack" class="tab-content">
+                    <h3 style="margin-bottom:16px;color:#f8fafc;">MITRE ATT&CK 攻击链</h3>
+                    <div class="attack-chain" id="attackChain"></div>
+                    <div id="attackPathsContent" style="margin-top:20px;"></div>
+                </div>
+
+                <!-- 热力图 -->
+                <div id="tab-heatmap" class="tab-content">
+                    <table class="heatmap-table" id="heatmapTable">
+                        <thead><tr><th>IP地址</th><th>开放端口数</th><th>高危端口数</th><th>风险密度</th><th>风险等级</th></tr></thead>
+                        <tbody id="heatmapBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- 修复计划 -->
+                <div id="tab-remediation" class="tab-content">
+                    <div id="remediationContent"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 空状态 -->
+        <div id="emptyState" class="section">
+            <div class="empty-state">
+                <div class="icon">🔍</div>
+                <h3 style="margin-bottom:8px;">开始你的第一次攻击面评估</h3>
+                <p>输入目标域名或IP，系统将自动完成：资产发现 → 暴露面评估 → 攻击路径分析 → 风险优先级排序</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000';
+        const API_KEY = 'cF_fK3wzzFd3sDU-WykQzDbAKNhn_Jjoyphbmh-adLtwx5ShhU8oLpt94aV_uECT';
+        let currentReport = null;
+
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            const headers = { 'X-API-Key': API_KEY };
+            if (body) headers['Content-Type'] = 'application/json';
+            const res = await fetch(`${API_BASE}${endpoint}`, {
+                method,
+                headers,
+                body: body ? JSON.stringify(body) : undefined
+            });
+            return res.json();
+        }
+
+        async function runFullAssessment() {
+            const target = document.getElementById('targetInput').value.trim();
+            if (!target) { alert('请输入目标'); return; }
+
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('scanProgress').style.display = 'block';
+            document.getElementById('fullScanBtn').disabled = true;
+            document.getElementById('quickScanBtn').disabled = true;
+
+            // 模拟进度
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress = Math.min(progress + Math.random() * 15, 95);
+                document.getElementById('progressFill').style.width = progress + '%';
+            }, 500);
+
+            try {
+                const options = {
+                    ports: document.getElementById('portRange').value,
+                    timeout: parseInt(document.getElementById('timeout').value),
+                    max_threads: parseInt(document.getElementById('threads').value)
+                };
+
+                const result = await apiCall('/api/v1/asm/full-assessment', 'POST', {
+                    target, options
+                });
+
+                clearInterval(progressInterval);
+                document.getElementById('progressFill').style.width = '100%';
+
+                if (result.status === 'success') {
+                    currentReport = result.report;
+                    setTimeout(() => {
+                        document.getElementById('scanProgress').style.display = 'none';
+                        document.getElementById('resultsArea').style.display = 'block';
+                        renderResults(result.report);
+                    }, 500);
+                } else {
+                    alert('评估失败: ' + (result.detail || '未知错误'));
+                    document.getElementById('scanProgress').style.display = 'none';
+                    document.getElementById('emptyState').style.display = 'block';
+                }
+            } catch (e) {
+                clearInterval(progressInterval);
+                alert('请求失败: ' + e.message);
+                document.getElementById('scanProgress').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
+            }
+
+            document.getElementById('fullScanBtn').disabled = false;
+            document.getElementById('quickScanBtn').disabled = false;
+        }
+
+        async function runQuickScan() {
+            const target = document.getElementById('targetInput').value.trim();
+            if (!target) { alert('请输入目标'); return; }
+
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('fullScanBtn').disabled = true;
+            document.getElementById('quickScanBtn').disabled = true;
+
+            try {
+                const result = await apiCall('/api/v1/asm/quick-scan', 'POST', { target });
+                if (result.status === 'success') {
+                    alert(`快速扫描完成！\n发现 ${result.result.assets.total_ips} 个IP，${result.result.assets.total_open_ports} 个开放端口\n风险等级: ${result.result.overall_risk.level}`);
+                }
+            } catch (e) {
+                alert('扫描失败: ' + e.message);
+            }
+
+            document.getElementById('fullScanBtn').disabled = false;
+            document.getElementById('quickScanBtn').disabled = false;
+        }
+
+        function renderResults(report) {
+            // 统计卡片
+            const assessment = report.phase2_exposure_assessment;
+            const dist = assessment.risk_distribution;
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="stat-card critical"><div class="label">严重风险</div><div class="value">${dist.critical}</div></div>
+                <div class="stat-card high"><div class="label">高危风险</div><div class="value">${dist.high}</div></div>
+                <div class="stat-card medium"><div class="label">中危风险</div><div class="value">${dist.medium}</div></div>
+                <div class="stat-card low"><div class="label">低危风险</div><div class="value">${dist.low}</div></div>
+                <div class="stat-card info"><div class="label">发现资产</div><div class="value">${report.phase1_asset_discovery.summary.total_ips}</div></div>
+                <div class="stat-card info"><div class="label">开放端口</div><div class="value">${report.phase1_asset_discovery.summary.total_open_ports}</div></div>
+            `;
+
+            // 风险清单
+            const risks = report.phase4_risk_prioritization.prioritized_risks;
+            document.getElementById('riskList').innerHTML = risks.slice(0, 30).map(r => `
+                <li class="risk-item ${r.finding.severity}">
+                    <div class="risk-header">
+                        <span class="risk-title">${r.finding.title}</span>
+                        <span class="risk-severity">${r.priority_level} (${r.priority_score}分)</span>
+                    </div>
+                    <div class="risk-desc">${r.finding.description}</div>
+                    <div class="risk-meta">
+                        <span>资产: ${r.finding.asset || 'N/A'}</span>
+                        <span>端口: ${r.finding.port || 'N/A'}</span>
+                        <span>SLA: ${r.sla}</span>
+                    </div>
+                    <div class="risk-recommendation">💡 ${r.finding.recommendation}</div>
+                </li>
+            `).join('');
+
+            // 资产发现
+            const assets = report.phase1_asset_discovery.assets;
+            document.getElementById('assetsContent').innerHTML = `
+                <h3 style="margin-bottom:12px;color:#f8fafc;">资产摘要</h3>
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="label">IP地址</div><div class="value">${assets.ip_addresses.length}</div></div>
+                    <div class="stat-card"><div class="label">子域名</div><div class="value">${assets.subdomains.length}</div></div>
+                    <div class="stat-card"><div class="label">开放端口</div><div class="value">${assets.open_ports.length}</div></div>
+                    <div class="stat-card"><div class="label">服务</div><div class="value">${assets.services.length}</div></div>
+                    <div class="stat-card"><div class="label">DNS记录</div><div class="value">${assets.dns_records.length}</div></div>
+                    <div class="stat-card"><div class="label">证书</div><div class="value">${assets.certificates.length}</div></div>
+                </div>
+                <h3 style="margin:20px 0 12px;color:#f8fafc;">IP资产列表</h3>
+                <table class="heatmap-table">
+                    <thead><tr><th>IP</th><th>关联域名</th><th>来源</th></tr></thead>
+                    <tbody>${assets.ip_addresses.slice(0, 20).map(a => `<tr><td>${a.ip}</td><td>${a.domain || 'N/A'}</td><td>${a.source}</td></tr>`).join('')}</tbody>
+                </table>
+            `;
+
+            // 攻击链
+            const chain = report.phase3_attack_path_analysis.attack_chain;
+            document.getElementById('attackChain').innerHTML = chain.map(node => `
+                <div class="chain-node ${node.possible ? 'active' : ''}">
+                    <div class="node-id">${node.tactic_id}</div>
+                    <div class="node-name">${node.tactic_name}</div>
+                    <div class="node-count">${node.related_findings.length > 0 ? node.related_findings.length + '个发现' : '无相关'}</div>
+                </div>
+            `).join('');
+
+            // 攻击路径
+            const paths = report.phase3_attack_path_analysis.attack_paths;
+            document.getElementById('attackPathsContent').innerHTML = `
+                <h3 style="margin-bottom:12px;color:#f8fafc;">可能的攻击路径 (${paths.length}条)</h3>
+                ${paths.map((p, i) => `
+                    <div class="risk-item ${p.impact}" style="margin-bottom:12px;">
+                        <div class="risk-header">
+                            <span class="risk-title">路径${i+1}: ${p.name}</span>
+                            <span class="risk-severity">概率: ${p.probability} / 影响: ${p.impact}</span>
+                        </div>
+                        <div style="margin-top:8px;">
+                            ${p.steps.map(s => `<span style="display:inline-block;padding:4px 10px;background:#0f172a;border-radius:4px;margin:2px;font-size:12px;color:#94a3b8;">${s.phase}: ${s.action}</span>`).join(' → ')}
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+
+            // 热力图
+            const heatmap = assessment.heatmap.data;
+            document.getElementById('heatmapBody').innerHTML = heatmap.map(h => `
+                <tr>
+                    <td>${h.ip}</td>
+                    <td>${h.port_count}</td>
+                    <td style="color:${h.high_risk_port_count > 0 ? '#ef4444' : '#22c55e'};">${h.high_risk_port_count}</td>
+                    <td>${h.risk_density}%</td>
+                    <td><span class="risk-badge ${h.high_risk_port_count > 2 ? 'critical' : h.high_risk_port_count > 0 ? 'high' : 'low'}">${h.high_risk_port_count > 2 ? '严重' : h.high_risk_port_count > 0 ? '高危' : '低危'}</span></td>
+                </tr>
+            `).join('');
+
+            // 修复计划
+            const plan = report.phase4_risk_prioritization.remediation_plan;
+            document.getElementById('remediationContent').innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card critical"><div class="label">P0 紧急 (24h)</div><div class="value">${plan.summary.P0}</div></div>
+                    <div class="stat-card high"><div class="label">P1 高 (7天)</div><div class="value">${plan.summary.P1}</div></div>
+                    <div class="stat-card medium"><div class="label">P2 中 (30天)</div><div class="value">${plan.summary.P2}</div></div>
+                    <div class="stat-card low"><div class="label">P3 低 (90天)</div><div class="value">${plan.summary.P3}</div></div>
+                </div>
+                <h3 style="margin:20px 0 12px;color:#f8fafc;">预计修复工作量: ${plan.total_effort_estimate}</h3>
+                ${['P0', 'P1', 'P2'].map(level => plan.plan[level].length > 0 ? `
+                    <h4 style="margin:16px 0 8px;color:#f8fafc;">${level}级修复项</h4>
+                    ${plan.plan[level].map(item => `
+                        <div class="risk-item ${level === 'P0' ? 'critical' : level === 'P1' ? 'high' : 'medium'}" style="margin-bottom:8px;">
+                            <div class="risk-title">${item.title}</div>
+                            <div class="risk-desc">资产: ${item.asset} | 优先级分: ${item.priority_score} | SLA: ${item.sla}</div>
+                            <div class="risk-recommendation">💡 ${item.recommendation}</div>
+                        </div>
+                    `).join('')}
+                ` : '').join('')}
+            `;
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
+        // 回车触发扫描
+        document.getElementById('targetInput').addEventListener('keypress', e => {
+            if (e.key === 'Enter') runFullAssessment();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具一键安装中心</title>
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--ok:#3fb950;--warn:#d29922;--err:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI",Microsoft YaHei,sans-serif;padding:16px;font-size:14px}
+h1{font-size:22px;margin-bottom:4px}
+h2{font-size:16px;margin:18px 0 10px;color:var(--accent)}
+.sub{color:var(--muted);margin-bottom:16px;font-size:13px}
+.notice{background:#1f6feb22;border:1px solid #1f6feb66;padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px}
+.stat .n{font-size:24px;font-weight:700}
+.stat .l{color:var(--muted);font-size:12px;margin-top:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px}
+.card .name{font-weight:600;font-size:15px}
+.card .desc{color:var(--muted);font-size:12px;margin:4px 0}
+.card .meta{font-size:12px;color:var(--muted);margin-top:6px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.b-ok{background:#3fb95022;color:var(--ok)}
+.b-no{background:#f8514922;color:var(--err)}
+.b-br{background:#d2992222;color:var(--warn)}
+.btn{background:var(--accent);color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-right:6px;margin-top:6px}
+.btn:hover{opacity:.9}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-danger{background:var(--err)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+input,select{background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px}
+.log{background:#010409;border:1px solid var(--border);border-radius:6px;padding:10px;height:220px;overflow:auto;font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap}
+.log .err{color:var(--err)} .log .ok{color:var(--ok)} .log .warn{color:var(--warn)}
+.progress{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:8px}
+.progress>div{height:100%;background:var(--ok);transition:width .3s}
+details{margin-top:8px} summary{cursor:pointer;color:var(--accent)}
+a{color:var(--accent)}
+.pm{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.pm .card{flex:1;min-width:160px}
+.tag{font-size:11px;background:#30363d;padding:1px 6px;border-radius:4px;margin-right:4px}
+</style>
+</head>
+<body>
+<h1>🛠 工具一键安装中心</h1>
+<div class="sub">真实 subprocess 安装 · 自动检测版本 · 失败重试 3 次 · 每工具 300s 超时</div>
+<div class="notice">⚠ 仅限授权环境：所有工具仅用于授权安全测试 / 教学 / 演示。未安装包管理器时会给出明确安装指引，不 mock。</div>
+
+<div class="stats" id="stats"></div>
+<h2>📦 包管理器</h2>
+<div class="pm" id="pm"></div>
+
+<div class="toolbar">
+  <button class="btn" onclick="loadDashboard()">刷新</button>
+  <button class="btn" onclick="installAll()">批量安装所有未安装</button>
+  <input id="q" placeholder="搜索工具..." oninput="searchTools()">
+  <select id="catFilter" onchange="loadTools()"><option value="">全部分类</option></select>
+  <button class="btn btn-ghost" onclick="loadLibs()">Python 库</button>
+  <button class="btn btn-ghost" onclick="loadImages()">Docker 镜像</button>
+</div>
+
+<h2>🔍 原生工具</h2>
+<div class="grid" id="tools"></div>
+
+<h2>📜 安装日志</h2>
+<div class="toolbar">
+  <select id="taskSel" onchange="loadTaskLog()"><option value="">选择任务</option></select>
+  <button class="btn btn-ghost" onclick="refreshLog()">刷新日志</button>
+</div>
+<div class="log" id="log">等待任务...</div>
+
+<script>
+const API='/api/v1/tools-installer';
+let currentTab='native';
+
+async function jget(u){const r=await fetch(API+u);return r.json();}
+async function jpost(u,b){const r=await fetch(API+u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});return r.json();}
+
+function badge(s){
+  if(s==='installed')return '<span class="badge b-ok">已安装</span>';
+  if(s==='broken')return '<span class="badge b-br">损坏</span>';
+  return '<span class="badge b-no">未安装</span>';
+}
+
+async function loadDashboard(){
+  const d=await jget('/dashboard');
+  const s=d.data;
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><div class="n">${s.native.installed}/${s.native.total}</div><div class="l">原生工具</div></div>
+    <div class="stat"><div class="n">${s.python_libs.installed}/${s.python_libs.total}</div><div class="l">Python 库</div></div>
+    <div class="stat"><div class="n">${s.docker_images.installed}/${s.docker_images.total}</div><div class="l">Docker 镜像</div></div>
+    <div class="stat"><div class="n">${s.pm_ready.length}</div><div class="l">包管理器就绪</div></div>`;
+  const pmEl=document.getElementById('pm');
+  pmEl.innerHTML='';
+  for(const[k,v]of Object.entries(s.package_managers)){
+    if(k==='platform')continue;
+    const ok=v.available;
+    pmEl.innerHTML+=`<div class="card"><div class="name">${k} ${ok?'<span class="badge b-ok">就绪</span>':'<span class="badge b-no">缺失</span>'}</div>
+      <div class="desc">${v.version||'-'}</div>
+      ${ok?'':`<div class="meta">安装: <a href="${v.install_url}" target="_blank">${v.install_url}</a></div>`}</div>`;
+  }
+  const sel=document.getElementById('catFilter');
+  sel.innerHTML='<option value="">全部分类</option>';
+  for(const[k,v]of Object.entries(s.category_labels||{})){
+    sel.innerHTML+=`<option value="${k}">${v}</option>`;
+  }
+  loadTools();
+}
+
+async function loadTools(){
+  const cat=document.getElementById('catFilter').value;
+  const d=await jget('/tools'+(cat?`?category=${cat}`:''));
+  const el=document.getElementById('tools');
+  el.innerHTML='';
+  for(const t of d.data.items){
+    el.innerHTML+=`<div class="card">
+      <div class="name">${t.display} ${badge(t.status)}</div>
+      <div class="desc">${t.description||''}</div>
+      <div class="meta">版本: ${t.version||'未知'} · 分类: ${t.category}</div>
+      <div class="meta">命令: <code style="font-size:11px">${(t.install&&t.install.cmd)||''}</code></div>
+      <button class="btn" onclick="install('${t.name}')">安装</button>
+      <button class="btn btn-ghost" onclick="upgrade('${t.name}')">升级</button>
+      <button class="btn btn-danger" onclick="uninstall('${t.name}')">卸载</button>
+      <button class="btn btn-ghost" onclick="fix('${t.name}')">修复</button>
+      ${t.missing_deps&&t.missing_deps.length?`<div class="meta" style="color:var(--warn)">缺失依赖: ${t.missing_deps.join(',')}</div>`:''}
+    </div>`;
+  }
+}
+
+async function loadLibs(){
+  const d=await jget('/libs');
+  const el=document.getElementById('tools');el.innerHTML='';
+  for(const t of d.data.items){
+    el.innerHTML+=`<div class="card"><div class="name">${t.display} ${badge(t.status)}</div>
+      <div class="desc">${t.description||''}</div>
+      <div class="meta">版本: ${t.version||'未知'}</div>
+      <button class="btn" onclick="install('${t.name}')">pip 安装</button></div>`;
+  }
+}
+async function loadImages(){
+  const d=await jget('/images');
+  const el=document.getElementById('tools');el.innerHTML='';
+  for(const t of d.data.items){
+    el.innerHTML+=`<div class="card"><div class="name">${t.display} ${badge(t.status)}</div>
+      <div class="desc">${t.description||''}</div>
+      <div class="meta">${(t.install&&t.install.cmd)||''}</div>
+      <button class="btn" onclick="install('${t.name}')">docker pull</button></div>`;
+  }
+}
+
+async function install(name){await jpost('/install',{tool:name});refreshTasks();}
+async function upgrade(name){await jpost('/upgrade/'+name);refreshTasks();}
+async function uninstall(name){if(confirm(`确定卸载 ${name}?`))await jpost('/uninstall/'+name);}
+async function fix(name){await jpost('/fix/'+name);}
+async function installAll(){await jpost('/install-all',{run_async:true});refreshTasks();}
+
+async function searchTools(){
+  const q=document.getElementById('q').value.trim();
+  if(!q){loadTools();return;}
+  const d=await jget('/search?q='+encodeURIComponent(q));
+  const el=document.getElementById('tools');el.innerHTML='';
+  for(const t of d.data.results){
+    el.innerHTML+=`<div class="card"><div class="name">${t.display}</div>
+      <div class="desc">${t.description}</div>
+      <button class="btn" onclick="install('${t.name}')">安装</button></div>`;
+  }
+}
+
+async function refreshTasks(){
+  const d=await jget('/tasks?limit=20');
+  const sel=document.getElementById('taskSel');
+  sel.innerHTML='<option value="">选择任务</option>';
+  for(const t of d.data){
+    sel.innerHTML+=`<option value="${t.task_id}">[${t.status}] ${t.tool}</option>`;
+  }
+}
+async function loadTaskLog(){
+  const tid=document.getElementById('taskSel').value;
+  if(!tid)return;
+  const d=await jget('/tasks/'+tid+'/logs?tail=300');
+  const el=document.getElementById('log');
+  el.innerHTML=(d.data.logs||[]).map(l=>{
+    if(/error|fail/i.test(l))return `<span class="err">${esc(l)}</span>`;
+    if(/ok|success/i.test(l))return `<span class="ok">${esc(l)}</span>`;
+    if(/warn/i.test(l))return `<span class="warn">${esc(l)}</span>`;
+    return esc(l);
+  }).join('\n');
+  el.scrollTop=el.scrollHeight;
+}
+function refreshLog(){loadTaskLog();}
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+loadDashboard();
+refreshTasks();
+setInterval(()=>{const t=document.getElementById('taskSel').value;if(t)loadTaskLog();},3000);
+</script>
+</body>
+</html>

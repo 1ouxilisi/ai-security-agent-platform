@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全大模型与AI Agent深度平台</title>
+<style>
+:root{
+  --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --border:#30363d;
+  --blue:#58a6ff; --green:#3fb950; --red:#f85149; --yellow:#d29922;
+  --purple:#bc8cff; --text:#c9d1d9; --text2:#8b949e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",sans-serif;font-size:14px;line-height:1.6}
+a{color:var(--blue);text-decoration:none}
+.header{background:linear-gradient(135deg,#0d1117,#161b22);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header h1{font-size:20px;color:#fff}
+.header h1 span{color:var(--blue)}
+.header .version{background:var(--bg3);padding:4px 12px;border-radius:12px;font-size:12px;color:var(--text2)}
+.tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto;padding:0 12px;flex-wrap:nowrap}
+.tab{padding:12px 18px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;white-space:nowrap;font-size:13px;transition:all .2s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.main{padding:20px;max-width:1400px;margin:0 auto}
+.panel{display:none}
+.panel.active{display:block}
+.grid{display:grid;gap:16px;margin-bottom:20px}
+.grid-4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(360px,1fr))}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card h3{font-size:14px;color:var(--text2);margin-bottom:8px;font-weight:600}
+.card .value{font-size:28px;color:#fff;font-weight:700}
+.card .sub{font-size:12px;color:var(--text2);margin-top:4px}
+.card.blue{border-left:3px solid var(--blue)}
+.card.green{border-left:3px solid var(--green)}
+.card.red{border-left:3px solid var(--red)}
+.card.yellow{border-left:3px solid var(--yellow)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--text2);font-weight:600;background:var(--bg3)}
+tr:hover td{background:var(--bg3)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge.green{background:rgba(63,185,80,.15);color:var(--green)}
+.badge.red{background:rgba(248,81,73,.15);color:var(--red)}
+.badge.yellow{background:rgba(210,153,34,.15);color:var(--yellow)}
+.badge.blue{background:rgba(88,166,255,.15);color:var(--blue)}
+button{background:var(--blue);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;transition:opacity .2s}
+button:hover{opacity:.85}
+button.secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+button.danger{background:var(--red)}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--border);padding:8px 10px;border-radius:6px;font-size:13px;width:100%;font-family:inherit}
+textarea{min-height:80px;resize:vertical}
+label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px}
+.form-group{margin-bottom:12px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>*{flex:1;min-width:150px}
+pre{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;overflow:auto;max-height:400px;font-size:12px;color:var(--green)}
+.muted{color:var(--text2);font-size:12px}
+.alert{padding:10px 14px;border-radius:6px;margin-bottom:10px;font-size:13px}
+.alert.success{background:rgba(63,185,80,.1);border:1px solid var(--green);color:var(--green)}
+.alert.warning{background:rgba(210,153,34,.1);border:1px solid var(--yellow);color:var(--yellow)}
+.alert.info{background:rgba(88,166,255,.1);border:1px solid var(--blue);color:var(--blue)}
+.loading{text-align:center;padding:20px;color:var(--text2)}
+.section-title{font-size:16px;color:#fff;margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.chat-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;height:360px;overflow-y:auto;margin-bottom:12px}
+.chat-msg{margin-bottom:10px;padding:8px 12px;border-radius:6px;max-width:90%}
+.chat-msg.user{background:rgba(88,166,255,.1);margin-left:auto}
+.chat-msg.assistant{background:var(--bg3)}
+.chat-msg .role{font-size:11px;color:var(--text2);margin-bottom:4px}
+@media(max-width:768px){
+  .main{padding:12px}
+  .header{padding:12px}
+  .header h1{font-size:16px}
+  .grid-4{grid-template-columns:repeat(2,1fr)}
+  .row{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🛡 安全大模型与<span>AI Agent</span>深度平台</h1>
+  <div>
+    <span class="version">v26.1.0 · 第26轮升级方向1</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-panel="overview">📊 大模型总览</div>
+  <div class="tab" data-panel="models">🧠 模型管理</div>
+  <div class="tab" data-panel="agents">🤖 Agent管理</div>
+  <div class="tab" data-panel="code">💻 代码生成</div>
+  <div class="tab" data-panel="qa">💬 问答系统</div>
+  <div class="tab" data-panel="report">📄 报告生成</div>
+  <div class="tab" data-panel="settings">⚙️ 系统设置</div>
+</div>
+
+<div class="main">
+
+<!-- ========== 总览 ========== -->
+<div class="panel active" id="panel-overview">
+  <div class="section-title">平台总览</div>
+  <div class="grid grid-4" id="kpi-cards">
+    <div class="card blue"><h3>已加载模型</h3><div class="value" id="kpi-models">-</div><div class="sub">当前激活：<span id="kpi-current">-</span></div></div>
+    <div class="card green"><h3>注册Agent</h3><div class="value" id="kpi-agents">-</div><div class="sub">已完成任务：<span id="kpi-tasks">-</span></div></div>
+    <div class="card yellow"><h3>问答会话</h3><div class="value" id="kpi-qa">-</div><div class="sub">问题总数：<span id="kpi-qc">-</span></div></div>
+    <div class="card red"><h3>生成报告</h3><div class="value" id="kpi-reports">-</div><div class="sub">知识库文档：<span id="kpi-kb">-</span></div></div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>健康指标</h3>
+      <div id="health-metrics"><div class="loading">加载中...</div></div>
+    </div>
+    <div class="card">
+      <h3>平台告警</h3>
+      <div id="alert-list"><div class="loading">加载中...</div></div>
+    </div>
+  </div>
+
+  <div class="section-title">模块健康</div>
+  <div class="card">
+    <table id="module-health-table"><thead><tr><th>模块</th><th>状态</th><th>延迟</th></tr></thead><tbody><tr class="loading"><td colspan="3">加载中...</td></tr></tbody></table>
+  </div>
+</div>
+
+<!-- ========== 模型管理 ========== -->
+<div class="panel" id="panel-models">
+  <div class="section-title">模型管理</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>对话推理测试</h3>
+      <div class="chat-box" id="chat-box"></div>
+      <div class="row">
+        <div style="flex:1"><input id="chat-input" placeholder="输入安全问题，如：什么是SQL注入？如何防御？"></div>
+        <button onclick="sendChat()">发送</button>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <h3>模型列表</h3>
+        <table id="models-table"><thead><tr><th>名称</th><th>类型</th><th>状态</th><th>操作</th></tr></thead><tbody><tr class="loading"><td colspan="4">加载中...</td></tr></tbody></table>
+      </div>
+      <div class="card">
+        <h3>知识库检索</h3>
+        <div class="form-group"><input id="kb-query" placeholder="输入关键词，如：XSS、SQL注入、等保"></div>
+        <button class="secondary" onclick="kbSearch()">检索</button>
+        <div id="kb-results" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">模型评测</div>
+  <div class="card">
+    <div class="row">
+      <div><label>模型ID</label><input id="eval-model" placeholder="sec-llm-7b"></div>
+      <div><label>基准</label><input id="eval-bench" value="sec-bench-v1"></div>
+      <div style="display:flex;align-items:flex-end"><button onclick="runEval()">运行评测</button></div>
+    </div>
+    <div id="eval-results" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- ========== Agent管理 ========== -->
+<div class="panel" id="panel-agents">
+  <div class="section-title">Agent 列表</div>
+  <div class="card">
+    <table id="agents-table"><thead><tr><th>名称</th><th>角色</th><th>工具</th><th>状态</th></tr></thead><tbody><tr class="loading"><td colspan="4">加载中...</td></tr></tbody></table>
+  </div>
+
+  <div class="section-title">任务执行</div>
+  <div class="card">
+    <div class="row">
+      <div><label>任务目标</label><input id="task-goal" value="对目标进行漏洞扫描并生成报告"></div>
+      <div><label>目标</label><input id="task-target" value="demo.example.com"></div>
+      <div style="display:flex;align-items:flex-end"><button onclick="runTask()">执行任务</button></div>
+    </div>
+    <div id="task-result" style="margin-top:12px"></div>
+  </div>
+
+  <div class="section-title">历史任务</div>
+  <div class="card">
+    <table id="tasks-table"><thead><tr><th>ID</th><th>目标</th><th>步骤数</th><th>状态</th></tr></thead><tbody><tr class="loading"><td colspan="4">加载中...</td></tr></tbody></table>
+  </div>
+</div>
+
+<!-- ========== 代码生成 ========== -->
+<div class="panel" id="panel-code">
+  <div class="section-title">安全代码生成</div>
+  <div class="card">
+    <div class="row">
+      <div><label>需求描述</label><input id="code-req" value="实现用户登录接口，需要密码加密和参数化查询"></div>
+      <div><label>语言</label><select id="code-lang"><option value="python">Python</option><option value="javascript">JavaScript</option></select></div>
+      <div style="display:flex;align-items:flex-end"><button onclick="genCode()">生成代码</button></div>
+    </div>
+    <div id="code-output" style="margin-top:12px"></div>
+  </div>
+
+  <div class="section-title">代码安全审查</div>
+  <div class="card">
+    <div class="form-group"><textarea id="review-code" placeholder="粘贴需要审查的代码...">cursor.execute(f"SELECT * FROM users WHERE name='{name}'")
+result = eval(user_input)
+password = "admin123"</textarea></div>
+    <div class="row">
+      <div><label>语言</label><select id="review-lang"><option value="python">Python</option><option value="javascript">JavaScript</option></select></div>
+      <div style="display:flex;align-items:flex-end"><button onclick="reviewCode()">开始审查</button></div>
+    </div>
+    <div id="review-output" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- ========== 问答系统 ========== -->
+<div class="panel" id="panel-qa">
+  <div class="section-title">安全智能问答</div>
+  <div class="card">
+    <div class="chat-box" id="qa-box"></div>
+    <div class="row">
+      <div style="flex:1"><input id="qa-input" placeholder="提问，如：等保三级需要做什么？"></div>
+      <button onclick="qaAsk()">提问</button>
+    </div>
+  </div>
+  <div class="section-title">热门FAQ</div>
+  <div class="card">
+    <table id="faq-table"><thead><tr><th>问题</th><th>分类</th><th>热度</th></tr></thead><tbody><tr class="loading"><td colspan="3">加载中...</td></tr></tbody></table>
+  </div>
+</div>
+
+<!-- ========== 报告生成 ========== -->
+<div class="panel" id="panel-report">
+  <div class="section-title">智能报告生成</div>
+  <div class="card">
+    <div class="row">
+      <div><label>报告标题</label><input id="rpt-title" value="2026年Q3安全评估报告"></div>
+      <div><label>目标</label><input id="rpt-target" value="demo.example.com"></div>
+      <div><label>模板</label><select id="rpt-tpl"><option value="tpt-tech">技术详细版</option><option value="tpl-exec">高管摘要版</option><option value="tpl-compliance">合规审计版</option></select></div>
+      <div style="display:flex;align-items:flex-end"><button onclick="genReport()">生成报告</button></div>
+    </div>
+    <div id="rpt-output" style="margin-top:12px"></div>
+  </div>
+  <div class="section-title">历史报告</div>
+  <div class="card">
+    <table id="rpt-table"><thead><tr><th>标题</th><th>模板</th><th>页数</th><th>状态</th></tr></thead><tbody><tr class="loading"><td colspan="4">加载中...</td></tr></tbody></table>
+  </div>
+</div>
+
+<!-- ========== 系统设置 ========== -->
+<div class="panel" id="panel-settings">
+  <div class="section-title">系统设置</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>当前配置</h3>
+      <div id="settings-info"><div class="loading">加载中...</div></div>
+    </div>
+    <div class="card">
+      <h3>使用量统计</h3>
+      <div id="usage-info"><div class="loading">加载中...</div></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h3>关于</h3>
+    <p class="muted">安全大模型与AI Agent深度平台 · 第26轮升级方向1<br>
+    包含：模型管理 / 安全知识库RAG / 提示词工程 / 模型微调 / 推理 / 评测<br>
+    Agent自主决策 / 代码生成 / 智能问答 / 报告生成<br>
+    仅用于授权的安全评估与运营场景。</p>
+  </div>
+</div>
+
+</div>
+
+<script>
+const API = '/api/v1/security-llm';
+
+async function api(path, method='GET', body=null){
+  const opt = {method, headers:{'Content-Type':'application/json'}};
+  if(body) opt.body = JSON.stringify(body);
+  try{
+    const r = await fetch(API+path, opt);
+    const j = await r.json();
+    return j;
+  }catch(e){
+    return {success:false, error:e.message, data:null};
+  }
+}
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-'+t.dataset.panel).classList.add('active');
+    loadPanel(t.dataset.panel);
+  };
+});
+
+function loadPanel(name){
+  if(name==='overview') loadOverview();
+  else if(name==='models') loadModels();
+  else if(name==='agents') loadAgents();
+  else if(name==='qa') loadQA();
+  else if(name==='report') loadReports();
+  else if(name==='settings') loadSettings();
+}
+
+// ========== 总览 ==========
+async function loadOverview(){
+  const ov = await api('/dashboard/overview');
+  if(ov.success){
+    const k = ov.data.kpi;
+    document.getElementById('kpi-models').textContent = k.models_loaded;
+    document.getElementById('kpi-current').textContent = k.active_model;
+    document.getElementById('kpi-agents').textContent = k.agents_registered;
+    document.getElementById('kpi-tasks').textContent = k.tasks_completed;
+    document.getElementById('kpi-qa').textContent = k.qa_sessions;
+    document.getElementById('kpi-qc').textContent = k.qa_questions;
+    document.getElementById('kpi-reports').textContent = k.reports_generated;
+    document.getElementById('kpi-kb').textContent = k.kb_docs;
+    const h = ov.data.health;
+    document.getElementById('health-metrics').innerHTML =
+      `<p>LLM延迟: <b>${h.llm_latency_ms}ms</b></p>
+       <p>Agent成功率: <b>${(h.agent_success_rate*100).toFixed(1)}%</b></p>
+       <p>问答置信度: <b>${(h.qa_avg_confidence*100).toFixed(1)}%</b></p>
+       <p>RAG召回率: <b>${(h.rag_recall*100).toFixed(1)}%</b></p>`;
+  }
+  const alerts = await api('/dashboard/alerts');
+  if(alerts.success){
+    document.getElementById('alert-list').innerHTML = alerts.data.map(a=>
+      `<div class="alert ${a.level}"><b>${a.title}</b><br><span class="muted">${a.desc}</span></div>`
+    ).join('');
+  }
+  const mh = await api('/dashboard/module-health');
+  if(mh.success){
+    document.querySelector('#module-health-table tbody').innerHTML = mh.data.map(m=>
+      `<tr><td>${m.module}</td><td><span class="badge green">${m.status}</span></td><td>${m.latency_ms}ms</td></tr>`
+    ).join('');
+  }
+}
+
+// ========== 模型管理 ==========
+async function loadModels(){
+  const r = await api('/models');
+  if(r.success){
+    document.querySelector('#models-table tbody').innerHTML = r.data.map(m=>
+      `<tr><td>${m.name}</td><td>${m.type} ${m.size}</td><td><span class="badge ${m.is_default?'green':'blue'}">${m.is_default?'当前':'待命'}</span></td>
+      <td><button class="secondary" onclick="switchModel('${m.id}')">切换</button></td></tr>`
+    ).join('');
+  }
+}
+async function switchModel(id){
+  const r = await api('/models/switch','POST',{model_id:id});
+  if(r.success){ alert('已切换到: '+id); loadModels(); }
+}
+async function sendChat(){
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if(!msg) return;
+  const box = document.getElementById('chat-box');
+  box.innerHTML += `<div class="chat-msg user"><div class="role">你</div>${msg}</div>`;
+  input.value='';
+  const r = await api('/chat','POST',{message:msg});
+  if(r.success){
+    box.innerHTML += `<div class="chat-msg assistant"><div class="role">AI助手</div>${(r.data.answer||'').replace(/\n/g,'<br>')}</div>`;
+  }else{
+    box.innerHTML += `<div class="chat-msg assistant"><div class="role">错误</div>${r.error}</div>`;
+  }
+  box.scrollTop = box.scrollHeight;
+}
+async function kbSearch(){
+  const q = document.getElementById('kb-query').value;
+  const r = await api('/kb/search?q='+encodeURIComponent(q));
+  if(r.success){
+    document.getElementById('kb-results').innerHTML = r.data.map(d=>
+      `<div class="card" style="margin-bottom:8px"><b>${d.title}</b> <span class="badge yellow">${d.category}</span><br><span class="muted">${d.content.substring(0,100)}...</span></div>`
+    ).join('') || '<p class="muted">无结果</p>';
+  }
+}
+async function runEval(){
+  const model = document.getElementById('eval-model').value || 'sec-llm-7b';
+  const bench = document.getElementById('eval-bench').value;
+  const r = await api('/eval/run','POST',{model_id:model, benchmark:bench});
+  if(r.success){
+    const m = r.data.metrics;
+    document.getElementById('eval-results').innerHTML =
+      `<div class="card">
+        <p>准确率: <b>${(m.accuracy*100).toFixed(1)}%</b> | F1: <b>${(m.f1_score*100).toFixed(1)}%</b></p>
+        <p>安全准确率: <b>${(m.security_accuracy*100).toFixed(1)}%</b> | 幻觉率: <b>${(m.hallucination_rate*100).toFixed(1)}%</b></p>
+        <p>延迟: <b>${m.response_latency_ms}ms</b></p>
+      </div>`;
+  }
+}
+
+// ========== Agent管理 ==========
+async function loadAgents(){
+  const r = await api('/agents');
+  if(r.success){
+    document.querySelector('#agents-table tbody').innerHTML = r.data.map(a=>
+      `<tr><td>${a.name}</td><td>${a.role}</td><td>${a.tools.join(', ')}</td><td><span class="badge blue">${a.status}</span></td></tr>`
+    ).join('');
+  }
+  const t = await api('/tasks');
+  if(t.success){
+    document.querySelector('#tasks-table tbody').innerHTML = t.data.slice(-10).map(x=>
+      `<tr><td>${x.id}</td><td>${x.target}</td><td>${x.total_steps}</td><td><span class="badge green">${x.status}</span></td></tr>`
+    ).join('') || '<tr><td colspan="4" class="muted">暂无任务</td></tr>';
+  }
+}
+async function runTask(){
+  const goal = document.getElementById('task-goal').value;
+  const target = document.getElementById('task-target').value;
+  const r = await api('/tasks/execute','POST',{goal, target});
+  if(r.success){
+    document.getElementById('task-result').innerHTML =
+      `<div class="alert success">任务 ${r.data.id} 完成，共 ${r.data.total_steps} 步</div>
+       <pre>${JSON.stringify(r.data.steps, null, 2)}</pre>`;
+    loadAgents();
+  }
+}
+
+// ========== 代码生成 ==========
+async function genCode(){
+  const req = document.getElementById('code-req').value;
+  const lang = document.getElementById('code-lang').value;
+  const r = await api('/code/generate','POST',{requirement:req, language:lang});
+  if(r.success){
+    document.getElementById('code-output').innerHTML =
+      `<div class="alert success">已生成 ${r.data.lines} 行代码（${r.data.language}）</div>
+       <pre>${r.data.code}</pre>
+       <p class="muted">安全提示：${r.data.security_notes.join('；')}</p>`;
+  }
+}
+async function reviewCode(){
+  const code = document.getElementById('review-code').value;
+  const lang = document.getElementById('review-lang').value;
+  const r = await api('/code/review','POST',{code, language:lang});
+  if(r.success){
+    const d = r.data;
+    let badge = d.risk_level==='high'?'red':(d.risk_level==='medium'?'yellow':'green');
+    document.getElementById('review-output').innerHTML =
+      `<div class="alert ${badge==='green'?'success':'warning'}">风险等级: <b>${d.risk_level}</b> | 得分: <b>${d.score}</b> | 发现: <b>${d.total}</b></div>
+       <table><thead><tr><th>规则</th><th>级别</th><th>行</th><th>修复建议</th></tr></thead>
+       <tbody>${d.findings.map(f=>`<tr><td>${f.rule}</td><td><span class="badge ${f.severity==='critical'?'red':'yellow'}">${f.severity}</span></td><td>${f.line}</td><td>${f.fix}</td></tr>`).join('')}</tbody></table>`;
+  }
+}
+
+// ========== 问答系统 ==========
+let qaSessionId = null;
+async function loadQA(){
+  if(!qaSessionId){
+    const s = await api('/qa/sessions','POST');
+    if(s.success) qaSessionId = s.data.id;
+  }
+  const f = await api('/qa/faq');
+  if(f.success){
+    document.querySelector('#faq-table tbody').innerHTML = f.data.map(x=>
+      `<tr><td>${x.q}</td><td><span class="badge blue">${x.category}</span></td><td>${x.hits}</td></tr>`
+    ).join('');
+  }
+}
+async function qaAsk(){
+  const input = document.getElementById('qa-input');
+  const q = input.value.trim();
+  if(!q) return;
+  const box = document.getElementById('qa-box');
+  box.innerHTML += `<div class="chat-msg user"><div class="role">你</div>${q}</div>`;
+  input.value='';
+  const r = await api('/qa/ask','POST',{question:q, session_id:qaSessionId});
+  if(r.success){
+    box.innerHTML += `<div class="chat-msg assistant"><div class="role">AI回答（置信度${(r.data.confidence*100).toFixed(0)}%）</div>${(r.data.answer||'').replace(/\n/g,'<br>')}</div>`;
+  }
+  box.scrollTop = box.scrollHeight;
+}
+
+// ========== 报告生成 ==========
+async function loadReports(){
+  const r = await api('/reports');
+  if(r.success){
+    document.querySelector('#rpt-table tbody').innerHTML = r.data.map(x=>
+      `<tr><td>${x.title}</td><td>${x.template_name}</td><td>${x.pages}</td><td><span class="badge blue">${x.status}</span></td></tr>`
+    ).join('') || '<tr><td colspan="4" class="muted">暂无报告</td></tr>';
+  }
+}
+async function genReport(){
+  const title = document.getElementById('rpt-title').value;
+  const target = document.getElementById('rpt-target').value;
+  const tpl = document.getElementById('rpt-tpl').value;
+  const r = await api('/reports/generate','POST',{title, target, template_id:tpl});
+  if(r.success){
+    document.getElementById('rpt-output').innerHTML =
+      `<div class="alert success">报告 ${r.data.id} 已生成，${r.data.pages}页</div>
+       <pre>${r.data.content.substring(0,800)}...</pre>`;
+    loadReports();
+  }
+}
+
+// ========== 系统设置 ==========
+async function loadSettings(){
+  const ov = await api('/dashboard/overview');
+  if(ov.success){
+    document.getElementById('settings-info').innerHTML =
+      `<p>平台: <b>${ov.data.platform}</b></p>
+       <p>版本: <b>${ov.data.version}</b></p>
+       <p>运行时长: <b>${ov.data.uptime_hours}小时</b></p>
+       <p>当前模型: <b>${ov.data.kpi.active_model}</b></p>`;
+  }
+  const u = await api('/dashboard/usage');
+  if(u.success){
+    document.getElementById('usage-info').innerHTML =
+      `<p>今日Token: <b>${u.data.tokens_today.toLocaleString()}</b></p>
+       <p>今日API调用: <b>${u.data.api_calls_today}</b></p>
+       <p>预估成本: <b>¥${u.data.cost_cny}</b></p>`;
+  }
+}
+
+// Init
+loadOverview();
+</script>
+</body>
+</html>

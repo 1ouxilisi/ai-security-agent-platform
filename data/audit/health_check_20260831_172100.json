@@ -1,0 +1,87 @@
+{
+  "check_time": "2026-08-31T17:21:00.193004",
+  "total": 11,
+  "passed": 11,
+  "warnings": 0,
+  "failed": 0,
+  "duration": 27.37726140022278,
+  "results": [
+    {
+      "name": "Python版本",
+      "status": "pass",
+      "message": "Python 3.13.13",
+      "critical": true,
+      "duration": 0
+    },
+    {
+      "name": "核心依赖",
+      "status": "pass",
+      "message": "所有核心依赖已安装 (7个)",
+      "critical": true,
+      "duration": 0
+    },
+    {
+      "name": "配置文件",
+      "status": "pass",
+      "message": ".env文件存在，API密钥已配置",
+      "critical": false,
+      "duration": 0
+    },
+    {
+      "name": "核心模块",
+      "status": "pass",
+      "message": "所有11个核心模块导入成功",
+      "critical": true,
+      "duration": 0
+    },
+    {
+      "name": "工具模块",
+      "status": "pass",
+      "message": "工具模块抽样检查通过 (47个工具)",
+      "critical": false,
+      "duration": 0
+    },
+    {
+      "name": "API服务器",
+      "status": "pass",
+      "message": "API服务器文件存在",
+      "critical": true,
+      "duration": 0
+    },
+    {
+      "name": "前端文件",
+      "status": "pass",
+      "message": "所有前端文件存在 (4个)，console_v7.html编码正常",
+      "critical": false,
+      "duration": 0
+    },
+    {
+      "name": "数据目录",
+      "status": "pass",
+      "message": "所有数据目录存在",
+      "critical": false,
+      "duration": 0
+    },
+    {
+      "name": "Docker配置",
+      "status": "pass",
+      "message": "Docker配置文件存在",
+      "critical": false,
+      "duration": 0
+    },
+    {
+      "name": "文档文件",
+      "status": "pass",
+      "message": "所有核心文档存在 (4个)",
+      "critical": false,
+      "duration": 0
+    },
+    {
+      "name": "测试文件",
+      "status": "pass",
+      "message": "测试文件: 13个",
+      "critical": false,
+      "duration": 0
+    }
+  ]
+}

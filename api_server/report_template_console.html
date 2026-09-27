@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>报告模板编辑器</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #0d1117; color: #c9d1d9; font-size: 13px;
+  }
+  header {
+    background: #161b22; padding: 12px 20px; border-bottom: 1px solid #30363d;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  header h1 { font-size: 18px; color: #58a6ff; }
+  header .badge { color: #8b949e; font-size: 12px; }
+  .container { display: flex; gap: 12px; padding: 12px; height: calc(100vh - 54px); }
+  .left { width: 300px; overflow-y: auto; border-right: 1px solid #30363d; padding-right: 12px; }
+  .right { flex: 1; overflow-y: auto; }
+  .card {
+    background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+    padding: 10px; margin-bottom: 10px; cursor: pointer;
+  }
+  .card:hover { border-color: #58a6ff; }
+  .card.active { border-color: #58a6ff; background: #1c2530; }
+  .card .name { font-weight: 600; color: #e6edf3; }
+  .card .desc { color: #8b949e; font-size: 11px; margin: 4px 0; }
+  .tags span {
+    display: inline-block; background: #21262d; color: #58a6ff;
+    padding: 1px 6px; border-radius: 3px; font-size: 10px; margin-right: 4px;
+  }
+  .card .ops button, .toolbar button {
+    background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
+    border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 11px; margin-top: 6px; margin-right: 4px;
+  }
+  .card .ops button:hover, .toolbar button:hover { background: #30363d; }
+  .panel { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 14px; margin-bottom: 12px; }
+  .panel h2 { font-size: 14px; color: #58a6ff; margin-bottom: 10px; border-bottom: 1px solid #30363d; padding-bottom: 6px; }
+  .row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .row label { width: 90px; color: #8b949e; line-height: 28px; }
+  input, select, textarea {
+    background: #0d1117; color: #c9d1d9; border: 1px solid #30363d;
+    border-radius: 4px; padding: 5px 8px; font-size: 12px; flex: 1; min-width: 120px;
+  }
+  .section-item {
+    display: flex; align-items: center; gap: 8px; padding: 6px;
+    background: #0d1117; border: 1px solid #30363d; border-radius: 4px; margin-bottom: 4px;
+  }
+  .section-item .order-btns button {
+    background: #21262d; color: #c9d1d9; border: 1px solid #30363d; cursor: pointer; padding: 1px 6px; margin: 0 1px;
+  }
+  .section-item .title-input { flex: 1; }
+  .toggle { cursor: pointer; width: 36px; }
+  .color-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .color-row label { width: 100px; color: #8b949e; }
+  input[type=color] { width: 40px; height: 26px; border: none; background: none; padding: 0; }
+  .toolbar { margin-bottom: 12px; }
+  #preview {
+    background: #fff; color: #000; border-radius: 4px; min-height: 200px;
+    padding: 16px; overflow: auto;
+  }
+  .preview-toggle { cursor: pointer; color: #58a6ff; }
+  .hidden { display: none; }
+  .muted { color: #8b949e; font-size: 11px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>报告模板编辑器</h1>
+  <span class="badge">深色主题 · 离线可用 · AI Hacking Agent</span>
+</header>
+<div class="container">
+  <!-- 左侧：模板列表 -->
+  <div class="left">
+    <div class="toolbar">
+      <button onclick="loadList()">刷新列表</button>
+      <button onclick="newTemplate()">新建模板</button>
+    </div>
+    <div id="tplList"></div>
+  </div>
+
+  <!-- 右侧：编辑区 -->
+  <div class="right">
+    <div class="panel">
+      <h2>基本信息</h2>
+      <div class="row"><label>模板名称</label><input id="tplName" placeholder="模板名称"></div>
+      <div class="row"><label>描述</label><input id="tplDesc" placeholder="描述"></div>
+      <div class="row"><label>版本</label><input id="tplVersion" value="1" disabled></div>
+    </div>
+
+    <div class="panel">
+      <h2>章节管理（上下箭头排序）</h2>
+      <div id="sectionList"></div>
+    </div>
+
+    <div class="panel">
+      <h2>样式设置</h2>
+      <div class="row"><label>样式预设</label>
+        <select id="presetSelect" onchange="applyPreset()">
+          <option value="classic_bw">经典黑白</option>
+          <option value="tech_blue">科技蓝</option>
+          <option value="security_red">安全红</option>
+          <option value="business_gray">商务灰</option>
+          <option value="custom">自定义</option>
+        </select>
+      </div>
+      <div class="color-row"><label>主色</label><input type="color" id="primaryColor" value="#000000"></div>
+      <div class="color-row"><label>辅色</label><input type="color" id="secondaryColor" value="#666666"></div>
+      <div class="color-row"><label>字体</label>
+        <select id="fontFamily">
+          <option>Arial</option><option>Segoe UI</option><option>Helvetica</option>
+        </select>
+      </div>
+      <div class="color-row"><label>字号</label>
+        <select id="fontSize"><option>11px</option><option selected>12px</option><option>14px</option></select>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Logo 上传</h2>
+      <input type="file" id="logoFile" accept="image/*">
+      <button onclick="uploadLogo()">上传Logo</button>
+      <div id="logoPreview" class="muted" style="margin-top:6px;"></div>
+    </div>
+
+    <div class="toolbar">
+      <button onclick="saveTemplate()">保存</button>
+      <button onclick="previewTemplate()">实时预览</button>
+      <button onclick="exportTemplate()">导出</button>
+      <button onclick="importTemplate()">导入</button>
+    </div>
+
+    <div class="panel">
+      <h2 class="preview-toggle" onclick="togglePreview()">▶ 实时预览</h2>
+      <div id="previewWrap"><div id="preview">点击"实时预览"查看渲染效果...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const BASE = "/api/v1/report-templates";
+let currentId = null;
+let currentSections = [];
+
+async function api(path, opts={}) {
+  const res = await fetch(BASE + path, {
+    headers: { "Content-Type": "application/json" }, ...opts
+  });
+  return res.json();
+}
+
+async function loadList() {
+  const data = await api("/list");
+  const box = document.getElementById("tplList");
+  box.innerHTML = "";
+  (data.templates || []).forEach(t => {
+    const card = document.createElement("div");
+    card.className = "card" + (t.id === currentId ? " active" : "");
+    card.innerHTML = `<div class="name">${t.name}</div>
+      <div class="desc">${t.description || ""}</div>
+      <div class="tags"><span>${t.style_preset || "default"}</span><span>${t.source || ""}</span></div>
+      <div class="ops">
+        <button onclick="loadDetail('${t.id}')">编辑</button>
+        <button onclick="dupTpl('${t.id}')">复制</button>
+        <button onclick="expTpl('${t.id}')">导出</button>
+        <button onclick="delTpl('${t.id}')">删除</button>
+      </div>`;
+    box.appendChild(card);
+  });
+}
+
+async function loadDetail(id) {
+  currentId = id;
+  const data = await api("/" + id);
+  const t = data.template;
+  document.getElementById("tplName").value = t.name || "";
+  document.getElementById("tplDesc").value = t.description || "";
+  document.getElementById("tplVersion").value = t.version || 1;
+  document.getElementById("presetSelect").value = t.style_preset || "custom";
+  currentSections = t.sections || [];
+  renderSections();
+  loadList();
+}
+
+function renderSections() {
+  const box = document.getElementById("sectionList");
+  box.innerHTML = "";
+  currentSections.sort((a,b) => a.order - b.order);
+  currentSections.forEach((s, i) => {
+    const row = document.createElement("div");
+    row.className = "section-item";
+    row.innerHTML = `
+      <span class="order-btns">
+        <button onclick="moveSec(${i},-1)">▲</button>
+        <button onclick="moveSec(${i},1)">▼</button>
+      </span>
+      <input type="text" class="title-input" value="${s.title}" onchange="currentSections[${i}].title=this.value">
+      <input type="checkbox" class="toggle" ${s.visible ? "checked" : ""} onchange="currentSections[${i}].visible=this.checked">
+      <span class="muted">${s.section_id}</span>`;
+    box.appendChild(row);
+  });
+}
+
+function moveSec(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= currentSections.length) return;
+  [currentSections[i], currentSections[j]] = [currentSections[j], currentSections[i]];
+  currentSections.forEach((s, k) => s.order = k + 1);
+  renderSections();
+}
+
+function applyPreset() { /* 颜色选择器由用户手动调 */ }
+
+function collectConfig() {
+  return {
+    name: document.getElementById("tplName").value,
+    description: document.getElementById("tplDesc").value,
+    style_preset: document.getElementById("presetSelect").value,
+    style_vars: {
+      primary_color: document.getElementById("primaryColor").value,
+      secondary_color: document.getElementById("secondaryColor").value,
+      font_family: document.getElementById("fontFamily").value,
+      font_size: document.getElementById("fontSize").value,
+    },
+    sections: currentSections,
+  };
+}
+
+async function saveTemplate() {
+  const cfg = collectConfig();
+  if (currentId) {
+    await api("/" + currentId, { method: "PUT", body: JSON.stringify(cfg) });
+  } else {
+    const d = await api("", { method: "POST", body: JSON.stringify(cfg) });
+    currentId = d.template.id;
+  }
+  loadList();
+  alert("已保存");
+}
+
+async function previewTemplate() {
+  const sample = {
+    project_name: "示例项目", client_name: "示例客户", analyst: "安全测试员",
+    risk_score: "7.5", targets: ["https://example.com"],
+    vuln_list: [
+      { severity: "high", name: "SQL注入", target: "https://example.com", location: "/id", description: "存在SQL注入漏洞" },
+      { severity: "medium", name: "XSS", target: "https://example.com", location: "/search", description: "反射型XSS" }
+    ],
+    key_findings: ["发现SQL注入", "缺少安全响应头"]
+  };
+  const url = currentId ? "/" + currentId + "/preview" : "/standard_report/preview";
+  const data = await api(url, { method: "POST", body: JSON.stringify({ sample_data: sample }) });
+  document.getElementById("preview").innerHTML = data.html || "无预览";
+}
+
+async function dupTpl(id) { await api("/" + id + "/duplicate", { method: "POST", body: "{}" }); loadList(); }
+async function expTpl(id) { const d = await api("/" + id + "/export"); prompt("导出JSON:", d.content); }
+async function delTpl(id) { if(confirm("确认删除?")) { await api("/" + id, { method: "DELETE" }); loadList(); } }
+async function newTemplate() { currentId = null; currentSections = []; document.getElementById("tplName").value=""; }
+async function importTemplate() {
+  const txt = prompt("粘贴模板JSON:"); if(!txt) return;
+  await api("/import", { method: "POST", body: JSON.stringify({ content: txt }) }); loadList();
+}
+async function uploadLogo() {
+  const f = document.getElementById("logoFile").files[0]; if(!f) return;
+  const fd = new FormData(); fd.append("file", f);
+  const res = await fetch(BASE + "/logo", { method: "POST", body: fd });
+  const d = await res.json();
+  document.getElementById("logoPreview").textContent = "已上传: " + (d.logo_id || "失败");
+}
+function togglePreview() { document.getElementById("previewWrap").classList.toggle("hidden"); }
+
+loadList();
+</script>
+</body>
+</html>

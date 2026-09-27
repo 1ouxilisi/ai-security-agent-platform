@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>移动安全真实分析控制台</title>
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--fg:#e6edf3;--muted:#8b949e;--accent:#f778ba;--ok:#3fb950;--warn:#d29922;--bad:#f85149}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Microsoft YaHei","Segoe UI",Arial,sans-serif;font-size:13px}
+header{padding:14px 22px;background:linear-gradient(90deg,#f778ba33,#f778ba00);border-bottom:1px solid var(--border)}
+header h1{font-size:18px;margin:0}
+header .sub{color:var(--muted);font-size:12px;margin-top:4px}
+main{padding:18px 22px;max-width:1400px;margin:0 auto}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:14px}
+.panel h2{margin:0 0 10px;font-size:15px;color:var(--accent)}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+input{background:#0d1117;border:1px solid var(--border);color:var(--fg);padding:7px 10px;border-radius:4px;font-size:13px;min-width:240px}
+button{background:#a03a7a;color:#fff;border:none;padding:7px 14px;border-radius:4px;cursor:pointer;font-size:13px}
+button:hover{background:#c14b94}
+button.sec{background:#30363d}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:4px;padding:10px;overflow:auto;max-height:520px;font-family:Consolas,monospace;font-size:12px}
+</style>
+</head>
+<body>
+<header><h1>移动安全真实分析控制台</h1><div class="sub">真实 APK 解析 + 权限风险 + 静态漏洞检测（androguard 优先，内置 AXML 兜底）</div></header>
+<main>
+<div class="panel"><h2>环境</h2><div class="row"><button onclick="loadEnv()">刷新环境</button></div><pre id="envOut"></pre></div>
+
+<div class="panel"><h2>APK 上传 / 路径分析</h2>
+  <div class="row">
+    <input id="apkPath" placeholder="APK 绝对路径" style="flex:1">
+    <button onclick="analyzePath()">分析指定路径</button>
+  </div>
+  <div class="row">
+    <input type="file" id="apkFile" accept=".apk">
+    <button onclick="uploadApk()">上传并分析</button>
+  </div>
+  <pre id="resultOut">等待分析…</pre>
+</div>
+
+<div class="panel"><h2>动态分析环境</h2>
+  <div class="row">
+    <button onclick="dynStatus()">状态</button>
+    <button onclick="dynDevices()">设备列表</button>
+  </div>
+  <pre id="dynOut"></pre>
+</div>
+</main>
+<script>
+function val(id){return document.getElementById(id).value}
+function show(id,obj){document.getElementById(id).textContent=JSON.stringify(obj,null,2)}
+function loadEnv(){fetch('/api/v1/mobile-real/env').then(r=>r.json()).then(d=>show('envOut',d))}
+function analyzePath(){
+  fetch('/api/v1/mobile-real/analyze-path',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({path:val('apkPath')})}).then(r=>r.json()).then(d=>show('resultOut',d));
+}
+function uploadApk(){
+  const f=document.getElementById('apkFile').files[0];
+  if(!f){alert('选择 APK');return}
+  const fd=new FormData();fd.append('file',f);
+  fetch('/api/v1/mobile-real/upload',{method:'POST',body:fd}).then(r=>r.json()).then(d=>show('resultOut',d));
+}
+function dynStatus(){fetch('/api/v1/mobile-real/dynamic/status').then(r=>r.json()).then(d=>show('dynOut',d))}
+function dynDevices(){fetch('/api/v1/mobile-real/dynamic/devices').then(r=>r.json()).then(d=>show('dynOut',d))}
+loadEnv();
+</script>
+</body>
+</html>

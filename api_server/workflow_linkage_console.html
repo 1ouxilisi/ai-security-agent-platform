@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>领域联动工作流 · Workflow Linkage</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#121821; --panel2:#18212d; --border:#243040;
+  --fg:#e6edf3; --muted:#8b98a8; --accent:#4fc3f7; --ok:#2ecc71;
+  --warn:#f1c40f; --high:#ff7043; --crit:#ff1744; --ai:#ce93d8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  font-size:13px;line-height:1.5;}
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 18px;background:linear-gradient(90deg,#10161d,#16202c);
+  border-bottom:1px solid var(--border)}
+header h1{font-size:16px;margin:0;color:var(--accent)}
+header .sub{color:var(--muted);font-size:12px;margin-left:10px}
+button{background:#1c2733;color:var(--fg);border:1px solid var(--border);
+  padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px}
+button:hover{background:#243240}
+button.primary{background:#1565c0;border-color:#1976d2}
+button.danger{background:#b71c1c;border-color:#c62828}
+button.ok{background:#1b5e20;border-color:#2e7d32}
+.tabbar{display:flex;gap:2px;padding:8px 18px;background:#0e141b;
+  border-bottom:1px solid var(--border);overflow-x:auto}
+.tabbar .tab{padding:6px 14px;cursor:pointer;border-radius:4px;
+  color:var(--muted);white-space:nowrap}
+.tabbar .tab.active{background:#1c2733;color:var(--accent)}
+main{padding:14px 18px}
+.panel{background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;padding:12px;margin-bottom:12px}
+.panel h3{margin:0 0 8px;font-size:13px;color:var(--accent)}
+.kpi{background:var(--panel2);border:1px solid var(--border);
+  border-radius:6px;padding:10px 12px}
+.kpi .v{font-size:22px;font-weight:600}
+.kpi .l{color:var(--muted);font-size:11px}
+.kpi.ok .v{color:var(--ok)} .kpi.crit .v{color:var(--crit)}
+.kpi.warn .v{color:var(--warn)}
+.grid{display:grid;gap:12px}
+.grid.c2{grid-template-columns:1fr 1fr}
+.grid.c3{grid-template-columns:1fr 1fr 1fr}
+.grid.c4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1100px){.grid.c3,.grid.c4{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.grid.c2,.grid.c3,.grid.c4{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:500}
+.badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px}
+.badge.on{background:#123a2a;color:#69f0ae}
+.badge.off{background:#3a1a1a;color:#ef9a9a}
+.badge.src{background:#1f3a4a;color:#81d4fa}
+.badge.tgt{background:#3a2a4a;color:#ce93d8}
+.rule-card{background:var(--panel2);border:1px solid var(--border);
+  border-radius:6px;padding:10px;margin-bottom:8px}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.flow .node{padding:6px 12px;border-radius:6px;background:#1c2733;
+  border:1px solid var(--border);font-size:12px}
+.flow .arrow{color:var(--accent);font-size:16px}
+.muted{color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input,select,textarea{background:#0e141b;color:var(--fg);
+  border:1px solid var(--border);padding:5px 8px;border-radius:4px;font-size:12px}
+.log{background:#0a0e13;border:1px solid var(--border);border-radius:4px;
+  padding:8px;height:220px;overflow:auto;font-family:Consolas,monospace;
+  font-size:11px;white-space:pre-wrap}
+.bar{height:8px;background:#1c2733;border-radius:4px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--ok)}
+.hidden{display:none}
+footer{padding:8px 18px;color:var(--muted);font-size:11px;
+  border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🔗 领域联动工作流 <span class="sub">跨领域自动化联动 · 8 条预设规则</span></h1></div>
+  <div class="row">
+    <button class="primary" onclick="loadAll()">🔄 刷新</button>
+    <button onclick="openCreate()">➕ 新建规则</button>
+    <a href="/soc-center" style="color:var(--accent);font-size:12px">← 返回 SOC Center</a>
+  </div>
+</header>
+
+<div class="tabbar">
+  <div class="tab active" data-tab="monitor" onclick="switchTab('monitor')">📊 联动监控</div>
+  <div class="tab" data-tab="rules" onclick="switchTab('rules')">📋 联动规则配置</div>
+  <div class="tab" data-tab="events" onclick="switchTab('events')">⚡ 联动事件流</div>
+  <div class="tab" data-tab="failures" onclick="switchTab('failures')">⚠️ 失败列表</div>
+</div>
+
+<main>
+<!-- 监控 -->
+<section id="tab-monitor">
+  <div class="grid c4">
+    <div class="kpi"><div class="l">规则总数</div><div class="v" id="mRules">-</div></div>
+    <div class="kpi ok"><div class="l">已启用</div><div class="v" id="mEnabled">-</div></div>
+    <div class="kpi warn"><div class="l">联动总次数</div><div class="v" id="mTotal">-</div></div>
+    <div class="kpi ok"><div class="l">成功率</div><div class="v" id="mRate">-</div></div>
+  </div>
+  <div class="panel" style="margin-top:12px">
+    <h3>联动规则状态总览</h3>
+    <div id="ruleOverview"></div>
+  </div>
+</section>
+
+<!-- 规则配置 -->
+<section id="tab-rules" class="hidden">
+  <div class="panel">
+    <h3>可视化配置 · 源领域 → 触发条件 → 执行动作 → 目标领域</h3>
+    <div class="flow" id="ruleFlow"></div>
+  </div>
+  <div id="ruleList"></div>
+</section>
+
+<!-- 事件流 -->
+<section id="tab-events" class="hidden">
+  <div class="panel">
+    <h3>实时联动事件流 <button style="float:right" onclick="loadEvents()">刷新</button></h3>
+    <div class="log" id="eventLog"></div>
+  </div>
+</section>
+
+<!-- 失败 -->
+<section id="tab-failures" class="hidden">
+  <div class="panel">
+    <h3>联动失败列表（可手动重试）</h3>
+    <div id="failList"></div>
+  </div>
+</section>
+</main>
+
+<!-- 新建规则弹窗 -->
+<div class="panel hidden" id="createPanel" style="max-width:680px;margin:14px auto">
+  <h3>新建联动规则</h3>
+  <div class="grid c2">
+    <div><label class="muted">名称</label><input id="cName" style="width:100%" value="自定义联动"></div>
+    <div><label class="muted">源领域</label>
+      <select id="cSource" style="width:100%" id="cSource"></select></div>
+    <div><label class="muted">目标领域</label>
+      <select id="cTarget" style="width:100%"></select></div>
+    <div><label class="muted">事件类型</label>
+      <select id="cType" style="width:100%"></select></div>
+    <div><label class="muted">严重阈值</label>
+      <select id="cSev" style="width:100%">
+        <option value="low">low</option><option value="medium">medium</option>
+        <option value="high">high</option><option value="critical">critical</option></select></div>
+    <div><label class="muted">优先级</label><input id="cPri" type="number" value="5" style="width:100%"></div>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <label class="muted">动作:</label>
+    <label><input type="checkbox" value="create_task"> 创建任务</label>
+    <label><input type="checkbox" value="generate_alert"> 生成告警</label>
+    <label><input type="checkbox" value="sync_data" checked> 同步数据</label>
+    <label><input type="checkbox" value="send_notification"> 发送通知</label>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <button class="primary" onclick="submitCreate()">保存规则</button>
+    <button onclick="closeCreate()">取消</button>
+  </div>
+</div>
+
+<footer>领域联动工作流 · 8 条预设联动规则 · 联动引擎（去重/重试3次/动作执行）· <a href="/soc-center" style="color:var(--accent)">→ 统一 SOC Center</a></footer>
+
+<script>
+const API="/api/v1/workflow-linkage";
+let META={};
+async function api(p,opts){
+  try{
+    const r=await fetch(API+p,opts);
+    const j=await r.json();
+    return j.data;
+  }catch(e){console.error(e);return null;}
+}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function timeAgo(ts){if(!ts)return "-";const d=Date.now()/1000-ts;
+  if(d<60)return "刚刚";if(d<3600)return Math.floor(d/60)+"分钟前";
+  if(d<86400)return Math.floor(d/3600)+"小时前";return Math.floor(d/86400)+"天前";}
+
+function switchTab(name){
+  document.querySelectorAll(".tabbar .tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===name));
+  ["monitor","rules","events","failures"].forEach(t=>
+    document.getElementById("tab-"+t).classList.toggle("hidden",t!==name));
+  if(name==="events")loadEvents();
+  if(name==="failures")loadFailures();
+}
+
+async function loadMeta(){
+  META=await api("/meta")||{event_types:[]};
+  const src=document.getElementById("cSource");
+  const tgt=document.getElementById("cTarget");
+  const et=document.getElementById("cType");
+  const opts=META.event_types.map(x=>`<option value="${x}">${x}</option>`).join("");
+  const doms=await api("/monitor/rules");
+  const sdomains=[...new Set((doms&&doms.rules||[]).map(x=>x.source_domain))];
+  const tdomains=[...new Set((doms&&doms.rules||[]).map(x=>x.target_domain))];
+  src.innerHTML=sdomains.map(x=>`<option value="${x}">${x}</option>`).join("");
+  tgt.innerHTML=tdomains.map(x=>`<option value="${x}">${x}</option>`).join("");
+  et.innerHTML=opts;
+}
+
+async function loadMonitor(){
+  const d=await api("/monitor/dashboard");
+  if(!d)return;
+  const st=d.stats||{};
+  document.getElementById("mRules").textContent=st.total_rules||0;
+  document.getElementById("mEnabled").textContent=st.enabled_rules||0;
+  document.getElementById("mTotal").textContent=(st.linkage&&st.linkage.total)||0;
+  document.getElementById("mRate").textContent=((st.linkage&&st.linkage.success_rate)||0)+"%";
+  document.getElementById("ruleOverview").innerHTML=(d.rules||[]).map(x=>{
+    const rate=x.success_rate||0;
+    return `<div class="rule-card"><div class="row" style="justify-content:space-between">
+      <span><b>${esc(x.name)}</b> <span class="badge ${x.enabled?"on":"off"}">${x.enabled?"启用":"停用"}</span></span>
+      <span class="muted">触发 ${x.hit_count} 次 · 成功率 ${rate}%</span></div>
+      <div class="flow" style="margin-top:6px">
+        <span class="node badge src">${esc(x.source_domain)}</span><span class="arrow">→</span>
+        <span class="node">${esc(x.name)}</span><span class="arrow">→</span>
+        <span class="node badge tgt">${esc(x.target_domain)}</span></div>
+      <div class="bar" style="margin-top:6px"><i style="width:${rate}%"></i></div></div>`;
+  }).join("");
+}
+
+async function loadRules(){
+  const d=await api("/rules");
+  const rules=(d&&d.rules)||[];
+  document.getElementById("ruleFlow").innerHTML=rules.slice(0,8).map(x=>
+    `<span class="node badge src">${esc(x.source_domain)}</span><span class="arrow">→</span>
+     <span class="node">${esc(x.name)}</span><span class="arrow">→</span>
+     <span class="node badge tgt">${esc(x.target_domain)}</span>`).join("<span style='margin:0 6px'>|</span>");
+  document.getElementById("ruleList").innerHTML=rules.map(x=>{
+    const t=x.trigger||{};
+    return `<div class="rule-card"><div class="row" style="justify-content:space-between">
+      <span><b>${esc(x.name)}</b> <span class="badge ${x.enabled?"on":"off"}">${x.enabled?"启用":"停用"}</span></span>
+      <span class="row">
+        <button onclick="toggleRule('${x.id}',${!x.enabled})">${x.enabled?"停用":"启用"}</button>
+        <button class="primary" onclick="testRule('${x.id}')">🧪 测试</button>
+        <button class="danger" onclick="delRule('${x.id}')">删除</button>
+      </span></div>
+      <div class="muted" style="font-size:12px;margin-top:4px">${esc(x.description||"")}</div>
+      <div class="row" style="margin-top:6px;font-size:12px">
+        <span class="badge src">${esc(x.source_domain)}</span>→
+        <span class="badge tgt">${esc(x.target_domain)}</span>
+        <span class="muted">事件:${t.event_type} 阈值:${t.severity_threshold}</span>
+        <span class="muted">动作:${(x.actions||[]).join(",")}</span>
+        <span class="muted">优先级:${x.priority}</span>
+      </div></div>`;
+  }).join("");
+}
+
+async function loadEvents(){
+  const d=await api("/monitor/events?limit=80");
+  const items=(d&&d.events)||[];
+  document.getElementById("eventLog").textContent=items.map(x=>
+    `[${new Date(x.created_at*1000).toLocaleString()}] [${x.status}] ${x.rule_name} | ${x.source_domain}→${x.target_domain} | ${x.detail}`).join("\n")||"暂无联动事件";
+}
+
+async function loadFailures(){
+  const d=await api("/monitor/failures?limit=50");
+  const items=(d&&d.failures)||[];
+  document.getElementById("failList").innerHTML=items.length?items.map(x=>
+    `<div class="rule-card"><div class="row" style="justify-content:space-between">
+      <span><b>${esc(x.rule_name)}</b> <span class="badge off">failed</span></span>
+      <span class="muted">${timeAgo(x.created_at)}</span></div>
+      <div class="muted" style="font-size:12px">${esc(x.detail)}</div>
+      <button class="primary" style="margin-top:6px" onclick="retryLog('${x.id}')">🔁 手动重试</button></div>`).join("")
+    :'<div class="muted">暂无失败记录</div>';
+}
+
+async function toggleRule(id,enabled){
+  await fetch(`${API}/rules/${id}/toggle`,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({enabled})});
+  loadRules();loadMonitor();
+}
+async function delRule(id){
+  if(!confirm("确认删除该规则？"))return;
+  await fetch(`${API}/rules/${id}`,{method:"DELETE"});
+  loadRules();loadMonitor();
+}
+async function testRule(id){
+  const r=await api(`/rules/${id}/test`,{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+  alert("测试完成: 触发 "+(r.result.fired_count||0)+" 个动作");
+  loadEvents();loadMonitor();
+}
+async function retryLog(id){
+  await api(`/logs/${id}/retry`,{method:"POST"});
+  loadFailures();loadEvents();
+}
+
+function openCreate(){document.getElementById("createPanel").classList.remove("hidden");}
+function closeCreate(){document.getElementById("createPanel").classList.add("hidden");}
+async function submitCreate(){
+  const actions=[...document.querySelectorAll("#createPanel input[type=checkbox]:checked")].map(x=>x.value);
+  const body={name:document.getElementById("cName").value,
+    source_domain:document.getElementById("cSource").value,
+    target_domain:document.getElementById("cTarget").value,
+    event_type:document.getElementById("cType").value,
+    severity_threshold:document.getElementById("cSev").value,
+    priority:parseInt(document.getElementById("cPri").value)||5,
+    actions:actions};
+  await api("/rules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  closeCreate();loadRules();loadMonitor();
+}
+
+async function loadAll(){
+  await loadMeta();
+  await Promise.all([loadMonitor(),loadRules(),loadEvents(),loadFailures()]);
+}
+loadAll();
+setInterval(()=>{loadMonitor();loadEvents();},15000);
+</script>
+</body>
+</html>

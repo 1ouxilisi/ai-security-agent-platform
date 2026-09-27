@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>端到端工作流执行器 · Workflow Executor Console</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2129; --border:#30363d;
+  --txt:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950;
+  --red:#f85149; --yellow:#d29922; --blue:#58a6ff; --purple:#bc8cff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.5}
+header{background:linear-gradient(90deg,#161b22,#0d1117);padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:18px;font-weight:600}
+header h1 span{color:var(--accent)}
+.badge{background:var(--panel2);border:1px solid var(--border);padding:3px 10px;border-radius:12px;font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:4px;padding:0 24px;background:var(--panel);border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{padding:12px 18px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-size:14px;border-bottom:2px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--txt)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+main{padding:20px 24px;max-width:1400px;margin:0 auto}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:18px;margin-bottom:16px}
+.panel h2{font-size:15px;margin-bottom:12px;color:var(--accent)}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+input,select,textarea{background:var(--panel2);border:1px solid var(--border);color:var(--txt);padding:8px 10px;border-radius:6px;font-size:13px}
+input[type=text],textarea{flex:1;min-width:200px}
+textarea{min-height:80px;font-family:monospace}
+button{background:var(--accent);color:#0d1117;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
+button.secondary{background:var(--panel2);color:var(--txt);border:1px solid var(--border)}
+button.danger{background:var(--red);color:#fff}
+button:hover{opacity:.88}
+.hidden{display:none!important}
+.progress{height:10px;background:var(--panel2);border-radius:5px;overflow:hidden;margin:10px 0}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--blue),var(--green));width:0;transition:width .4s}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:600}
+tr:hover td{background:var(--panel2)}
+.status{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.s-done{background:rgba(63,185,80,.15);color:var(--green)}
+.s-failed{background:rgba(248,81,73,.15);color:var(--red)}
+.s-running{background:rgba(88,166,255,.15);color:var(--blue)}
+.s-pending{background:rgba(139,148,158,.15);color:var(--muted)}
+.s-skipped,.s-cancelled{background:rgba(210,153,34,.15);color:var(--yellow)}
+pre{background:#010409;border:1px solid var(--border);border-radius:6px;padding:12px;overflow:auto;font-size:12px;max-height:400px;white-space:pre-wrap;word-break:break-all}
+.logstream{background:#010409;border:1px solid var(--border);border-radius:6px;padding:10px;height:220px;overflow-y:auto;font-family:monospace;font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.stat{display:inline-block;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:10px 16px;margin:4px}
+.stat b{font-size:20px;display:block}
+.dag-wrap{position:relative;background:#010409;border:1px solid var(--border);border-radius:6px;min-height:420px;overflow:auto}
+.node{position:absolute;min-width:140px;padding:8px 10px;border-radius:6px;border:2px solid;cursor:pointer;font-size:12px}
+.node .nm{font-weight:600}
+.node .tm{font-size:10px;color:var(--muted)}
+.edge{stroke:#444;stroke-width:1.5;fill:none}
+.edge-exec{stroke:var(--green)}
+.kv{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--border)}
+.kv span:first-child{color:var(--muted)}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;margin:2px}
+.check-pass{color:var(--green)}.check-fail{color:var(--red)}
+.scn-card{border:1px solid var(--border);border-radius:6px;padding:12px;cursor:pointer;background:var(--panel2)}
+.scn-card.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.scn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--panel2);border:1px solid var(--accent);padding:12px 18px;border-radius:8px;z-index:99;display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡️ <span>端到端工作流执行器</span> · Workflow Executor Console</h1>
+  <div>
+    <span class="badge" id="healthBadge">检测模块: --</span>
+    <span class="badge">第16轮 · 方向1</span>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-tab="oneshot">🚀 一键评估</button>
+  <button class="tab" data-tab="tracker">📋 执行追踪</button>
+  <button class="tab" data-tab="scenarios">🧩 场景模板</button>
+  <button class="tab" data-tab="dag">🕸️ 可视化DAG</button>
+  <button class="tab" data-tab="batch">⚡ 批量调度</button>
+  <button class="tab" data-tab="verify">✅ 端到端验证</button>
+</div>
+
+<main>
+<!-- ================= 一键评估 ================= -->
+<section id="tab-oneshot">
+  <div class="panel">
+    <h2>一键安全评估</h2>
+    <div class="row">
+      <input type="text" id="osTarget" placeholder="输入目标: 127.0.0.1 / example.com / http://host / C:\app.apk / contract.sol" value="127.0.0.1">
+      <select id="osScenario"></select>
+      <button id="osRun">启动评估</button>
+      <button class="secondary" id="osRecognize">识别目标类型</button>
+    </div>
+    <div id="osRecognizeResult" class="muted" style="font-size:12px;color:var(--muted)"></div>
+    <div class="progress"><div class="progress-bar" id="osBar"></div></div>
+    <div class="row">
+      <span id="osStatus" class="status s-pending">就绪</span>
+      <span id="osPct" style="color:var(--muted);font-size:12px">0%</span>
+      <span id="osRisk" style="margin-left:auto"></span>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h2>执行步骤</h2>
+      <table id="osSteps"><thead><tr><th>步骤</th><th>状态</th><th>耗时</th><th>说明</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="panel">
+      <h2>实时日志流</h2>
+      <div class="logstream" id="osLog"></div>
+    </div>
+  </div>
+  <div class="panel hidden" id="osReportPanel">
+    <h2>评估报告</h2>
+    <pre id="osReport"></pre>
+  </div>
+</section>
+
+<!-- ================= 执行追踪 ================= -->
+<section id="tab-tracker" class="hidden">
+  <div class="panel">
+    <h2>任务列表</h2>
+    <div class="row">
+      <button class="secondary" id="trRefresh">刷新</button>
+      <select id="trFilter">
+        <option value="">全部状态</option>
+        <option value="pending">等待</option>
+        <option value="running">执行中</option>
+        <option value="done">完成</option>
+        <option value="failed">失败</option>
+        <option value="cancelled">已取消</option>
+      </select>
+      <span id="trStats"></span>
+    </div>
+    <table id="trTable"><thead><tr><th>任务ID</th><th>目标</th><th>场景</th><th>状态</th><th>进度</th><th>风险</th><th>耗时</th><th>操作</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="panel hidden" id="trDetailPanel">
+    <h2>任务详情 / 步骤时间线</h2>
+    <div id="trDetail"></div>
+  </div>
+</section>
+
+<!-- ================= 场景模板 ================= -->
+<section id="tab-scenarios" class="hidden">
+  <div class="panel">
+    <h2>预置场景模板（8个端到端流程）</h2>
+    <div class="scn-grid" id="scnGrid"></div>
+  </div>
+</section>
+
+<!-- ================= 可视化DAG ================= -->
+<section id="tab-dag" class="hidden">
+  <div class="panel">
+    <h2>DAG 流程图</h2>
+    <div class="row">
+      <input type="text" id="dagTaskId" placeholder="输入任务ID">
+      <button id="dagLoad">加载DAG</button>
+      <button class="secondary" id="dagCritical">显示关键路径</button>
+    </div>
+    <div id="dagLegend" style="font-size:12px;color:var(--muted);margin-bottom:8px">
+      <span class="pill s-done">绿=完成</span>
+      <span class="pill s-running">蓝=执行中</span>
+      <span class="pill s-failed">红=失败</span>
+      <span class="pill s-skipped">黄=跳过</span>
+      <span class="pill s-pending">灰=等待</span>
+    </div>
+    <div class="dag-wrap" id="dagWrap"><svg id="dagSvg" width="100%" height="420"></svg></div>
+  </div>
+  <div class="panel">
+    <h2>节点详情</h2>
+    <pre id="dagNodeDetail">点击流程图节点查看详情</pre>
+  </div>
+</section>
+
+<!-- ================= 批量调度 ================= -->
+<section id="tab-batch" class="hidden">
+  <div class="panel">
+    <h2>批量任务提交</h2>
+    <div class="row">
+      <textarea id="bcTargets" placeholder="每行一个目标&#10;127.0.0.1&#10;192.168.1.1&#10;example.com"></textarea>
+    </div>
+    <div class="row">
+      <select id="bcScenario"></select>
+      <select id="bcPriority"><option value="high">高优先级</option><option value="medium" selected>中优先级</option><option value="low">低优先级</option></select>
+      <button id="bcSubmit">批量提交</button>
+      <button class="danger" id="bcCancelPending">取消所有等待中</button>
+      <button class="secondary" id="bcRefresh">刷新队列</button>
+    </div>
+    <div id="bcQueue"></div>
+  </div>
+  <div class="panel">
+    <h2>批次列表</h2>
+    <table id="bcTable"><thead><tr><th>批次ID</th><th>场景</th><th>完成</th><th>失败</th><th>等待</th><th>操作</th></tr></thead><tbody></tbody></table>
+  </div>
+</section>
+
+<!-- ================= 端到端验证 ================= -->
+<section id="tab-verify" class="hidden">
+  <div class="panel">
+    <h2>端到端自检验证</h2>
+    <div class="row">
+      <input type="text" id="vfTarget" value="127.0.0.1">
+      <select id="vfScenario"><option value="web_full_assessment">Web资产全面评估</option></select>
+      <button id="vfRun">一键运行验证</button>
+    </div>
+    <div id="vfResult"></div>
+  </div>
+</section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = "/api/v1/workflow-executor";
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+let pollTimer = null;
+
+function toast(msg){const t=$("#toast");t.textContent=msg;t.style.display="block";setTimeout(()=>t.style.display="none",2500);}
+async function api(path, opts){
+  try{
+    const r = await fetch(BASE+path, opts);
+    const j = await r.json();
+    if(!j.success) throw new Error(j.error||"请求失败");
+    return j.data;
+  }catch(e){ console.error(e); toast("错误: "+e.message); throw e; }
+}
+function stCls(s){return "s-"+s;}
+function esc(s){return (s==null?"":String(s)).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+// tabs
+$$(".tab").forEach(t=>t.onclick=()=>{
+  $$(".tab").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  $$("main section").forEach(s=>s.classList.add("hidden"));
+  $("#tab-"+t.dataset.tab).classList.remove("hidden");
+});
+
+// load scenarios into selects
+async function loadScenarios(){
+  const list = await api("/scenarios");
+  window._scenarios = list;
+  const opts = list.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");
+  $("#osScenario").innerHTML = opts;
+  $("#bcScenario").innerHTML = opts;
+  // scenario cards
+  $("#scnGrid").innerHTML = list.map(s=>`
+    <div class="scn-card" data-id="${s.id}">
+      <div style="font-weight:600;color:var(--accent)">${esc(s.name)}</div>
+      <div style="font-size:12px;color:var(--muted);margin:6px 0">${esc(s.description)}</div>
+      <div style="font-size:12px">步骤数: <b>${s.step_count}</b> · 类型: ${(s.target_types||[]).join("/")}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">${s.builtin?"内置":"自定义"}</div>
+    </div>`).join("");
+  $$(".scn-card").forEach(c=>c.onclick=()=>{
+    $$(".scn-card").forEach(x=>x.classList.remove("active"));
+    c.classList.add("active");
+    $("#osScenario").value=c.dataset.id;
+  });
+}
+
+// health
+async function loadHealth(){
+  try{
+    const h = await api("/health");
+    $("#healthBadge").textContent = "检测模块: " + (h.module_available?"已加载":"未加载");
+  }catch(e){}
+}
+
+// recognize
+$("#osRecognize").onclick = async ()=>{
+  const t = $("#osTarget").value.trim();
+  const d = await api("/target-recognize?target="+encodeURIComponent(t));
+  $("#osRecognizeResult").textContent = "识别结果: type="+d.type+" host="+(d.host||"")+" port="+(d.port||"-");
+};
+
+// one-shot run
+$("#osRun").onclick = async ()=>{
+  const target = $("#osTarget").value.trim();
+  const scenario_id = $("#osScenario").value;
+  const d = await api("/one-shot",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({target, scenario_id, options:{}})});
+  toast("任务已提交: "+d.task_id);
+  pollTask(d.task_id);
+};
+
+async function pollTask(tid){
+  clearInterval(pollTimer);
+  let done=false;
+  pollTimer = setInterval(async ()=>{
+    const t = await api("/tasks/"+tid);
+    $("#osBar").style.width = t.progress+"%";
+    $("#osPct").textContent = t.progress+"%";
+    const stEl = $("#osStatus");
+    stEl.textContent = t.status; stEl.className = "status "+stCls(t.status);
+    $("#osRisk").innerHTML = t.result&&t.result.risk_score!=null
+      ? `风险分: <b style="color:var(--accent)">${t.result.risk_score}</b> (${t.result.risk_level})` : "";
+    // steps
+    $("#osSteps tbody").innerHTML = (t.steps||[]).map(s=>`
+      <tr><td>${esc(s.name)}</td><td class="status ${stCls(s.status)}">${s.status}</td>
+      <td>${s.duration_ms?s.duration_ms+"ms":"-"}</td><td style="font-size:11px;color:var(--muted)">${esc((s.error||s.output_summary&&JSON.stringify(s.output_summary).slice(0,80))||"")}</td></tr>`).join("");
+    // logs
+    $("#osLog").innerHTML = (t.global_logs||[]).map(esc).join("<br>");
+    $("#osLog").scrollTop = $("#osLog").scrollHeight;
+    if(["done","failed","cancelled"].includes(t.status)){
+      clearInterval(pollTimer);
+      if(t.result&&t.result.report){
+        $("#osReportPanel").classList.remove("hidden");
+        $("#osReport").textContent = JSON.stringify(t.result.report,null,2);
+      }
+      done=true;
+    }
+  }, 1200);
+}
+
+// tracker
+async function loadTracker(){
+  const st = $("#trFilter").value;
+  const list = await api("/tasks"+(st?("?status="+st):""));
+  const stats = await api("/tracker/stats");
+  $("#trStats").textContent = " 队列: " + JSON.stringify(stats.by_status);
+  $("#trTable tbody").innerHTML = (list||[]).map(t=>`
+    <tr>
+      <td style="font-family:monospace;font-size:11px">${t.task_id}</td>
+      <td>${esc(t.target)}</td>
+      <td>${esc(t.scenario_name)}</td>
+      <td class="status ${stCls(t.status)}">${t.status}</td>
+      <td>${t.progress}%</td>
+      <td>${t.result&&t.result.risk_score!=null?t.result.risk_score:"-"}</td>
+      <td>${t.elapsed_ms?Math.round(t.elapsed_ms/1000)+"s":"-"}</td>
+      <td>
+        <button class="secondary" onclick='viewDetail("${t.task_id}")'>详情</button>
+        <button class="secondary" onclick='retryTask("${t.task_id}")'>重试</button>
+        <button class="danger" onclick='cancelTask("${t.task_id}")'>取消</button>
+      </td>
+    </tr>`).join("");
+}
+async function viewDetail(tid){
+  const t = await api("/tasks/"+tid);
+  $("#trDetailPanel").classList.remove("hidden");
+  $("#trDetail").innerHTML = `
+    <div class="grid2">
+      <div>
+        <div class="kv"><span>任务ID</span><span>${tid}</span></div>
+        <div class="kv"><span>目标</span><span>${esc(t.target)}</span></div>
+        <div class="kv"><span>状态</span><span class="status ${stCls(t.status)}">${t.status}</span></div>
+        <div class="kv"><span>进度</span><span>${t.progress}%</span></div>
+        <div class="kv"><span>风险分</span><span>${t.result&&t.result.risk_score}</span></div>
+      </div>
+      <div>
+        <div class="kv"><span>创建</span><span>${t.created_at}</span></div>
+        <div class="kv"><span>完成</span><span>${t.finished_at||"-"}</span></div>
+        <div class="kv"><span>总步骤</span><span>${t.total_steps}</span></div>
+        <div class="kv"><span>失败步骤</span><span>${t.failed_steps}</span></div>
+      </div>
+    </div>
+    <h3 style="margin:12px 0 6px;color:var(--accent)">步骤时间线</h3>
+    <table><thead><tr><th>步骤</th><th>状态</th><th>开始</th><th>结束</th><th>耗时</th></tr></thead><tbody>
+      ${(t.steps||[]).map(s=>`<tr><td>${esc(s.name)}</td><td class="status ${stCls(s.status)}">${s.status}</td>
+        <td>${s.started_at||"-"}</td><td>${s.finished_at||"-"}</td><td>${s.duration_ms?s.duration_ms+"ms":"-"}</td></tr>`).join("")}
+    </tbody></table>`;
+}
+async function retryTask(tid){await api("/tasks/"+tid+"/retry",{method:"POST"});toast("已重试");loadTracker();}
+async function cancelTask(tid){await api("/tasks/"+tid+"/cancel",{method:"POST"});toast("已取消");loadTracker();}
+$("#trRefresh").onclick = loadTracker;
+$("#trFilter").onchange = loadTracker;
+
+// DAG
+$("#dagLoad").onclick = async ()=>{
+  const tid = $("#dagTaskId").value.trim();
+  if(!tid) return toast("请输入任务ID");
+  drawDag(await api("/tasks/"+tid+"/dag"));
+};
+function drawDag(dag){
+  const svg = $("#dagSvg");
+  svg.innerHTML="";
+  const ns="http://www.w3.org/2000/svg";
+  // edges
+  dag.edges.forEach(e=>{
+    const from=dag.nodes.find(n=>n.id===e.from), to=dag.nodes.find(n=>n.id===e.to);
+    if(!from||!to)return;
+    const isExec = dag.executed_path.includes(e.from)&&dag.executed_path.includes(e.to);
+    const l=document.createElementNS(ns,"line");
+    l.setAttribute("x1",from.x+70);l.setAttribute("y1",from.y+25);
+    l.setAttribute("x2",to.x);l.setAttribute("y2",to.y+25);
+    l.setAttribute("class",isExec?"edge edge-exec":"edge");
+    svg.appendChild(l);
+  });
+  // nodes
+  const wrap=$("#dagWrap");
+  $$("#dagWrap .node").forEach(n=>n.remove());
+  dag.nodes.forEach(n=>{
+    const div=document.createElement("div");
+    div.className="node";
+    div.style.left=n.x+"px";div.style.top=n.y+"px";
+    div.style.borderColor=n.color;div.style.position="absolute";
+    div.innerHTML=`<div class="nm">${esc(n.label)}</div>
+      <div class="tm">${n.status} · ${n.duration_ms||0}ms</div>`;
+    div.onclick=()=>showNodeDetail(dag.task_id,n.id);
+    wrap.appendChild(div);
+  });
+}
+async function showNodeDetail(tid,sid){
+  const d = await api(`/tasks/${tid}/steps/${sid}/detail`);
+  $("#dagNodeDetail").textContent = JSON.stringify(d,null,2);
+}
+$("#dagCritical").onclick = async ()=>{
+  const tid = $("#dagTaskId").value.trim();
+  if(!tid) return;
+  const d = await api("/tasks/"+tid+"/critical-path");
+  $("#dagNodeDetail").textContent = "关键路径:\n"+JSON.stringify(d.critical_path,null,2);
+};
+
+// batch
+$("#bcSubmit").onclick = async ()=>{
+  const raw = $("#bcTargets").value;
+  const scenario_id = $("#bcScenario").value;
+  const priority = $("#bcPriority").value;
+  const d = await api("/batch/submit",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({raw_text:raw, scenario_id, priority})});
+  toast("批次已提交: "+d.batch_id+" 目标数: "+d.submitted);
+  loadBatch();
+};
+$("#bcCancelPending").onclick = async ()=>{
+  const d = await api("/batch/cancel-pending",{method:"POST"});
+  toast("取消了 "+d.cancelled+" 个等待任务");loadBatch();
+};
+$("#bcRefresh").onclick = loadBatch;
+async function loadBatch(){
+  const q = await api("/batch/status");
+  $("#bcQueue").innerHTML = `<div class="stat"><b>${q.queued}</b>等待</div>
+    <div class="stat"><b>${q.running}</b>执行中</div>
+    <div class="stat"><b>${q.max_concurrency}</b>并发上限</div>`;
+  const list = await api("/batch/list");
+  $("#bcTable tbody").innerHTML = (list||[]).map(b=>`
+    <tr><td style="font-family:monospace;font-size:11px">${b.batch_id}</td>
+    <td>${esc(b.scenario_id)}</td>
+    <td>${b.summary?b.summary.done:"-"}</td><td>${b.summary?b.summary.failed:"-"}</td>
+    <td>${b.summary?b.summary.queued:"-"}</td>
+    <td><button class="secondary" onclick="exportBatch('${b.batch_id}')">导出ZIP</button>
+        <button class="secondary" onclick="retryBatch('${b.batch_id}')">重试失败</button></td></tr>`).join("");
+}
+function exportBatch(bid){window.open(BASE+"/batch/"+bid+"/export","_blank");}
+async function retryBatch(bid){await api("/batch/"+bid+"/retry",{method:"POST"});toast("已重试");loadBatch();}
+
+// verify
+$("#vfRun").onclick = async ()=>{
+  const target=$("#vfTarget").value.trim();
+  const sid=$("#vfScenario").value;
+  toast("正在执行端到端验证(可能耗时10-60s)...");
+  const d = await api("/verify/run?target="+encodeURIComponent(target)+"&scenario_id="+encodeURIComponent(sid),{method:"POST"});
+  $("#vfResult").innerHTML = `
+    <div class="stat"><b class="${d.overall==='PASS'?'check-pass':'check-fail'}">${d.overall}</b>总体验证</div>
+    <div class="stat"><b>${d.passed}/${d.total}</b>通过项</div>
+    <div class="stat"><b>${d.elapsed_s}s</b>总耗时</div>
+    <div class="stat"><b>${d.risk_score}</b>风险分</div>
+    <div class="stat"><b>${(d.open_ports||[]).length}</b>开放端口</div>
+    <table style="margin-top:12px"><thead><tr><th>检查项</th><th>结果</th><th>详情</th></tr></thead><tbody>
+    ${d.checks.map(c=>`<tr><td>${esc(c.check)}</td>
+      <td class="${c.result==='PASS'?'check-pass':'check-fail'}">${c.result}</td>
+      <td style="font-size:11px">${esc(c.detail)} ${c.advice?"<br><i style='color:var(--yellow)'>建议: "+esc(c.advice)+"</i>":""}</td></tr>`).join("")}
+    </tbody></table>
+    <pre style="margin-top:10px">结论: ${esc(d.conclusion)}</pre>`;
+};
+
+// init
+loadHealth();loadScenarios().then(loadTracker).then(loadBatch);
+setInterval(()=>{ if(!$("#tab-tracker").classList.contains("hidden")) loadTracker(); if(!$("#tab-batch").classList.contains("hidden")) loadBatch(); },5000);
+</script>
+</body>
+</html>

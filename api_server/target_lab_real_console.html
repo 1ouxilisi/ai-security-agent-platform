@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>真实靶场一键部署</title>
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--ok:#3fb950;--warn:#d29922;--err:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI",Microsoft YaHei,sans-serif;padding:16px;font-size:14px}
+h1{font-size:22px;margin-bottom:4px} h2{font-size:16px;margin:18px 0 10px;color:var(--accent)}
+.sub{color:var(--muted);margin-bottom:16px;font-size:13px}
+.notice{background:#1f6feb22;border:1px solid #1f6feb66;padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px}
+.stat .n{font-size:24px;font-weight:700} .stat .l{color:var(--muted);font-size:12px;margin-top:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px}
+.card .name{font-weight:600;font-size:15px} .card .desc{color:var(--muted);font-size:12px;margin:4px 0}
+.card .meta{font-size:12px;color:var(--muted);margin-top:6px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.b-ok{background:#3fb95022;color:var(--ok)} .b-no{background:#f8514922;color:var(--err)}
+.b-br{background:#d2992222;color:var(--warn)} .b-wait{background:#58a6ff22;color:var(--accent)}
+.btn{background:var(--accent);color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-right:6px;margin-top:6px}
+.btn:hover{opacity:.9} .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-danger{background:var(--err)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.log{background:#010409;border:1px solid var(--border);border-radius:6px;padding:10px;height:200px;overflow:auto;font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap}
+a{color:var(--accent)}
+.url{font-family:Consolas,monospace;background:#010409;padding:2px 6px;border-radius:4px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left}
+</style>
+</head>
+<body>
+<h1>🎯 真实靶场一键部署中心</h1>
+<div class="sub">Docker 一键拉取启动 · 无 Docker 自动模拟 · 健康检查 60s 重试 3 次</div>
+<div class="notice">⚠ 仅限授权环境：本地靶场仅用于授权安全测试 / 教学 / 演示。</div>
+
+<div class="stats" id="stats"></div>
+<h2>🐳 Docker 状态</h2>
+<div id="docker"></div>
+
+<h2>🚀 可用靶场</h2>
+<div class="grid" id="labs"></div>
+
+<h2>📋 已部署实例</h2>
+<table id="instTable"><thead><tr><th>实例</th><th>模式</th><th>状态</th><th>健康</th><th>URL</th><th>操作</th></tr></thead><tbody></tbody></table>
+
+<h2>📜 日志</h2>
+<div class="toolbar"><select id="instSel" onchange="loadLogs()"></select></div>
+<div class="log" id="log">选择实例查看日志</div>
+
+<script>
+const API='/api/v1/target-lab-real';
+async function jget(u){const r=await fetch(API+u);return r.json();}
+async function jpost(u,b){const r=await fetch(API+u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});return r.json();}
+function badge(s){
+  if(s==='running')return '<span class="badge b-ok">运行中</span>';
+  if(s==='starting')return '<span class="badge b-wait">启动中</span>';
+  if(s==='failed'||s==='destroyed')return '<span class="badge b-no">'+s+'</span>';
+  return '<span class="badge b-br">'+(s||'未知')+'</span>';
+}
+async function loadDashboard(){
+  const d=await jget('/dashboard');const s=d.data;
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><div class="n">${s.stats.total_instances}</div><div class="l">实例总数</div></div>
+    <div class="stat"><div class="n">${s.stats.running}</div><div class="l">运行中</div></div>
+    <div class="stat"><div class="n">${s.stats.docker}</div><div class="l">Docker 模式</div></div>
+    <div class="stat"><div class="n">${s.stats.mock}</div><div class="l">模拟模式</div></div>`;
+  const dn=s.docker;
+  document.getElementById('docker').innerHTML=`<div class="card"><div class="name">${dn.available?'<span class="badge b-ok">Docker 就绪</span>':'<span class="badge b-no">Docker 未安装</span>'}</div>
+    <div class="desc">${dn.version||dn.message||''}</div>
+    ${dn.available?'':`<div class="meta">安装: <a href="${dn.install_url}" target="_blank">Docker Desktop</a></div>`}</div>`;
+  const labsEl=document.getElementById('labs');labsEl.innerHTML='';
+  for(const cat of Object.keys(s.labs_by_category)){
+    for(const l of s.labs_by_category[cat]){
+      labsEl.innerHTML+=`<div class="card">
+        <div class="name">${l.name} <span class="badge b-br">${l.difficulty}</span></div>
+        <div class="desc">${l.description}</div>
+        <div class="meta">镜像: <code>${l.image}</code><br>分类: ${s.categories[cat]||cat} · 端口: ${Object.keys(l.ports).join(',')||'无'}</div>
+        ${l.notes?`<div class="meta" style="color:var(--warn)">${l.notes}</div>`:''}
+        <button class="btn" onclick="deploy('${l.lab_id}')">一键部署</button>
+        <button class="btn btn-ghost" onclick="deploy('${l.lab_id}',prompt('指定主机端口:'))">自定义端口</button>
+      </div>`;
+    }
+  }
+  loadInstances();
+}
+async function deploy(lab_id,host_port){
+  const body={lab_id};if(host_port)body.host_port=parseInt(host_port);
+  await jpost('/deploy',body);
+  setTimeout(loadInstances,1500);
+}
+async function loadInstances(){
+  const d=await jget('/instances');
+  const tb=document.querySelector('#instTable tbody');tb.innerHTML='';
+  const sel=document.getElementById('instSel');sel.innerHTML='<option value="">选择实例</option>';
+  for(const i of d.data.instances){
+    tb.innerHTML+=`<tr><td>${i.name}<br><span style="color:var(--muted);font-size:11px">${i.instance_id}</span></td>
+      <td>${i.mode}</td><td>${badge(i.status)}</td>
+      <td>${i.health||'-'}</td>
+      <td>${i.url?`<a class="url" href="${i.url}" target="_blank">${i.url}</a>`:'-'}</td>
+      <td>
+        <button class="btn" onclick="op('restart','${i.instance_id}')">重启</button>
+        <button class="btn btn-ghost" onclick="op('stop','${i.instance_id}')">停止</button>
+        <button class="btn btn-danger" onclick="op('destroy','${i.instance_id}')">销毁</button>
+        <button class="btn btn-ghost" onclick="pick('${i.instance_id}')">日志</button>
+      </td></tr>`;
+    sel.innerHTML+=`<option value="${i.instance_id}">${i.name} (${i.status})</option>`;
+  }
+}
+function pick(id){document.getElementById('instSel').value=id;loadLogs();}
+async function op(act,id){
+  await jpost('/'+act,{instance_id:id});loadInstances();
+}
+async function loadLogs(){
+  const id=document.getElementById('instSel').value;if(!id)return;
+  const d=await jget('/instances/'+id+'/logs?tail=200');
+  const el=document.getElementById('log');
+  el.innerHTML=(d.data.logs||[]).map(l=>l.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))).join('\n');
+  el.scrollTop=el.scrollHeight;
+}
+loadDashboard();
+setInterval(loadInstances,5000);
+</script>
+</body>
+</html>

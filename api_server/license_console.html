@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>License 管理控制台 · AI Hacking Agent</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-2: #161b22;
+    --bg-3: #1f2630;
+    --border: #2d3640;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 14px; line-height: 1.6;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 0 0 12px; color: var(--accent); }
+  .sub { color: var(--text-dim); margin-bottom: 24px; }
+  .grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; }
+  @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px; margin-bottom: 18px;
+  }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  label { color: var(--text-dim); font-size: 12px; }
+  input, select, textarea {
+    background: var(--bg-3); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 10px; border-radius: 6px; font-size: 13px; width: 100%;
+    font-family: inherit;
+  }
+  textarea { min-height: 80px; resize: vertical; font-family: ui-monospace, monospace; }
+  button {
+    background: var(--accent); color: #0d1117; border: 0; padding: 8px 16px;
+    border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;
+  }
+  button.secondary { background: var(--bg-3); color: var(--text); border: 1px solid var(--border); }
+  button.danger { background: var(--red); color: #fff; }
+  button:hover { opacity: 0.9; }
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 600;
+  }
+  .badge.free { background: #30363d; color: var(--text-dim); }
+  .badge.pro { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .badge.enterprise { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .kv { display: grid; grid-template-columns: 140px 1fr; gap: 6px 12px; font-size: 13px; }
+  .kv .k { color: var(--text-dim); }
+  .warn { color: var(--yellow); }
+  .err { color: var(--red); }
+  .ok { color: var(--green); }
+  pre {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px; overflow: auto; font-size: 12px; color: var(--text-dim);
+    max-height: 200px;
+  }
+  .tier-card {
+    border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+    background: var(--bg-3);
+  }
+  .tier-card h3 { margin: 0 0 6px; font-size: 14px; }
+  .tier-card .price { color: var(--yellow); font-weight: 600; }
+  ul.limits { margin: 8px 0 0 18px; padding: 0; color: var(--text-dim); font-size: 12px; }
+  .toast {
+    position: fixed; top: 20px; right: 20px; padding: 12px 18px;
+    background: var(--bg-3); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 99; max-width: 360px;
+  }
+  .toast.ok { border-color: var(--green); }
+  .toast.err { border-color: var(--red); }
+</style>
+</head>
+<body>
+
+<h1>License 管理控制台</h1>
+<div class="sub">AI Hacking Agent v30 · 机器码绑定 · RSA-PSS 签名 · 功能分级授权</div>
+
+<div class="grid">
+  <!-- 左列 -->
+  <div>
+    <!-- 当前状态 -->
+    <div class="card">
+      <h2>当前 License 状态</h2>
+      <div id="status-box">加载中...</div>
+    </div>
+
+    <!-- 激活 -->
+    <div class="card">
+      <h2>激活 License</h2>
+      <label>粘贴 License Key（payload_b64.signature_b64）</label>
+      <textarea id="license-input" placeholder="eyJ... . 这里粘贴完整 License 字符串"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button onclick="activateLicense()">立即激活</button>
+        <button class="secondary" onclick="loadStatus()">刷新状态</button>
+        <button class="danger" onclick="deactivate()">卸载 License</button>
+      </div>
+      <pre id="activate-result" style="margin-top:10px"></pre>
+    </div>
+
+    <!-- 机器码 -->
+    <div class="card">
+      <h2>本机机器码</h2>
+      <div class="kv">
+        <div class="k">Machine Code</div>
+        <div id="machine-code">加载中...</div>
+      </div>
+      <div class="sub" style="margin-top:8px;font-size:12px">
+        将此机器码发给供应商，或在下方"生成 License"中直接使用。
+      </div>
+    </div>
+  </div>
+
+  <!-- 右列 -->
+  <div>
+    <!-- 管理员：生成 -->
+    <div class="card">
+      <h2>生成 License（管理员）</h2>
+      <div class="row">
+        <div style="flex:1"><label>客户名称</label><input id="gen-customer" value="Demo Customer"></div>
+        <div style="flex:1"><label>版本等级</label>
+          <select id="gen-tier">
+            <option value="free">免费版 Free</option>
+            <option value="pro" selected>专业版 Pro</option>
+            <option value="enterprise">企业版 Enterprise</option>
+          </select>
+        </div>
+        <div style="flex:1"><label>有效期（天）</label><input id="gen-days" type="number" value="365"></div>
+      </div>
+      <div style="margin-top:8px">
+        <label>绑定机器码（留空 = 当前主机）</label>
+        <input id="gen-machine" placeholder="留空自动使用当前机器码">
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button onclick="generateLicense()">生成 License</button>
+        <button class="secondary" onclick="copyLicense()">复制 License</button>
+      </div>
+      <pre id="gen-result" style="margin-top:10px"></pre>
+    </div>
+
+    <!-- 版本对比 -->
+    <div class="card">
+      <h2>版本对比</h2>
+      <div id="tiers-box">加载中...</div>
+    </div>
+
+    <!-- 配额 -->
+    <div class="card">
+      <h2>今日 API 配额</h2>
+      <div id="quota-box">加载中...</div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+const API = "/api/v1/license";
+function toast(msg, kind="ok") {
+  const el = document.getElementById("toast");
+  el.className = "toast " + kind;
+  el.textContent = msg;
+  el.style.display = "block";
+  setTimeout(() => el.style.display = "none", 3500);
+}
+async function jget(url) {
+  const r = await fetch(url); return r.json();
+}
+async function jpost(url, body) {
+  const r = await fetch(url, {method:"POST", headers:{"Content-Type":"application/json"},
+                                body: JSON.stringify(body||{})});
+  return r.json();
+}
+
+async function loadStatus() {
+  const r = await jget(API + "/status");
+  const d = r.data || {};
+  const tierClass = d.tier || "free";
+  const box = document.getElementById("status-box");
+  box.innerHTML = `
+    <div class="kv">
+      <div class="k">激活状态</div>
+      <div>${d.activated ? '<span class="ok">已激活</span>' : '<span class="warn">未激活（免费版）</span>'}</div>
+      <div class="k">版本</div>
+      <div><span class="badge ${tierClass}">${d.tier_name || "免费版 (Free)"}</span></div>
+      <div class="k">授权客户</div><div>${d.customer || "-"}</div>
+      <div class="k">License ID</div><div>${d.license_id || "-"}</div>
+      <div class="k">剩余天数</div><div>${d.days_remaining ?? "-"}</div>
+      <div class="k">到期时间</div><div>${d.expires_at ? new Date(d.expires_at*1000).toLocaleString() : "-"}</div>
+      <div class="k">多租户</div><div>${d.multi_tenant ? "✅ 支持" : "❌ 不支持"}</div>
+      <div class="k">优先支持</div><div>${d.priority_support ? "✅ 支持" : "❌ 不支持"}</div>
+    </div>
+    ${d.warning ? `<div class="warn" style="margin-top:10px">⚠ ${d.warning}</div>` : ""}
+    ${d.upgrade_guide && d.upgrade_guide.next_tier ?
+        `<div class="sub" style="margin-top:8px">🚀 ${d.upgrade_guide.message}</div>` : ""}
+  `;
+}
+
+async function loadMachineCode() {
+  const r = await jget(API + "/machine-code");
+  document.getElementById("machine-code").textContent = r.data.machine_code;
+}
+
+async function loadTiers() {
+  const r = await jget(API + "/tiers");
+  const box = document.getElementById("tiers-box");
+  box.innerHTML = (r.data.tiers || []).map(t => `
+    <div class="tier-card" style="margin-bottom:10px">
+      <div class="row" style="justify-content:space-between">
+        <h3><span class="badge ${t.code}">${t.name}</span></h3>
+        <span class="price">${t.price}</span>
+      </div>
+      <div class="sub" style="margin:4px 0">${t.summary}</div>
+      <ul class="limits">${(t.limits||[]).map(l=>`<li>${l}</li>`).join("")}</ul>
+    </div>
+  `).join("");
+}
+
+async function loadQuota() {
+  const r = await jget(API + "/quota");
+  const q = r.data || {};
+  const pct = q.limit ? Math.min(100, Math.round(q.used/q.limit*100)) : 0;
+  document.getElementById("quota-box").innerHTML = `
+    <div class="kv">
+      <div class="k">已用 / 上限</div><div>${q.used} / ${q.limit}</div>
+      <div class="k">剩余</div><div>${q.remaining}</div>
+      <div class="k">日期</div><div>${q.date}</div>
+    </div>
+    <div style="background:#0d1117;border-radius:4px;height:8px;margin-top:10px">
+      <div style="width:${pct}%;height:100%;background:${q.exceeded?'var(--red)':'var(--green)'}"></div>
+    </div>
+  `;
+}
+
+async function activateLicense() {
+  const key = document.getElementById("license-input").value.trim();
+  if (!key) { toast("请先粘贴 License Key", "err"); return; }
+  const r = await jpost(API + "/activate", {license_key: key});
+  document.getElementById("activate-result").textContent = JSON.stringify(r, null, 2);
+  if (r.success) { toast("License 激活成功 ✅", "ok"); loadStatus(); loadQuota(); }
+  else { toast("激活失败: " + (r.error?.message || "未知错误"), "err"); }
+}
+
+async function deactivate() {
+  if (!confirm("确认卸载当前 License？")) return;
+  await jpost(API + "/deactivate", {});
+  toast("已卸载", "ok"); loadStatus(); loadQuota();
+}
+
+let lastLicense = "";
+async function generateLicense() {
+  const body = {
+    tier: document.getElementById("gen-tier").value,
+    customer: document.getElementById("gen-customer").value,
+    duration_days: parseInt(document.getElementById("gen-days").value || "365"),
+    machine_code: document.getElementById("gen-machine").value || null,
+  };
+  const r = await jpost(API + "/generate", body);
+  document.getElementById("gen-result").textContent = JSON.stringify(r, null, 2);
+  if (r.success) {
+    lastLicense = r.data.license_key;
+    toast("License 已生成 ✅", "ok");
+  } else {
+    toast("生成失败: " + (r.error?.message || ""), "err");
+  }
+}
+function copyLicense() {
+  if (!lastLicense) { toast("先生成 License", "err"); return; }
+  navigator.clipboard.writeText(lastLicense).then(
+    () => toast("已复制到剪贴板", "ok"),
+    () => toast("复制失败", "err"));
+}
+
+// 初始化
+loadStatus(); loadMachineCode(); loadTiers(); loadQuota();
+setInterval(() => { loadStatus(); loadQuota(); }, 15000);
+</script>
+</body>
+</html>

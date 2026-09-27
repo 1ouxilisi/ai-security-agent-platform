@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>靶场管理控制台</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#e6edf3;
+    --muted:#8b949e; --accent:#2ea043; --danger:#da3633; --warn:#d29922;
+    --info:#1f6feb; --radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",monospace,sans-serif;font-size:14px;line-height:1.5}
+  .topbar{display:flex;align-items:center;gap:14px;padding:12px 20px;background:#161b22;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .topbar h1{font-size:18px;font-weight:600}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:12px;border:1px solid var(--border)}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .dot.green{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+  .dot.red{background:var(--danger);box-shadow:0 0 6px var(--danger)}
+  .warn-label{background:rgba(210,153,34,.15);color:var(--warn);border:1px solid var(--warn);padding:3px 10px;border-radius:6px;font-size:12px}
+  .container{max-width:1200px;margin:0 auto;padding:20px}
+  section{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:18px}
+  section h2{font-size:16px;margin-bottom:12px;border-left:3px solid var(--accent);padding-left:8px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+  .card{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:14px;transition:.2s}
+  .card:hover{border-color:var(--info)}
+  .card .name{font-weight:600;font-size:15px;margin-bottom:6px}
+  .card .desc{color:var(--muted);font-size:12px;margin-bottom:8px}
+  .tags{margin:6px 0}
+  .tag{display:inline-block;background:rgba(31,111,235,.15);color:#79b8ff;border-radius:4px;padding:1px 7px;font-size:11px;margin:2px 3px 2px 0}
+  .tag.diff{background:rgba(210,153,34,.15);color:var(--warn)}
+  .meta{font-size:12px;color:var(--muted);margin:4px 0}
+  .actions{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+  button{cursor:pointer;border:1px solid var(--border);background:#21262d;color:var(--text);padding:5px 12px;border-radius:6px;font-size:12px;transition:.15s}
+  button:hover{background:#30363d}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+  button.warn{background:var(--warn);border-color:var(--warn);color:#000}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .detail{display:none;margin-top:10px;padding:10px;border-top:1px dashed var(--border);font-size:12px}
+  .detail.open{display:block}
+  .detail pre{background:#010409;border:1px solid var(--border);border-radius:6px;padding:8px;overflow:auto;max-height:200px;font-size:11px;white-space:pre-wrap;word-break:break-all}
+  .scn{border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;background:#0d1117}
+  .scn .head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  .scn .res{margin-top:8px;padding:8px;border-radius:6px;font-size:12px;display:none}
+  .scn .res.show{display:block}
+  .res.pass{background:rgba(46,160,67,.15);border:1px solid var(--accent)}
+  .res.fail{background:rgba(218,54,51,.12);border:1px solid var(--danger)}
+  .res.err{background:rgba(139,148,158,.12);border:1px solid var(--muted)}
+  textarea{width:100%;min-height:220px;background:#010409;color:#7ee787;border:1px solid var(--border);border-radius:6px;padding:10px;font-family:monospace;font-size:12px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  input[type=number]{background:#0d1117;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 8px;width:90px}
+  label{font-size:12px;color:var(--muted)}
+  .toast{position:fixed;bottom:20px;right:20px;background:#21262d;border:1px solid var(--border);padding:10px 16px;border-radius:8px;display:none;z-index:99;max-width:320px}
+  @media(max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .container{padding:10px}
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>🛡 靶场管理控制台</h1>
+  <span class="pill"><span id="dockerDot" class="dot red"></span><span id="dockerText">检测中…</span></span>
+  <span class="warn-label">⚠ 仅限授权环境使用</span>
+</div>
+
+<div class="container">
+
+  <section>
+    <h2>支持的漏洞靶场（5）</h2>
+    <div class="grid" id="labGrid"></div>
+  </section>
+
+  <section>
+    <h2>测试场景库（6）</h2>
+    <div id="scnList"></div>
+  </section>
+
+  <section>
+    <h2>Docker Compose 生成器</h2>
+    <div class="row" id="composePick"></div>
+    <div class="row">
+      <label>CPU 限制</label><input type="number" id="cpuLimit" value="0.5" step="0.1" min="0.1">
+      <label>内存</label><input type="number" id="memLimit" value="512" step="64" min="128">
+      <button class="primary" onclick="genCompose()">生成 docker-compose.yml</button>
+      <button onclick="downloadCompose()">下载 YAML</button>
+    </div>
+    <textarea id="composeOut" readonly placeholder="生成结果将显示在这里…"></textarea>
+  </section>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = "/api/v1/target-labs";
+// 内嵌兜底数据：5 个靶场 / 6 个场景（与后端元数据一致）
+const FALLBACK_LABS = [
+  {lab_id:"dvwa", name:"DVWA", description:"Damn Vulnerable Web App，覆盖 SQL注入/XSS/命令注入/文件上传等", difficulty:"低/中/高", default_port:8080},
+  {lab_id:"juice-shop", name:"OWASP Juice Shop", description:"OWASP 官方 SPA，包含 OWASP Top 10 全漏洞", difficulty:"星级制", default_port:3000},
+  {lab_id:"webgoat", name:"WebGoat", description:"Java Web 安全教学，渐进式课程", difficulty:"渐进式", default_port:8081},
+  {lab_id:"bwapp", name:"bWAPP", description:"buggy web application，100+ 漏洞", difficulty:"低/中/高", default_port:8082},
+  {lab_id:"mutillidae", name:"Mutillidae II", description:"OWASP Top 10 入门级教学应用", difficulty:"入门级", default_port:8083}
+];
+const FALLBACK_SCENARIOS = [
+  {scenario_id:"sqli_detection", name:"SQL 注入测试", risk_level:"中"},
+  {scenario_id:"xss_reflected", name:"XSS 测试", risk_level:"中"},
+  {scenario_id:"cmd_injection", name:"命令注入测试", risk_level:"高"},
+  {scenario_id:"file_upload", name:"文件上传测试", risk_level:"高"},
+  {scenario_id:"auth_bypass", name:"认证绕过测试", risk_level:"高"},
+  {scenario_id:"privesc_bola", name:"权限提升测试", risk_level:"中"}
+];
+let lastComposeYaml = "";
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.style.display = "block";
+  setTimeout(()=>{t.style.display="none"}, 2600);
+}
+async function api(path, opts){
+  try{
+    const r = await fetch(BASE + path, opts);
+    return await r.json();
+  }catch(e){ return {code:-1, error:String(e)}; }
+}
+
+// ---------- 靶场卡片 ----------
+function renderLabs(labs){
+  const grid = document.getElementById("labGrid");
+  grid.innerHTML = "";
+  labs.forEach(l=>{
+    const card = document.createElement("div");
+    card.className = "card";
+    const tags = (l.vuln_types||[]).map(v=>`<span class="tag">${v}</span>`).join("");
+    card.innerHTML = `
+      <div class="name">${l.name}</div>
+      <div class="desc">${l.description||""}</div>
+      <div class="tags"><span class="tag diff">难度：${l.difficulty||"-"}</span></div>
+      <div class="tags">${tags}</div>
+      <div class="meta">默认端口：${l.default_port} &nbsp;|&nbsp; 镜像：<code>${l.docker_image||"-"}</code></div>
+      <div class="meta">状态：<span class="dot red" id="st_${l.lab_id}"></span> <span id="stext_${l.lab_id}">未部署</span></div>
+      <div class="actions">
+        <button class="primary" onclick="deploy('${l.lab_id}',${l.default_port})">部署</button>
+        <button onclick="toggleDetail('${l.lab_id}')">详情</button>
+      </div>
+      <div class="detail" id="det_${l.lab_id}"></div>`;
+    grid.appendChild(card);
+  });
+}
+
+async function deploy(labId, port){
+  const res = await api("/deploy",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({lab_id:labId, port:port})});
+  if(res.code===0 && res.data && res.data.success){
+    const inst = res.data.instance;
+    toast(`已创建实例 ${inst.instance_id.slice(0,8)}，端口 ${inst.port}`);
+    await startInst(inst.instance_id, labId);
+  }else{
+    toast("部署失败：" + (res.error || (res.data&&res.data.error) || "未知"));
+  }
+}
+
+async function startInst(iid, labId){
+  const res = await api(`/${iid}/start`,{method:"POST"});
+  if(res.code===0 && res.data && res.data.success){
+    document.getElementById("st_"+labId).className="dot green";
+    document.getElementById("stext_"+labId).textContent="运行中";
+  }else{
+    toast("启动失败（可能无 Docker）：" + (res.error||"检查后端日志"));
+  }
+}
+
+function toggleDetail(labId){
+  const d = document.getElementById("det_"+labId);
+  d.classList.toggle("open");
+  if(d.classList.contains("open")){
+    d.innerHTML = "<pre>正在加载详情…</pre>";
+    api("/health").then(h=>{
+      const insts = (h.data&&h.data.instances&&h.data.instances.instances)||[];
+      const mine = insts.find(x=>x.lab_id===labId);
+      d.innerHTML = mine ? `<pre>${JSON.stringify(mine,null,2)}</pre>`
+                          : "<pre>暂无运行实例，请先部署。</pre>";
+    });
+  }
+}
+
+// ---------- 场景 ----------
+function renderScenarios(scns){
+  const box = document.getElementById("scnList");
+  box.innerHTML="";
+  scns.forEach(s=>{
+    const div = document.createElement("div");
+    div.className="scn";
+    div.innerHTML = `
+      <div class="head">
+        <div><b>${s.name}</b> <span class="tag diff">${s.risk_level}风险</span></div>
+        <button class="primary" onclick="execScn('${s.scenario_id}')">执行检测</button>
+      </div>
+      <div class="meta" style="margin-top:6px">目标靶场：${s.target_lab}　路径：${s.target_url}</div>
+      <div class="meta">${s.description}</div>
+      <div class="res" id="res_${s.scenario_id}"></div>`;
+    box.appendChild(div);
+  });
+}
+async function execScn(sid){
+  const url = prompt("请输入靶场访问 URL（如 http://127.0.0.1:8080）","http://127.0.0.1:8080");
+  if(!url) return;
+  const res = await api("/scenarios/execute",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({scenario_id:sid, target_url:url})});
+  const box = document.getElementById("res_"+sid);
+  box.classList.add("show");
+  if(res.code===0){
+    const r = res.data;
+    const ok = r.result==="detected";
+    box.className = "res show " + (ok?"pass":"fail");
+    box.innerHTML = `结果：<b>${r.result==="detected"?"检测到漏洞":"未检测/失败"}</b><br>`+
+      `预期：${r.expected}<br>证据：<pre style="margin-top:6px">${JSON.stringify(r.evidence,null,2)}</pre>`;
+  }else{
+    box.className="res show err";
+    box.textContent = "执行失败：" + (res.error||"未知");
+  }
+}
+
+// ---------- compose ----------
+function renderComposePick(labs){
+  const box = document.getElementById("composePick");
+  box.innerHTML = "<label>选择靶场：</label>" + labs.map(l=>
+    `<label style="margin-right:10px"><input type="checkbox" class="cbox" value="${l.lab_id}"> ${l.name}</label>`
+  ).join("");
+}
+async function genCompose(){
+  const ids = [...document.querySelectorAll(".cbox:checked")].map(c=>c.value);
+  if(!ids.length){ toast("请至少选择一个靶场"); return; }
+  const cpu = document.getElementById("cpuLimit").value || "0.5";
+  const mem = document.getElementById("memLimit").value || "512";
+  const res = await api("/generate-compose",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({lab_ids:ids, options:{cpu:cpu, memory:mem}})});
+  if(res.code===0){
+    lastComposeYaml = res.data.yaml;
+    document.getElementById("composeOut").value = lastComposeYaml;
+    toast("compose 已生成，端口：" + JSON.stringify(res.data.resolved_ports));
+  }else{
+    toast("生成失败：" + (res.error||""));
+  }
+}
+function downloadCompose(){
+  if(!lastComposeYaml){ toast("请先生成"); return; }
+  const blob = new Blob([lastComposeYaml],{type:"text/yaml"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "docker-compose.yml";
+  a.click();
+}
+
+// ---------- 初始化 ----------
+async function init(){
+  // 列表
+  const listRes = await api("/list");
+  const labs = (listRes.code===0 && listRes.data && listRes.data.labs) ? listRes.data.labs : FALLBACK_LABS;
+  renderLabs(labs);
+  renderComposePick(labs);
+  // 场景
+  const scnRes = await api("/scenarios");
+  const scns = (scnRes.code===0 && scnRes.data && scnRes.data.scenarios) ? scnRes.data.scenarios : FALLBACK_SCENARIOS;
+  renderScenarios(scns);
+  // 健康/Docker
+  const h = await api("/health");
+  const dot = document.getElementById("dockerDot");
+  const txt = document.getElementById("dockerText");
+  const dockerOk = h.data && h.data.docker && h.data.docker.available;
+  dot.className = "dot " + (dockerOk?"green":"red");
+  txt.textContent = dockerOk ? "Docker 可用" : "Docker 不可用（本地脚本模式）";
+}
+init();
+</script>
+</body>
+</html>

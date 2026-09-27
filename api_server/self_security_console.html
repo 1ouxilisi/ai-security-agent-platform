@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自身安全加固大提升控制台 · Self-Security Hardening v19.2</title>
+<style>
+:root{
+  --bg:#0b1120; --bg2:#0f172a; --panel:#111c33; --panel2:#16223d;
+  --border:#1e2c4a; --text:#e2e8f0; --muted:#94a3b8;
+  --accent:#22d3ee; --ok:#22c55e; --warn:#f59e0b; --crit:#ef4444; --info:#3b82f6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:linear-gradient(90deg,#0b1120,#13233f);border-bottom:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+header h1{font-size:18px;color:var(--accent);letter-spacing:1px}
+header .meta{font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:4px;padding:10px 22px;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{padding:9px 16px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--muted);white-space:nowrap;border:1px solid transparent}
+.tab:hover{color:var(--text);background:var(--panel)}
+.tab.active{background:var(--panel2);color:var(--accent);border-color:var(--accent)}
+main{padding:18px 22px;max-width:1500px;margin:0 auto}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px}
+.panel h2{font-size:15px;color:var(--accent);margin-bottom:10px;border-left:3px solid var(--accent);padding-left:8px}
+.panel h3{font-size:13px;color:var(--text);margin:10px 0 6px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.card{flex:1;min-width:220px;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:12px}
+.card .num{font-size:26px;font-weight:700}
+.card .lbl{font-size:12px;color:var(--muted)}
+.btn{background:var(--accent);color:#0b1120;border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:600;font-size:13px}
+.btn:hover{filter:brightness(1.15)}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+input,select,textarea{background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:5px;font-size:13px;width:100%}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{border:1px solid var(--border);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--panel2);color:var(--accent)}
+tr:hover td{background:#1a2a4d}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.b-critical{background:#7f1d1d;color:#fecaca}
+.b-high{background:#7c2d12;color:#fed7aa}
+.b-medium{background:#78350f;color:#fde68a}
+.b-low{background:#1e3a8a;color:#bfdbfe}
+.b-info{background:#134e4a;color:#99f6e4}
+.muted{color:var(--muted);font-size:12px}
+pre{background:#0a0f1e;border:1px solid var(--border);border-radius:5px;padding:10px;overflow:auto;font-size:12px;max-height:340px;white-space:pre-wrap;word-break:break-all}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;font-size:13px}
+.kv div span{color:var(--muted);margin-right:6px}
+.progress{height:8px;background:var(--bg2);border-radius:4px;overflow:hidden;margin-top:4px}
+.progress>div{height:100%;background:linear-gradient(90deg,var(--accent),var(--ok))}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.tabpage{display:none}
+.tabpage.active{display:block}
+.alert{padding:8px 12px;border-radius:5px;font-size:12px;margin:6px 0}
+.alert-ok{background:#052e16;color:#86efac;border:1px solid #166534}
+.alert-warn{background:#422006;color:#fcd34d;border:1px solid #92400e}
+.alert-err{background:#450a0a;color:#fca5a5;border:1px solid #991b1b}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;padding:6px 0}
+.bar-chart .b{flex:1;background:linear-gradient(180deg,var(--accent),#1e40af);border-radius:3px 3px 0 0;position:relative}
+.bar-chart .b span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:10px;color:var(--muted)}
+.footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
+@media(max-width:760px){.row{flex-direction:column}header{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🛡 自身安全加固大提升控制台</h1>
+    <div class="meta">第19轮升级方向2 · 防御/检测/加固视角 · 只读静态扫描 · 不对外部目标发起攻击</div>
+  </div>
+  <div class="meta" id="clock">--:--:--</div>
+</header>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" data-tab="t1">🔍 自身渗透</div>
+  <div class="tab" data-tab="t2">📋 代码审计</div>
+  <div class="tab" data-tab="t3">🔐 API加固</div>
+  <div class="tab" data-tab="t4">🗄 数据安全</div>
+  <div class="tab" data-tab="t5">🛰 运行时防护</div>
+  <div class="tab" data-tab="t6">📊 安全仪表盘</div>
+</div>
+
+<main>
+<!-- ============== Tab1 自身渗透 ============== -->
+<div class="tabpage active" id="t1">
+  <div class="panel">
+    <h2>扫描配置与进度</h2>
+    <div class="toolbar">
+      <label class="muted">扫描深度：</label>
+      <select id="penDepth" style="width:140px">
+        <option value="quick">quick</option>
+        <option value="normal" selected>normal</option>
+        <option value="deep">deep</option>
+      </select>
+      <button class="btn" onclick="runPentest()">▶ 启动自身安全扫描</button>
+      <span class="muted" id="penStatus"></span>
+    </div>
+    <div class="row" id="penSummary"></div>
+  </div>
+
+  <div class="panel">
+    <h2>OWASP Top 10 (2021) 分布</h2>
+    <div id="owaspList"><span class="muted">点击"启动扫描"后加载</span></div>
+  </div>
+
+  <div class="row">
+    <div class="panel" style="flex:1.2">
+      <h2>注入检测</h2>
+      <div class="toolbar"><button class="btn ghost" onclick="loadInjection()">运行注入检测</button></div>
+      <div id="injResult"></div>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2>认证授权测试</h2>
+      <div class="toolbar"><button class="btn ghost" onclick="loadAuthz()">运行认证授权分析</button></div>
+      <div id="authzResult"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="panel" style="flex:1">
+      <h2>敏感信息泄露</h2>
+      <div class="toolbar"><button class="btn ghost" onclick="loadDisclosure()">识别敏感信息</button></div>
+      <div id="disclosureResult"></div>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2>配置安全检查</h2>
+      <div class="toolbar"><button class="btn ghost" onclick="loadConfig()">检查配置</button></div>
+      <div id="configResult"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== Tab2 代码审计 ============== -->
+<div class="tabpage" id="t2">
+  <div class="panel">
+    <h2>依赖漏洞扫描（requirements.txt）</h2>
+    <div class="toolbar"><button class="btn" onclick="loadDeps()">扫描依赖</button></div>
+    <div class="row" id="depSummary"></div>
+    <h3>命中详情</h3>
+    <div id="depTable"></div>
+  </div>
+  <div class="row">
+    <div class="panel" style="flex:1">
+      <h2>SAST 规则库</h2>
+      <div class="toolbar"><button class="btn ghost" onclick="loadRules()">加载规则库</button></div>
+      <div id="rulesResult"></div>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2>代码静态分析（实际跑规则）</h2>
+      <div class="toolbar"><button class="btn ghost" onclick="loadSast()">运行 SAST</button></div>
+      <div id="sastResult"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="panel" style="flex:1">
+      <h2>代码复杂度分析</h2>
+      <div class="toolbar"><button class="btn ghost" onclick="loadComplexity()">分析复杂度</button></div>
+      <div id="complexityResult"></div>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2>安全编码规范检查</h2>
+      <div class="toolbar"><button class="btn ghost" onclick="loadStandards()">检查规范</button></div>
+      <div id="standardsResult"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== Tab3 API加固 ============== -->
+<div class="tabpage" id="t3">
+  <div class="row">
+    <div class="panel" style="flex:1">
+      <h2>API 认证强化</h2>
+      <button class="btn ghost" onclick="callApi('/hardening/auth','#authResult')">分析 JWT / 令牌</button>
+      <div id="authResult" class="muted">未加载</div>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2>API 授权强化</h2>
+      <button class="btn ghost" onclick="callApi('/hardening/authz','#authzResult')">分析 RBAC / 越权</button>
+      <div id="authzResult" class="muted">未加载</div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="panel" style="flex:1">
+      <h2>输入验证与消毒</h2>
+      <button class="btn ghost" onclick="callApi('/hardening/input','#inputResult')">分析 Schema 验证</button>
+      <div id="inputResult" class="muted">未加载</div>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2>速率限制 / 防暴力破解</h2>
+      <button class="btn ghost" onclick="callApi('/hardening/rate-limit','#rateResult')">分析限流</button>
+      <div id="rateResult" class="muted">未加载</div>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>API 安全响应头</h2>
+    <button class="btn ghost" onclick="callApi('/hardening/headers','#hdrResult')">检查安全头</button>
+    <div id="hdrResult" class="muted">未加载</div>
+  </div>
+  <div class="panel">
+    <h2>加固总览与建议</h2>
+    <button class="btn" onclick="callApi('/hardening/overview','#overviewResult')">生成加固建议</button>
+    <div id="overviewResult" class="muted">未加载</div>
+  </div>
+</div>
+
+<!-- ============== Tab4 数据安全 ============== -->
+<div class="tabpage" id="t4">
+  <div class="row">
+    <div class="panel" style="flex:1.2">
+      <h2>敏感数据识别</h2>
+      <button class="btn ghost" onclick="callApi('/data/discover','#discoverResult')">扫描 PII/PCI/密钥</button>
+      <div id="discoverResult" class="muted">未加载</div>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2>数据加密评估</h2>
+      <button class="btn ghost" onclick="callApi('/data/encryption','#encResult')">评估加密强度</button>
+      <div id="encResult" class="muted">未加载</div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="panel" style="flex:1">
+      <h2>数据脱敏规则</h2>
+      <button class="btn ghost" onclick="callApi('/data/masking','#maskResult')">查看脱敏示例</button>
+      <div id="maskResult" class="muted">未加载</div>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2>数据访问审计</h2>
+      <button class="btn ghost" onclick="callApi('/data/access-audit','#auditResult')">查看审计规则</button>
+      <div id="auditResult" class="muted">未加载</div>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>隐私合规（GDPR / CCPA / PIPL）</h2>
+    <button class="btn ghost" onclick="callApi('/data/privacy','#privResult')">检查合规差距</button>
+    <div id="privResult" class="muted">未加载</div>
+  </div>
+</div>
+
+<!-- ============== Tab5 运行时防护 ============== -->
+<div class="tabpage" id="t5">
+  <div class="panel">
+    <h2>WAF 规则引擎（实时检测）</h2>
+    <div class="toolbar">
+      <input id="wafPayload" placeholder="输入待测 payload，如：' OR 1=1 --  / <script>alert(1)</script>" style="flex:1">
+      <button class="btn" onclick="inspectWaf()">检测</button>
+    </div>
+    <div id="wafInspectResult" class="muted">未检测</div>
+    <h3>已加载规则</h3>
+    <div id="wafRulesResult"></div>
+  </div>
+  <div class="row">
+    <div class="panel" style="flex:1">
+      <h2>入侵检测（IDS 特征）</h2>
+      <button class="btn ghost" onclick="callApi('/runtime/ids','#idsResult')">查看特征库</button>
+      <div id="idsResult" class="muted">未加载</div>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2>日志审计</h2>
+      <button class="btn ghost" onclick="callApi('/runtime/logs','#logsResult')">检查日志</button>
+      <div id="logsResult" class="muted">未加载</div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="panel" style="flex:1">
+      <h2>异常行为检测（UEBA）</h2>
+      <button class="btn ghost" onclick="callApi('/runtime/ueba','#uebaResult')">查看基线</button>
+      <div id="uebaResult" class="muted">未加载</div>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2>应急响应 Playbook</h2>
+      <button class="btn ghost" onclick="callApi('/runtime/incident','#irResult')">查看流程</button>
+      <div id="irResult" class="muted">未加载</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== Tab6 仪表盘 ============== -->
+<div class="tabpage" id="t6">
+  <div class="panel">
+    <h2>安全态势大屏</h2>
+    <button class="btn" onclick="loadPosture()">刷新态势</button>
+    <div class="row" id="postureCards" style="margin-top:10px"></div>
+    <h3 style="margin-top:12px">7 日安全评分趋势</h3>
+    <div class="bar-chart" id="trendChart"></div>
+  </div>
+  <div class="panel">
+    <h2>漏洞管理</h2>
+    <button class="btn ghost" onclick="loadVulns()">加载漏洞列表</button>
+    <div id="vulnTable" style="margin-top:8px"></div>
+  </div>
+  <div class="row">
+    <div class="panel" style="flex:1">
+      <h2>安全报告</h2>
+      <button class="btn ghost" onclick="callApi('/dashboard/report','#reportResult')">生成周报</button>
+      <div id="reportResult" class="muted">未加载</div>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2>基线检查（CIS/ASVS/NIST/等保2.0）</h2>
+      <button class="btn ghost" onclick="callApi('/dashboard/baseline','#baseResult')">执行基线</button>
+      <div id="baseResult" class="muted">未加载</div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="panel" style="flex:1">
+      <h2>安全培训与意识</h2>
+      <button class="btn ghost" onclick="callApi('/dashboard/training','#trainResult')">查看培训</button>
+      <div id="trainResult" class="muted">未加载</div>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2>综合安全评分</h2>
+      <button class="btn ghost" onclick="loadScore()">计算评分</button>
+      <div id="scoreResult" class="muted">未加载</div>
+    </div>
+  </div>
+</div>
+</main>
+
+<div class="footer">self_security v19.2 · 自身安全加固 · 防御即服务（Defense-as-Code）</div>
+
+<script>
+const BASE = "/api/v1/self-security";
+// Tab switching
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click",()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".tabpage").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    document.getElementById(t.dataset.tab).classList.add("active");
+  });
+});
+// clock
+setInterval(()=>{document.getElementById("clock").textContent=new Date().toLocaleString("zh-CN");},1000);
+
+async function api(path, opts){
+  try{
+    const r = await fetch(BASE+path, opts||{});
+    const j = await r.json();
+    if(!j.success) throw new Error(j.error||"未知错误");
+    return j.data;
+  }catch(e){
+    throw e;
+  }
+}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function badge(sev){
+  const m={critical:"b-critical",high:"b-high",medium:"b-medium",low:"b-low",info:"b-info"};
+  return `<span class="badge ${m[sev]||"b-info"}">${esc(sev)}</span>`;
+}
+function kv(obj){
+  if(!obj||typeof obj!=="object") return `<pre>${esc(JSON.stringify(obj,null,2))}</pre>`;
+  return `<div class="kv">${Object.entries(obj).map(([k,v])=>{
+    if(typeof v==="object") v=JSON.stringify(v);
+    return `<div><span>${esc(k)}:</span>${esc(v)}</div>`;
+  }).join("")}</div>`;
+}
+function render(el, data){
+  const node = typeof el==="string"?document.querySelector(el):el;
+  if(data==null||typeof data==="object"){ node.innerHTML = `<pre>${esc(JSON.stringify(data,null,2))}</pre>`; }
+  else node.textContent = String(data);
+}
+async function callApi(path, el){
+  try{
+    document.querySelector(el).innerHTML=`<span class="muted">加载中...</span>`;
+    const d = await api(path);
+    render(el, d);
+  }catch(e){
+    document.querySelector(el).innerHTML=`<div class="alert alert-err">${esc(e.message)}</div>`;
+  }
+}
+
+// Tab1
+async function runPentest(){
+  const depth = document.getElementById("penDepth").value;
+  document.getElementById("penStatus").textContent = "扫描中...";
+  try{
+    const d = await api("/pentest/scan?depth="+encodeURIComponent(depth));
+    const r = d.result || d;
+    const s = r.summary||{};
+    document.getElementById("penSummary").innerHTML = `
+      <div class="card"><div class="num" style="color:var(--crit)">${s.critical||0}</div><div class="lbl">严重</div></div>
+      <div class="card"><div class="num" style="color:var(--warn)">${s.high||0}</div><div class="lbl">高危</div></div>
+      <div class="card"><div class="num" style="color:var(--info)">${s.medium||0}</div><div class="lbl">中危</div></div>
+      <div class="card"><div class="num" style="color:var(--ok)">${(s.total_findings||0)-(s.critical||0)-(s.high||0)-(s.medium||0)}</div><div class="lbl">低危/信息</div></div>
+      <div class="card"><div class="num">${s.risk_score||0}</div><div class="lbl">风险分（${s.risk_level||"-"}）</div></div>`;
+    document.getElementById("penStatus").textContent = `完成，耗时 ${r.elapsed_seconds}s，扫描 ${r.scope.python_files} 个 .py`;
+    // OWASP
+    const dist = r.owasp_distribution||{};
+    document.getElementById("owaspList").innerHTML = `<table><tr><th>OWASP</th><th>名称</th><th>命中数</th></tr>` +
+      (r.owasp_top10||[]).map(o=>`<tr><td>${o.id}</td><td>${esc(o.name)}</td><td>${dist[o.id]||0}</td></tr>`).join("") + `</table>`;
+  }catch(e){
+    document.getElementById("penStatus").innerHTML=`<span class="alert alert-err">${esc(e.message)}</span>`;
+  }
+}
+async function loadInjection(){
+  try{
+    const d = await api("/pentest/injection");
+    document.getElementById("injResult").innerHTML = `<div class="alert alert-warn">共识别注入风险点 ${d.total_injection_points} 个</div>
+      <table><tr><th>类别</th><th>风险</th><th>命中数</th></tr>`+
+      d.categories.map(c=>`<tr><td>${esc(c.label)}</td><td>${badge(c.risk)}</td><td>${c.hit_count}</td></tr>`).join("")+`</table>`;
+  }catch(e){document.getElementById("injResult").innerHTML=`<div class="alert alert-err">${esc(e.message)}</div>`;}
+}
+async function loadAuthz(){
+  try{
+    const d = await api("/pentest/authz");
+    let h=`<div class="alert alert-warn">共 ${d.total_authz_risk_points} 个风险点</div><table><tr><th>检查项</th><th>命中</th></tr>`;
+    for(const[k,v] of Object.entries(d.checks)){ h+=`<tr><td>${esc(v.label)}</td><td>${v.count}</td></tr>`; }
+    document.getElementById("authzResult").innerHTML=h+`</table>`;
+  }catch(e){document.getElementById("authzResult").innerHTML=`<div class="alert alert-err">${esc(e.message)}</div>`;}
+}
+async function loadDisclosure(){
+  try{
+    const d = await api("/pentest/disclosure");
+    let h=`<div class="alert alert-warn">疑似泄露 ${d.total_leaks} 项</div><table><tr><th>类型</th><th>计数</th></tr>`;
+    d.categories.forEach(c=>h+=`<tr><td>${esc(c.title)}</td><td>${c.count}</td></tr>`);
+    h+=`</table>`;
+    if(d.backup_files_found&&d.backup_files_found.length) h+=`<h3>备份文件</h3><pre>${esc(d.backup_files_found.join("\n"))}</pre>`;
+    document.getElementById("disclosureResult").innerHTML=h;
+  }catch(e){document.getElementById("disclosureResult").innerHTML=`<div class="alert alert-err">${esc(e.message)}</div>`;}
+}
+async function loadConfig(){
+  try{
+    const d = await api("/pentest/config");
+    document.getElementById("configResult").innerHTML=`<div class="alert alert-${d.pass_rate>=80?"ok":"warn"}">通过率 ${d.pass_rate}% (${d.total}项)</div>
+      <table><tr><th>检查项</th><th>状态</th><th>修复建议</th></tr>`+
+      d.checks.map(c=>`<tr><td>${esc(c.item)}</td><td><span class="badge ${c.status==="PASS"?"b-info":"b-medium"}">${c.status}</span></td><td>${esc(c.fix)}</td></tr>`).join("")+`</table>`;
+  }catch(e){document.getElementById("configResult").innerHTML=`<div class="alert alert-err">${esc(e.message)}</div>`;}
+}
+
+// Tab2
+async function loadDeps(){
+  try{
+    const d = await api("/audit/deps");
+    document.getElementById("depSummary").innerHTML=`
+      <div class="card"><div class="num">${d.declared_packages}</div><div class="lbl">声明依赖</div></div>
+      <div class="card"><div class="num" style="color:var(--crit)">${d.severity_distribution.high||0}</div><div class="lbl">高危 CVE</div></div>
+      <div class="card"><div class="num" style="color:var(--warn)">${d.severity_distribution.medium||0}</div><div class="lbl">中危 CVE</div></div>
+      <div class="card"><div class="num">${d.known_vuln_hits}</div><div class="lbl">知识库命中</div></div>`;
+    document.getElementById("depTable").innerHTML=`<table><tr><th>包</th><th>声明</th><th>漏洞ID</th><th>级别</th><th>建议</th></tr>`+
+      (d.findings||[]).map(f=>`<tr><td>${esc(f.package)}</td><td>${esc(f.declared)}</td><td>${esc(f.vuln_id)}</td><td>${badge(f.severity)}</td><td>${esc(f.upgrade_hint)}</td></tr>`).join("")+`</table>`;
+  }catch(e){document.getElementById("depTable").innerHTML=`<div class="alert alert-err">${esc(e.message)}</div>`;}
+}
+async function loadRules(){
+  try{
+    const d = await api("/audit/sast-rules");
+    document.getElementById("rulesResult").innerHTML=`<div class="alert alert-ok">规则总数 ${d.total_rules}</div>
+      <pre>${esc(JSON.stringify(d.by_severity,null,2))}</pre>
+      <h3>规则样例</h3><table><tr><th>ID</th><th>级别</th><th>标题</th></tr>`+
+      d.rules.slice(0,15).map(r=>`<tr><td>${esc(r.id)}</td><td>${badge(r.severity)}</td><td>${esc(r.title)}</td></tr>`).join("")+`</table>`;
+  }catch(e){document.getElementById("rulesResult").innerHTML=`<div class="alert alert-err">${esc(e.message)}</div>`;}
+}
+async function loadSast(){
+  try{
+    const d = (await api("/audit/sast-scan")).result;
+    document.getElementById("sastResult").innerHTML=`<div class="alert alert-warn">扫描 ${d.files_scanned} 文件，发现 ${d.findings_total} 处</div>
+      <pre>${esc(JSON.stringify(d.by_severity,null,2))}</pre>
+      <h3>Top 文件</h3><table><tr><th>文件</th><th>问题数</th></tr>`+
+      d.top_files.map(f=>`<tr><td>${esc(f.file)}</td><td>${f.issues}</td></tr>`).join("")+`</table>`;
+  }catch(e){document.getElementById("sastResult").innerHTML=`<div class="alert alert-err">${esc(e.message)}</div>`;}
+}
+async function loadComplexity(){
+  try{
+    const d = await api("/audit/complexity");
+    document.getElementById("complexityResult").innerHTML=`<div class="kv">
+      <div><span>函数总数</span>${d.total_functions}</div>
+      <div><span>长方法(>80行)</span>${d.long_methods_count}</div>
+      <div><span>高复杂度函数</span>${d.high_complexity_funcs}</div>
+      <div><span>神类(>25方法)</span>${d.god_classes}</div>
+      <div><span>技术债(h)</span>${d.estimated_tech_debt_hours}</div>
+      <div><span>质量分</span>${d.code_quality_score}</div></div>`;
+  }catch(e){document.getElementById("complexityResult").innerHTML=`<div class="alert alert-err">${esc(e.message)}</div>`;}
+}
+async function loadStandards(){
+  try{
+    const d = await api("/audit/standards");
+    document.getElementById("standardsResult").innerHTML=`<div class="alert alert-${d.compliance_score>=70?"ok":"warn"}">合规分 ${d.compliance_score}</div>
+      <pre>${esc(JSON.stringify(d.metrics,null,2))}</pre>`;
+  }catch(e){document.getElementById("standardsResult").innerHTML=`<div class="alert alert-err">${esc(e.message)}</div>`;}
+}
+
+// Tab5 WAF
+async function inspectWaf(){
+  const p = document.getElementById("wafPayload").value;
+  try{
+    const d = await fetch(BASE+"/runtime/waf/inspect",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({payload:p,source:"console"})}).then(r=>r.json());
+    if(!d.success) throw new Error(d.error);
+    const r = d.data;
+    const cls = r.decision==="block"?"alert-err":r.decision==="log"?"alert-warn":"alert-ok";
+    document.getElementById("wafInspectResult").innerHTML=`<div class="alert ${cls}">决策: ${r.decision}，命中 ${r.hits.length} 条规则</div>
+      <pre>${esc(JSON.stringify(r.hits,null,2))}</pre>`;
+    const rules = await api("/runtime/waf");
+    document.getElementById("wafRulesResult").innerHTML=`<table><tr><th>ID</th><th>规则</th><th>动作</th><th>级别</th></tr>`+
+      rules.rules.map(x=>`<tr><td>${x.id}</td><td>${esc(x.name)}</td><td>${x.action}</td><td>${badge(x.severity)}</td></tr>`).join("")+`</table>`;
+  }catch(e){document.getElementById("wafInspectResult").innerHTML=`<div class="alert alert-err">${esc(e.message)}</div>`;}
+}
+
+// Tab6
+async function loadPosture(){
+  try{
+    const d = (await api("/dashboard/posture")).result;
+    document.getElementById("postureCards").innerHTML=`
+      <div class="card"><div class="num" style="color:var(--crit)">${d.vuln_counts.critical||0}</div><div class="lbl">严重漏洞</div></div>
+      <div class="card"><div class="num" style="color:var(--warn)">${d.vuln_counts.high||0}</div><div class="lbl">高危</div></div>
+      <div class="card"><div class="num">${d.waf_blocked_today}</div><div class="lbl">WAF拦截</div></div>
+      <div class="card"><div class="num">${d.active_alerts}</div><div class="lbl">活跃告警</div></div>
+      <div class="card"><div class="num" style="color:var(--accent)">${d.security_score}</div><div class="lbl">综合分(${d.security_level})</div></div>`;
+    const t = d.trend_7d||[];
+    const max = Math.max(...t,1);
+    document.getElementById("trendChart").innerHTML=t.map((v,i)=>`<div class="b" style="height:${Math.round(v/max*100)}%"><span>D${i+1}</span></div>`).join("");
+  }catch(e){document.getElementById("postureCards").innerHTML=`<div class="alert alert-err">${esc(e.message)}</div>`;}
+}
+async function loadVulns(){
+  try{
+    const d = await api("/dashboard/vulns");
+    document.getElementById("vulnTable").innerHTML=`<div class="alert alert-warn">未修复漏洞 ${d.total} 个</div>
+      <table><tr><th>ID</th><th>标题</th><th>级别</th><th>位置</th><th>修复建议</th></tr>`+
+      d.items.map(v=>`<tr><td>${v.id}</td><td>${esc(v.title)}</td><td>${badge(v.severity)}</td><td>${esc(v.location)}</td><td>${esc(v.fix)}</td></tr>`).join("")+`</table>`;
+  }catch(e){document.getElementById("vulnTable").innerHTML=`<div class="alert alert-err">${esc(e.message)}</div>`;}
+}
+async function loadScore(){
+  try{
+    const d = await api("/dashboard/score");
+    let h=`<div class="alert alert-${d.total>=70?"ok":"warn"}">总分 ${d.total}（${d.level}）</div>
+      <table><tr><th>维度</th><th>得分</th></tr>`;
+    for(const[k,v] of Object.entries(d.dimensions)){ h+=`<tr><td>${esc(k)}</td><td>${v}</td></tr>`; }
+    h+=`</table><h3>改进建议</h3><ul>`+d.improvements.map(x=>`<li>${esc(x)}</li>`).join("")+`</ul>`;
+    document.getElementById("scoreResult").innerHTML=h;
+  }catch(e){document.getElementById("scoreResult").innerHTML=`<div class="alert alert-err">${esc(e.message)}</div>`;}
+}
+// 初始加载
+loadPosture();
+</script>
+</body>
+</html>

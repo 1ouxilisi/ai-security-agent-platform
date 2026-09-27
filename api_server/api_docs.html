@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Hacking Agent API - 专业接口文档</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;background:#0a0a14;color:#e0e0e0;line-height:1.6}
+.header{background:linear-gradient(135deg,#0f0f23 0%,#1a1a3e 50%,#0f0f23 100%);padding:20px 30px;border-bottom:2px solid #2a2a5a;position:sticky;top:0;z-index:1000;box-shadow:0 2px 20px rgba(0,0,0,0.5)}
+.header h1{color:#fff;font-size:24px;margin-bottom:5px;display:flex;align-items:center;gap:10px}
+.header h1 .icon{font-size:28px}
+.header .subtitle{color:#8899bb;font-size:13px}
+.header .stats{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap}
+.header .stat{background:rgba(100,120,255,0.1);padding:6px 14px;border-radius:6px;font-size:12px;color:#aabbdd;border:1px solid rgba(100,120,255,0.2)}
+.header .stat strong{color:#fff;margin-right:4px}
+.container{display:flex;min-height:calc(100vh - 110px)}
+.sidebar{width:280px;background:#0d0d1a;border-right:1px solid #1f1f3a;padding:15px;overflow-y:auto;max-height:calc(100vh - 110px);position:sticky;top:110px}
+.sidebar h3{color:#6677aa;font-size:11px;text-transform:uppercase;margin-bottom:12px;letter-spacing:1.5px;font-weight:600}
+.tag-item{padding:9px 12px;margin-bottom:3px;border-radius:6px;cursor:pointer;font-size:13px;color:#99aabb;transition:all 0.2s;display:flex;justify-content:space-between;align-items:center}
+.tag-item:hover{background:#1a1a30;color:#fff}
+.tag-item.active{background:linear-gradient(90deg,#2a2a6a,#1a1a4a);color:#fff;border-left:3px solid #6a6aff}
+.tag-item .count{background:rgba(100,120,255,0.15);padding:2px 8px;border-radius:10px;font-size:11px;color:#8899cc}
+.main{flex:1;padding:20px 30px;overflow-y:auto}
+.toolbar{display:flex;gap:12px;margin-bottom:20px;align-items:center;flex-wrap:wrap}
+.search-box{flex:1;min-width:250px;padding:10px 16px;background:#12122a;border:1px solid #2a2a4a;border-radius:8px;color:#fff;font-size:14px;outline:none;transition:all 0.2s}
+.search-box:focus{border-color:#5a5aff;box-shadow:0 0 0 3px rgba(90,90,255,0.1)}
+.toolbar-btn{padding:9px 16px;background:#1a1a3a;border:1px solid #2a2a5a;border-radius:6px;color:#aabbdd;font-size:13px;cursor:pointer;transition:all 0.2s}
+.toolbar-btn:hover{background:#2a2a5a;color:#fff}
+.toolbar-btn.active{background:#3a3a7a;color:#fff;border-color:#5a5aff}
+.endpoint{background:#0d0d1a;border:1px solid #1f1f3a;border-radius:10px;margin-bottom:12px;overflow:hidden;transition:all 0.2s}
+.endpoint:hover{border-color:#3a3a6a}
+.endpoint.expanded{border-color:#4a4a8a;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.endpoint-header{display:flex;align-items:center;padding:14px 18px;cursor:pointer;gap:14px}
+.method{padding:5px 12px;border-radius:5px;font-size:11px;font-weight:700;text-transform:uppercase;min-width:65px;text-align:center;letter-spacing:0.5px}
+.method.get{background:#1b5e20;color:#a5d6a7}
+.method.post{background:#0d47a1;color:#90caf9}
+.method.put{background:#e65100;color:#ffcc80}
+.method.delete{background:#b71c1c;color:#ef9a9a}
+.method.patch{background:#4a148c;color:#ce93d8}
+.endpoint-path{font-family:'Consolas','Monaco','Fira Code',monospace;font-size:13px;color:#e0e0e0;flex:1}
+.endpoint-desc{font-size:12px;color:#7788aa;margin-left:10px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.endpoint-actions{display:flex;gap:8px}
+.fav-btn{background:none;border:none;color:#555;font-size:16px;cursor:pointer;padding:4px;transition:all 0.2s}
+.fav-btn:hover{color:#ffd700;transform:scale(1.2)}
+.fav-btn.active{color:#ffd700}
+.endpoint-body{padding:0 18px 18px;border-top:1px solid #1f1f3a;display:none}
+.endpoint.expanded .endpoint-body{display:block}
+.endpoint-body h4{color:#7788bb;font-size:11px;text-transform:uppercase;margin:16px 0 10px;letter-spacing:1px;font-weight:600}
+.endpoint-body h4:first-child{margin-top:14px}
+.desc-text{color:#aabbcc;font-size:13px;background:#12122a;padding:10px 14px;border-radius:6px;border-left:3px solid #5a5aff}
+.params-table{width:100%;border-collapse:collapse;font-size:12px}
+.params-table th{text-align:left;padding:10px 12px;background:#151530;color:#8899bb;border-bottom:2px solid #2a2a4a;font-weight:600}
+.params-table td{padding:10px 12px;border-bottom:1px solid #1a1a30;color:#c0c0d0}
+.params-table code{background:#1a1a35;padding:2px 7px;border-radius:4px;color:#90caf9;font-family:'Consolas',monospace;font-size:11px}
+.params-table .required{color:#ef5350;font-weight:bold}
+.params-table .optional{color:#66bb6a}
+.req-body-editor{background:#0a0a14;border:1px solid #2a2a4a;border-radius:8px;overflow:hidden}
+.req-body-editor textarea{width:100%;min-height:150px;background:transparent;border:none;color:#a5d6a7;font-family:'Consolas','Monaco',monospace;font-size:12px;padding:14px;resize:vertical;outline:none;line-height:1.6}
+.req-body-editor .editor-header{background:#151530;padding:8px 14px;font-size:11px;color:#8899bb;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2a2a4a}
+.req-body-editor .editor-header button{background:#2a2a5a;color:#aabbdd;border:none;padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer}
+.req-body-editor .editor-header button:hover{background:#3a3a7a;color:#fff}
+.try-btn{background:linear-gradient(135deg,#3a3a8a,#2a2a6a);color:#fff;border:none;padding:11px 28px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;margin-top:16px;transition:all 0.2s;letter-spacing:0.5px}
+.try-btn:hover{background:linear-gradient(135deg,#4a4a9a,#3a3a7a);transform:translateY(-1px);box-shadow:0 4px 12px rgba(90,90,255,0.3)}
+.try-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.response-area{margin-top:16px;background:#0a0a14;border:1px solid #2a2a4a;border-radius:8px;overflow:hidden;display:none}
+.response-area.show{display:block}
+.response-header{background:#151530;padding:10px 14px;font-size:12px;color:#8899bb;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2a2a4a}
+.response-status{padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700}
+.response-status.success{background:#1b5e20;color:#a5d6a7}
+.response-status.error{background:#b71c1c;color:#ef9a9a}
+.response-status.redirect{background:#e65100;color:#ffcc80}
+.response-body{padding:14px;font-family:'Consolas','Monaco',monospace;font-size:12px;white-space:pre-wrap;max-height:400px;overflow-y:auto;color:#c0c0d0;line-height:1.6}
+.response-body .json-key{color:#90caf9}
+.response-body .json-string{color:#a5d6a7}
+.response-body .json-number{color:#ffcc80}
+.response-body .json-boolean{color:#ce93d8}
+.response-body .json-null{color:#ef9a9a}
+.loading{color:#7788aa;text-align:center;padding:40px;font-size:14px}
+.empty{color:#556677;text-align:center;padding:40px;font-size:14px}
+.history-panel{position:fixed;right:0;top:110px;width:350px;height:calc(100vh - 110px);background:#0d0d1a;border-left:1px solid #1f1f3a;transform:translateX(100%);transition:transform 0.3s;z-index:999;overflow-y:auto;padding:15px}
+.history-panel.show{transform:translateX(0)}
+.history-panel h3{color:#7788bb;font-size:12px;text-transform:uppercase;margin-bottom:12px;letter-spacing:1px}
+.history-item{background:#12122a;padding:10px 12px;border-radius:6px;margin-bottom:8px;cursor:pointer;transition:all 0.2px;border-left:3px solid transparent}
+.history-item:hover{background:#1a1a3a;border-left-color:#5a5aff}
+.history-item .method{display:inline-block;min-width:auto;padding:2px 8px;font-size:10px;margin-right:8px}
+.history-item .path{font-family:'Consolas',monospace;font-size:11px;color:#aabbcc}
+.history-item .time{font-size:10px;color:#667788;margin-top:4px}
+.history-item .status{font-size:10px;margin-top:4px}
+.toast{position:fixed;bottom:20px;right:20px;background:#1a1a3a;color:#fff;padding:12px 20px;border-radius:8px;border-left:4px solid #5a5aff;z-index:2000;transform:translateY(100px);transition:transform 0.3s;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+.toast.show{transform:translateY(0)}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:#0a0a14}
+::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#3a3a6a}
+</style>
+</head>
+<body>
+<div class="header">
+<h1><span class="icon">🔓</span> AI Hacking Agent API <span style="font-size:14px;color:#7788aa;font-weight:normal">v10.0 专业版</span></h1>
+<div class="subtitle">AI驱动的安全研究智能体平台 - 专业REST API接口文档</div>
+<div class="stats" id="stats"></div>
+</div>
+<div class="container">
+<div class="sidebar">
+<h3>接口分类</h3>
+<div id="tagList"></div>
+</div>
+<div class="main">
+<div class="toolbar">
+<input type="text" class="search-box" id="searchBox" placeholder="🔍 搜索接口路径、描述、方法...">
+<button class="toolbar-btn" onclick="toggleFavorites()">⭐ 收藏</button>
+<button class="toolbar-btn" onclick="toggleHistory()">📋 历史</button>
+<button class="toolbar-btn" onclick="expandAll()">展开全部</button>
+<button class="toolbar-btn" onclick="collapseAll()">收起全部</button>
+</div>
+<div id="endpointList"></div>
+</div>
+</div>
+<div class="history-panel" id="historyPanel">
+<h3>请求历史</h3>
+<div id="historyList"></div>
+<button class="toolbar-btn" style="width:100%;margin-top:10px" onclick="clearHistory()">清空历史</button>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var apiData = null;
+var currentTag = 'all';
+var showFavorites = false;
+var favorites = JSON.parse(localStorage.getItem('api_favorites') || '[]');
+var history = JSON.parse(localStorage.getItem('api_history') || '[]');
+
+function showToast(msg) {
+    var toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(function() { toast.classList.remove('show'); }, 2500);
+}
+
+function loadAPI() {
+    document.getElementById('endpointList').innerHTML = '<div class="loading">⏳ 正在加载API文档...</div>';
+    fetch('/openapi.json')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            apiData = data;
+            renderStats();
+            renderTags();
+            renderEndpoints();
+        })
+        .catch(function(e) {
+            document.getElementById('endpointList').innerHTML = '<div class="empty">❌ 加载失败: ' + e.message + '<br>请确保服务正常运行</div>';
+        });
+}
+
+function renderStats() {
+    var paths = Object.keys(apiData.paths || {});
+    var methods = 0;
+    var tags = {};
+    paths.forEach(function(p) {
+        Object.keys(apiData.paths[p]).forEach(function(m) {
+            methods++;
+            var op = apiData.paths[p][m];
+            (op.tags || ['default']).forEach(function(t) { tags[t] = true; });
+        });
+    });
+    document.getElementById('stats').innerHTML =
+        '<span class="stat"><strong>' + methods + '</strong>接口总数</span>' +
+        '<span class="stat"><strong>' + paths.length + '</strong>路径数</span>' +
+        '<span class="stat"><strong>' + Object.keys(tags).length + '</strong>分类数</span>' +
+        '<span class="stat"><strong>' + apiData.info.version + '</strong>版本</span>' +
+        '<span class="stat"><strong>' + favorites.length + '</strong>已收藏</span>' +
+        '<span class="stat"><strong>' + history.length + '</strong>请求历史</span>';
+}
+
+function renderTags() {
+    var tagCount = {};
+    Object.keys(apiData.paths || {}).forEach(function(p) {
+        Object.keys(apiData.paths[p]).forEach(function(m) {
+            var op = apiData.paths[p][m];
+            (op.tags || ['default']).forEach(function(t) {
+                tagCount[t] = (tagCount[t] || 0) + 1;
+            });
+        });
+    });
+    var sortedTags = Object.keys(tagCount).sort();
+    var total = 0;
+    Object.keys(tagCount).forEach(function(t) { total += tagCount[t]; });
+    var html = '<div class="tag-item ' + (currentTag === 'all' ? 'active' : '') + '" onclick="filterTag(\'all\')">📋 全部接口<span class="count">' + total + '</span></div>';
+    sortedTags.forEach(function(t) {
+        html += '<div class="tag-item ' + (currentTag === t ? 'active' : '') + '" onclick="filterTag(\'' + t + '\')">' + t + '<span class="count">' + tagCount[t] + '</span></div>';
+    });
+    document.getElementById('tagList').innerHTML = html;
+}
+
+function filterTag(tag) {
+    currentTag = tag;
+    showFavorites = false;
+    renderTags();
+    renderEndpoints();
+}
+
+function toggleFavorites() {
+    showFavorites = !showFavorites;
+    renderEndpoints();
+    showToast(showFavorites ? '显示收藏的接口' : '显示全部接口');
+}
+
+function toggleHistory() {
+    document.getElementById('historyPanel').classList.toggle('show');
+    renderHistory();
+}
+
+function renderHistory() {
+    var html = '';
+    if (history.length === 0) {
+        html = '<div class="empty" style="padding:20px;font-size:12px">暂无请求历史</div>';
+    } else {
+        history.slice(0, 50).forEach(function(h, i) {
+            var statusClass = h.status >= 200 && h.status < 300 ? 'success' : (h.status >= 300 && h.status < 400 ? 'redirect' : 'error');
+            html += '<div class="history-item" onclick="loadHistoryItem(' + i + ')">' +
+                '<span class="method ' + h.method + '">' + h.method.toUpperCase() + '</span>' +
+                '<span class="path">' + h.path.substring(0, 40) + (h.path.length > 40 ? '...' : '') + '</span>' +
+                '<div class="time">' + h.time + '</div>' +
+                '<div class="status response-status ' + statusClass + '">' + h.status + ' ' + h.statusText + ' (' + h.duration + 'ms)</div>' +
+                '</div>';
+        });
+    }
+    document.getElementById('historyList').innerHTML = html;
+}
+
+function loadHistoryItem(index) {
+    var h = history[index];
+    if (h && h.body) {
+        var textareas = document.querySelectorAll('.req-body-editor textarea');
+        if (textareas.length > 0) {
+            textareas[0].value = h.body;
+        }
+    }
+    showToast('已加载历史请求参数');
+}
+
+function clearHistory() {
+    history = [];
+    localStorage.setItem('api_history', JSON.stringify(history));
+    renderHistory();
+    renderStats();
+    showToast('历史已清空');
+}
+
+function expandAll() {
+    document.querySelectorAll('.endpoint').forEach(function(el) { el.classList.add('expanded'); });
+}
+
+function collapseAll() {
+    document.querySelectorAll('.endpoint').forEach(function(el) { el.classList.remove('expanded'); });
+}
+
+function toggleFavorite(path, method, event) {
+    event.stopPropagation();
+    var key = method + ' ' + path;
+    var idx = favorites.indexOf(key);
+    if (idx > -1) {
+        favorites.splice(idx, 1);
+        showToast('已取消收藏');
+    } else {
+        favorites.push(key);
+        showToast('已收藏');
+    }
+    localStorage.setItem('api_favorites', JSON.stringify(favorites));
+    renderStats();
+    renderEndpoints();
+}
+
+function isFavorite(path, method) {
+    return favorites.indexOf(method + ' ' + path) > -1;
+}
+
+function formatJson(json) {
+    try {
+        return JSON.stringify(JSON.parse(json), null, 2);
+    } catch(e) {
+        return json;
+    }
+}
+
+function highlightJson(json) {
+    if (typeof json !== 'string') {
+        try { json = JSON.stringify(json, null, 2); } catch(e) { return String(json); }
+    }
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function(match) {
+        var cls = 'json-number';
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+                cls = 'json-key';
+            } else {
+                cls = 'json-string';
+            }
+        } else if (/true|false/.test(match)) {
+            cls = 'json-boolean';
+        } else if (/null/.test(match)) {
+            cls = 'json-null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+    });
+}
+
+function renderEndpoints() {
+    var search = document.getElementById('searchBox').value.toLowerCase();
+    var html = '';
+    var count = 0;
+    Object.keys(apiData.paths || {}).sort().forEach(function(path) {
+        Object.keys(apiData.paths[path]).forEach(function(method) {
+            var op = apiData.paths[path][method];
+            var tags = op.tags || ['default'];
+            if (currentTag !== 'all' && tags.indexOf(currentTag) === -1) return;
+            if (showFavorites && !isFavorite(path, method)) return;
+            var desc = op.summary || op.description || '';
+            if (search && path.toLowerCase().indexOf(search) === -1 && desc.toLowerCase().indexOf(search) === -1 && method.toLowerCase().indexOf(search) === -1) return;
+            count++;
+            var id = 'ep_' + btoa(path + method).replace(/=/g, '');
+            var favClass = isFavorite(path, method) ? 'active' : '';
+            html += '<div class="endpoint" id="' + id + '">';
+            html += '<div class="endpoint-header" onclick="toggleEndpoint(\'' + id + '\')">';
+            html += '<span class="method ' + method + '">' + method.toUpperCase() + '</span>';
+            html += '<span class="endpoint-path">' + path + '</span>';
+            html += '<span class="endpoint-desc">' + desc.substring(0, 60) + (desc.length > 60 ? '...' : '') + '</span>';
+            html += '<div class="endpoint-actions">';
+            html += '<button class="fav-btn ' + favClass + '" onclick="toggleFavorite(\'' + path + '\',\'' + method + '\',event)">⭐</button>';
+            html += '</div></div>';
+            html += '<div class="endpoint-body">';
+            if (op.description) {
+                html += '<h4>接口说明</h4><div class="desc-text">' + op.description + '</div>';
+            }
+            if (op.parameters && op.parameters.length > 0) {
+                html += '<h4>请求参数 (' + op.parameters.length + '个)</h4><table class="params-table"><tr><th>参数名</th><th>位置</th><th>类型</th><th>必填</th><th>说明</th></tr>';
+                op.parameters.forEach(function(p) {
+                    html += '<tr><td><code>' + p.name + '</code></td><td>' + p.in + '</td><td>' + (p.schema ? p.schema.type : '') + '</td><td>' + (p.required ? '<span class="required">必填</span>' : '<span class="optional">可选</span>') + '</td><td>' + (p.description || '') + '</td></tr>';
+                });
+                html += '</table>';
+            }
+            if (op.requestBody && op.requestBody.content) {
+                var jsonContent = op.requestBody.content['application/json'];
+                if (jsonContent) {
+                    var example = jsonContent.example ? JSON.stringify(jsonContent.example, null, 2) : (jsonContent.schema ? JSON.stringify(jsonContent.schema, null, 2) : '{}');
+                    html += '<h4>请求体 (JSON)</h4>';
+                    html += '<div class="req-body-editor">';
+                    html += '<div class="editor-header"><span>application/json</span><button onclick="formatBody(this)">格式化</button></div>';
+                    html += '<textarea id="body_' + id + '" placeholder="请输入JSON请求体...">' + example + '</textarea>';
+                    html += '</div>';
+                }
+            }
+            html += '<button class="try-btn" id="btn_' + id + '" onclick="tryRequest(\'' + path + '\',\'' + method + '\',\'' + id + '\')">🚀 发送请求</button>';
+            html += '<div class="response-area" id="resp_' + id + '"></div>';
+            html += '</div></div>';
+        });
+    });
+    if (!html) html = '<div class="empty">🔍 没有找到匹配的接口</div>';
+    document.getElementById('endpointList').innerHTML = html;
+}
+
+function formatBody(btn) {
+    var textarea = btn.closest('.req-body-editor').querySelector('textarea');
+    try {
+        textarea.value = JSON.stringify(JSON.parse(textarea.value), null, 2);
+        showToast('格式化成功');
+    } catch(e) {
+        showToast('JSON格式错误: ' + e.message);
+    }
+}
+
+function toggleEndpoint(id) {
+    document.getElementById(id).classList.toggle('expanded');
+}
+
+function tryRequest(path, method, id) {
+    var btn = document.getElementById('btn_' + id);
+    var respArea = document.getElementById('resp_' + id);
+    var bodyText = '';
+    var bodyEl = document.getElementById('body_' + id);
+    if (bodyEl) bodyText = bodyEl.value;
+    btn.disabled = true;
+    btn.textContent = '⏳ 请求中...';
+    respArea.classList.add('show');
+    respArea.innerHTML = '<div style="color:#7788aa;padding:14px">⏳ 正在发送请求...</div>';
+    var startTime = Date.now();
+    var options = { method: method.toUpperCase(), headers: { 'Content-Type': 'application/json' } };
+    if (method.toUpperCase() !== 'GET' && method.toUpperCase() !== 'DELETE' && bodyText) {
+        options.body = bodyText;
+    }
+    fetch(path, options)
+        .then(function(res) {
+            var elapsed = Date.now() - startTime;
+            return res.text().then(function(text) {
+                var statusClass = res.ok ? 'success' : (res.status >= 300 && res.status < 400 ? 'redirect' : 'error');
+                var formatted = text;
+                try { formatted = highlightJson(text); } catch(e) {}
+                respArea.innerHTML = '<div class="response-header"><span><span class="response-status ' + statusClass + '">' + res.status + ' ' + res.statusText + '</span> <span style="color:#667788;margin-left:10px">耗时: ' + elapsed + 'ms | 大小: ' + text.length + '字节</span></span><button class="toolbar-btn" style="padding:3px 10px;font-size:11px" onclick="copyResponse(\'' + id + '\')">复制</button></div><div class="response-body" id="respbody_' + id + '">' + formatted + '</div>';
+                history.unshift({ method: method, path: path, body: bodyText, status: res.status, statusText: res.statusText, duration: elapsed, time: new Date().toLocaleString() });
+                if (history.length > 100) history = history.slice(0, 100);
+                localStorage.setItem('api_history', JSON.stringify(history));
+                renderStats();
+            });
+        })
+        .catch(function(e) {
+            respArea.innerHTML = '<div class="response-header"><span class="response-status error">请求失败</span></div><div class="response-body" style="color:#ef9a9a">❌ ' + e.message + '</div>';
+        })
+        .finally(function() {
+            btn.disabled = false;
+            btn.textContent = '🚀 发送请求';
+        });
+}
+
+function copyResponse(id) {
+    var body = document.getElementById('respbody_' + id);
+    if (body) {
+        var text = body.textContent;
+        navigator.clipboard.writeText(text).then(function() {
+            showToast('已复制到剪贴板');
+        });
+    }
+}
+
+document.getElementById('searchBox').addEventListener('input', renderEndpoints);
+loadAPI();
+</script>
+</body>
+</html>

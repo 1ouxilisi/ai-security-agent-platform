@@ -1,0 +1,116 @@
+# AI Hacking Agent v4.0 - 配置文件
+# 复制为 config.yaml 并根据需要修改
+
+# 大模型配置
+llm:
+  api_key: "sk-your-api-key-here"
+  base_url: "https://api.deepseek.com/v1"
+  model: "deepseek-chat"
+  temperature: 0.1
+  max_tokens: 4096
+  timeout: 60
+
+# MCP服务配置
+mcp:
+  host: "0.0.0.0"
+  port: 8000
+  mode: "stdio"  # stdio / http
+
+# API服务配置
+api:
+  host: "0.0.0.0"
+  port: 8000
+  cors_origins: ["*"]
+  max_concurrent_tasks: 5
+
+# Web UI配置
+webui:
+  host: "0.0.0.0"
+  port: 8501
+  theme: "light"  # light / dark
+
+# 安全配置
+security:
+  allowed_targets:
+    - "localhost"
+    - "127.0.0.1"
+    - "*.test.local"
+  rate_limit: 10  # 每秒最大请求数
+  max_concurrent_scans: 3
+  request_timeout: 30
+  user_agent: "AIHackingAgent/4.0 (Security Research)"
+
+# 工具开关配置
+tools:
+  # 侦察工具
+  recon:
+    port_scan: true
+    dns_lookup: true
+    http_headers: true
+  # 子域名工具
+  subdomain:
+    dns_bruteforce: true
+    certificate_transparency: true
+  # Web安全工具
+  web:
+    directory_scan: true
+    sql_injection_test: true
+    xss_test: true
+    ssl_certificate_check: true
+  # 高级Web工具
+  advanced_web:
+    ssrf_test: true
+    idor_test: true
+    command_injection_test: true
+    file_upload_test: true
+    xxe_test: true
+  # 浏览器工具
+  browser:
+    enabled: true
+    headless: true
+  # 桌面工具
+  desktop:
+    enabled: true
+    failsafe: true  # 鼠标移到角落立即停止
+
+# 数据库配置
+database:
+  path: "data/ai_hacking_agent.db"
+  backup_enabled: true
+  backup_interval: 3600  # 秒
+
+# 报告配置
+report:
+  output_dir: "reports"
+  default_format: "markdown"  # markdown / html / json
+  include_technical_details: true
+  include_remediation: true
+  author: "AI Hacking Agent"
+  company: ""
+
+# 日志配置
+logging:
+  level: "INFO"  # DEBUG / INFO / WARNING / ERROR
+  file: "logs/ai_hacking_agent.log"
+  max_size: "10MB"
+  backup_count: 5
+  console_output: true
+
+# 调度器配置
+scheduler:
+  max_concurrent: 5
+  task_timeout: 3600  # 秒
+  max_retries: 3
+
+# RAG知识库配置
+rag:
+  enabled: true
+  knowledge_dir: "data/knowledge"
+  top_k: 5
+  min_similarity: 0.1
+
+# 插件配置
+plugins:
+  enabled: true
+  plugin_dir: "plugins"
+  auto_load: true

@@ -1,0 +1,209 @@
+{
+  "src-b157d1e0": {
+    "source_id": "src-b157d1e0",
+    "name": "AlienVault OTX",
+    "type": "open_source",
+    "url": "https://otx.alienvault.com",
+    "quality_score": 75,
+    "reliability": "B",
+    "coverage": [
+      "ip",
+      "domain",
+      "url",
+      "hash"
+    ],
+    "update_frequency": "realtime",
+    "enabled": true,
+    "last_sync": 0,
+    "total_iocs": 0,
+    "false_positive_count": 0,
+    "tags": []
+  },
+  "src-805a6193": {
+    "source_id": "src-805a6193",
+    "name": "VirusTotal",
+    "type": "commercial",
+    "url": "https://www.virustotal.com",
+    "quality_score": 90,
+    "reliability": "A",
+    "coverage": [
+      "ip",
+      "domain",
+      "url",
+      "hash"
+    ],
+    "update_frequency": "realtime",
+    "enabled": true,
+    "last_sync": 0,
+    "total_iocs": 0,
+    "false_positive_count": 0,
+    "tags": []
+  },
+  "src-ebb27a32": {
+    "source_id": "src-ebb27a32",
+    "name": "AbuseIPDB",
+    "type": "open_source",
+    "url": "https://www.abuseipdb.com",
+    "quality_score": 70,
+    "reliability": "B",
+    "coverage": [
+      "ip"
+    ],
+    "update_frequency": "realtime",
+    "enabled": true,
+    "last_sync": 0,
+    "total_iocs": 0,
+    "false_positive_count": 0,
+    "tags": []
+  },
+  "src-c9e0b4eb": {
+    "source_id": "src-c9e0b4eb",
+    "name": "URLhaus",
+    "type": "open_source",
+    "url": "https://urlhaus.abuse.ch",
+    "quality_score": 80,
+    "reliability": "A",
+    "coverage": [
+      "url",
+      "domain"
+    ],
+    "update_frequency": "realtime",
+    "enabled": true,
+    "last_sync": 0,
+    "total_iocs": 0,
+    "false_positive_count": 0,
+    "tags": []
+  },
+  "src-e0b2224a": {
+    "source_id": "src-e0b2224a",
+    "name": "MalwareBazaar",
+    "type": "open_source",
+    "url": "https://bazaar.abuse.ch",
+    "quality_score": 85,
+    "reliability": "A",
+    "coverage": [
+      "hash"
+    ],
+    "update_frequency": "realtime",
+    "enabled": true,
+    "last_sync": 0,
+    "total_iocs": 0,
+    "false_positive_count": 0,
+    "tags": []
+  },
+  "src-4a9e52b3": {
+    "source_id": "src-4a9e52b3",
+    "name": "ThreatFox",
+    "type": "open_source",
+    "url": "https://threatfox.abuse.ch",
+    "quality_score": 80,
+    "reliability": "A",
+    "coverage": [
+      "ip",
+      "domain",
+      "url",
+      "hash"
+    ],
+    "update_frequency": "realtime",
+    "enabled": true,
+    "last_sync": 0,
+    "total_iocs": 0,
+    "false_positive_count": 0,
+    "tags": []
+  },
+  "src-6daa3889": {
+    "source_id": "src-6daa3889",
+    "name": "Feodo Tracker",
+    "type": "open_source",
+    "url": "https://feodotracker.abuse.ch",
+    "quality_score": 85,
+    "reliability": "A",
+    "coverage": [
+      "ip",
+      "domain"
+    ],
+    "update_frequency": "hourly",
+    "enabled": true,
+    "last_sync": 0,
+    "total_iocs": 0,
+    "false_positive_count": 0,
+    "tags": []
+  },
+  "src-b5f5cdb4": {
+    "source_id": "src-b5f5cdb4",
+    "name": "SSL Blacklist",
+    "type": "open_source",
+    "url": "https://sslbl.abuse.ch",
+    "quality_score": 75,
+    "reliability": "B",
+    "coverage": [
+      "hash",
+      "certificate"
+    ],
+    "update_frequency": "daily",
+    "enabled": true,
+    "last_sync": 0,
+    "total_iocs": 0,
+    "false_positive_count": 0,
+    "tags": []
+  },
+  "src-eae92bb6": {
+    "source_id": "src-eae92bb6",
+    "name": "MISP",
+    "type": "open_source",
+    "url": "https://www.misp-project.org",
+    "quality_score": 80,
+    "reliability": "B",
+    "coverage": [
+      "ip",
+      "domain",
+      "url",
+      "hash",
+      "email"
+    ],
+    "update_frequency": "realtime",
+    "enabled": true,
+    "last_sync": 0,
+    "total_iocs": 0,
+    "false_positive_count": 0,
+    "tags": []
+  },
+  "src-3c9dc252": {
+    "source_id": "src-3c9dc252",
+    "name": "MITRE ATT&CK",
+    "type": "open_source",
+    "url": "https://attack.mitre.org",
+    "quality_score": 95,
+    "reliability": "A",
+    "coverage": [
+      "attack_patterns"
+    ],
+    "update_frequency": "quarterly",
+    "enabled": true,
+    "last_sync": 0,
+    "total_iocs": 0,
+    "false_positive_count": 0,
+    "tags": []
+  },
+  "src-d8caaa5e": {
+    "source_id": "src-d8caaa5e",
+    "name": "内部威胁情报",
+    "type": "internal",
+    "url": "",
+    "quality_score": 90,
+    "reliability": "A",
+    "coverage": [
+      "ip",
+      "domain",
+      "url",
+      "hash",
+      "email"
+    ],
+    "update_frequency": "realtime",
+    "enabled": true,
+    "last_sync": 0,
+    "total_iocs": 0,
+    "false_positive_count": 0,
+    "tags": []
+  }
+}

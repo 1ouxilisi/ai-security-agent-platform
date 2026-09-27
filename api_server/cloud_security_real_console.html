@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>云安全真实版控制台 · 方向3</title>
+<style>
+:root{
+  --bg:#0f1115; --panel:#171a21; --panel2:#1f232c; --border:#2a2f3a;
+  --text:#e6e8ee; --muted:#8a90a0; --accent:#4fc3f7; --ok:#2ecc71;
+  --warn:#f1c40f; --high:#e67e22; --crit:#e74c3c; --info:#95a5a6;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+header{padding:16px 24px;background:linear-gradient(90deg,#1a1f2a,#171a21);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:8px}
+header h1{margin:0;font-size:18px}
+header .badge{background:var(--ok);color:#000;padding:2px 10px;border-radius:999px;
+  font-size:12px;font-weight:bold}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.col{flex:1;min-width:320px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+  padding:16px;margin-bottom:16px}
+.card h2{margin:0 0 12px;font-size:15px;color:var(--accent);
+  border-bottom:1px solid var(--border);padding-bottom:8px}
+input,select,button{background:var(--panel2);border:1px solid var(--border);
+  color:var(--text);padding:8px 12px;border-radius:6px;font-size:14px;
+  font-family:inherit}
+input[type=text]{flex:1}
+button{cursor:pointer;background:var(--accent);color:#000;border:none;font-weight:bold}
+button:hover{opacity:.85}
+button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border)}
+button:disabled{opacity:.4;cursor:not-allowed}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:normal}
+tr:hover td{background:var(--panel2)}
+.sev{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;
+  font-weight:bold;color:#000}
+.sev.critical{background:var(--crit)} .sev.high{background:var(--high)}
+.sev.medium{background:var(--warn);color:#000} .sev.low{background:var(--accent)}
+.sev.info{background:var(--info);color:#fff}
+.sev.pass{background:var(--ok)}
+.st{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px}
+.st.pass{background:#1e4633;color:#2ecc71}
+.st.fail{background:#4a1f1f;color:#e74c3c}
+.st.error{background:#4a3a1a;color:#f1c40f}
+.st.not_config{background:#2a2f3a;color:#8a90a0}
+code,pre{background:#0a0c10;padding:2px 6px;border-radius:4px;
+  font-family:Consolas,Monaco,monospace;font-size:12px}
+pre{padding:12px;overflow:auto;max-height:360px;white-space:pre-wrap}
+.muted{color:var(--muted)}
+.stat{display:inline-block;margin-right:18px} .stat b{font-size:22px;display:block}
+.tag{display:inline-block;background:var(--panel2);border:1px solid var(--border);
+  padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}
+.tab-row{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.tab{padding:6px 14px;border-radius:6px;cursor:pointer;background:var(--panel2);
+  border:1px solid var(--border)}
+.tab.active{background:var(--accent);color:#000;font-weight:bold}
+.tab-pane{display:none} .tab-pane.active{display:block}
+.bar{height:10px;background:var(--border);border-radius:5px;overflow:hidden}
+.bar>div{height:100%;background:linear-gradient(90deg,#4fc3f7,#2ecc71);transition:width .4s}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px}
+.dot.ok{background:var(--ok)} .dot.no{background:var(--crit)}
+@media(max-width:768px){.row{flex-direction:column}.col{min-width:0}}
+</style>
+</head>
+<body>
+<header>
+  <h1>☁️ 云安全真实版控制台 <span class="badge">方向3 · 真实云API · 不mock</span></h1>
+  <div><span class="muted">cloud_security_real · AWS/Azure/阿里云/K8s/Docker</span>
+    &nbsp;<span class="muted" id="clock"></span></div>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>凭证 / SDK 就绪矩阵</h2>
+    <div id="matrix" class="muted">加载中...</div>
+    <div class="toolbar" style="margin-top:10px">
+      <button class="secondary" id="btnMatrix">🔄 刷新矩阵</button>
+      <button class="secondary" id="btnGuide">📘 安装/配置指引</button>
+    </div>
+    <pre id="guideBox" style="display:none"></pre>
+  </div>
+
+  <div class="card">
+    <h2>真实扫描</h2>
+    <div class="toolbar">
+      <select id="provider">
+        <option value="aws">AWS (boto3)</option>
+        <option value="azure">Azure (azure SDK)</option>
+        <option value="aliyun">阿里云 (aliyun SDK)</option>
+      </select>
+      <input type="text" id="region" placeholder="区域(可选, us-east-1 / cn-hangzhou)">
+      <button id="btnStart">🚀 一键真实全量检查</button>
+      <button class="secondary" id="btnQuick">⚡ 同步快速检查</button>
+    </div>
+    <div class="muted">未安装 SDK / 未配置凭证时不会生成 mock 数据，会明确提示安装与配置命令。</div>
+  </div>
+
+  <div class="card">
+    <h2>概览</h2>
+    <div id="overview"><span class="muted">加载中...</span></div>
+  </div>
+
+  <div class="card">
+    <h2>扫描结果</h2>
+    <div class="tab-row">
+      <div class="tab active" data-t="summary">汇总</div>
+      <div class="tab" data-t="findings">检查详情</div>
+      <div class="tab" data-t="cis">CIS 基线</div>
+      <div class="tab" data-t="container">容器/K8s</div>
+      <div class="tab" data-t="report">报告</div>
+    </div>
+    <div class="tab-pane active" id="pane-summary"><div id="summary"><span class="muted">尚未扫描</span></div></div>
+    <div class="tab-pane" id="pane-findings"><div id="findings"><span class="muted">尚未扫描</span></div></div>
+    <div class="tab-pane" id="pane-cis"><div id="cis"><span class="muted">尚未扫描</span></div></div>
+    <div class="tab-pane" id="pane-container"><div id="container"><span class="muted">尚未扫描</span></div></div>
+    <div class="tab-pane" id="pane-report"><div id="report"><span class="muted">尚未生成</span></div></div>
+  </div>
+
+  <div class="card">
+    <h2>历史任务</h2>
+    <div id="tasks" class="muted">加载中...</div>
+  </div>
+</div>
+
+<script>
+const API='/api/v1/cloud-security-real';
+let lastResult=null;
+
+function $(s){return document.querySelector(s)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+async function api(path,opts){
+  opts=opts||{}; opts.headers=Object.assign({'Content-Type':'application/json'},opts.headers||{});
+  const r=await fetch(API+path,opts);
+  const j=await r.json();
+  return j;
+}
+function sevBadge(sev){return `<span class="sev ${esc(sev)}">${esc(sev)}</span>`}
+function stBadge(st){return `<span class="st ${esc(st)}">${esc(st)}</span>`}
+
+function clock(){const d=new Date();$('#clock').textContent=d.toLocaleTimeString()}
+setInterval(clock,1000);clock();
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');$('#pane-'+t.dataset.t).classList.add('active');
+});
+
+async function loadMatrix(){
+  const j=await api('/credential/matrix');
+  if(!j.success){$('#matrix').textContent=j.error;return}
+  const d=j.data;
+  const rows=Object.entries(d).map(([k,v])=>{
+    if(typeof v!=='object'||!v)return '';
+    const ok=v.sdk_installed!==false && (v.credentials_configured!==false || v.trivy!==undefined);
+    const cls=v.sdk_installed===false?'no':'ok';
+    const info=v.sdk_installed===false?('SDK缺失: '+(v.hint||'').slice(0,60))
+      :(v.credentials_configased===false||v.credentials_configured===false)?('凭证: '+(v.hint||'').slice(0,60))
+      :(v.hint||'就绪');
+    return `<div><span class="dot ${cls}"></span><b>${esc(k)}</b> <span class="muted">${esc(info)}</span></div>`;
+  }).join('');
+  $('#matrix').innerHTML=rows||'(空)';
+}
+async function loadOverview(){
+  const j=await api('/dashboard/overview');
+  if(!j.success){return}
+  const d=j.data;
+  $('#overview').innerHTML=
+    `<span class="stat muted">任务 <b>${d.task_count}</b></span>`+
+    `<span class="stat muted">完成 <b>${d.done_count}</b></span>`+
+    `<span class="stat muted">检查项 <b>${d.total_findings}</b></span>`+
+    (d.by_severity?Object.entries(d.by_severity).map(([k,v])=>
+      `<span class="stat">${sevBadge(k)} <b>${v}</b></span>`).join(''):'');
+}
+async function loadTasks(){
+  const j=await api('/tasks');
+  if(!j.success){return}
+  if(!j.data.tasks.length){$('#tasks').textContent='暂无任务';return}
+  $('#tasks').innerHTML='<table><tr><th>ID</th><th>云厂商</th><th>状态</th><th>进度</th><th>时间</th></tr>'+
+    j.data.tasks.map(t=>`<tr><td><code>${esc(t.task_id)}</code></td><td>${esc(t.provider)}</td>
+      <td>${esc(t.status)}</td><td>${t.progress}%</td><td>${esc(t.created_at)}</td></tr>`).join('')+'</table>';
+}
+
+function renderSummary(cloud){
+  const s=cloud.summary||{};
+  $('#summary').innerHTML=
+    `<div class="bar"><div style="width:${s.pass_rate||0}%"></div></div>
+     <p class="muted">合规率 ${s.pass_rate}% · 共 ${s.total} 项 · 合规 ${s.passed} · 不合规 ${s.failed} · 错误 ${s.errors}</p>
+     <div>${Object.entries(s.by_severity||{}).map(([k,v])=>`<span class="stat">${sevBadge(k)}<b>${v}</b></span>`).join('')}</div>
+     <pre>${esc((cloud.credential_status||{}).hint||'')}</pre>
+     <table><tr><th>服务</th><th>检查项</th><th>合规</th><th>不合规</th><th>合规率</th></tr>`+
+     Object.entries(cloud.by_service||{}).map(([k,v])=>
+       `<tr><td>${esc(k)}</td><td>${v.total}</td><td>${v.passed}</td><td>${v.failed}</td><td>${v.pass_rate}%</td></tr>`).join('')+'</table>';
+}
+function renderFindings(cloud){
+  const fs=cloud.findings||[];
+  if(!fs.length){$('#findings').innerHTML='<span class="muted">无发现项</span>';return}
+  $('#findings').innerHTML='<table><tr><th>严重度</th><th>状态</th><th>服务</th><th>标题</th><th>资源</th><th>预期/实际</th><th>修复</th></tr>'+
+    fs.slice(0,200).map(f=>`<tr>
+      <td>${sevBadge(f.severity)}</td><td>${stBadge(f.status)}</td>
+      <td>${esc(f.service)}</td><td>${esc(f.title)}</td>
+      <td><code>${esc(f.resource||'')}</code></td>
+      <td class="muted">${esc(f.expected)}<br>实际: ${esc(f.actual)}</td>
+      <td class="muted">${esc(f.remediation)}</td></tr>`).join('')+'</table>';
+}
+function renderCis(cis){
+  if(!cis){$('#cis').innerHTML='<span class="muted">无</span>';return}
+  $('#cis').innerHTML=Object.entries(cis).map(([k,v])=>
+    `<h3>${esc(v.name)} — 合规率 ${v.pass_rate}%（${v.failed} 不合规 / ${v.unknown} 未评估）</h3>
+     <table><tr><th>ID</th><th>控制项</th><th>严重度</th><th>状态</th><th>修复</th></tr>`+
+    v.controls.map(c=>`<tr><td><code>${esc(c.id)}</code></td><td>${esc(c.title)}</td>
+      <td>${sevBadge(c.severity)}</td><td>${stBadge(c.status)}</td>
+      <td class="muted">${esc(c.remediation)}</td></tr>`).join('')+'</table>'
+  ).join('');
+}
+function renderContainer(c){
+  if(!c){$('#container').innerHTML='<span class="muted">未运行容器检查</span>';return}
+  const k=c.k8s||{}, dk=c.docker||{};
+  $('#container').innerHTML=
+    `<p>K8s: ${k.summary?`${k.summary.total} 项 / 不合规 ${k.summary.failed}`:'未运行'}</p>
+     <p>Docker: ${dk.summary?`${dk.summary.total} 项 / 不合规 ${dk.summary.failed}`:'未运行'}</p>
+     <pre>${esc(JSON.stringify(c.scanner_status||{},null,2))}</pre>`;
+}
+function renderReport(res){
+  if(!res||!res.report){$('#report').innerHTML='<span class="muted">未生成报告</span>';return}
+  $('#report').innerHTML=`<p>报告路径: <code>${esc(res.report)}</code></p>`;
+}
+
+async function runStart(asyncMode){
+  const prov=$('#provider').value, region=$('#region').value||null;
+  $('#summary').innerHTML='<span class="muted">扫描中...</span>';
+  let j;
+  if(asyncMode){
+    j=await api('/start',{method:'POST',body:JSON.stringify({provider:prov,region:region,async_mode:true})});
+    if(!j.success){alert(j.error);return}
+    const tid=j.data.task_id;
+    // poll
+    for(let i=0;i<60;i++){
+      await new Promise(r=>setTimeout(r,1500));
+      const s=await api('/task/'+tid+'/status');
+      if(s.data && (s.data.status==='done'||s.data.status==='error')){
+        const res=await api('/task/'+tid+'/result');
+        lastResult=res.data;
+        renderResult(lastResult);
+        break;
+      }
+    }
+  }else{
+    j=await api('/quick/'+prov,{method:'POST',body:JSON.stringify({region:region})});
+    if(!j.success){alert(j.error);return}
+    renderResult({cloud:j.data,container:null,cis:null});
+  }
+  loadOverview();loadTasks();
+}
+function renderResult(res){
+  if(!res){return}
+  renderSummary(res.cloud||{});
+  renderFindings(res.cloud||{});
+  renderCis(res.cis);
+  renderContainer(res.container);
+  renderReport(res);
+}
+
+$('#btnStart').onclick=()=>runStart(true);
+$('#btnQuick').onclick=()=>runStart(false);
+$('#btnMatrix').onclick=loadMatrix;
+$('#btnGuide').onclick=async()=>{
+  const j=await api('/credential/guide/aws');
+  $('#guideBox').style.display='block';
+  $('#guideBox').textContent=JSON.stringify(j.data,null,2);
+};
+
+loadMatrix();loadOverview();loadTasks();
+</script>
+</body>
+</html>

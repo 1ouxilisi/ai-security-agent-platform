@@ -1,0 +1,522 @@
+{
+  "check_time": "2026-09-10T19:14:24.630846",
+  "python_version": "3.14.7",
+  "summary": {
+    "passed": 99,
+    "warnings": 3,
+    "failed": 0,
+    "total": 102
+  },
+  "results": [
+    {
+      "name": "Python版本 >= 3.10",
+      "status": "PASS",
+      "detail": "当前版本: 3.14.7"
+    },
+    {
+      "name": "pip可用",
+      "status": "PASS",
+      "detail": "pip包管理器"
+    },
+    {
+      "name": "main.py (程序入口)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "requirements.txt (依赖清单)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "README.md (项目说明文档)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": ".env.example (环境变量模板)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "start.bat (Windows启动脚本)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "start.sh (Linux/Mac启动脚本)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "Dockerfile (Docker构建文件)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "docker-compose.yml (Docker Compose配置)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "setup_wizard.py (一键安装向导)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "INSTALL.md (安装指南)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "USAGE.md (使用指南)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "QUICKSTART.md (快速入门)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "CHANGELOG.md (更新日志)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "ARCHITECTURE.md (架构说明)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": ".env 配置文件",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "LLM_API_KEY 已配置",
+      "status": "PASS",
+      "detail": "大模型API密钥已配置"
+    },
+    {
+      "name": "目录 agent/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 scanner/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 exploit/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 workflow/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 knowledge/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 api_server/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 mcp_server/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 config/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 utils/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 database/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 security/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 plugins/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 reporting/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 scheduler/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 tests/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 tools/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 data/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 logs/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "目录 reports/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 mobile_security/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 internal_pentest/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 cloud_security/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 api_security/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 client_security/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 code_audit/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 wireless_security/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 ai_security/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 iot_security/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 ics_security/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 blockchain_security/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 forensics/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 threat_intelligence/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 social_engineering/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 vulnerability_management/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 distributed/",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "模块 config.settings",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 utils.logger",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 api_server.app",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 agent.base_agent",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 scanner.advanced_vuln_scanner",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 exploit.poc_library",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 workflow.engine",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 knowledge.cve",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 mcp_server.server",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 plugins.manager",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 reporting.report_exporter",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 scheduler.task_scheduler",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 tools.integration",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 internal_pentest.enhanced",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 cloud_security.enhanced",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 utils.performance",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 utils.multi_user",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 distributed.core",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "模块 api_server.enhanced_routes",
+      "status": "PASS",
+      "detail": "导入成功"
+    },
+    {
+      "name": "首页 (api_server/index.html)",
+      "status": "PASS",
+      "detail": "25993 bytes"
+    },
+    {
+      "name": "主控制台 (api_server/console_v7.html)",
+      "status": "PASS",
+      "detail": "33349 bytes"
+    },
+    {
+      "name": "增强控制台 (api_server/enhanced_console.html)",
+      "status": "PASS",
+      "detail": "58214 bytes"
+    },
+    {
+      "name": "扩展控制台 (api_server/extended_console.html)",
+      "status": "PASS",
+      "detail": "56444 bytes"
+    },
+    {
+      "name": "高级控制台 (api_server/advanced_console.html)",
+      "status": "PASS",
+      "detail": "66821 bytes"
+    },
+    {
+      "name": "仪表盘 (api_server/dashboard.html)",
+      "status": "PASS",
+      "detail": "16008 bytes"
+    },
+    {
+      "name": "漏洞库 (api_server/vuln_database.html)",
+      "status": "PASS",
+      "detail": "30918 bytes"
+    },
+    {
+      "name": "API文档 (api_server/api_docs.html)",
+      "status": "PASS",
+      "detail": "23335 bytes"
+    },
+    {
+      "name": "路由 api_server/app.py",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "路由 api_server/enhanced_routes.py",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "路由 api_server/extended_routes.py",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "路由 api_server/advanced_routes.py",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "路由 api_server/auth_routes.py",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "路由 api_server/internal_routes.py",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "路由 api_server/exploit_routes.py",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "路由 api_server/tools_routes.py",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "路由 api_server/distributed_routes.py",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "路由 api_server/combat_routes.py",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "测试 tests/test_suite.py",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "测试 tests/test_unit.py",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "测试 tests/test_functionality.py",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "测试 tests/test_new_security_modules.py",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "flake8配置 (.flake8)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "项目配置 (pyproject.toml)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "CI/CD流水线 (.github/workflows/ci-cd.yml)",
+      "status": "PASS",
+      "detail": "存在"
+    },
+    {
+      "name": "工具 nmap",
+      "status": "PASS",
+      "detail": "已安装"
+    },
+    {
+      "name": "工具 sqlmap",
+      "status": "WARN",
+      "detail": "未安装（可选，用于真实工具集成）"
+    },
+    {
+      "name": "工具 nuclei",
+      "status": "PASS",
+      "detail": "已安装"
+    },
+    {
+      "name": "工具 masscan",
+      "status": "WARN",
+      "detail": "未安装（可选，用于真实工具集成）"
+    },
+    {
+      "name": "工具 nikto",
+      "status": "WARN",
+      "detail": "未安装（可选，用于真实工具集成）"
+    }
+  ]
+}

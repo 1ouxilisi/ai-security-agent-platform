@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Hacking Agent - 系统控制台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid #334155;
+            padding: 24px 30px;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 6px;
+        }
+        .header h1 span { color: #38bdf8; }
+        .header .subtitle {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+        .header .version {
+            display: inline-block;
+            background: #0ea5e9;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .container {
+            padding: 24px 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        /* 系统状态卡片 */
+        .status-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+        .status-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 16px 18px;
+        }
+        .status-card .label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+        .status-card .value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #38bdf8;
+        }
+        .status-card .value.green { color: #34d399; }
+        .status-card .value.yellow { color: #fbbf24; }
+        .status-card .value.red { color: #f87171; }
+        /* 区块标题 */
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #f8fafc;
+            margin: 28px 0 16px;
+            padding-left: 12px;
+            border-left: 4px solid #38bdf8;
+        }
+        /* 功能卡片网格 */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        .feature-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .feature-card:hover {
+            border-color: #38bdf8;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(56, 189, 248, 0.15);
+        }
+        .feature-card .icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+        .feature-card .title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 8px;
+        }
+        .feature-card .desc {
+            font-size: 13px;
+            color: #94a3b8;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        .feature-card .link {
+            font-size: 12px;
+            color: #38bdf8;
+            font-weight: 500;
+        }
+        .feature-card .badge {
+            display: inline-block;
+            background: #334155;
+            color: #cbd5e1;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-left: 6px;
+        }
+        .badge.new { background: #065f46; color: #6ee7b7; }
+        .badge.core { background: #1e3a5f; color: #7dd3fc; }
+        /* 快速开始流程 */
+        .flow {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 28px;
+        }
+        .flow-steps {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: stretch;
+        }
+        .flow-step {
+            flex: 1;
+            min-width: 180px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 16px;
+            position: relative;
+        }
+        .flow-step .num {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            background: #0ea5e9;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .flow-step .step-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 6px;
+        }
+        .flow-step .step-desc {
+            font-size: 12px;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            color: #475569;
+            font-size: 20px;
+        }
+        /* 系统架构 */
+        .arch {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 28px;
+        }
+        .arch-layers {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .arch-layer {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 14px 18px;
+        }
+        .arch-layer .layer-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #38bdf8;
+            margin-bottom: 8px;
+        }
+        .arch-layer .layer-items {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .arch-item {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 5px;
+            padding: 5px 12px;
+            font-size: 12px;
+            color: #cbd5e1;
+        }
+        /* 底部 */
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #64748b;
+            font-size: 12px;
+            border-top: 1px solid #1e293b;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛡️ AI Hacking Agent <span>系统控制台</span><span class="version">v6.0</span></h1>
+        <div class="subtitle">AI驱动的自动化网络安全渗透测试平台 · 一个人 = 一个安全团队</div>
+    </div>
+
+    <div class="container">
+        <!-- 系统状态 -->
+        <div class="status-bar" id="statusBar">
+            <div class="status-card">
+                <div class="label">服务状态</div>
+                <div class="value green" id="serviceStatus">运行中</div>
+            </div>
+            <div class="status-card">
+                <div class="label">安全工具</div>
+                <div class="value" id="toolCount">34+</div>
+            </div>
+            <div class="status-card">
+                <div class="label">AI智能体</div>
+                <div class="value" id="agentCount">4个</div>
+            </div>
+            <div class="status-card">
+                <div class="label">漏洞数据库</div>
+                <div class="value" id="vulnCount">-</div>
+            </div>
+            <div class="status-card">
+                <div class="label">API接口</div>
+                <div class="value">70+</div>
+            </div>
+            <div class="status-card">
+                <div class="label">运行时长</div>
+                <div class="value yellow" id="uptime">-</div>
+            </div>
+        </div>
+
+        <!-- 快速开始流程 -->
+        <div class="section-title">🚀 快速开始（按这个顺序用）</div>
+        <div class="flow">
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <div class="num">1</div>
+                    <div class="step-title">同步漏洞库</div>
+                    <div class="step-desc">打开漏洞数据库，点"同步NVD"，等3-5分钟，漏洞库从5条→几千条</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="num">2</div>
+                    <div class="step-title">配置AI密钥</div>
+                    <div class="step-desc">在.env中配置LLM_API_KEY（智谱/DeepSeek/OpenAI），启用AI智能体</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="num">3</div>
+                    <div class="step-title">测试工具</div>
+                    <div class="step-desc">在API文档中测试端口扫描、Web扫描等工具，确认功能正常</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="num">4</div>
+                    <div class="step-title">跑一次完整扫描</div>
+                    <div class="step-desc">用超级智能体对授权靶场执行完整渗透测试，自动生成报告</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="num">5</div>
+                    <div class="step-title">接单打钱</div>
+                    <div class="step-desc">用工具给中小企业做安全测试，3000-2万/次，或卖源码材料包</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 核心功能入口 -->
+        <div class="section-title">🎯 核心功能入口</div>
+        <div class="grid">
+            <a class="feature-card" href="/workbench">
+                <div class="icon">🎯</div>
+                <div class="title">渗透测试工作台 <span class="badge core">核心</span></div>
+                <div class="desc">输入目标一键扫描，实时进度+7步流程+漏洞发现+报告生成，端到端完整工作流，这是最常用的入口</div>
+                <div class="link">打开 → /workbench</div>
+            </a>
+            <a class="feature-card" href="/workbench">
+                <div class="icon">🎯</div>
+                <div class="title">渗透测试工作台 <span class="badge core">核心</span></div>
+                <div class="desc">输入目标一键扫描，实时进度+7步流程+漏洞发现+报告生成，端到端完整工作流，这是最常用的入口</div>
+                <div class="link">打开 → /workbench</div>
+            </a>
+            <a class="feature-card" href="/workbench">
+                <div class="icon">🎯</div>
+                <div class="title">渗透测试工作台 <span class="badge core">核心</span></div>
+                <div class="desc">输入目标一键扫描，实时进度+7步流程+漏洞发现+报告生成，端到端完整工作流，这是最常用的入口</div>
+                <div class="link">打开 → /workbench</div>
+            </a>
+            <a class="feature-card" href="/vuln-database">
+                <div class="icon">🔍</div>
+                <div class="title">漏洞数据库管理 <span class="badge new">新</span></div>
+                <div class="desc">NVD 25万+ + Exploit-DB 4万+ + Vulners 200万+漏洞库，搜索、筛选、详情、同步、告警</div>
+                <div class="link">打开 → /vuln-database</div>
+            </a>
+            <a class="feature-card" href="/dashboard">
+                <div class="icon">📊</div>
+                <div class="title">系统仪表盘 <span class="badge core">核心</span></div>
+                <div class="desc">系统状态总览、任务统计、漏洞趋势、报告列表，一眼看全系统运行情况</div>
+                <div class="link">打开 → /dashboard</div>
+            </a>
+            <a class="feature-card" href="/docs">
+                <div class="icon">📚</div>
+                <div class="title">API文档 <span class="badge core">核心</span></div>
+                <div class="desc">Swagger UI，70+接口在线测试，所有功能都能在这里调用，开发者首选</div>
+                <div class="link">打开 → /docs</div>
+            </a>
+            <a class="feature-card" href="/console">
+                <div class="icon">💻</div>
+                <div class="title">交互控制台</div>
+                <div class="desc">命令行式交互界面，直接输入命令执行扫描、调用工具、查看结果</div>
+                <div class="link">打开 → /console</div>
+            </a>
+            <a class="feature-card" href="/test">
+                <div class="icon">🧪</div>
+                <div class="title">功能测试页</div>
+                <div class="desc">各个功能模块的测试页面，快速验证工具、智能体、报告等功能是否正常</div>
+                <div class="link">打开 → /test</div>
+            </a>
+            <a class="feature-card" href="/health">
+                <div class="icon">❤️</div>
+                <div class="title">健康检查</div>
+                <div class="desc">查看服务状态、版本、运行时长，确认API服务是否正常运行</div>
+                <div class="link">打开 → /health</div>
+            </a>
+        </div>
+
+        <!-- AI智能体 -->
+        <div class="section-title">🤖 AI智能体系统</div>
+        <div class="grid">
+            <div class="feature-card" onclick="showAgentInfo('react')">
+                <div class="icon">🧠</div>
+                <div class="title">ReAct推理智能体</div>
+                <div class="desc">思考→行动→观察循环，自动规划任务、调用工具、分析结果，支持自然语言指令</div>
+                <div class="link">API: POST /api/v1/agents/react</div>
+            </div>
+            <div class="feature-card" onclick="showAgentInfo('super')">
+                <div class="icon">⚡</div>
+                <div class="title">超级智能体（编排器）</div>
+                <div class="desc">全自动渗透测试编排，侦察→扫描→验证→报告一条龙，输入目标自动完成全部流程</div>
+                <div class="link">API: POST /api/v1/super-agent/execute</div>
+            </div>
+            <div class="feature-card" onclick="showAgentInfo('rag')">
+                <div class="icon">📖</div>
+                <div class="title">RAG知识库检索</div>
+                <div class="desc">渗透测试知识库，查询漏洞原理、利用方法、修复方案，AI结合知识库给出专业回答</div>
+                <div class="link">API: POST /api/v1/knowledge/rag</div>
+            </div>
+            <div class="feature-card" onclick="showAgentInfo('mcp')">
+                <div class="icon">🔌</div>
+                <div class="title">MCP协议服务器</div>
+                <div class="desc">8个工具集40+工具，对接Claude/GPT等大模型，让大模型直接调用你的安全工具</div>
+                <div class="link">启动: python launcher.py mcp</div>
+            </div>
+        </div>
+
+        <!-- 安全工具 -->
+        <div class="section-title">🔧 安全工具系统（34+）</div>
+        <div class="grid">
+            <div class="feature-card" onclick="showToolInfo('recon')">
+                <div class="icon">🔭</div>
+                <div class="title">侦察类工具</div>
+                <div class="desc">子域名枚举、DNS查询、WHOIS、端口扫描、服务识别、SSL证书分析、HTTP头获取</div>
+                <div class="link">8个工具</div>
+            </div>
+            <div class="feature-card" onclick="showToolInfo('web')">
+                <div class="icon">🌐</div>
+                <div class="title">Web扫描类</div>
+                <div class="desc">目录扫描、SQL注入检测、XSS检测、CSRF检测、文件上传检测、CORS配置、安全头检查</div>
+                <div class="link">10个工具</div>
+            </div>
+            <div class="feature-card" onclick="showToolInfo('exploit')">
+                <div class="icon">💥</div>
+                <div class="title">漏洞利用类</div>
+                <div class="desc">POC验证、漏洞利用框架、CVE匹配、已知漏洞利用、浏览器自动化、桌面自动化</div>
+                <div class="link">8个工具</div>
+            </div>
+            <div class="feature-card" onclick="showToolInfo('report')">
+                <div class="icon">📄</div>
+                <div class="title">报告与验证</div>
+                <div class="desc">4种报告模板（专业渗透/护网自查/高管摘要/简单扫描）、漏洞验证、数据导出</div>
+                <div class="link">8个工具</div>
+            </div>
+        </div>
+
+        <!-- 系统架构 -->
+        <div class="section-title">🏗️ 系统架构（8大系统）</div>
+        <div class="arch">
+            <div class="arch-layers">
+                <div class="arch-layer">
+                    <div class="layer-name">第1层：用户交互层</div>
+                    <div class="layer-items">
+                        <span class="arch-item">Web管理页面（5个）</span>
+                        <span class="arch-item">Swagger API文档</span>
+                        <span class="arch-item">Streamlit Web UI</span>
+                        <span class="arch-item">MCP大模型对接</span>
+                        <span class="arch-item">命令行CLI</span>
+                    </div>
+                </div>
+                <div class="arch-layer">
+                    <div class="layer-name">第2层：AI智能体层</div>
+                    <div class="layer-items">
+                        <span class="arch-item">ReAct推理智能体</span>
+                        <span class="arch-item">超级智能体（编排器）</span>
+                        <span class="arch-item">RAG知识库检索</span>
+                        <span class="arch-item">4个专业智能体（侦察/扫描/利用/报告）</span>
+                    </div>
+                </div>
+                <div class="arch-layer">
+                    <div class="layer-name">第3层：API服务层</div>
+                    <div class="layer-items">
+                        <span class="arch-item">FastAPI REST API（70+接口）</span>
+                        <span class="arch-item">WebSocket实时进度</span>
+                        <span class="arch-item">JWT认证 + RBAC权限</span>
+                        <span class="arch-item">API网关 + 限流 + 审计日志</span>
+                    </div>
+                </div>
+                <div class="arch-layer">
+                    <div class="layer-name">第4层：安全工具层</div>
+                    <div class="layer-items">
+                        <span class="arch-item">侦察工具（8个）</span>
+                        <span class="arch-item">Web扫描（10个）</span>
+                        <span class="arch-item">漏洞利用（8个）</span>
+                        <span class="arch-item">浏览器/桌面自动化</span>
+                        <span class="arch-item">报告生成（4种模板）</span>
+                    </div>
+                </div>
+                <div class="arch-layer">
+                    <div class="layer-name">第5层：数据层</div>
+                    <div class="layer-items">
+                        <span class="arch-item">漏洞数据库（NVD/Exploit-DB/Vulners）</span>
+                        <span class="arch-item">SQLite任务/结果数据库</span>
+                        <span class="arch-item">RAG知识库</span>
+                        <span class="arch-item">POC/EXP本地库</span>
+                        <span class="arch-item">配置/日志/备份</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 常用API速查 -->
+        <div class="section-title">⚡ 常用API速查（直接复制用）</div>
+        <div class="arch">
+            <div style="font-family:monospace;font-size:13px;line-height:2;color:#cbd5e1;overflow-x:auto;">
+                <div><span style="color:#34d399;"># 健康检查</span></div>
+                <div>curl http://127.0.0.1:8000/health</div>
+                <div style="margin-top:10px;"><span style="color:#34d399;"># 搜索漏洞</span></div>
+                <div>curl "http://127.0.0.1:8000/api/v1/vuln/search?keyword=Log4j&severity=critical"</div>
+                <div style="margin-top:10px;"><span style="color:#34d399;"># 同步NVD（后台）</span></div>
+                <div>curl -X POST http://127.0.0.1:8000/api/v1/vuln/sync/nvd -H "Content-Type: application/json" -d '{"days":30}'</div>
+                <div style="margin-top:10px;"><span style="color:#34d399;"># 调用工具（端口扫描）</span></div>
+                <div>curl -X POST http://127.0.0.1:8000/api/v1/tools/call -H "Content-Type: application/json" -d '{"tool_name":"port_scan","parameters":{"target":"127.0.0.1"}}'</div>
+                <div style="margin-top:10px;"><span style="color:#34d399;"># 创建扫描任务</span></div>
+                <div>curl -X POST http://127.0.0.1:8000/api/v1/tasks -H "Content-Type: application/json" -d '{"target":"127.0.0.1","task_type":"full_scan"}'</div>
+                <div style="margin-top:10px;"><span style="color:#34d399;"># AI智能体执行</span></div>
+                <div>curl -X POST http://127.0.0.1:8000/api/v1/agents/react -H "Content-Type: application/json" -d '{"task":"扫描127.0.0.1的开放端口"}'</div>
+                <div style="margin-top:10px;"><span style="color:#34d399;"># 超级智能体（全自动渗透）</span></div>
+                <div>curl -X POST http://127.0.0.1:8000/api/v1/super-agent/execute -H "Content-Type: application/json" -d '{"target":"http://靶场地址","goal":"全面渗透测试并生成报告"}'</div>
+                <div style="margin-top:10px;"><span style="color:#34d399;"># 生成报告</span></div>
+                <div>curl -X POST http://127.0.0.1:8000/api/v1/reports/generate -H "Content-Type: application/json" -d '{"task_id":"任务ID","format":"markdown"}'</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        AI Hacking Agent v6.0 · AI驱动的自动化网络安全渗透测试平台 · 仅限授权测试使用
+    </div>
+
+    <script>
+        // 加载系统状态
+        async function loadStatus() {
+            try {
+                const res = await fetch('/health');
+                const data = await res.json();
+                document.getElementById('serviceStatus').textContent = '运行中';
+                document.getElementById('serviceStatus').className = 'value green';
+                // 运行时长
+                const uptime = data.uptime_seconds || 0;
+                const mins = Math.floor(uptime / 60);
+                const secs = Math.floor(uptime % 60);
+                document.getElementById('uptime').textContent = mins + '分' + secs + '秒';
+            } catch (e) {
+                document.getElementById('serviceStatus').textContent = '已停止';
+                document.getElementById('serviceStatus').className = 'value red';
+            }
+            // 漏洞库统计
+            try {
+                const res = await fetch('/api/v1/vuln/stats');
+                const data = await res.json();
+                document.getElementById('vulnCount').textContent = data.total || 0;
+            } catch (e) {
+                document.getElementById('vulnCount').textContent = '-';
+            }
+        }
+
+        function showAgentInfo(type) {
+            const info = {
+                react: 'ReAct智能体：思考(Reasoning)→行动(Acting)→观察(Observation)循环。输入自然语言任务，AI自动规划步骤、调用工具、分析结果，直到完成任务。需要配置LLM_API_KEY。',
+                super: '超级智能体：全自动渗透测试编排器。输入目标和目标，自动执行：侦察→端口扫描→Web扫描→漏洞验证→报告生成。支持最多50步，适合完整渗透测试。',
+                rag: 'RAG知识库：检索增强生成。查询渗透测试知识库（漏洞原理、利用方法、修复方案），AI结合检索到的知识给出专业回答，避免幻觉。',
+                mcp: 'MCP服务器：Model Context Protocol。让Claude/GPT等大模型直接调用你的安全工具。配置后在大模型里说"扫描这个目标"，它会自动调用你的工具。'
+            };
+            alert(info[type] || '暂无说明');
+        }
+
+        function showToolInfo(type) {
+            const info = {
+                recon: '侦察类工具：subdomain_enum（子域名枚举）、dns_lookup（DNS查询）、whois_lookup、port_scan（端口扫描）、service_identify、ssl_certificate_check、http_headers、ip_geolocation',
+                web: 'Web扫描类：directory_scan、sql_injection_scan、xss_scan、csrf_scan、file_upload_scan、cors_check、security_headers、cms_identify、tech_stack、web_crawler',
+                exploit: '漏洞利用类：poc_verify、cve_match、exploit_framework、browser_automation（Playwright）、desktop_automation、api_fuzzer、auth_bypass、parameter_tamper',
+                report: '报告与验证：report_generator（4种模板）、vulnerability_verify、data_export、evidence_collector、risk_assessment、remediation_suggest、compliance_check、trend_analysis'
+            };
+            alert(info[type] || '暂无说明');
+        }
+
+        // 页面加载时获取状态
+        loadStatus();
+        // 每30秒刷新一次状态
+        setInterval(loadStatus, 30000);
+    </script>
+</body>
+</html>

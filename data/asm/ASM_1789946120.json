@@ -1,0 +1,1622 @@
+{
+  "report_id": "ASM_1789946120",
+  "target": "127.0.0.1",
+  "scan_time": "2026-09-21 07:15:20",
+  "duration_seconds": 162.77,
+  "phase1_asset_discovery": {
+    "target": "127.0.0.1",
+    "target_type": "ip",
+    "assets": {
+      "domains": [],
+      "subdomains": [],
+      "ip_addresses": [],
+      "open_ports": [
+        {
+          "ip": "127.0.0.1",
+          "port": 135,
+          "status": "open"
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 445,
+          "status": "open"
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 5432,
+          "status": "open"
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 8443,
+          "status": "open"
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 8000,
+          "status": "open"
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 8081,
+          "status": "open"
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 8082,
+          "status": "open"
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 8083,
+          "status": "open"
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 9443,
+          "status": "open"
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 10000,
+          "status": "open"
+        }
+      ],
+      "services": [
+        {
+          "ip": "127.0.0.1",
+          "port": 135,
+          "service": "Unknown-135",
+          "banner": ""
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 445,
+          "service": "SMB",
+          "banner": ""
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 5432,
+          "service": "PostgreSQL",
+          "banner": ""
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 8443,
+          "service": "HTTPS-Alt",
+          "banner": "HTTP/1.0 400 Bad Request\r\n\r\nClient sent an HTTP request to an HTTPS server."
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 8000,
+          "service": "Unknown-8000",
+          "banner": ""
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 8081,
+          "service": "Unknown-8081",
+          "banner": ""
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 8082,
+          "service": "Unknown-8082",
+          "banner": ""
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 8083,
+          "service": "Unknown-8083",
+          "banner": ""
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 9443,
+          "service": "Unknown-9443",
+          "banner": ""
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 10000,
+          "service": "Unknown-10000",
+          "banner": ""
+        }
+      ],
+      "tech_stacks": [],
+      "cloud_buckets": [],
+      "certificates": [],
+      "dns_records": []
+    },
+    "summary": {
+      "total_domains": 0,
+      "total_subdomains": 0,
+      "total_ips": 0,
+      "total_open_ports": 10,
+      "total_services": 10,
+      "total_tech_stacks": 0,
+      "total_cloud_buckets": 0,
+      "total_certificates": 0,
+      "total_dns_records": 0
+    },
+    "scan_stats": {
+      "duration_seconds": 162.76,
+      "total_found": 20,
+      "ips_scanned": 1
+    }
+  },
+  "phase2_exposure_assessment": {
+    "total_findings": 10,
+    "risk_distribution": {
+      "critical": 1,
+      "high": 2,
+      "medium": 0,
+      "low": 0,
+      "info": 7
+    },
+    "findings": [
+      {
+        "type": "port_exposure",
+        "severity": "high",
+        "asset": "127.0.0.1",
+        "port": 135,
+        "service": "MSRPC",
+        "title": "MSRPC服务暴露在公网",
+        "description": "端口135(MSRPC)对外开放。Windows RPC，多种漏洞利用入口",
+        "recommendation": "限制MSRPC服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+        "cvss_score": 7.5
+      },
+      {
+        "type": "port_exposure",
+        "severity": "critical",
+        "asset": "127.0.0.1",
+        "port": 445,
+        "service": "SMB",
+        "title": "SMB服务暴露在公网",
+        "description": "端口445(SMB)对外开放。EternalBlue等勒索软件利用入口",
+        "recommendation": "限制SMB服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+        "cvss_score": 9.8
+      },
+      {
+        "type": "port_exposure",
+        "severity": "high",
+        "asset": "127.0.0.1",
+        "port": 5432,
+        "service": "PostgreSQL",
+        "title": "PostgreSQL服务暴露在公网",
+        "description": "端口5432(PostgreSQL)对外开放。数据库暴露，弱口令可导致数据泄露",
+        "recommendation": "限制PostgreSQL服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+        "cvss_score": 7.5
+      },
+      {
+        "type": "port_exposure",
+        "severity": "info",
+        "asset": "127.0.0.1",
+        "port": 8443,
+        "title": "端口8443开放",
+        "description": "端口8443对外开放，需确认是否为业务必需端口",
+        "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+        "cvss_score": 2.0
+      },
+      {
+        "type": "port_exposure",
+        "severity": "info",
+        "asset": "127.0.0.1",
+        "port": 8000,
+        "title": "端口8000开放",
+        "description": "端口8000对外开放，需确认是否为业务必需端口",
+        "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+        "cvss_score": 2.0
+      },
+      {
+        "type": "port_exposure",
+        "severity": "info",
+        "asset": "127.0.0.1",
+        "port": 8081,
+        "title": "端口8081开放",
+        "description": "端口8081对外开放，需确认是否为业务必需端口",
+        "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+        "cvss_score": 2.0
+      },
+      {
+        "type": "port_exposure",
+        "severity": "info",
+        "asset": "127.0.0.1",
+        "port": 8082,
+        "title": "端口8082开放",
+        "description": "端口8082对外开放，需确认是否为业务必需端口",
+        "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+        "cvss_score": 2.0
+      },
+      {
+        "type": "port_exposure",
+        "severity": "info",
+        "asset": "127.0.0.1",
+        "port": 8083,
+        "title": "端口8083开放",
+        "description": "端口8083对外开放，需确认是否为业务必需端口",
+        "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+        "cvss_score": 2.0
+      },
+      {
+        "type": "port_exposure",
+        "severity": "info",
+        "asset": "127.0.0.1",
+        "port": 9443,
+        "title": "端口9443开放",
+        "description": "端口9443对外开放，需确认是否为业务必需端口",
+        "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+        "cvss_score": 2.0
+      },
+      {
+        "type": "port_exposure",
+        "severity": "info",
+        "asset": "127.0.0.1",
+        "port": 10000,
+        "title": "端口10000开放",
+        "description": "端口10000对外开放，需确认是否为业务必需端口",
+        "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+        "cvss_score": 2.0
+      }
+    ],
+    "asset_risks": [
+      {
+        "asset": "127.0.0.1",
+        "total_findings": 10,
+        "critical": 1,
+        "high": 2,
+        "medium": 0,
+        "low": 0,
+        "info": 7,
+        "risk_score": 38.8,
+        "risk_level": "high"
+      }
+    ],
+    "heatmap": {
+      "total_assets": 1,
+      "assets_with_high_risk_ports": 1,
+      "data": [
+        {
+          "ip": "127.0.0.1",
+          "ports": [
+            135,
+            445,
+            5432,
+            8443,
+            8000,
+            8081,
+            8082,
+            8083,
+            9443,
+            10000
+          ],
+          "port_count": 10,
+          "high_risk_port_count": 3,
+          "risk_density": 30.0
+        }
+      ]
+    },
+    "overall_risk_score": {
+      "score": 24,
+      "level": "medium",
+      "description": "发现1个严重风险、2个高危风险、0个中危风险、0个低危风险"
+    },
+    "assessment_time": "2026-09-21 07:15:20"
+  },
+  "phase3_attack_path_analysis": {
+    "entry_points": [
+      {
+        "type": "open_service",
+        "asset": "127.0.0.1",
+        "port": 445,
+        "service": "SMB",
+        "description": "SMB服务暴露在公网",
+        "exploitability": "critical",
+        "impact": "critical"
+      },
+      {
+        "type": "open_service",
+        "asset": "127.0.0.1",
+        "port": 135,
+        "service": "MSRPC",
+        "description": "MSRPC服务暴露在公网",
+        "exploitability": "high",
+        "impact": "high"
+      },
+      {
+        "type": "open_service",
+        "asset": "127.0.0.1",
+        "port": 5432,
+        "service": "PostgreSQL",
+        "description": "PostgreSQL服务暴露在公网",
+        "exploitability": "high",
+        "impact": "high"
+      },
+      {
+        "type": "web_application",
+        "asset": "127.0.0.1",
+        "port": 8443,
+        "service": "HTTP/HTTPS",
+        "description": "Web应用在127.0.0.1:8443",
+        "exploitability": "medium",
+        "impact": "high"
+      },
+      {
+        "type": "web_application",
+        "asset": "127.0.0.1",
+        "port": 8000,
+        "service": "HTTP/HTTPS",
+        "description": "Web应用在127.0.0.1:8000",
+        "exploitability": "medium",
+        "impact": "high"
+      }
+    ],
+    "attack_paths": [
+      {
+        "name": "直接利用 - SMB",
+        "steps": [
+          {
+            "phase": "侦察",
+            "action": "扫描127.0.0.1:445",
+            "status": "已完成"
+          },
+          {
+            "phase": "初始访问",
+            "action": "利用SMB服务漏洞",
+            "status": "可能"
+          },
+          {
+            "phase": "执行",
+            "action": "在目标系统执行代码",
+            "status": "可能"
+          },
+          {
+            "phase": "影响",
+            "action": "数据泄露/系统控制",
+            "status": "可能"
+          }
+        ],
+        "probability": "critical",
+        "impact": "critical",
+        "entry_point": {
+          "type": "open_service",
+          "asset": "127.0.0.1",
+          "port": 445,
+          "service": "SMB",
+          "description": "SMB服务暴露在公网",
+          "exploitability": "critical",
+          "impact": "critical"
+        }
+      },
+      {
+        "name": "入口突破 + 内网横向移动",
+        "steps": [
+          {
+            "phase": "侦察",
+            "action": "扫描127.0.0.1",
+            "status": "已完成"
+          },
+          {
+            "phase": "初始访问",
+            "action": "利用SMB获得初始访问",
+            "status": "可能"
+          },
+          {
+            "phase": "发现",
+            "action": "内网扫描，发现其他主机",
+            "status": "可能"
+          },
+          {
+            "phase": "凭证访问",
+            "action": "窃取凭证/哈希传递",
+            "status": "可能"
+          },
+          {
+            "phase": "横向移动",
+            "action": "使用窃取凭证访问其他主机",
+            "status": "可能"
+          },
+          {
+            "phase": "影响",
+            "action": "内网多主机控制/数据泄露",
+            "status": "可能"
+          }
+        ],
+        "probability": "medium",
+        "impact": "critical",
+        "entry_point": {
+          "type": "open_service",
+          "asset": "127.0.0.1",
+          "port": 445,
+          "service": "SMB",
+          "description": "SMB服务暴露在公网",
+          "exploitability": "critical",
+          "impact": "critical"
+        }
+      },
+      {
+        "name": "直接利用 - MSRPC",
+        "steps": [
+          {
+            "phase": "侦察",
+            "action": "扫描127.0.0.1:135",
+            "status": "已完成"
+          },
+          {
+            "phase": "初始访问",
+            "action": "利用MSRPC服务漏洞",
+            "status": "可能"
+          },
+          {
+            "phase": "执行",
+            "action": "在目标系统执行代码",
+            "status": "可能"
+          },
+          {
+            "phase": "影响",
+            "action": "数据泄露/系统控制",
+            "status": "可能"
+          }
+        ],
+        "probability": "high",
+        "impact": "high",
+        "entry_point": {
+          "type": "open_service",
+          "asset": "127.0.0.1",
+          "port": 135,
+          "service": "MSRPC",
+          "description": "MSRPC服务暴露在公网",
+          "exploitability": "high",
+          "impact": "high"
+        }
+      },
+      {
+        "name": "入口突破 + 内网横向移动",
+        "steps": [
+          {
+            "phase": "侦察",
+            "action": "扫描127.0.0.1",
+            "status": "已完成"
+          },
+          {
+            "phase": "初始访问",
+            "action": "利用MSRPC获得初始访问",
+            "status": "可能"
+          },
+          {
+            "phase": "发现",
+            "action": "内网扫描，发现其他主机",
+            "status": "可能"
+          },
+          {
+            "phase": "凭证访问",
+            "action": "窃取凭证/哈希传递",
+            "status": "可能"
+          },
+          {
+            "phase": "横向移动",
+            "action": "使用窃取凭证访问其他主机",
+            "status": "可能"
+          },
+          {
+            "phase": "影响",
+            "action": "内网多主机控制/数据泄露",
+            "status": "可能"
+          }
+        ],
+        "probability": "medium",
+        "impact": "critical",
+        "entry_point": {
+          "type": "open_service",
+          "asset": "127.0.0.1",
+          "port": 135,
+          "service": "MSRPC",
+          "description": "MSRPC服务暴露在公网",
+          "exploitability": "high",
+          "impact": "high"
+        }
+      },
+      {
+        "name": "直接利用 - PostgreSQL",
+        "steps": [
+          {
+            "phase": "侦察",
+            "action": "扫描127.0.0.1:5432",
+            "status": "已完成"
+          },
+          {
+            "phase": "初始访问",
+            "action": "利用PostgreSQL服务漏洞",
+            "status": "可能"
+          },
+          {
+            "phase": "执行",
+            "action": "在目标系统执行代码",
+            "status": "可能"
+          },
+          {
+            "phase": "影响",
+            "action": "数据泄露/系统控制",
+            "status": "可能"
+          }
+        ],
+        "probability": "high",
+        "impact": "high",
+        "entry_point": {
+          "type": "open_service",
+          "asset": "127.0.0.1",
+          "port": 5432,
+          "service": "PostgreSQL",
+          "description": "PostgreSQL服务暴露在公网",
+          "exploitability": "high",
+          "impact": "high"
+        }
+      },
+      {
+        "name": "入口突破 + 内网横向移动",
+        "steps": [
+          {
+            "phase": "侦察",
+            "action": "扫描127.0.0.1",
+            "status": "已完成"
+          },
+          {
+            "phase": "初始访问",
+            "action": "利用PostgreSQL获得初始访问",
+            "status": "可能"
+          },
+          {
+            "phase": "发现",
+            "action": "内网扫描，发现其他主机",
+            "status": "可能"
+          },
+          {
+            "phase": "凭证访问",
+            "action": "窃取凭证/哈希传递",
+            "status": "可能"
+          },
+          {
+            "phase": "横向移动",
+            "action": "使用窃取凭证访问其他主机",
+            "status": "可能"
+          },
+          {
+            "phase": "影响",
+            "action": "内网多主机控制/数据泄露",
+            "status": "可能"
+          }
+        ],
+        "probability": "medium",
+        "impact": "critical",
+        "entry_point": {
+          "type": "open_service",
+          "asset": "127.0.0.1",
+          "port": 5432,
+          "service": "PostgreSQL",
+          "description": "PostgreSQL服务暴露在公网",
+          "exploitability": "high",
+          "impact": "high"
+        }
+      },
+      {
+        "name": "直接利用 - HTTP/HTTPS",
+        "steps": [
+          {
+            "phase": "侦察",
+            "action": "扫描127.0.0.1:8443",
+            "status": "已完成"
+          },
+          {
+            "phase": "初始访问",
+            "action": "利用HTTP/HTTPS服务漏洞",
+            "status": "可能"
+          },
+          {
+            "phase": "执行",
+            "action": "在目标系统执行代码",
+            "status": "可能"
+          },
+          {
+            "phase": "影响",
+            "action": "数据泄露/系统控制",
+            "status": "可能"
+          }
+        ],
+        "probability": "medium",
+        "impact": "high",
+        "entry_point": {
+          "type": "web_application",
+          "asset": "127.0.0.1",
+          "port": 8443,
+          "service": "HTTP/HTTPS",
+          "description": "Web应用在127.0.0.1:8443",
+          "exploitability": "medium",
+          "impact": "high"
+        }
+      },
+      {
+        "name": "入口突破 + 内网横向移动",
+        "steps": [
+          {
+            "phase": "侦察",
+            "action": "扫描127.0.0.1",
+            "status": "已完成"
+          },
+          {
+            "phase": "初始访问",
+            "action": "利用HTTP/HTTPS获得初始访问",
+            "status": "可能"
+          },
+          {
+            "phase": "发现",
+            "action": "内网扫描，发现其他主机",
+            "status": "可能"
+          },
+          {
+            "phase": "凭证访问",
+            "action": "窃取凭证/哈希传递",
+            "status": "可能"
+          },
+          {
+            "phase": "横向移动",
+            "action": "使用窃取凭证访问其他主机",
+            "status": "可能"
+          },
+          {
+            "phase": "影响",
+            "action": "内网多主机控制/数据泄露",
+            "status": "可能"
+          }
+        ],
+        "probability": "medium",
+        "impact": "critical",
+        "entry_point": {
+          "type": "web_application",
+          "asset": "127.0.0.1",
+          "port": 8443,
+          "service": "HTTP/HTTPS",
+          "description": "Web应用在127.0.0.1:8443",
+          "exploitability": "medium",
+          "impact": "high"
+        }
+      },
+      {
+        "name": "直接利用 - HTTP/HTTPS",
+        "steps": [
+          {
+            "phase": "侦察",
+            "action": "扫描127.0.0.1:8000",
+            "status": "已完成"
+          },
+          {
+            "phase": "初始访问",
+            "action": "利用HTTP/HTTPS服务漏洞",
+            "status": "可能"
+          },
+          {
+            "phase": "执行",
+            "action": "在目标系统执行代码",
+            "status": "可能"
+          },
+          {
+            "phase": "影响",
+            "action": "数据泄露/系统控制",
+            "status": "可能"
+          }
+        ],
+        "probability": "medium",
+        "impact": "high",
+        "entry_point": {
+          "type": "web_application",
+          "asset": "127.0.0.1",
+          "port": 8000,
+          "service": "HTTP/HTTPS",
+          "description": "Web应用在127.0.0.1:8000",
+          "exploitability": "medium",
+          "impact": "high"
+        }
+      },
+      {
+        "name": "入口突破 + 内网横向移动",
+        "steps": [
+          {
+            "phase": "侦察",
+            "action": "扫描127.0.0.1",
+            "status": "已完成"
+          },
+          {
+            "phase": "初始访问",
+            "action": "利用HTTP/HTTPS获得初始访问",
+            "status": "可能"
+          },
+          {
+            "phase": "发现",
+            "action": "内网扫描，发现其他主机",
+            "status": "可能"
+          },
+          {
+            "phase": "凭证访问",
+            "action": "窃取凭证/哈希传递",
+            "status": "可能"
+          },
+          {
+            "phase": "横向移动",
+            "action": "使用窃取凭证访问其他主机",
+            "status": "可能"
+          },
+          {
+            "phase": "影响",
+            "action": "内网多主机控制/数据泄露",
+            "status": "可能"
+          }
+        ],
+        "probability": "medium",
+        "impact": "critical",
+        "entry_point": {
+          "type": "web_application",
+          "asset": "127.0.0.1",
+          "port": 8000,
+          "service": "HTTP/HTTPS",
+          "description": "Web应用在127.0.0.1:8000",
+          "exploitability": "medium",
+          "impact": "high"
+        }
+      }
+    ],
+    "attack_chain": [
+      {
+        "tactic_id": "TA0043",
+        "tactic_name": "侦察",
+        "tactic_name_en": "Reconnaissance",
+        "description": "攻击者试图收集可用于规划未来操作的信息",
+        "techniques": [
+          "主动扫描",
+          "被动信息收集",
+          "搜索引擎发现",
+          "DNS查询"
+        ],
+        "related_findings": [
+          {
+            "type": "port_exposure",
+            "severity": "high",
+            "asset": "127.0.0.1",
+            "port": 135,
+            "service": "MSRPC",
+            "title": "MSRPC服务暴露在公网",
+            "description": "端口135(MSRPC)对外开放。Windows RPC，多种漏洞利用入口",
+            "recommendation": "限制MSRPC服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+            "cvss_score": 7.5
+          },
+          {
+            "type": "port_exposure",
+            "severity": "critical",
+            "asset": "127.0.0.1",
+            "port": 445,
+            "service": "SMB",
+            "title": "SMB服务暴露在公网",
+            "description": "端口445(SMB)对外开放。EternalBlue等勒索软件利用入口",
+            "recommendation": "限制SMB服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+            "cvss_score": 9.8
+          },
+          {
+            "type": "port_exposure",
+            "severity": "high",
+            "asset": "127.0.0.1",
+            "port": 5432,
+            "service": "PostgreSQL",
+            "title": "PostgreSQL服务暴露在公网",
+            "description": "端口5432(PostgreSQL)对外开放。数据库暴露，弱口令可导致数据泄露",
+            "recommendation": "限制PostgreSQL服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+            "cvss_score": 7.5
+          }
+        ],
+        "risk_level": "critical",
+        "possible": true
+      },
+      {
+        "tactic_id": "TA0001",
+        "tactic_name": "初始访问",
+        "tactic_name_en": "Initial Access",
+        "description": "攻击者试图进入你的网络",
+        "techniques": [
+          "利用公开-facing应用",
+          "暴力破解",
+          "钓鱼",
+          "利用外部远程服务"
+        ],
+        "related_findings": [
+          {
+            "type": "port_exposure",
+            "severity": "high",
+            "asset": "127.0.0.1",
+            "port": 135,
+            "service": "MSRPC",
+            "title": "MSRPC服务暴露在公网",
+            "description": "端口135(MSRPC)对外开放。Windows RPC，多种漏洞利用入口",
+            "recommendation": "限制MSRPC服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+            "cvss_score": 7.5
+          },
+          {
+            "type": "port_exposure",
+            "severity": "critical",
+            "asset": "127.0.0.1",
+            "port": 445,
+            "service": "SMB",
+            "title": "SMB服务暴露在公网",
+            "description": "端口445(SMB)对外开放。EternalBlue等勒索软件利用入口",
+            "recommendation": "限制SMB服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+            "cvss_score": 9.8
+          },
+          {
+            "type": "port_exposure",
+            "severity": "high",
+            "asset": "127.0.0.1",
+            "port": 5432,
+            "service": "PostgreSQL",
+            "title": "PostgreSQL服务暴露在公网",
+            "description": "端口5432(PostgreSQL)对外开放。数据库暴露，弱口令可导致数据泄露",
+            "recommendation": "限制PostgreSQL服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+            "cvss_score": 7.5
+          }
+        ],
+        "risk_level": "critical",
+        "possible": true
+      },
+      {
+        "tactic_id": "TA0002",
+        "tactic_name": "执行",
+        "tactic_name_en": "Execution",
+        "description": "攻击者试图在受害者系统上运行恶意代码",
+        "techniques": [
+          "命令行解释器",
+          "PowerShell",
+          "利用客户端执行",
+          "服务执行"
+        ],
+        "related_findings": [],
+        "risk_level": "low",
+        "possible": false
+      },
+      {
+        "tactic_id": "TA0003",
+        "tactic_name": "持久化",
+        "tactic_name_en": "Persistence",
+        "description": "攻击者试图保持立足点",
+        "techniques": [
+          "注册表运行键",
+          "计划任务",
+          "服务创建",
+          "启动文件夹"
+        ],
+        "related_findings": [],
+        "risk_level": "low",
+        "possible": false
+      },
+      {
+        "tactic_id": "TA0004",
+        "tactic_name": "权限提升",
+        "tactic_name_en": "Privilege Escalation",
+        "description": "攻击者试图获得更高权限",
+        "techniques": [
+          "利用漏洞提权",
+          "令牌窃取",
+          "绕过UAC",
+          "服务权限配置错误"
+        ],
+        "related_findings": [],
+        "risk_level": "low",
+        "possible": false
+      },
+      {
+        "tactic_id": "TA0005",
+        "tactic_name": "防御规避",
+        "tactic_name_en": "Defense Evasion",
+        "description": "攻击者试图逃避检测",
+        "techniques": [
+          "禁用安全工具",
+          "混淆文件",
+          "进程注入",
+          "根包"
+        ],
+        "related_findings": [],
+        "risk_level": "low",
+        "possible": false
+      },
+      {
+        "tactic_id": "TA0006",
+        "tactic_name": "凭证访问",
+        "tactic_name_en": "Credential Access",
+        "description": "攻击者试图窃取账户名和密码",
+        "techniques": [
+          "凭证转储",
+          "键盘记录",
+          "凭据文件中的凭证",
+          "暴力破解"
+        ],
+        "related_findings": [],
+        "risk_level": "low",
+        "possible": false
+      },
+      {
+        "tactic_id": "TA0007",
+        "tactic_name": "发现",
+        "tactic_name_en": "Discovery",
+        "description": "攻击者试图了解你的环境",
+        "techniques": [
+          "系统信息发现",
+          "网络服务发现",
+          "账户发现",
+          "文件目录发现"
+        ],
+        "related_findings": [],
+        "risk_level": "low",
+        "possible": false
+      },
+      {
+        "tactic_id": "TA0008",
+        "tactic_name": "横向移动",
+        "tactic_name_en": "Lateral Movement",
+        "description": "攻击者试图在你的环境中移动",
+        "techniques": [
+          "远程桌面协议",
+          "SMB/Windows管理共享",
+          "SSH",
+          "WMI"
+        ],
+        "related_findings": [],
+        "risk_level": "low",
+        "possible": false
+      },
+      {
+        "tactic_id": "TA0009",
+        "tactic_name": "收集",
+        "tactic_name_en": "Collection",
+        "description": "攻击者试图收集感兴趣的数据",
+        "techniques": [
+          "数据从本地系统收集",
+          "剪贴板数据",
+          "输入捕获",
+          "邮件收集"
+        ],
+        "related_findings": [],
+        "risk_level": "low",
+        "possible": false
+      },
+      {
+        "tactic_id": "TA0010",
+        "tactic_name": "数据外泄",
+        "tactic_name_en": "Exfiltration",
+        "description": "攻击者试图窃取数据",
+        "techniques": [
+          "通过C2通道外泄",
+          "通过备用通道外泄",
+          "自动外泄",
+          "传输数据大小限制"
+        ],
+        "related_findings": [],
+        "risk_level": "low",
+        "possible": false
+      },
+      {
+        "tactic_id": "TA0040",
+        "tactic_name": "影响",
+        "tactic_name_en": "Impact",
+        "description": "攻击者试图破坏可用性或完整性",
+        "techniques": [
+          "数据加密用于影响",
+          "数据销毁",
+          "服务停止",
+          "资源耗尽"
+        ],
+        "related_findings": [],
+        "risk_level": "low",
+        "possible": false
+      }
+    ],
+    "attack_mapping": {
+      "total_tactics_affected": 2,
+      "tactics": {
+        "reconnaissance": {
+          "name": "侦察",
+          "count": 10,
+          "findings": [
+            {
+              "type": "port_exposure",
+              "severity": "high",
+              "asset": "127.0.0.1",
+              "port": 135,
+              "service": "MSRPC",
+              "title": "MSRPC服务暴露在公网",
+              "description": "端口135(MSRPC)对外开放。Windows RPC，多种漏洞利用入口",
+              "recommendation": "限制MSRPC服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+              "cvss_score": 7.5
+            },
+            {
+              "type": "port_exposure",
+              "severity": "critical",
+              "asset": "127.0.0.1",
+              "port": 445,
+              "service": "SMB",
+              "title": "SMB服务暴露在公网",
+              "description": "端口445(SMB)对外开放。EternalBlue等勒索软件利用入口",
+              "recommendation": "限制SMB服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+              "cvss_score": 9.8
+            },
+            {
+              "type": "port_exposure",
+              "severity": "high",
+              "asset": "127.0.0.1",
+              "port": 5432,
+              "service": "PostgreSQL",
+              "title": "PostgreSQL服务暴露在公网",
+              "description": "端口5432(PostgreSQL)对外开放。数据库暴露，弱口令可导致数据泄露",
+              "recommendation": "限制PostgreSQL服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+              "cvss_score": 7.5
+            },
+            {
+              "type": "port_exposure",
+              "severity": "info",
+              "asset": "127.0.0.1",
+              "port": 8443,
+              "title": "端口8443开放",
+              "description": "端口8443对外开放，需确认是否为业务必需端口",
+              "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+              "cvss_score": 2.0
+            },
+            {
+              "type": "port_exposure",
+              "severity": "info",
+              "asset": "127.0.0.1",
+              "port": 8000,
+              "title": "端口8000开放",
+              "description": "端口8000对外开放，需确认是否为业务必需端口",
+              "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+              "cvss_score": 2.0
+            }
+          ]
+        },
+        "initial_access": {
+          "name": "初始访问",
+          "count": 10,
+          "findings": [
+            {
+              "type": "port_exposure",
+              "severity": "high",
+              "asset": "127.0.0.1",
+              "port": 135,
+              "service": "MSRPC",
+              "title": "MSRPC服务暴露在公网",
+              "description": "端口135(MSRPC)对外开放。Windows RPC，多种漏洞利用入口",
+              "recommendation": "限制MSRPC服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+              "cvss_score": 7.5
+            },
+            {
+              "type": "port_exposure",
+              "severity": "critical",
+              "asset": "127.0.0.1",
+              "port": 445,
+              "service": "SMB",
+              "title": "SMB服务暴露在公网",
+              "description": "端口445(SMB)对外开放。EternalBlue等勒索软件利用入口",
+              "recommendation": "限制SMB服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+              "cvss_score": 9.8
+            },
+            {
+              "type": "port_exposure",
+              "severity": "high",
+              "asset": "127.0.0.1",
+              "port": 5432,
+              "service": "PostgreSQL",
+              "title": "PostgreSQL服务暴露在公网",
+              "description": "端口5432(PostgreSQL)对外开放。数据库暴露，弱口令可导致数据泄露",
+              "recommendation": "限制PostgreSQL服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+              "cvss_score": 7.5
+            },
+            {
+              "type": "port_exposure",
+              "severity": "info",
+              "asset": "127.0.0.1",
+              "port": 8443,
+              "title": "端口8443开放",
+              "description": "端口8443对外开放，需确认是否为业务必需端口",
+              "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+              "cvss_score": 2.0
+            },
+            {
+              "type": "port_exposure",
+              "severity": "info",
+              "asset": "127.0.0.1",
+              "port": 8000,
+              "title": "端口8000开放",
+              "description": "端口8000对外开放，需确认是否为业务必需端口",
+              "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+              "cvss_score": 2.0
+            }
+          ]
+        }
+      }
+    },
+    "feasibility": {
+      "score": 60.0,
+      "level": "high",
+      "total_paths": 10,
+      "description": "发现10条可能的攻击路径，平均可行性60%"
+    },
+    "defense_recommendations": [
+      {
+        "tactic": "侦察",
+        "tactic_id": "TA0043",
+        "recommendation": "减少信息暴露：关闭不必要的端口和服务，配置防火墙限制访问来源",
+        "priority": "medium"
+      },
+      {
+        "tactic": "初始访问",
+        "tactic_id": "TA0001",
+        "recommendation": "强化入口防护：及时修补漏洞，使用强密码和多因素认证，部署WAF",
+        "priority": "high"
+      },
+      {
+        "tactic": "执行",
+        "tactic_id": "TA0002",
+        "recommendation": "应用白名单：限制可执行程序运行，启用脚本拦截，最小权限原则",
+        "priority": "high"
+      },
+      {
+        "tactic": "持久化",
+        "tactic_id": "TA0003",
+        "recommendation": "监控持久化点：定期检查注册表/计划任务/服务，启用变更检测",
+        "priority": "medium"
+      },
+      {
+        "tactic": "权限提升",
+        "tactic_id": "TA0004",
+        "recommendation": "权限最小化：遵循最小权限原则，及时修补系统漏洞，启用UAC",
+        "priority": "medium"
+      },
+      {
+        "tactic": "防御规避",
+        "tactic_id": "TA0005",
+        "recommendation": "部署EDR：启用终端检测和响应，定期更新安全软件，监控异常行为",
+        "priority": "medium"
+      },
+      {
+        "tactic": "凭证访问",
+        "tactic_id": "TA0006",
+        "recommendation": "凭证保护：使用密码管理器，启用多因素认证，定期轮换密码，监控异常登录",
+        "priority": "high"
+      },
+      {
+        "tactic": "发现",
+        "tactic_id": "TA0007",
+        "recommendation": "网络分段：实施网络分段，限制横向扫描，监控异常网络流量",
+        "priority": "medium"
+      },
+      {
+        "tactic": "横向移动",
+        "tactic_id": "TA0008",
+        "recommendation": "访问控制：限制远程管理端口，使用特权访问管理，监控异常远程连接",
+        "priority": "high"
+      },
+      {
+        "tactic": "收集",
+        "tactic_id": "TA0009",
+        "recommendation": "数据分类：对敏感数据分类标记，实施数据防泄漏(DLP)，监控异常文件访问",
+        "priority": "medium"
+      },
+      {
+        "tactic": "数据外泄",
+        "tactic_id": "TA0010",
+        "recommendation": "流量监控：监控异常出站流量，限制数据传输大小，部署数据防泄漏",
+        "priority": "medium"
+      },
+      {
+        "tactic": "影响",
+        "tactic_id": "TA0040",
+        "recommendation": "备份恢复：定期备份重要数据，测试恢复流程，部署勒索软件防护",
+        "priority": "high"
+      }
+    ],
+    "analysis_time": "2026-09-21 07:15:20"
+  },
+  "phase4_risk_prioritization": {
+    "total_risks": 10,
+    "prioritized_risks": [
+      {
+        "finding": {
+          "type": "port_exposure",
+          "severity": "critical",
+          "asset": "127.0.0.1",
+          "port": 445,
+          "service": "SMB",
+          "title": "SMB服务暴露在公网",
+          "description": "端口445(SMB)对外开放。EternalBlue等勒索软件利用入口",
+          "recommendation": "限制SMB服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+          "cvss_score": 9.8
+        },
+        "priority_score": 92.2,
+        "priority_level": "P0 - 紧急",
+        "sla": "24小时内修复",
+        "scores": {
+          "cvss": 9.8,
+          "exploitability": 10,
+          "business_impact": 9.0,
+          "exposure": 9.5,
+          "detection_difficulty": 2.0
+        }
+      },
+      {
+        "finding": {
+          "type": "port_exposure",
+          "severity": "high",
+          "asset": "127.0.0.1",
+          "port": 135,
+          "service": "MSRPC",
+          "title": "MSRPC服务暴露在公网",
+          "description": "端口135(MSRPC)对外开放。Windows RPC，多种漏洞利用入口",
+          "recommendation": "限制MSRPC服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+          "cvss_score": 7.5
+        },
+        "priority_score": 74.0,
+        "priority_level": "P1 - 高",
+        "sla": "7天内修复",
+        "scores": {
+          "cvss": 7.5,
+          "exploitability": 9.0,
+          "business_impact": 7.0,
+          "exposure": 7.0,
+          "detection_difficulty": 2.0
+        }
+      },
+      {
+        "finding": {
+          "type": "port_exposure",
+          "severity": "high",
+          "asset": "127.0.0.1",
+          "port": 5432,
+          "service": "PostgreSQL",
+          "title": "PostgreSQL服务暴露在公网",
+          "description": "端口5432(PostgreSQL)对外开放。数据库暴露，弱口令可导致数据泄露",
+          "recommendation": "限制PostgreSQL服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+          "cvss_score": 7.5
+        },
+        "priority_score": 74.0,
+        "priority_level": "P1 - 高",
+        "sla": "7天内修复",
+        "scores": {
+          "cvss": 7.5,
+          "exploitability": 9.0,
+          "business_impact": 7.0,
+          "exposure": 7.0,
+          "detection_difficulty": 2.0
+        }
+      },
+      {
+        "finding": {
+          "type": "port_exposure",
+          "severity": "info",
+          "asset": "127.0.0.1",
+          "port": 8443,
+          "title": "端口8443开放",
+          "description": "端口8443对外开放，需确认是否为业务必需端口",
+          "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+          "cvss_score": 2.0
+        },
+        "priority_score": 26.3,
+        "priority_level": "P3 - 低",
+        "sla": "90天内修复",
+        "scores": {
+          "cvss": 2.0,
+          "exploitability": 2.5,
+          "business_impact": 1.0,
+          "exposure": 7.0,
+          "detection_difficulty": 2.0
+        }
+      },
+      {
+        "finding": {
+          "type": "port_exposure",
+          "severity": "info",
+          "asset": "127.0.0.1",
+          "port": 8000,
+          "title": "端口8000开放",
+          "description": "端口8000对外开放，需确认是否为业务必需端口",
+          "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+          "cvss_score": 2.0
+        },
+        "priority_score": 26.3,
+        "priority_level": "P3 - 低",
+        "sla": "90天内修复",
+        "scores": {
+          "cvss": 2.0,
+          "exploitability": 2.5,
+          "business_impact": 1.0,
+          "exposure": 7.0,
+          "detection_difficulty": 2.0
+        }
+      },
+      {
+        "finding": {
+          "type": "port_exposure",
+          "severity": "info",
+          "asset": "127.0.0.1",
+          "port": 8081,
+          "title": "端口8081开放",
+          "description": "端口8081对外开放，需确认是否为业务必需端口",
+          "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+          "cvss_score": 2.0
+        },
+        "priority_score": 22.5,
+        "priority_level": "P3 - 低",
+        "sla": "90天内修复",
+        "scores": {
+          "cvss": 2.0,
+          "exploitability": 1.0,
+          "business_impact": 1.0,
+          "exposure": 7.0,
+          "detection_difficulty": 2.0
+        }
+      },
+      {
+        "finding": {
+          "type": "port_exposure",
+          "severity": "info",
+          "asset": "127.0.0.1",
+          "port": 8082,
+          "title": "端口8082开放",
+          "description": "端口8082对外开放，需确认是否为业务必需端口",
+          "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+          "cvss_score": 2.0
+        },
+        "priority_score": 22.5,
+        "priority_level": "P3 - 低",
+        "sla": "90天内修复",
+        "scores": {
+          "cvss": 2.0,
+          "exploitability": 1.0,
+          "business_impact": 1.0,
+          "exposure": 7.0,
+          "detection_difficulty": 2.0
+        }
+      },
+      {
+        "finding": {
+          "type": "port_exposure",
+          "severity": "info",
+          "asset": "127.0.0.1",
+          "port": 8083,
+          "title": "端口8083开放",
+          "description": "端口8083对外开放，需确认是否为业务必需端口",
+          "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+          "cvss_score": 2.0
+        },
+        "priority_score": 22.5,
+        "priority_level": "P3 - 低",
+        "sla": "90天内修复",
+        "scores": {
+          "cvss": 2.0,
+          "exploitability": 1.0,
+          "business_impact": 1.0,
+          "exposure": 7.0,
+          "detection_difficulty": 2.0
+        }
+      },
+      {
+        "finding": {
+          "type": "port_exposure",
+          "severity": "info",
+          "asset": "127.0.0.1",
+          "port": 9443,
+          "title": "端口9443开放",
+          "description": "端口9443对外开放，需确认是否为业务必需端口",
+          "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+          "cvss_score": 2.0
+        },
+        "priority_score": 22.5,
+        "priority_level": "P3 - 低",
+        "sla": "90天内修复",
+        "scores": {
+          "cvss": 2.0,
+          "exploitability": 1.0,
+          "business_impact": 1.0,
+          "exposure": 7.0,
+          "detection_difficulty": 2.0
+        }
+      },
+      {
+        "finding": {
+          "type": "port_exposure",
+          "severity": "info",
+          "asset": "127.0.0.1",
+          "port": 10000,
+          "title": "端口10000开放",
+          "description": "端口10000对外开放，需确认是否为业务必需端口",
+          "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+          "cvss_score": 2.0
+        },
+        "priority_score": 22.5,
+        "priority_level": "P3 - 低",
+        "sla": "90天内修复",
+        "scores": {
+          "cvss": 2.0,
+          "exploitability": 1.0,
+          "business_impact": 1.0,
+          "exposure": 7.0,
+          "detection_difficulty": 2.0
+        }
+      }
+    ],
+    "remediation_plan": {
+      "summary": {
+        "P0": 1,
+        "P1": 2,
+        "P2": 0,
+        "P3": 7,
+        "P4": 0
+      },
+      "plan": {
+        "P0": [
+          {
+            "asset": "127.0.0.1",
+            "title": "SMB服务暴露在公网",
+            "recommendation": "限制SMB服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+            "priority_score": 92.2,
+            "sla": "24小时内修复"
+          }
+        ],
+        "P1": [
+          {
+            "asset": "127.0.0.1",
+            "title": "MSRPC服务暴露在公网",
+            "recommendation": "限制MSRPC服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+            "priority_score": 74.0,
+            "sla": "7天内修复"
+          },
+          {
+            "asset": "127.0.0.1",
+            "title": "PostgreSQL服务暴露在公网",
+            "recommendation": "限制PostgreSQL服务的访问来源，使用VPN或防火墙白名单，避免直接暴露在公网",
+            "priority_score": 74.0,
+            "sla": "7天内修复"
+          }
+        ],
+        "P2": [],
+        "P3": [
+          {
+            "asset": "127.0.0.1",
+            "title": "端口8443开放",
+            "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+            "priority_score": 26.3,
+            "sla": "90天内修复"
+          },
+          {
+            "asset": "127.0.0.1",
+            "title": "端口8000开放",
+            "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+            "priority_score": 26.3,
+            "sla": "90天内修复"
+          },
+          {
+            "asset": "127.0.0.1",
+            "title": "端口8081开放",
+            "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+            "priority_score": 22.5,
+            "sla": "90天内修复"
+          },
+          {
+            "asset": "127.0.0.1",
+            "title": "端口8082开放",
+            "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+            "priority_score": 22.5,
+            "sla": "90天内修复"
+          },
+          {
+            "asset": "127.0.0.1",
+            "title": "端口8083开放",
+            "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+            "priority_score": 22.5,
+            "sla": "90天内修复"
+          },
+          {
+            "asset": "127.0.0.1",
+            "title": "端口9443开放",
+            "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+            "priority_score": 22.5,
+            "sla": "90天内修复"
+          },
+          {
+            "asset": "127.0.0.1",
+            "title": "端口10000开放",
+            "recommendation": "确认该端口是否为业务必需，非必需端口建议关闭",
+            "priority_score": 22.5,
+            "sla": "90天内修复"
+          }
+        ],
+        "P4": []
+      },
+      "total_effort_estimate": "约11.5小时（约1.4人天）"
+    },
+    "risk_matrix": {
+      "matrix": {
+        "high_impact_high_prob": 3,
+        "high_impact_low_prob": 0,
+        "low_impact_high_prob": 0,
+        "low_impact_low_prob": 7
+      },
+      "details": {
+        "high_impact_high_prob": [
+          "SMB服务暴露在公网",
+          "MSRPC服务暴露在公网",
+          "PostgreSQL服务暴露在公网"
+        ],
+        "high_impact_low_prob": [],
+        "low_impact_high_prob": [],
+        "low_impact_low_prob": [
+          "端口8443开放",
+          "端口8000开放",
+          "端口8081开放",
+          "端口8082开放",
+          "端口8083开放",
+          "端口9443开放",
+          "端口10000开放"
+        ]
+      }
+    },
+    "summary": {
+      "total_risks": 10,
+      "p0_critical": 1,
+      "p1_high": 2,
+      "p2_medium": 0,
+      "p3_low": 7,
+      "p4_info": 0,
+      "average_priority_score": 40.5,
+      "top_risks": [
+        "SMB服务暴露在公网",
+        "MSRPC服务暴露在公网",
+        "PostgreSQL服务暴露在公网",
+        "端口8443开放",
+        "端口8000开放"
+      ]
+    },
+    "prioritization_time": "2026-09-21 07:15:20"
+  },
+  "executive_summary": {
+    "target": "127.0.0.1",
+    "total_assets_discovered": 0,
+    "total_open_ports": 10,
+    "total_vulnerabilities_found": 10,
+    "risk_distribution": {
+      "critical": 1,
+      "high": 2,
+      "medium": 0,
+      "low": 0,
+      "info": 7
+    },
+    "overall_risk_level": "medium",
+    "overall_risk_score": 24,
+    "attack_paths_found": 10,
+    "attack_feasibility": "high",
+    "p0_critical_risks": 1,
+    "p1_high_risks": 2,
+    "top_5_risks": [
+      "SMB服务暴露在公网",
+      "MSRPC服务暴露在公网",
+      "PostgreSQL服务暴露在公网",
+      "端口8443开放",
+      "端口8000开放"
+    ],
+    "remediation_effort": "约11.5小时（约1.4人天）",
+    "key_recommendations": [
+      "立即修复P0级严重风险",
+      "关闭不必要的公网暴露端口",
+      "实施网络分段，限制横向移动",
+      "启用多因素认证",
+      "定期进行攻击面评估"
+    ]
+  },
+  "overall_risk_score": {
+    "score": 24,
+    "level": "medium",
+    "description": "发现1个严重风险、2个高危风险、0个中危风险、0个低危风险"
+  }
+}

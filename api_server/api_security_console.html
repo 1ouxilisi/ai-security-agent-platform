@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API安全测试控制台</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: #0d1117; color: #c9d1d9; padding: 16px;
+    line-height: 1.5;
+  }
+  h1 { color: #58a6ff; font-size: 22px; margin-bottom: 12px; }
+  h2 { color: #79c0ff; font-size: 16px; margin: 16px 0 8px;
+       border-left: 3px solid #58a6ff; padding-left: 8px; }
+  .panel { background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+           padding: 14px; margin-bottom: 14px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  input[type=text], input[type=password], select, textarea {
+    background: #0d1117; color: #c9d1d9; border: 1px solid #30363d;
+    border-radius: 4px; padding: 6px 8px; font-size: 13px; flex: 1; min-width: 120px;
+  }
+  textarea { width: 100%; min-height: 80px; font-family: Consolas, monospace; }
+  button {
+    background: #238636; color: #fff; border: none; border-radius: 4px;
+    padding: 7px 14px; cursor: pointer; font-size: 13px;
+  }
+  button:hover { background: #2ea043; }
+  button.secondary { background: #30363d; }
+  button.secondary:hover { background: #484f58; }
+  button.danger { background: #da3633; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  th, td { border: 1px solid #30363d; padding: 6px 8px; text-align: left; }
+  th { background: #21262d; color: #8b949e; }
+  tr:hover { background: #1c2128; }
+  .method { padding: 2px 8px; border-radius: 3px; font-weight: bold; font-size: 11px; color: #fff; }
+  .m-get { background: #2ea043; }
+  .m-post { background: #1f6feb; }
+  .m-put { background: #d29922; }
+  .m-delete { background: #da3633; }
+  .m-patch { background: #a371f7; }
+  .tag { padding: 1px 6px; border-radius: 10px; font-size: 10px; }
+  .tag-public { background: #1f6feb; }
+  .tag-authenticated { background: #d29922; }
+  .tag-admin { background: #da3633; }
+  .tag-user { background: #a371f7; }
+  .risk { padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; }
+  .risk-critical { background: #da3633; color: #fff; }
+  .risk-high { background: #db6d28; color: #fff; }
+  .risk-medium { background: #d29922; color: #000; }
+  .risk-low { background: #1f6feb; color: #fff; }
+  .risk-info { background: #30363d; color: #c9d1d9; }
+  .progress-bar { background: #21262d; border-radius: 4px; height: 18px; overflow: hidden; }
+  .progress-fill { background: linear-gradient(90deg, #1f6feb, #2ea043);
+                   height: 100%; width: 0%; transition: width 0.3s; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .stat-card { background: #21262d; padding: 10px; border-radius: 6px; text-align: center; }
+  .stat-card .num { font-size: 24px; font-weight: bold; color: #58a6ff; }
+  .stat-card .label { font-size: 11px; color: #8b949e; }
+  .welcome { background: #1f6feb22; border: 1px solid #1f6feb; padding: 12px; border-radius: 6px; margin-bottom: 14px; }
+  .muted { color: #8b949e; font-size: 12px; }
+  .endpoint-detail { display: none; background: #0d1117; padding: 8px; margin-top: 4px; border-radius: 4px; font-size: 12px; }
+  .endpoint-row.expanded .endpoint-detail { display: block; }
+  .badge { display: inline-block; background: #30363d; padding: 2px 6px; border-radius: 3px; margin: 1px; font-size: 11px; }
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  @media (max-width: 768px) {
+    .row { flex-direction: column; align-items: stretch; }
+    input, select, button { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<h1>API安全测试控制台</h1>
+
+<div class="welcome">
+  <strong>使用说明：</strong>
+  本工具仅用于<strong>授权</strong>的 API 安全评估。流程：① 输入 OpenAPI 规范（URL 或粘贴内容）→ ② 解析后查看端点 → ③ 配置 fuzz 强度与测试类型 → ④ 开始扫描 → ⑤ 查看漏洞与报告。
+  所有 fuzz 仅做<strong>检测不做利用</strong>，速率控制默认开启，请勿对未授权目标发起扫描。
+</div>
+
+<!-- OpenAPI 输入区 -->
+<div class="panel">
+  <h2>1. OpenAPI 规范输入</h2>
+  <div class="row">
+    <input type="text" id="openapiUrl" placeholder="OpenAPI URL (如 https://example.com/openapi.json)">
+    <input type="file" id="openapiFile" accept=".json,.yaml,.yml" style="flex:0">
+    <button class="secondary" onclick="loadFile()">读取文件</button>
+    <button onclick="parseOpenapi()">解析</button>
+  </div>
+  <div style="margin-top:8px">
+    <textarea id="openapiContent" placeholder="或直接粘贴 OpenAPI JSON / YAML 内容"></textarea>
+  </div>
+  <div id="apiInfo" style="margin-top:10px"></div>
+</div>
+
+<!-- 端点列表区 -->
+<div class="panel">
+  <h2>2. 端点列表</h2>
+  <div id="endpointStats" class="muted">尚未解析</div>
+  <table id="endpointTable" style="display:none">
+    <thead><tr><th>方法</th><th>路径</th><th>认证</th><th>参数数</th><th>分类</th></tr></thead>
+    <tbody id="endpointBody"></tbody>
+  </table>
+</div>
+
+<!-- 测试配置区 -->
+<div class="panel">
+  <h2>3. 测试配置</h2>
+  <div class="row">
+    <label>fuzz 强度:</label>
+    <select id="fuzzIntensity">
+      <option value="low">低（关键参数 + 5 payload/类型）</option>
+      <option value="medium" selected>中（所有参数 + 10 payload/类型）</option>
+      <option value="high">高（所有参数 + 全部 payload + 全量逻辑测试）</option>
+    </select>
+  </div>
+  <div style="margin-top:8px">
+    <span class="muted">fuzz 类型（按住 Ctrl 多选，默认全选）:</span><br>
+    <select id="fuzzTypes" multiple style="min-height:80px">
+      <option value="sql_injection">sql_injection</option>
+      <option value="xss">xss</option>
+      <option value="command_injection">command_injection</option>
+      <option value="path_traversal">path_traversal</option>
+      <option value="ssrf">ssrf</option>
+      <option value="xxe">xxe</option>
+      <option value="deserialization">deserialization</option>
+      <option value="integer_overflow">integer_overflow</option>
+      <option value="format_malformed">format_malformed</option>
+      <option value="empty_null">empty_null</option>
+      <option value="long_string">long_string</option>
+      <option value="special_chars">special_chars</option>
+    </select>
+  </div>
+  <div style="margin-top:8px">
+    <span class="muted">逻辑测试类型:</span><br>
+    <select id="logicTypes" multiple style="min-height:80px">
+      <option value="horizontal_privilege_esc">水平越权</option>
+      <option value="vertical_privilege_esc">垂直越权</option>
+      <option value="auth_bypass">认证绕过</option>
+      <option value="csrf">CSRF</option>
+      <option value="idor">IDOR</option>
+      <option value="mass_assignment">批量赋值</option>
+      <option value="business_logic_bypass">业务逻辑绕过</option>
+    </select>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <label>请求间隔(s):</label><input type="text" id="reqInterval" value="0.5" style="flex:0; width:80px">
+    <label>超时(s):</label><input type="text" id="timeout" value="10" style="flex:0; width:80px">
+    <label>认证 Token:</label><input type="password" id="authToken" placeholder="Bearer token">
+  </div>
+</div>
+
+<!-- 扫描控制区 -->
+<div class="panel">
+  <h2>4. 扫描控制</h2>
+  <div class="row">
+    <button onclick="startScan()">开始扫描</button>
+    <button class="secondary" onclick="refreshStatus()" id="refreshBtn">刷新状态</button>
+    <span id="currentStep" class="muted"></span>
+  </div>
+  <div class="progress-bar" style="margin-top:8px"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="progressText" class="muted" style="margin-top:4px">0%</div>
+</div>
+
+<!-- 漏洞列表区 -->
+<div class="panel">
+  <h2>5. 漏洞列表</h2>
+  <div class="filter-bar">
+    <label>按严重程度筛选:</label>
+    <select id="severityFilter" onchange="renderVulns()">
+      <option value="">全部</option>
+      <option value="critical">Critical</option>
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+      <option value="low">Low</option>
+      <option value="info">Info</option>
+    </select>
+  </div>
+  <table id="vulnTable">
+    <thead><tr><th>类型</th><th>端点</th><th>参数</th><th>风险等级</th><th>证据</th><th>修复建议</th></tr></thead>
+    <tbody id="vulnBody"><tr><td colspan="6" class="muted">尚未扫描</td></tr></tbody>
+  </table>
+</div>
+
+<!-- 报告区 -->
+<div class="panel">
+  <h2>6. 报告</h2>
+  <div class="row">
+    <button onclick="genReport('json')">生成 JSON 报告</button>
+    <button class="secondary" onclick="genReport('html')">生成 HTML 报告</button>
+  </div>
+  <pre id="reportContent" style="margin-top:8px; background:#0d1117; padding:10px; border-radius:4px; max-height:300px; overflow:auto; font-size:11px"></pre>
+</div>
+
+<!-- 统计区 -->
+<div class="panel">
+  <h2>7. 统计</h2>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="num" id="statEndpoints">-</div><div class="label">端点总数</div></div>
+    <div class="stat-card"><div class="num" id="statVulns">-</div><div class="label">漏洞总数</div></div>
+    <div class="stat-card"><div class="num" id="statCritical">-</div><div class="label">Critical</div></div>
+    <div class="stat-card"><div class="num" id="statHigh">-</div><div class="label">High</div></div>
+    <div class="stat-card"><div class="num" id="statMedium">-</div><div class="label">Medium</div></div>
+    <div class="stat-card"><div class="num" id="statScans">-</div><div class="label">总扫描数</div></div>
+  </div>
+</div>
+
+<script>
+const BASE = '/api/v1/api-security';
+let currentScanId = null;
+let allVulns = [];
+let allEndpoints = [];
+
+function selMulti(id) {
+  return Array.from(document.getElementById(id).selectedOptions).map(o => o.value);
+}
+
+async function api(path, opts) {
+  try {
+    const r = await fetch(BASE + path, opts);
+    return await r.json();
+  } catch (e) {
+    return { code: -1, error: String(e) };
+  }
+}
+
+async function loadFile() {
+  const f = document.getElementById('openapiFile').files[0];
+  if (!f) return;
+  const txt = await f.text();
+  document.getElementById('openapiContent').value = txt;
+}
+
+async function parseOpenapi() {
+  const url = document.getElementById('openapiUrl').value.trim();
+  const content = document.getElementById('openapiContent').value;
+  if (!url && !content) { alert('请输入 URL 或粘贴内容'); return; }
+  const body = { url, content, content_type: url.includes('.yaml') ? 'yaml' : 'json' };
+  const res = await api('/parse-openapi', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  if (res.code === 0) {
+    const d = res.data;
+    const p = d.parsed || {};
+    const info = p.api_info || {};
+    document.getElementById('apiInfo').innerHTML =
+      `<div class="stat-grid">
+        <div class="stat-card"><div class="num">${info.title || '-'}</div><div class="label">API 标题</div></div>
+        <div class="stat-card"><div class="num">${info.version || '-'}</div><div class="label">版本</div></div>
+        <div class="stat-card"><div class="num">${p.endpoint_count || 0}</div><div class="label">端点数</div></div>
+        <div class="stat-card"><div class="num">${(p.auth_methods||[]).length}</div><div class="label">认证方式</div></div>
+      </div>`;
+    allEndpoints = p.endpoints || [];
+    renderEndpoints();
+  } else {
+    document.getElementById('apiInfo').innerHTML = `<span class="risk risk-high">解析失败: ${res.error}</span>`;
+  }
+}
+
+function methodClass(m) {
+  return 'm-' + (m || 'get').toLowerCase();
+}
+
+function renderEndpoints() {
+  const tb = document.getElementById('endpointBody');
+  tb.innerHTML = '';
+  allEndpoints.forEach((ep, i) => {
+    const tr = document.createElement('tr');
+    tr.className = 'endpoint-row';
+    const cls = ep.auth_required ? 'authenticated' : 'public';
+    const admin = (ep.path||'').toLowerCase().includes('admin') ? 'admin' : '';
+    const tags = [cls, admin].filter(Boolean).map(t => `<span class="tag tag-${t}">${t}</span>`).join(' ');
+    const params = (ep.param_details || []).map(p =>
+      `<div><span class="badge">${p.name}</span> ${p.location} ${p.type} ${p.required?'*':''}</div>`
+    ).join('') || '<span class="muted">无参数</span>';
+    tr.innerHTML = `<td><span class="method ${methodClass(ep.method)}">${ep.method}</span></td>
+      <td>${ep.path}</td>
+      <td>${ep.auth_required ? '是' : '否'}</td>
+      <td>${(ep.param_details||[]).length}</td>
+      <td>${tags}</td>
+      <div class="endpoint-detail">${params}</div>`;
+    tr.onclick = () => tr.classList.toggle('expanded');
+    tb.appendChild(tr);
+  });
+  document.getElementById('endpointTable').style.display = 'table';
+  document.getElementById('endpointStats').textContent = `共 ${allEndpoints.length} 个端点（点击行展开参数）`;
+}
+
+async function startScan() {
+  const content = document.getElementById('openapiContent').value;
+  const url = document.getElementById('openapiUrl').value.trim();
+  if (!content && !url) { alert('请先解析 OpenAPI'); return; }
+  const body = {
+    openapi_url: url,
+    openapi_content: content,
+    content_type: 'json',
+    auth_token: document.getElementById('authToken').value,
+    fuzz_intensity: document.getElementById('fuzzIntensity').value,
+    test_types: selMulti('fuzzTypes'),
+    logic_test_types: selMulti('logicTypes'),
+    rate_limit: {
+      request_interval: parseFloat(document.getElementById('reqInterval').value),
+      timeout: parseFloat(document.getElementById('timeout').value)
+    }
+  };
+  const res = await api('/scan', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  if (res.code === 0) {
+    currentScanId = res.data.scan_id;
+    pollStatus();
+  } else {
+    alert('启动失败: ' + res.error);
+  }
+}
+
+async function refreshStatus() {
+  if (currentScanId) pollStatus();
+}
+
+async function pollStatus() {
+  if (!currentScanId) return;
+  const res = await api('/' + currentScanId + '/status');
+  if (res.code === 0) {
+    const d = res.data;
+    document.getElementById('progressFill').style.width = d.progress + '%';
+    document.getElementById('progressText').textContent = d.progress + '%';
+    document.getElementById('currentStep').textContent = '当前步骤: ' + (d.current_step || '-') + ' (' + d.status + ')';
+    if (d.status === 'completed' || d.status === 'failed') {
+      loadResult();
+      return;
+    }
+    setTimeout(pollStatus, 1000);
+  }
+}
+
+async function loadResult() {
+  const res = await api('/' + currentScanId + '/vulnerabilities');
+  if (res.code === 0) {
+    allVulns = res.data || [];
+    renderVulns();
+  }
+  const sres = await api('/stats');
+  if (sres.code === 0) updateStats(sres.data);
+}
+
+function renderVulns() {
+  const sev = document.getElementById('severityFilter').value;
+  const tb = document.getElementById('vulnBody');
+  const list = sev ? allVulns.filter(v => v.risk_level === sev) : allVulns;
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="6" class="muted">无漏洞或尚未扫描</td></tr>';
+    return;
+  }
+  tb.innerHTML = list.slice(0, 200).map(v =>
+    `<tr><td>${v.type||''}</td><td>${v.endpoint||''}</td><td>${v.param||''}</td>
+     <td><span class="risk risk-${v.risk_level||'info'}">${v.risk_level||'info'}</span></td>
+     <td>${(v.evidence||'').slice(0,80)}</td><td>${(v.remediation||'').slice(0,80)}</td></tr>`
+  ).join('');
+}
+
+function updateStats(s) {
+  document.getElementById('statVulns').textContent = s.total_vulns || 0;
+  document.getElementById('statScans').textContent = s.total_scans || 0;
+  const br = s.by_risk || {};
+  document.getElementById('statCritical').textContent = br.critical || 0;
+  document.getElementById('statHigh').textContent = br.high || 0;
+  document.getElementById('statMedium').textContent = br.medium || 0;
+}
+
+async function genReport(fmt) {
+  if (!currentScanId) { alert('请先完成扫描'); return; }
+  const res = await api('/' + currentScanId + '/report', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({format: fmt})
+  });
+  if (res.code === 0) {
+    const c = res.data.content;
+    document.getElementById('reportContent').textContent =
+      typeof c === 'string' ? c : JSON.stringify(c, null, 2);
+  } else {
+    document.getElementById('reportContent').textContent = '错误: ' + res.error;
+  }
+}
+
+// 初始化加载统计
+(async () => {
+  const s = await api('/stats');
+  if (s.code === 0) updateStats(s.data);
+})();
+</script>
+</body>
+</html>

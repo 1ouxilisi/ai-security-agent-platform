@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全度量与成熟度平台 · Security Metrics Deep</title>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2129; --panel2:#222b36; --border:#2e3947;
+  --txt:#e6edf3; --muted:#8b98a9; --accent:#4dd0e1; --accent2:#7c4dff;
+  --ok:#2ecc71; --warn:#f1c40f; --bad:#e74c3c; --info:#3498db;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.5}
+header{background:linear-gradient(90deg,#1a2129,#222b36);padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+header h1{font-size:20px;color:var(--accent)}
+header .sub{color:var(--muted);font-size:12px;margin-top:4px}
+.badges{display:flex;gap:8px;flex-wrap:wrap}
+.badge{background:var(--panel2);border:1px solid var(--border);padding:4px 10px;border-radius:12px;font-size:12px;color:var(--muted)}
+.badge b{color:var(--accent)}
+nav{display:flex;gap:4px;background:var(--panel);padding:10px 24px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;padding:8px 14px;border-radius:6px;cursor:pointer;white-space:nowrap;font-size:13px}
+nav button:hover{background:var(--panel2);color:var(--txt)}
+nav button.active{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+main{padding:20px 24px;max-width:1400px;margin:0 auto}
+.tab{display:none}
+.tab.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px}
+.card .label{color:var(--muted);font-size:12px;margin-bottom:6px}
+.card .value{font-size:26px;font-weight:600;color:var(--txt)}
+.card .delta{font-size:12px;margin-top:4px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:18px}
+.panel h3{font-size:15px;margin-bottom:12px;color:var(--accent);border-left:3px solid var(--accent);padding-left:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:500;background:var(--panel2)}
+tr:hover td{background:rgba(77,208,225,.05)}
+.tag{padding:2px 8px;border-radius:10px;font-size:11px}
+.tag.ok{background:rgba(46,204,113,.15);color:var(--ok)}
+.tag.warn{background:rgba(241,196,15,.15);color:var(--warn)}
+.tag.bad{background:rgba(231,76,60,.15);color:var(--bad)}
+.bar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.row{display:flex;gap:14px;flex-wrap:wrap}
+.row > *{flex:1;min-width:280px}
+button.act{background:var(--accent2);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px}
+button.act:hover{opacity:.9}
+button.ghost{background:transparent;border:1px solid var(--border);color:var(--txt);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px}
+input,select{background:var(--panel2);border:1px solid var(--border);color:var(--txt);padding:7px 10px;border-radius:6px;font-size:13px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+pre{background:#0b0f14;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:12px;color:#9fd;color:#9ec;font-family:Consolas,monospace;max-height:420px}
+.muted{color:var(--muted);font-size:12px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+.kv div{background:var(--panel2);padding:8px 10px;border-radius:6px;font-size:12px}
+.kv b{color:var(--accent)}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:12px;border-top:1px solid var(--border);margin-top:20px}
+@media(max-width:720px){main{padding:12px}header{padding:12px}nav{padding:8px 12px}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>安全度量与成熟度平台</h1>
+    <div class="sub">第25轮升级方向3 · 成熟度 / KPI·KRI / ROI / 效能 / 文化 一体化度量</div>
+  </div>
+  <div class="badges">
+    <span class="badge">KPI <b id="bdKpi">-</b></span>
+    <span class="badge">KRI <b id="bdKri">-</b></span>
+    <span class="badge">评估 <b id="bdAssess">-</b></span>
+    <span class="badge">项目 <b id="bdProj">-</b></span>
+  </div>
+</header>
+
+<nav id="nav">
+  <button data-tab="overview" class="active">度量总览</button>
+  <button data-tab="maturity">成熟度管理</button>
+  <button data-tab="kpi">KPI/KRI</button>
+  <button data-tab="roi">投资ROI</button>
+  <button data-tab="eff">安全效能</button>
+  <button data-tab="culture">安全文化</button>
+  <button data-tab="settings">系统设置</button>
+</nav>
+
+<main>
+<!-- ============ 总览 ============ -->
+<section class="tab active" id="tab-overview">
+  <div class="cards" id="ovCards"></div>
+  <div class="row">
+    <div class="panel"><h3>安全趋势</h3><div id="ovSecTrend"></div></div>
+    <div class="panel"><h3>风险趋势</h3><div id="ovRiskTrend"></div></div>
+  </div>
+  <div class="panel"><h3>说明</h3>
+    <p class="muted">本控制台聚合六大度量域：成熟度等级、KPI 达标率、KRI 预警数、安全投资回报、团队效能与安全文化评分。所有数据由后端实时计算并通过 REST API 返回，全部内存模拟、无副作用。</p>
+  </div>
+</section>
+
+<!-- ============ 成熟度 ============ -->
+<section class="tab" id="tab-maturity">
+  <div class="toolbar">
+    <select id="maModel">
+      <option value="cmmi">CMMI 安全成熟度</option>
+      <option value="nist_csf" selected>NIST CSF 成熟度</option>
+      <option value="iso27001">ISO27001 成熟度</option>
+      <option value="djcp">等保成熟度</option>
+      <option value="custom">自定义模型</option>
+    </select>
+    <input id="maOrg" placeholder="组织名称" value="示例企业">
+    <select id="maTarget"><option value="3">目标 L3</option><option value="4" selected>目标 L4</option><option value="5">目标 L5</option></select>
+    <button class="act" onclick="runAssessment()">发起评估</button>
+    <button class="ghost" onclick="loadMaturityList()">刷新列表</button>
+  </div>
+  <div class="cards" id="maCards"></div>
+  <div class="row">
+    <div class="panel"><h3>领域评分</h3><div id="maDomains"></div></div>
+    <div class="panel"><h3>差距分析</h3><div id="maGaps"></div></div>
+  </div>
+  <div class="row">
+    <div class="panel"><h3>提升路线图</h3><div id="maRoadmap"></div></div>
+    <div class="panel"><h3>历史趋势</h3><div id="maTrend"></div></div>
+  </div>
+  <div class="panel"><h3>历史评估记录</h3><div id="maList"></div></div>
+</section>
+
+<!-- ============ KPI/KRI ============ -->
+<section class="tab" id="tab-kpi">
+  <div class="toolbar">
+    <select id="kpiGroup"><option value="">全部分组</option></select>
+    <button class="act" onclick="loadKpi()">查询 KPI</button>
+    <button class="ghost" onclick="collectKpi()">触发采集</button>
+    <button class="ghost" onclick="loadKri()">查询 KRI</button>
+  </div>
+  <div class="cards" id="kpiCards"></div>
+  <div class="panel"><h3>KPI 指标列表</h3><div id="kpiTable"></div></div>
+  <div class="panel"><h3>KRI 风险指标（预警/严重）</h3><div id="kriTable"></div></div>
+  <div class="row">
+    <div class="panel"><h3>分组对比</h3><div id="kpiCompare"></div></div>
+    <div class="panel"><h3>异常与预测</h3><div id="kpiAnomaly"></div></div>
+  </div>
+</section>
+
+<!-- ============ ROI ============ -->
+<section class="tab" id="tab-roi">
+  <div class="toolbar">
+    <button class="act" onclick="loadRoi()">刷新投资组合</button>
+    <button class="ghost" onclick="loadRoiBench()">行业基准</button>
+  </div>
+  <div class="cards" id="roiCards"></div>
+  <div class="panel"><h3>投资项目 ROI 对比（按 ROI 降序）</h3><div id="roiTable"></div></div>
+  <div class="row">
+    <div class="panel"><h3>成本结构</h3><div id="roiCost"></div></div>
+    <div class="panel"><h3>价值证明（高管汇报）</h3><div id="roiValue"></div></div>
+  </div>
+</section>
+
+<!-- ============ 效能 ============ -->
+<section class="tab" id="tab-eff">
+  <div class="toolbar"><button class="act" onclick="loadEff()">刷新效能数据</button></div>
+  <div class="cards" id="effCards"></div>
+  <div class="row">
+    <div class="panel"><h3>流程效能与 SLA</h3><div id="effProcess"></div></div>
+    <div class="panel"><h3>技术效能</h3><div id="effTech"></div></div>
+  </div>
+  <div class="row">
+    <div class="panel"><h3>质量度量</h3><div id="effQuality"></div></div>
+    <div class="panel"><h3>效能改进计划</h3><div id="effImprove"></div></div>
+  </div>
+</section>
+
+<!-- ============ 文化 ============ -->
+<section class="tab" id="tab-culture">
+  <div class="toolbar"><button class="act" onclick="loadCulture()">刷新文化评估</button></div>
+  <div class="cards" id="culCards"></div>
+  <div class="row">
+    <div class="panel"><h3>文化七维指标</h3><div id="culIndicators"></div></div>
+    <div class="panel"><h3>文化行为度量</h3><div id="culBehavior"></div></div>
+  </div>
+  <div class="panel"><h3>改进计划与活动</h3><div id="culImprove"></div></div>
+</section>
+
+<!-- ============ 设置 ============ -->
+<section class="tab" id="tab-settings">
+  <div class="toolbar">
+    <button class="act" onclick="loadSettings()">读取设置</button>
+    <button class="ghost" onclick="saveSettings('model_config')">保存模型配置</button>
+  </div>
+  <div class="panel"><h3>系统设置</h3><div id="setBox"></div></div>
+  <div class="panel"><h3>健康检查</h3><pre id="healthBox">未加载</pre></div>
+</section>
+</main>
+
+<footer>安全度量与成熟度平台 · 第25轮 · 全部数据本地模拟计算，不连接真实生产系统</footer>
+
+<script>
+const BASE = '/api/v1/security-metrics';
+let currentAid = null;
+
+async function api(path, opts){
+  try{
+    const r = await fetch(BASE + path, Object.assign({headers:{'Content-Type':'application/json'}}, opts||{}));
+    const j = await r.json();
+    if(!j.success){ console.warn(path, j.error); }
+    return j;
+  }catch(e){ console.error(path, e); return {success:false, error:String(e)}; }
+}
+function el(id){return document.getElementById(id);}
+function bar(v, max){ const m = Math.max(max||100, v); return `<div class="bar"><i style="width:${Math.max(0,Math.min(100,v))}%"></i></div>`; }
+function tag(s){
+  if(s==='达标'||s==='正常'||s==='ok') return '<span class="tag ok">'+s+'</span>';
+  if(s==='预警'||s==='warn') return '<span class="tag warn">'+s+'</span>';
+  if(s==='未达标'||s==='严重'||s==='bad') return '<span class="tag bad">'+s+'</span>';
+  return '<span class="tag">'+s+'</span>';
+}
+function table(headers, rows){
+  let h = '<table><thead><tr>'+headers.map(x=>'<th>'+x+'</th>').join('')+'</tr></thead><tbody>';
+  rows.forEach(r=>{ h += '<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>'; });
+  return h+'</tbody></table>';
+}
+
+/* ---- tabs ---- */
+el('nav').addEventListener('click', e=>{
+  if(e.target.tagName!=='BUTTON') return;
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el('tab-'+e.target.dataset.tab).classList.add('active');
+});
+
+/* ---- overview ---- */
+async function loadOverview(){
+  const j = await api('/overview');
+  if(!j.success) return;
+  const d = j.data;
+  el('ovCards').innerHTML = [
+    ['成熟度等级', d.maturity.level, '评分 '+d.maturity.score],
+    ['KPI 达标率', d.kpi_attainment.reached_rate+'%', d.kpi_attainment.reached+'/'+d.kpi_attainment.total],
+    ['KRI 预警数', d.kri_active_alerts, '严重+预警'],
+    ['效能评分', d.efficiency_score, '团队综合'],
+    ['文化评分', d.culture_score, '综合文化'],
+  ].map(c=>`<div class="card"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="delta">${c[2]}</div></div>`).join('');
+  el('ovSecTrend').innerHTML = d.security_trend.map(p=>`<div style="margin:6px 0"><span class="muted">${p.period}</span> ${bar(p.value)} <span>${p.value}</span></div>`).join('');
+  el('ovRiskTrend').innerHTML = d.risk_trend.map(p=>`<div style="margin:6px 0"><span class="muted">${p.period}</span> ${bar(p.value)} <span>${p.value}</span></div>`).join('');
+}
+
+/* ---- maturity ---- */
+async function runAssessment(){
+  const body = JSON.stringify({model:el('maModel').value, org_name:el('maOrg').value, scope:'全组织', assessor:'安全团队'});
+  const j = await api('/maturity/assessments', {method:'POST', body});
+  if(!j.success) return;
+  currentAid = j.data.assessment_id;
+  el('maCards').innerHTML = [
+    ['综合成熟度', j.data.overall_level_name, '评分 '+j.data.overall_score],
+    ['控制域数', j.data.domains.length, ''],
+    ['控制项数', j.data.items.length, ''],
+  ].map(c=>`<div class="card"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="delta">${c[2]}</div></div>`).join('');
+  el('maDomains').innerHTML = table(['领域','评分','等级'], j.data.domains.map(d=>[d.domain, d.score, 'L'+d.level+' '+d.level_name]));
+  await loadMaturityGaps(); await loadMaturityRoadmap(); await loadMaturityList();
+}
+async function loadMaturityGaps(){
+  if(!currentAid) return;
+  const j = await api(`/maturity/assessments/${currentAid}/gaps?target_level=${el('maTarget').value}`);
+  if(!j.success) return;
+  el('maGaps').innerHTML = table(['领域','当前','目标','差距','优先级'],
+    j.data.gap_domains.map(g=>[g.domain,'L'+g.current_level,'L'+g.target_level,g.gap_score,tag(g.priority==='高'?'bad':g.priority==='中'?'warn':'ok')]));
+}
+async function loadMaturityRoadmap(){
+  if(!currentAid) return;
+  const j = await api(`/maturity/assessments/${currentAid}/roadmap?target_level=${el('maTarget').value}&horizon_months=18`);
+  if(!j.success) return;
+  el('maRoadmap').innerHTML = table(['里程碑','月份','目标','优先级'],
+    j.data.milestones.map(m=>[m.milestone,'第'+m.month+'月','L'+m.target_level,tag(m.priority==='高'?'bad':m.priority==='中'?'warn':'ok')]))
+    + `<p class="muted" style="margin-top:8px">总资源需求：${j.data.resource_total}</p>`;
+}
+async function loadMaturityList(){
+  const j = await api('/maturity/assessments');
+  if(!j.success) return;
+  el('maList').innerHTML = table(['评估ID','模型','组织','评分','等级','时间'],
+    j.data.map(a=>[a.assessment_id, a.model, a.org_name, a.overall_score, a.overall_level_name, a.created_at]));
+}
+async function loadMaturityTrend(){
+  const j = await api('/maturity/trend?model='+el('maModel').value);
+  if(!j.success) return;
+  el('maTrend').innerHTML = j.data.history.map(h=>`<div style="margin:4px 0"><span class="muted">${h.period}</span> L${h.level} ${bar(h.score)} ${h.score}</div>`).join('')
+    + `<p class="muted" style="margin-top:6px">进步速度：${j.data.progress_speed_per_period}/期，目标达成率：${(j.data.goal_attainment_rate*100).toFixed(0)}%</p>`;
+}
+
+/* ---- KPI ---- */
+async function loadKpiGroups(){
+  const j = await api('/kpi/groups');
+  if(j.success){ j.data.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; el('kpiGroup').appendChild(o); }); }
+}
+async function loadKpi(){
+  const g = el('kpiGroup').value;
+  const j = await api('/kpi'+(g?('?group='+encodeURIComponent(g)):''));
+  if(!j.success) return;
+  el('kpiTable').innerHTML = table(['ID','分组','名称','当前','目标','状态'],
+    j.data.items.map(k=>[k.id,k.group,k.name,k.current_value,k.target,tag(k.status)]));
+  const dj = await api('/kpi/dashboard');
+  if(dj.success){ el('kpiCards').innerHTML = [
+    ['KPI 总数', dj.data.total_kpi, ''],
+    ['达标', dj.data.attainment.reached, dj.data.attainment.reached_rate+'%'],
+    ['预警', dj.data.attainment.warning, ''],
+    ['未达标', dj.data.attainment.missed, ''],
+  ].map(c=>`<div class="card"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="delta">${c[2]}</div></div>`).join(''); }
+}
+async function collectKpi(){ await api('/kpi/collect',{method:'POST',body:JSON.stringify({source:'auto'})}); loadKpi(); }
+async function loadKri(){
+  const j = await api('/kri/dashboard');
+  if(!j.success) return;
+  el('kriTable').innerHTML = table(['ID','名称','级别','值','阈值'],
+    j.data.active_alerts.map(k=>[k.id,k.name,tag(k.level==='严重'?'bad':'warn'),k.value,k.threshold]));
+}
+async function loadKpiCompare(){
+  const j = await api('/kpi/compare');
+  if(!j.success) return;
+  el('kpiCompare').innerHTML = table(['分组','均值','目标','达成率%'],
+    j.data.groups.map(g=>[g.group,g.avg_value,g.target,g.attainment]));
+  const aj = await api('/kpi/anomalies');
+  if(aj.success){
+    el('kpiAnomaly').innerHTML = `<p class="muted">KPI 异常 ${aj.data.kpi_anomalies.length} 项 / KRI 预警 ${aj.data.kri_alerts.length} 项</p>`
+      + table(['ID','名称','偏差'], aj.data.kpi_anomalies.slice(0,8).map(a=>[a.id,a.name,a.deviation]));
+  }
+}
+
+/* ---- ROI ---- */
+async function loadRoi(){
+  const j = await api('/roi/comparison');
+  if(!j.success) return;
+  el('roiTable').innerHTML = table(['项目','类别','ROI%','NPV','回收期(年)'],
+    j.data.projects.map(p=>[p.name,p.category,p.roi,p.npv,p.payback]));
+  const cj = await api('/roi/costs');
+  if(cj.success){
+    const bd = cj.data.breakdown;
+    el('roiCost').innerHTML = Object.entries(bd).filter(([k])=>k!=='总成本')
+      .map(([k,v])=>`<div style="margin:4px 0"><span class="muted">${k}</span> ¥${(v/10000).toFixed(1)}万 ${bar(v/(cj.data.total||1)*100)}</div>`).join('');
+  }
+}
+async function loadRoiBench(){
+  const j = await api('/roi/benchmark');
+  if(!j.success) return;
+  el('roiValue').innerHTML = `<div class="kv">` + Object.entries({
+    '本企业平均ROI':j.data.your_avg_roi, '行业平均':j.data.industry_avg_roi,
+    '最佳实践':j.data.best_practice_roi, '差值':j.data.vs_industry
+  }).map(([k,v])=>`<div>${k}<br><b>${v}</b></div>`).join('') + '</div>'
+    + '<ul style="margin-top:8px;padding-left:18px;color:var(--muted)">'+j.data.recommendations.map(r=>'<li>'+r+'</li>').join('')+'</ul>';
+}
+
+/* ---- efficiency ---- */
+async function loadEff(){
+  const j = await api('/efficiency/overview');
+  if(!j.success) return;
+  const d = j.data;
+  el('effCards').innerHTML = [
+    ['团队效能分', d.team.team_efficiency_score, '人均产出 '+JSON.stringify(d.team.per_capita_output)],
+    ['流程准时率', d.process.on_time_rate+'%', '瓶颈 '+d.process.bottlenecks.join('、')],
+    ['自动化率', d.tech.automation_rate+'%', '误报 '+d.tech.false_positive_rate+'%'],
+    ['整体质量', d.quality.overall_quality, '六维综合'],
+  ].map(c=>`<div class="card"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="delta">${c[2]}</div></div>`).join('');
+  el('effProcess').innerHTML = table(['流程','周期(h)','目标(h)','达标'],
+    d.process.processes.map(p=>[p.process,p.cycle_hours,p.target_hours,tag(p.on_time?'ok':'bad')]));
+  el('effTech').innerHTML = table(['指标','值%'],
+    [['扫描覆盖率',d.tech.scan_coverage],['检测准确率',d.tech.detection_accuracy],['自动化率',d.tech.automation_rate],['工具利用率',d.tech.tool_utilization],['技术ROI',d.tech.tech_roi]]
+    .map(r=>[r[0],r[1]]));
+  el('effQuality').innerHTML = table(['维度','评分','趋势'],
+    d.quality.dimensions.map(q=>[q.dimension,q.score,q.trend]));
+  const ij = await api('/efficiency/improvement');
+  if(ij.success){ el('effImprove').innerHTML = table(['领域','类型','措施','预期'],
+    ij.data.opportunities.map(o=>[o.area,o.type,o.action,o.expected_gain])); }
+}
+
+/* ---- culture ---- */
+async function loadCulture(){
+  const ij = await api('/culture/indicators');
+  if(!ij.success) return;
+  el('culCards').innerHTML = [
+    ['综合文化评分', ij.data.composite_score, ij.data.level],
+  ].map(c=>`<div class="card"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="delta">${c[2]}</div></div>`).join('');
+  el('culIndicators').innerHTML = table(['维度','评分'],
+    ij.data.dimensions.map(d=>[d.dimension,d.score]));
+  const bj = await api('/culture/behavior');
+  if(bj.success){ el('culBehavior').innerHTML = '<div class="kv">'+Object.entries(bj.data.metrics)
+    .map(([k,v])=>`<div>${k}<br><b>${v}</b></div>`).join('')+'</div>'; }
+  const imj = await api('/culture/improvement');
+  if(imj.success){
+    el('culImprove').innerHTML = table(['维度','当前','目标','差距','措施'],
+      imj.data.gaps.map(g=>[g.dimension,g.score,g.target,g.gap,g.measure]))
+      + '<p class="muted" style="margin-top:6px">文化活动：'+imj.data.activities.join('、')+'</p>';
+  }
+}
+
+/* ---- settings ---- */
+async function loadSettings(){
+  const j = await api('/settings');
+  if(!j.success) return;
+  el('setBox').innerHTML = '<pre>'+JSON.stringify(j.data,null,2)+'</pre>';
+}
+async function saveSettings(section){
+  const j = await api('/settings/'+section,{method:'PUT',body:JSON.stringify({values:{auto_reassess:true}})});
+  alert(j.success?'已更新 '+section:('失败：'+j.error));
+  loadSettings();
+}
+async function loadHealth(){
+  const j = await api('/health');
+  el('healthBox').textContent = JSON.stringify(j.data||j.error,null,2);
+  if(j.success){
+    el('bdKpi').textContent = j.data.kpi_count;
+    el('bdKri').textContent = j.data.kri_count;
+  }
+}
+async function loadSummary(){
+  const j = await api('/summary');
+  if(j.success){
+    el('bdAssess').textContent = j.data.assessments;
+    el('bdProj').textContent = j.data.roi_projects;
+  }
+}
+
+/* boot */
+loadOverview(); loadHealth(); loadSummary(); loadKpiGroups();
+loadMaturityList(); loadMaturityTrend(); loadKpi(); loadRoi(); loadEff(); loadCulture();
+setInterval(()=>{ loadOverview(); }, 30000);
+</script>
+</body>
+</html>

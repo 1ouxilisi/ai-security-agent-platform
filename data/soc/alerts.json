@@ -1,0 +1,58 @@
+{
+  "alert-001": {
+    "alert_id": "alert-001",
+    "title": "检测到SQL注入尝试",
+    "description": "在Web请求中检测到SQL注入payload",
+    "severity": "high",
+    "source": "WAF",
+    "rule_id": "waf-sqli-001",
+    "status": "new",
+    "created_at": 1788081307.0403044,
+    "acknowledged_at": null,
+    "resolved_at": null,
+    "related_event_id": "",
+    "details": {}
+  },
+  "alert-002": {
+    "alert_id": "alert-002",
+    "title": "异常登录行为",
+    "description": "用户从非常用IP地址登录",
+    "severity": "medium",
+    "source": "SIEM",
+    "rule_id": "siem-login-001",
+    "status": "new",
+    "created_at": 1788081307.040309,
+    "acknowledged_at": null,
+    "resolved_at": null,
+    "related_event_id": "",
+    "details": {}
+  },
+  "alert-003": {
+    "alert_id": "alert-003",
+    "title": "端口扫描检测",
+    "description": "检测到来自外部IP的端口扫描",
+    "severity": "low",
+    "source": "IDS",
+    "rule_id": "ids-scan-001",
+    "status": "new",
+    "created_at": 1788081307.0403125,
+    "acknowledged_at": null,
+    "resolved_at": null,
+    "related_event_id": "",
+    "details": {}
+  },
+  "alert-004": {
+    "alert_id": "alert-004",
+    "title": "恶意文件检测",
+    "description": "在终端检测到恶意软件",
+    "severity": "critical",
+    "source": "EDR",
+    "rule_id": "edr-malware-001",
+    "status": "new",
+    "created_at": 1788081307.0403142,
+    "acknowledged_at": null,
+    "resolved_at": null,
+    "related_event_id": "",
+    "details": {}
+  }
+}

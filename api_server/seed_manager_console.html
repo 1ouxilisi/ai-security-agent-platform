@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>种子数据与初始化控制台 · 第16轮升级方向3</title>
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1f2630; --border:#2d333b;
+    --fg:#e6edf3; --muted:#8b949e; --accent:#2ea043; --accent2:#1f6feb;
+    --crit:#f85149; --high:#ff9800; --med:#ffd33d; --low:#3fb950; --info:#58a6ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--fg);
+       font-size:14px;line-height:1.5}
+  header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 22px;
+         display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  header h1{font-size:18px;font-weight:600}
+  header .ver{color:var(--muted);font-size:12px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+  .b-crit{background:rgba(248,81,73,.15);color:var(--crit)}
+  .b-high{background:rgba(255,152,0,.15);color:var(--high)}
+  .b-med{background:rgba(255,211,61,.15);color:var(--med)}
+  .b-low{background:rgba(63,185,80,.15);color:var(--low)}
+  .b-info{background:rgba(88,166,255,.15);color:var(--info)}
+  nav{display:flex;flex-wrap:wrap;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 12px}
+  nav button{background:none;border:none;color:var(--muted);padding:12px 16px;cursor:pointer;
+             font-size:14px;border-bottom:2px solid transparent}
+  nav button.active{color:var(--fg);border-bottom-color:var(--accent2)}
+  nav button:hover{color:var(--fg)}
+  main{padding:20px 22px;max-width:1500px;margin:0 auto}
+  .tab{display:none}.tab.active{display:block}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+  .card h2{font-size:15px;margin-bottom:12px;color:var(--fg)}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+  .stat{background:var(--bg3);border-radius:6px;padding:12px}
+  .stat .num{font-size:22px;font-weight:700}
+  .stat .lbl{color:var(--muted);font-size:12px}
+  button.btn{background:var(--accent2);color:#fff;border:none;padding:8px 16px;border-radius:6px;
+             cursor:pointer;font-size:13px}
+  button.btn:hover{filter:brightness(1.1)}
+  button.btn.green{background:var(--accent)}
+  button.btn.gray{background:var(--bg3);color:var(--fg)}
+  button.btn.danger{background:var(--crit)}
+  button.btn:disabled{opacity:.5;cursor:not-allowed}
+  input,select{background:var(--bg3);border:1px solid var(--border);color:var(--fg);
+               padding:7px 10px;border-radius:5px;font-size:13px}
+  input:focus,select:focus{outline:none;border-color:var(--accent2)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--bg2)}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  .mono{font-family:Consolas,monospace;font-size:12px}
+  .muted{color:var(--muted)}
+  .prog{background:var(--bg3);border-radius:6px;height:18px;overflow:hidden}
+  .prog>div{background:linear-gradient(90deg,var(--accent2),var(--accent));height:100%;
+            transition:width .3s;display:flex;align-items:center;justify-content:center;
+            font-size:11px;color:#fff}
+  .subtabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .subtabs button{background:var(--bg3);border:1px solid var(--border);color:var(--muted);
+                  padding:6px 14px;border-radius:5px;cursor:pointer}
+  .subtabs button.active{color:var(--fg);border-color:var(--accent2)}
+  .detail{background:var(--bg3);border-radius:6px;padding:12px;margin-top:10px;font-size:13px}
+  .detail pre{white-space:pre-wrap;word-break:break-word;font-family:Consolas,monospace;
+              font-size:12px;color:var(--muted)}
+  .pager{display:flex;gap:8px;align-items:center;margin-top:12px;justify-content:flex-end}
+  .logline{font-family:Consolas,monospace;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)}
+  .tag{display:inline-block;background:var(--bg3);border:1px solid var(--border);border-radius:4px;
+       padding:1px 6px;margin:1px;font-size:11px}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--accent);
+         padding:10px 16px;border-radius:6px;display:none;z-index:99}
+  @media(max-width:760px){main{padding:12px}table{font-size:12px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🗄️ 种子数据与初始化控制台</h1>
+  <span class="ver">第16轮升级方向3 · <span id="verBadge">v16.0.0</span> · 内存模式</span>
+</header>
+<nav id="nav">
+  <button data-tab="init" class="active">初始化向导</button>
+  <button data-tab="seeds">种子管理</button>
+  <button data-tab="vulns">漏洞库</button>
+  <button data-tab="know">知识库</button>
+  <button data-tab="tools">工具模板</button>
+  <button data-tab="kpi">合规KPI</button>
+</nav>
+<main>
+
+<!-- ============ 1. 初始化向导 ============ -->
+<div class="tab active" id="tab-init">
+  <div class="card">
+    <h2>初始化状态</h2>
+    <div class="grid" id="initStats">
+      <div class="stat"><div class="num" id="iState">—</div><div class="lbl">当前状态</div></div>
+      <div class="stat"><div class="num" id="iMods">—</div><div class="lbl">已导入模块</div></div>
+      <div class="stat"><div class="num" id="iRecs">—</div><div class="lbl">总记录数</div></div>
+      <div class="stat"><div class="num" id="iSample">—</div><div class="lbl">示例数据</div></div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn green" id="btnInit">🚀 一键初始化</button>
+      <button class="btn" id="btnGenSample">生成示例数据</button>
+      <button class="btn danger" id="btnClearSample">清除示例数据</button>
+      <button class="btn gray" id="btnReloadInit">刷新状态</button>
+    </div>
+    <div style="margin-top:14px">
+      <div class="prog"><div id="initProg" style="width:0%">0%</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>初始化报告</h2>
+    <div id="initReport" class="muted">点击「一键初始化」后在此展示报告…</div>
+  </div>
+</div>
+
+<!-- ============ 2. 种子管理 ============ -->
+<div class="tab" id="tab-seeds">
+  <div class="card">
+    <h2>各模块种子数据状态</h2>
+    <table id="modTable">
+      <thead><tr><th>模块</th><th>标签</th><th>可用条数</th><th>已导入</th><th>状态</th>
+        <th>导入时间</th><th>操作</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="row" style="margin-top:12px">
+      <button class="btn green" id="btnImportAll">全部导入</button>
+      <button class="btn danger" id="btnResetAll">全部重置</button>
+      <button class="btn gray" id="btnReloadMods">刷新</button>
+    </div>
+    <div style="margin-top:12px">
+      <div class="prog"><div id="impProg" style="width:0%">0%</div></div>
+      <span class="muted" id="impMsg"></span>
+    </div>
+  </div>
+  <div class="card">
+    <h2>导入日志</h2>
+    <div id="logBox" class="muted">暂无日志</div>
+  </div>
+</div>
+
+<!-- ============ 3. 漏洞库 ============ -->
+<div class="tab" id="tab-vulns">
+  <div class="card">
+    <h2>漏洞库（CVE）</h2>
+    <div class="row" style="margin-bottom:12px">
+      <select id="vSev"><option value="">全部严重程度</option>
+        <option value="critical">critical</option><option value="high">high</option>
+        <option value="medium">medium</option><option value="low">low</option>
+        <option value="info">info</option></select>
+      <select id="vType"><option value="">全部类型</option></select>
+      <input id="vKw" placeholder="搜索 CVE/标题/产品…" style="min-width:220px">
+      <button class="btn" id="vSearch">查询</button>
+    </div>
+    <table>
+      <thead><tr><th>CVE编号</th><th>标题</th><th>严重程度</th><th>CVSS</th>
+        <th>类型</th><th>产品</th><th>日期</th></tr></thead>
+      <tbody id="vBody"></tbody>
+    </table>
+    <div class="pager">
+      <button class="btn gray" id="vPrev">上一页</button>
+      <span class="muted" id="vPage">1</span>
+      <button class="btn gray" id="vNext">下一页</button>
+      <span class="muted" id="vTotal"></span>
+    </div>
+    <div id="vDetail" class="detail" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ============ 4. 知识库 ============ -->
+<div class="tab" id="tab-know">
+  <div class="card">
+    <h2>安全知识库</h2>
+    <div class="row" style="margin-bottom:12px">
+      <select id="kCat"><option value="">全部分类</option></select>
+      <select id="kDiff"><option value="">全部难度</option>
+        <option>入门</option><option>中级</option><option>高级</option></select>
+      <input id="kKw" placeholder="搜索标题/内容/标签…" style="min-width:220px">
+      <button class="btn" id="kSearch">查询</button>
+    </div>
+    <table>
+      <thead><tr><th>标题</th><th>分类</th><th>难度</th><th>标签</th></tr></thead>
+      <tbody id="kBody"></tbody>
+    </table>
+    <div class="pager">
+      <button class="btn gray" id="kPrev">上一页</button>
+      <span class="muted" id="kPage">1</span>
+      <button class="btn gray" id="kNext">下一页</button>
+      <span class="muted" id="kTotal"></span>
+    </div>
+    <div id="kDetail" class="detail" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ============ 5. 工具模板 ============ -->
+<div class="tab" id="tab-tools">
+  <div class="card">
+    <h2>检测工具配置模板</h2>
+    <div class="row" style="margin-bottom:12px">
+      <select id="tType"><option value="">全部类型</option>
+        <option>扫描器</option><option>漏洞利用</option><option>密码破解</option>
+        <option>取证分析</option><option>逆向工程</option><option>协议分析</option>
+        <option>代码审计</option><option>容器扫描</option><option>无线安全</option>
+        <option>模糊测试</option></select>
+      <select id="tRisk"><option value="">全部风险</option>
+        <option>低</option><option>中</option><option>高</option></select>
+      <input id="tKw" placeholder="搜索工具/命令…" style="min-width:220px">
+      <button class="btn" id="tSearch">查询</button>
+    </div>
+    <table>
+      <thead><tr><th>名称</th><th>类型</th><th>描述</th><th>风险</th></tr></thead>
+      <tbody id="tBody"></tbody>
+    </table>
+    <div class="pager">
+      <button class="btn gray" id="tPrev">上一页</button>
+      <span class="muted" id="tPage">1</span>
+      <button class="btn gray" id="tNext">下一页</button>
+      <span class="muted" id="tTotal"></span>
+    </div>
+    <div id="tDetail" class="detail" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ============ 6. 合规KPI ============ -->
+<div class="tab" id="tab-kpi">
+  <div class="card">
+    <h2>报告模板 / KPI / 合规控制项</h2>
+    <div class="subtabs">
+      <button class="active" data-sub="reports">报告模板</button>
+      <button data-sub="kpis">KPI 指标</button>
+      <button data-sub="compliance">合规控制项</button>
+    </div>
+    <div id="sub-reports">
+      <table><thead><tr><th>模板名称</th><th>行业</th><th>受众</th><th>章节数</th></tr></thead>
+        <tbody id="rBody"></tbody></table>
+      <div id="rDetail" class="detail" style="display:none"></div>
+    </div>
+    <div id="sub-kpis" style="display:none">
+      <div class="row" style="margin-bottom:10px">
+        <select id="kpiCat"><option value="">全部分类</option>
+          <option>风险</option><option>运营</option><option>技术</option>
+          <option>合规</option><option>财务</option></select>
+        <button class="btn" id="kpiSearch">查询</button>
+      </div>
+      <table><thead><tr><th>KPI</th><th>分类</th><th>计算方法</th><th>目标</th><th>单位</th></tr></thead>
+        <tbody id="kpiBody"></tbody></table>
+      <span class="muted" id="kpiTotal"></span>
+    </div>
+    <div id="sub-compliance" style="display:none">
+      <div class="row" style="margin-bottom:10px">
+        <select id="cFramework"><option value="">全部框架</option>
+          <option>等保2.0三级</option><option>ISO27001:2022</option>
+          <option>GDPR</option><option>SOC2</option></select>
+        <select id="cRisk"><option value="">全部风险</option>
+          <option>高</option><option>中</option><option>低</option></select>
+        <input id="cKw" placeholder="搜索控制项…" style="min-width:200px">
+        <button class="btn" id="cSearch">查询</button>
+      </div>
+      <table><thead><tr><th>编号</th><th>控制项</th><th>框架</th><th>风险</th></tr></thead>
+        <tbody id="cBody"></tbody></table>
+      <span class="muted" id="cTotal"></span>
+    </div>
+  </div>
+</div>
+
+</main>
+<div class="toast" id="toast"></div>
+<script>
+const BASE = '/api/v1/seed-manager';
+let state = {vuln:{p:1,total:0}, know:{p:1,total:0}, tools:{p:1,total:0}};
+const PAGE=20;
+
+async function api(path, opts){
+  const r = await fetch(BASE+path, Object.assign({headers:{'Content-Type':'application/json'}}, opts||{}));
+  const j = await r.json();
+  if(!j.success) throw new Error(j.error||'请求失败');
+  return j.data;
+}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';
+  setTimeout(()=>t.style.display='none',2500);}
+function sevBadge(s){return `<span class="badge b-${s}">${s}</span>`;}
+function esc(s){return (s||'').toString().replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+// ---- tabs ----
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+b.dataset.tab).classList.add('active');
+});
+
+// ---- init ----
+async function loadInit(){
+  try{
+    const d = await api('/init/detect');
+    document.getElementById('iState').textContent =
+      {not_initialized:'未初始化',initialized:'已初始化',partial:'部分初始化'}[d.state]||d.state;
+    document.getElementById('iMods').textContent = d.modules_imported+'/'+d.modules_total;
+    document.getElementById('iSample').textContent = d.sample_generated?'已生成':'未生成';
+    const st = await api('/status');
+    document.getElementById('iRecs').textContent = st.total_records;
+  }catch(e){document.getElementById('iState').textContent='错误: '+e.message;}
+}
+document.getElementById('btnReloadInit').onclick=loadInit;
+document.getElementById('btnInit').onclick=async()=>{
+  const btn=document.getElementById('btnInit');btn.disabled=true;btn.textContent='初始化中…';
+  try{
+    const poll=setInterval(async()=>{try{const p=await api('/progress');
+      document.getElementById('initProg').style.width=(p.percent||0)+'%';
+      document.getElementById('initProg').textContent=(p.percent||0)+'%';
+      if(!p.running){clearInterval(poll);}}catch(e){}},500);
+    const r = await api('/init/run',{method:'POST',body:JSON.stringify({with_sample:true})});
+    const rp = r.report;
+    document.getElementById('initReport').innerHTML =
+      `<b>结果: ${rp.result}</b> · 耗时 ${rp.duration_seconds}s<br>`+
+      `开始: ${rp.started_at} · 完成: ${rp.finished_at}<br>`+
+      `模块: ${rp.modules_imported}/${rp.modules_total} · 总记录: ${rp.total_records}<br>`+
+      `示例数据: ${rp.sample_data_status}<br><pre>${esc(JSON.stringify(rp.module_counts,null,2))}</pre>`;
+    toast('初始化完成: '+rp.result);loadInit();
+  }catch(e){toast('初始化失败: '+e.message);}
+  btn.disabled=false;btn.textContent='🚀 一键初始化';
+};
+document.getElementById('btnGenSample').onclick=async()=>{
+  try{await api('/init/sample/generate',{method:'POST'});toast('示例数据已生成');loadInit();}
+  catch(e){toast(e.message);}
+};
+document.getElementById('btnClearSample').onclick=async()=>{
+  try{await api('/init/sample/clear',{method:'POST'});toast('示例数据已清除');loadInit();}
+  catch(e){toast(e.message);}
+};
+
+// ---- seed manager ----
+async function loadMods(){
+  const d = await api('/modules');
+  const tb = document.querySelector('#modTable tbody');tb.innerHTML='';
+  d.modules.forEach(m=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="mono">${m.module}</td><td>${m.label}</td>
+      <td>${m.total_available}</td><td>${m.imported_count}</td>
+      <td>${m.status==='imported'?'<span class="badge b-low">已导入</span>':'<span class="badge b-med">未导入</span>'}</td>
+      <td class="muted">${m.imported_at||'—'}</td>
+      <td><button class="btn" data-mod="${m.module}">导入</button>
+          <button class="btn gray" data-export="${m.module}">导出</button></td>`;
+    tb.appendChild(tr);
+  });
+  tb.querySelectorAll('button[data-mod]').forEach(b=>b.onclick=async()=>{
+    await api('/import/'+b.dataset.mod,{method:'POST',body:JSON.stringify({on_duplicate:'skip'})});
+    toast(b.dataset.mod+' 已导入');loadMods();loadLogs();
+  });
+  tb.querySelectorAll('button[data-export]').forEach(b=>b.onclick=async()=>{
+    const e=await api('/export/'+b.dataset.export);
+    toast(b.dataset.export+' 导出 '+e.count+' 条');
+  });
+  loadLogs();
+}
+async function loadLogs(){
+  const d=await api('/logs?limit=20');
+  document.getElementById('logBox').innerHTML =
+    d.logs.map(l=>`<div class="logline">[${l.time}] ${l.module||''} -> ${l.result} ${l.error||''}</div>`).join('')||'暂无日志';
+}
+document.getElementById('btnReloadMods').onclick=loadMods;
+document.getElementById('btnImportAll').onclick=async()=>{
+  try{
+    const poll=setInterval(async()=>{try{const p=await api('/progress');
+      document.getElementById('impProg').style.width=(p.percent||0)+'%';
+      document.getElementById('impProg').textContent=(p.percent||0)+'%';
+      document.getElementById('impMsg').textContent=p.message||'';
+      if(!p.running)clearInterval(poll);}catch(e){}},500);
+    await api('/import',{method:'POST',body:JSON.stringify({modules:null,on_duplicate:'skip'})});
+    toast('全部导入完成');loadMods();
+  }catch(e){toast(e.message);}
+};
+document.getElementById('btnResetAll').onclick=async()=>{
+  try{await api('/reset',{method:'POST',body:JSON.stringify({modules:null})});toast('已重置');loadMods();}
+  catch(e){toast(e.message);}
+};
+
+// ---- vulns ----
+async function loadVulnTypes(){
+  const d=await api('/vulnerabilities/types');
+  const sel=document.getElementById('vType');
+  d.types.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});
+}
+async function loadVulns(){
+  const s=document.getElementById('vSev').value, t=document.getElementById('vType').value;
+  const kw=document.getElementById('vKw').value;
+  const off=(state.vuln.p-1)*PAGE;
+  const d=await api(`/vulnerabilities?limit=${PAGE}&offset=${off}`+
+    (s?`&severity=${s}`:'')+(t?`&type=${encodeURIComponent(t)}`:'')+(kw?`&keyword=${encodeURIComponent(kw)}`:''));
+  state.vuln.total=d.total;
+  const tb=document.getElementById('vBody');tb.innerHTML='';
+  d.items.forEach(v=>{
+    const tr=document.createElement('tr');tr.style.cursor='pointer';
+    tr.innerHTML=`<td class="mono">${v.cve_id}</td><td>${esc(v.title)}</td>
+      <td>${sevBadge(v.severity)}</td><td>${v.cvss}</td><td>${v.vuln_type}</td>
+      <td>${esc(v.product)}</td><td>${v.published_date}</td>`;
+    tr.onclick=async()=>{const det=await api('/vulnerabilities/'+v.cve_id);
+      document.getElementById('vDetail').style.display='block';
+      document.getElementById('vDetail').innerHTML=
+        `<b>${det.cve_id}</b> ${esc(det.title)} ${sevBadge(det.severity)}<br>
+         <span class="muted">CVSS ${det.cvss} · ${det.vuln_type} · ${det.product}</span>
+         <p>${esc(det.description)}</p>
+         <span class="muted">影响: ${det.affected_version} · 修复: ${det.fixed_version}</span>
+         <pre>参考: ${(det.references||[]).join('\n')}</pre>`;};
+    tb.appendChild(tr);
+  });
+  document.getElementById('vPage').textContent=state.vuln.p;
+  document.getElementById('vTotal').textContent='共 '+d.total+' 条';
+}
+document.getElementById('vSearch').onclick=()=>{state.vuln.p=1;loadVulns();};
+document.getElementById('vPrev').onclick=()=>{if(state.vuln.p>1){state.vuln.p--;loadVulns();}};
+document.getElementById('vNext').onclick=()=>{if(state.vuln.p*PAGE<state.vuln.total){state.vuln.p++;loadVulns();}};
+
+// ---- knowledge ----
+async function loadKnowCats(){
+  const d=await api('/knowledge/stats');
+  const sel=document.getElementById('kCat');
+  d.categories.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+}
+async function loadKnow(){
+  const c=document.getElementById('kCat').value,d=document.getElementById('kDiff').value,kw=document.getElementById('kKw').value;
+  const off=(state.know.p-1)*PAGE;
+  const r=await api(`/knowledge?limit=${PAGE}&offset=${off}`+
+    (c?`&category=${encodeURIComponent(c)}`:'')+(d?`&difficulty=${d}`:'')+(kw?`&keyword=${encodeURIComponent(kw)}`:''));
+  state.know.total=r.total;
+  const tb=document.getElementById('kBody');tb.innerHTML='';
+  r.items.forEach((k,i)=>{
+    const tr=document.createElement('tr');tr.style.cursor='pointer';
+    tr.innerHTML=`<td>${esc(k.title)}</td><td>${k.category}</td><td>${k.difficulty}</td>
+      <td>${(k.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</td>`;
+    tr.onclick=()=>{document.getElementById('kDetail').style.display='block';
+      document.getElementById('kDetail').innerHTML=
+        `<b>${esc(k.title)}</b> <span class="muted">${k.category} · ${k.difficulty}</span>
+         <p>${esc(k.content)}</p>
+         <span class="muted">场景: ${k.scenario}</span>
+         <pre>参考: ${k.reference}</pre>`;};
+    tb.appendChild(tr);
+  });
+  document.getElementById('kPage').textContent=state.know.p;
+  document.getElementById('kTotal').textContent='共 '+r.total+' 条';
+}
+document.getElementById('kSearch').onclick=()=>{state.know.p=1;loadKnow();};
+document.getElementById('kPrev').onclick=()=>{if(state.know.p>1){state.know.p--;loadKnow();}};
+document.getElementById('kNext').onclick=()=>{if(state.know.p*PAGE<state.know.total){state.know.p++;loadKnow();}};
+
+// ---- tools ----
+async function loadTools(){
+  const t=document.getElementById('tType').value,r=document.getElementById('tRisk').value,kw=document.getElementById('tKw').value;
+  const off=(state.tools.p-1)*PAGE;
+  const d=await api(`/tools?limit=${PAGE}&offset=${off}`+
+    (t?`&type=${encodeURIComponent(t)}`:'')+(r?`&risk=${r}`:'')+(kw?`&keyword=${encodeURIComponent(kw)}`:''));
+  state.tools.total=d.total;
+  const tb=document.getElementById('tBody');tb.innerHTML='';
+  d.items.forEach(tl=>{
+    const tr=document.createElement('tr');tr.style.cursor='pointer';
+    tr.innerHTML=`<td><b>${esc(tl.name)}</b></td><td>${tl.type}</td>
+      <td class="muted">${esc(tl.description)}</td>
+      <td><span class="badge b-${tl.risk==='高'?'crit':tl.risk==='中'?'med':'low'}">${tl.risk}</span></td>`;
+    tr.onclick=()=>{document.getElementById('tDetail').style.display='block';
+      document.getElementById('tDetail').innerHTML=
+        `<b>${esc(tl.name)}</b> <span class="muted">${tl.type} · 风险${tl.risk}</span>
+         <p>${esc(tl.description)}</p>
+         <p class="muted">场景: ${tl.scenario} · 依赖: ${tl.dependencies}</p>
+         <pre>${(tl.commands||[]).join('\n')}</pre>
+         <span class="muted">参数: ${tl.params}</span>`;};
+    tb.appendChild(tr);
+  });
+  document.getElementById('tPage').textContent=state.tools.p;
+  document.getElementById('tTotal').textContent='共 '+d.total+' 条';
+}
+document.getElementById('tSearch').onclick=()=>{state.tools.p=1;loadTools();};
+document.getElementById('tPrev').onclick=()=>{if(state.tools.p>1){state.tools.p--;loadTools();}};
+document.getElementById('tNext').onclick=()=>{if(state.tools.p*PAGE<state.tools.total){state.tools.p++;loadTools();}};
+
+// ---- compliance / kpi / reports subtabs ----
+document.querySelectorAll('.subtabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.subtabs button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  ['reports','kpis','compliance'].forEach(s=>document.getElementById('sub-'+s).style.display=s===b.dataset.sub?'block':'none');
+});
+async function loadReports(){
+  const d=await api('/reports');
+  const tb=document.getElementById('rBody');tb.innerHTML='';
+  d.items.forEach((r,i)=>{
+    const tr=document.createElement('tr');tr.style.cursor='pointer';
+    tr.innerHTML=`<td>${esc(r.name)}</td><td>${r.industry}</td><td>${r.audience}</td><td>${r.sections.length}</td>`;
+    tr.onclick=()=>{document.getElementById('rDetail').style.display='block';
+      document.getElementById('rDetail').innerHTML=
+        `<b>${esc(r.name)}</b> <span class="muted">${r.industry} · 受众: ${r.audience}</span>
+         <p>${(r.sections||[]).map(s=>'• '+s.name+': '+s.points).join('<br>')}</p>
+         <span class="muted">格式: ${r.format}</span>`;};
+    tb.appendChild(tr);
+  });
+}
+async function loadKpis(){
+  const c=document.getElementById('kpiCat').value;
+  const d=await api('/kpis?limit=100'+(c?`&category=${c}`:''));
+  const tb=document.getElementById('kpiBody');tb.innerHTML='';
+  d.items.forEach(k=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${esc(k.name)}</td><td>${k.category}</td>
+      <td class="muted">${esc(k.formula)}</td><td>${k.target_value}</td><td>${k.unit}</td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('kpiTotal').textContent='共 '+d.total+' 条（显示前100）';
+}
+document.getElementById('kpiSearch').onclick=loadKpis;
+async function loadCompliance(){
+  const f=document.getElementById('cFramework').value,r=document.getElementById('cRisk').value,kw=document.getElementById('cKw').value;
+  const d=await api('/compliance?limit=50'+(f?`&framework=${encodeURIComponent(f)}`:'')+
+    (r?`&risk=${r}`:'')+(kw?`&keyword=${encodeURIComponent(kw)}`:''));
+  const tb=document.getElementById('cBody');tb.innerHTML='';
+  d.items.forEach(c=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="mono">${c.control_id}</td><td>${esc(c.name)}</td>
+      <td>${c.framework}</td>
+      <td><span class="badge b-${c.risk_level==='高'?'crit':c.risk_level==='中'?'med':'low'}">${c.risk_level}</span></td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('cTotal').textContent='共 '+d.total+' 条（显示前50）';
+}
+document.getElementById('cSearch').onclick=loadCompliance;
+
+// init
+loadInit();loadMods();loadVulnTypes().then(loadVulns);
+loadKnowCats().then(loadKnow);loadTools();loadReports();loadKpis();loadCompliance();
+</script>
+</body>
+</html>

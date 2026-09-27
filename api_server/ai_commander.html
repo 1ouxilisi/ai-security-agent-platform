@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI智能指挥中心 | LLM Security Commander</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  background: #0a0e17;
+  color: #e0e6ed;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.header {
+  background: linear-gradient(135deg, #0d1b2a 0%, #1b2838 100%);
+  border-bottom: 2px solid #00d4ff;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header h1 { font-size: 18px; color: #00d4ff; letter-spacing: 1px; }
+.header .status { display: flex; gap: 16px; font-size: 12px; align-items: center; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #00ff88; box-shadow: 0 0 8px #00ff88; }
+.main { flex: 1; display: flex; overflow: hidden; }
+.sidebar {
+  width: 280px; background: #0d1b2a; border-right: 1px solid #1a2942;
+  padding: 16px; overflow-y: auto;
+}
+.sidebar h3 { color: #00d4ff; font-size: 14px; margin-bottom: 12px; }
+.config-group { margin-bottom: 16px; }
+.config-group label { font-size: 11px; color: #8899aa; display: block; margin-bottom: 4px; }
+.config-group input, .config-group select {
+  width: 100%; background: #0a0e17; border: 1px solid #1a2942;
+  color: #e0e6ed; padding: 6px 8px; border-radius: 4px; font-size: 12px;
+}
+.chat-area {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+}
+.messages {
+  flex: 1; overflow-y: auto; padding: 20px;
+}
+.message { margin-bottom: 16px; max-width: 85%; }
+.message.user { margin-left: auto; }
+.message .bubble {
+  padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6;
+}
+.message.user .bubble {
+  background: #00d4ff; color: #0a0e17; border-bottom-right-radius: 4px;
+}
+.message.ai .bubble {
+  background: #112240; border: 1px solid #1a2942;
+  border-bottom-left-radius: 4px;
+}
+.message .meta { font-size: 11px; color: #8899aa; margin-top: 4px; }
+.task-card {
+  background: #0a0e17; border: 1px solid #1a2942; border-radius: 8px;
+  padding: 12px; margin-top: 8px; font-size: 12px;
+}
+.task-card .task-title { color: #00d4ff; font-weight: bold; margin-bottom: 6px; }
+.task-card .task-row { display: flex; justify-content: space-between; margin: 3px 0; }
+.task-card .task-label { color: #8899aa; }
+.task-card .task-value { color: #e0e6ed; }
+.progress-bar {
+  height: 6px; background: #1a2942; border-radius: 3px; margin-top: 8px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: linear-gradient(90deg, #00d4ff, #00ff88);
+  border-radius: 3px; transition: width 0.3s;
+}
+.input-area {
+  padding: 16px 20px; background: #0d1b2a; border-top: 1px solid #1a2942;
+  display: flex; gap: 12px; align-items: flex-end;
+}
+.input-area textarea {
+  flex: 1; background: #0a0e17; border: 1px solid #1a2942;
+  color: #e0e6ed; padding: 10px 14px; border-radius: 8px;
+  font-size: 14px; resize: none; min-height: 44px; max-height: 120px;
+  font-family: inherit;
+}
+.input-area textarea:focus { outline: none; border-color: #00d4ff; }
+.send-btn {
+  padding: 10px 24px; background: #00d4ff; color: #0a0e17;
+  border: none; border-radius: 8px; cursor: pointer; font-size: 14px;
+  font-weight: bold; transition: all 0.2s;
+}
+.send-btn:hover { background: #00b8e6; box-shadow: 0 0 12px rgba(0,212,255,0.4); }
+.send-btn:disabled { background: #1a2942; color: #8899aa; cursor: not-allowed; }
+.quick-cmds { padding: 8px 20px; background: #0d1b2a; display: flex; gap: 8px; flex-wrap: wrap; }
+.quick-cmd {
+  padding: 4px 12px; background: #112240; border: 1px solid #1a2942;
+  border-radius: 16px; font-size: 12px; color: #8899aa; cursor: pointer;
+  transition: all 0.2s;
+}
+.quick-cmd:hover { color: #00d4ff; border-color: #00d4ff; }
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 10px; margin: 2px;
+}
+.tag-critical { background: #ff4757; color: #fff; }
+.tag-high { background: #ffa502; color: #000; }
+.tag-medium { background: #00d4ff; color: #000; }
+.tag-low { background: #8899aa; color: #000; }
+.code-block {
+  background: #050810; border: 1px solid #1a2942; border-radius: 4px;
+  padding: 8px; font-family: 'Consolas', monospace; font-size: 11px;
+  overflow-x: auto; margin-top: 6px; white-space: pre-wrap;
+}
+.loading { display: inline-block; width: 14px; height: 14px; border: 2px solid #1a2942; border-top-color: #00d4ff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🧠 AI智能指挥中心 | LLM Security Commander v4.3</h1>
+  <div class="status">
+    <div class="status-dot"></div>
+    <span id="llm-status">LLM未配置</span>
+    <span id="clock"></span>
+  </div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <h3>⚙️ LLM配置</h3>
+    <div class="config-group">
+      <label>API Key</label>
+      <input type="password" id="api-key" placeholder="sk-..." value="">
+    </div>
+    <div class="config-group">
+      <label>API地址</label>
+      <input type="text" id="base-url" value="https://api.siliconflow.cn/v1">
+    </div>
+    <div class="config-group">
+      <label>模型</label>
+      <select id="model">
+        <option value="Qwen/Qwen2.5-7B-Instruct">Qwen2.5-7B (硅基流动)</option>
+        <option value="Qwen/Qwen2.5-72B-Instruct">Qwen2.5-72B (硅基流动)</option>
+        <option value="deepseek-ai/DeepSeek-V3">DeepSeek-V3 (硅基流动)</option>
+        <option value="gpt-4o-mini">GPT-4o-mini (OpenAI)</option>
+        <option value="gpt-4o">GPT-4o (OpenAI)</option>
+      </select>
+    </div>
+    <div class="config-group">
+      <label>温度</label>
+      <input type="number" id="temperature" value="0.3" step="0.1" min="0" max="2">
+    </div>
+    <button class="send-btn" style="width:100%;margin-top:8px;" onclick="saveConfig()">保存配置</button>
+
+    <h3 style="margin-top:24px;">📊 使用统计</h3>
+    <div id="stats" style="font-size:12px;color:#8899aa;line-height:1.8;">
+      调用次数: 0<br>
+      Token消耗: 0<br>
+      缓存命中: 0
+    </div>
+
+    <h3 style="margin-top:24px;">🔧 快捷工具</h3>
+    <div style="font-size:12px;color:#8899aa;line-height:1.8;">
+      <a href="/war-room" style="color:#00d4ff;">智能作战中心</a><br>
+      <a href="/multi-domain-console" style="color:#00d4ff;">12领域控制台</a><br>
+      <a href="/auto-pentest" style="color:#00d4ff;">自动化渗透</a><br>
+      <a href="/console" style="color:#00d4ff;">统一控制台</a>
+    </div>
+  </div>
+
+  <div class="chat-area">
+    <div class="messages" id="messages">
+      <div class="message ai">
+        <div class="bubble">
+          👋 你好！我是AI安全指挥中心。你可以用自然语言下达安全任务，例如：<br><br>
+          • "扫描 example.com 的Web漏洞"<br>
+          • "对 192.168.1.1 做端口扫描"<br>
+          • "分析刚才的扫描结果，生成报告"<br>
+          • "测试这个API的安全性: https://api.example.com"<br><br>
+          请先在左侧配置LLM API Key，然后开始对话。
+        </div>
+        <div class="meta">AI指挥中心 · 刚刚</div>
+      </div>
+    </div>
+
+    <div class="quick-cmds">
+      <span class="quick-cmd" onclick="quickCmd('扫描 example.com 的Web漏洞')">🔍 Web扫描</span>
+      <span class="quick-cmd" onclick="quickCmd('对 192.168.1.1 做端口扫描')">📡 端口扫描</span>
+      <span class="quick-cmd" onclick="quickCmd('生成渗透测试报告')">📄 生成报告</span>
+      <span class="quick-cmd" onclick="quickCmd('分析攻击路径')">⚔️ 攻击链分析</span>
+      <span class="quick-cmd" onclick="quickCmd('给出修复建议')">🛡️ 修复建议</span>
+      <span class="quick-cmd" onclick="quickCmd('对 https://api.example.com 做API渗透测试')">🔌 API测试</span>
+    </div>
+
+    <div class="input-area">
+      <textarea id="user-input" placeholder="输入安全任务指令，按Enter发送，Shift+Enter换行..."
+                onkeydown="handleKey(event)"></textarea>
+      <button class="send-btn" id="send-btn" onclick="sendMessage()">发送</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1/llm';
+let conversationId = Date.now();
+
+function $(id) { return document.getElementById(id); }
+
+function addMessage(role, content, meta = '') {
+  const messages = $('messages');
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+  const time = new Date().toLocaleTimeString();
+  div.innerHTML = `<div class="bubble">${content}</div><div class="meta">${meta || (role === 'user' ? '你' : 'AI')} · ${time}</div>`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  return div;
+}
+
+function addTaskCard(container, task) {
+  const card = document.createElement('div');
+  card.className = 'task-card';
+  card.innerHTML = `
+    <div class="task-title">📋 解析任务: ${task.task_type || 'unknown'}</div>
+    <div class="task-row"><span class="task-label">目标:</span><span class="task-value">${task.target || '-'}</span></div>
+    <div class="task-row"><span class="task-label">描述:</span><span class="task-value">${task.description || '-'}</span></div>
+    <div class="task-row"><span class="task-label">模式:</span><span class="task-value">${task.aggressive ? '激进' : '标准'}</span></div>
+    <div class="task-row"><span class="task-label">预计耗时:</span><span class="task-value">${task.estimated_time || '-'}</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:0%" id="prog-${Date.now()}"></div></div>
+  `;
+  container.appendChild(card);
+  return card;
+}
+
+async function saveConfig() {
+  const config = {
+    api_key: $('api-key').value,
+    base_url: $('base-url').value,
+    model: $('model').value,
+    temperature: parseFloat($('temperature').value),
+  };
+  try {
+    const res = await fetch(API + '/configure', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(config),
+    });
+    const data = await res.json();
+    if (data.success) {
+      $('llm-status').innerHTML = `<span class="status-dot"></span> ${config.model} 已连接`;
+      addMessage('ai', `✅ LLM配置已保存，模型: ${config.model}`);
+      loadStats();
+    } else {
+      addMessage('ai', `❌ 配置失败: ${data.error || '未知错误'}`);
+    }
+  } catch(e) {
+    addMessage('ai', `❌ 配置请求失败: ${e.message}`);
+  }
+}
+
+async function loadStats() {
+  try {
+    const res = await fetch(API + '/stats');
+    const data = await res.json();
+    if (data.success) {
+      const s = data.data;
+      $('stats').innerHTML = `
+        调用次数: ${s.total_calls}<br>
+        Token消耗: ${s.total_tokens}<br>
+        缓存命中: ${s.cache_size}<br>
+        模型: ${s.model}
+      `;
+      if (s.api_key_configured) {
+        $('llm-status').innerHTML = `<span class="status-dot"></span> ${s.model} 已连接`;
+      }
+    }
+  } catch(e) {}
+}
+
+async function sendMessage() {
+  const input = $('user-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  $('send-btn').disabled = true;
+  addMessage('user', text);
+
+  const thinkingMsg = addMessage('ai', '<span class="loading"></span> 正在解析任务...');
+
+  try {
+    // 1. 任务解析
+    const parseRes = await fetch(API + '/parse-task', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({user_input: text}),
+    });
+    const parseData = await parseRes.json();
+
+    if (parseData.success && parseData.data && !parseData.data.error) {
+      const task = parseData.data;
+      thinkingMsg.querySelector('.bubble').innerHTML = `✅ 任务解析完成，正在执行...`;
+      addTaskCard(thinkingMsg.querySelector('.bubble'), task);
+
+      // 2. 根据任务类型执行
+      await executeTask(task, thinkingMsg);
+    } else {
+      // LLM未配置或解析失败，直接对话
+      const chatRes = await fetch(API + '/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: text}),
+      });
+      const chatData = await chatRes.json();
+      if (chatData.success) {
+        thinkingMsg.querySelector('.bubble').innerHTML = chatData.data.content || '（无响应）';
+      } else {
+        thinkingMsg.querySelector('.bubble').innerHTML = `❌ ${chatData.error || 'LLM调用失败，请先配置API Key'}`;
+      }
+    }
+  } catch(e) {
+    thinkingMsg.querySelector('.bubble').innerHTML = `❌ 请求失败: ${e.message}`;
+  }
+
+  $('send-btn').disabled = false;
+  loadStats();
+}
+
+async function executeTask(task, msgEl) {
+  const bubble = msgEl.querySelector('.bubble');
+  const taskType = task.task_type;
+  const target = task.target || 'example.com';
+
+  bubble.innerHTML += `<br><br>⚙️ 正在执行 ${taskType}...`;
+
+  try {
+    // 根据任务类型调用对应API
+    let execRes;
+    if (taskType === 'web_scan' || taskType === 'port_scan' || taskType === 'full_pentest') {
+      execRes = await fetch('/api/v1/range/validate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({target: target.startsWith('http') ? target : 'https://' + target, aggressive: task.aggressive}),
+      });
+    } else if (taskType === 'api_pentest') {
+      execRes = await fetch('/api/v1/api-pentest/run', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({target: target, aggressive: task.aggressive}),
+      });
+    } else if (taskType === 'report') {
+      // 生成报告
+      const reportRes = await fetch(API + '/generate-report', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({target: target, findings: [], duration: 0, tools: []}),
+      });
+      const reportData = await reportRes.json();
+      bubble.innerHTML += `<br><br>📄 <strong>AI报告:</strong><br><div class="code-block">${(reportData.data?.report || '报告生成中').substring(0, 800)}...</div>`;
+      return;
+    } else if (taskType === 'vuln_verify' || taskType === 'recon') {
+      execRes = await fetch('/api/v1/range/validate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({target: target.startsWith('http') ? target : 'https://' + target}),
+      });
+    } else {
+      bubble.innerHTML += `<br><br>💡 任务类型 ${taskType} 正在开发中，已记录任务。`;
+      return;
+    }
+
+    if (execRes) {
+      const data = await execRes.json();
+      if (data.success && data.data) {
+        const d = data.data;
+        bubble.innerHTML += `<br><br>
+          ✅ <strong>执行完成!</strong><br>
+          目标: ${d.target || target}<br>
+          耗时: ${d.duration_seconds || '?'}秒<br>
+          风险评分: <strong>${d.risk_score || '?'}/100</strong><br>
+          发现: ${d.total_findings || d.stats?.total_endpoints || '?'}个<br>
+          真实工具: ${(d.tools_used || []).join(', ') || 'Python内置'}
+        `;
+        if (d.report) {
+          bubble.innerHTML += `<br><br>📄 <strong>报告摘要:</strong><br><div class="code-block">${d.report.substring(0, 500)}...</div>`;
+        }
+      } else {
+        bubble.innerHTML += `<br><br>⚠️ 执行完成但无数据返回`;
+      }
+    }
+  } catch(e) {
+    bubble.innerHTML += `<br><br>❌ 执行失败: ${e.message}`;
+  }
+}
+
+function quickCmd(text) {
+  $('user-input').value = text;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+// 时钟
+setInterval(() => { $('clock').textContent = new Date().toLocaleTimeString(); }, 1000);
+
+// 初始化
+loadStats();
+</script>
+</body>
+</html>

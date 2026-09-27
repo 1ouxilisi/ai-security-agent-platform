@@ -1,0 +1,12 @@
+[flake8]
+max-line-length = 120
+exclude = .git,__pycache__,venv,.venv,build,dist,*.egg-info
+ignore = E203,E501,W503,E402
+per-file-ignores =
+    tests/*: D100,D101,D102,D103
+    */__init__.py: F401
+
+[isort]
+profile = black
+line_length = 120
+known_first_party = agent,scanner,exploit,workflow,knowledge,api_server,mcp_server

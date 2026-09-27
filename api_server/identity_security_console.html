@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>身份安全与 IAM 控制台 · Identity Security Console</title>
+<style>
+:root{
+  --bg:#0b0f17; --bg2:#111827; --panel:#151c2c; --border:#1f2a44;
+  --fg:#e5e7eb; --muted:#8b93a7; --accent:#3b82f6; --ok:#10b981;
+  --warn:#f59e0b; --crit:#ef4444; --info:#06b6d4; --purple:#8b5cf6;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);font-size:13px}
+header{background:linear-gradient(90deg,#0f172a,#1e1b4b);
+  padding:14px 22px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between}
+header h1{margin:0;font-size:18px;letter-spacing:1px}
+header .sub{color:var(--muted);font-size:12px;margin-top:4px}
+.badge{background:var(--accent);color:#fff;padding:3px 10px;border-radius:10px;font-size:11px}
+nav{display:flex;gap:4px;padding:0 18px;background:var(--bg2);
+  border-bottom:1px solid var(--border);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:none;
+  padding:12px 16px;cursor:pointer;font-size:13px;border-bottom:2px solid transparent}
+nav button.active{color:var(--fg);border-bottom-color:var(--accent);background:#0f172a}
+nav button:hover{color:var(--fg)}
+main{padding:18px;max-width:1500px;margin:0 auto}
+.tab{display:none}
+.tab.active{display:block}
+.grid{display:grid;gap:14px}
+.grid-2{grid-template-columns:1fr 1fr}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1100px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr 1fr}}
+.card{background:var(--panel);border:1px solid var(--border);
+  border-radius:8px;padding:14px}
+.card h3{margin:0 0 10px;font-size:14px;color:var(--accent);
+  border-bottom:1px solid var(--border);padding-bottom:6px}
+.stat{display:flex;flex-direction:column;gap:4px}
+.stat .v{font-size:26px;font-weight:600}
+.stat .l{color:var(--muted);font-size:11px}
+.stat.ok .v{color:var(--ok)} .stat.warn .v{color:var(--warn)}
+.stat.crit .v{color:var(--crit)} .stat.info .v{color:var(--info)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:500;background:#0e1424}
+tr:hover td{background:#0f172a}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px}
+.tag.active{background:#064e3b;color:#6ee7b7}
+.tag.suspended{background:#78350f;color:#fcd34d}
+.tag.terminated{background:#7f1d1d;color:#fca5a5}
+.tag.archived{background:#374151;color:#d1d5db}
+.tag.pending{background:#1e3a8a;color:#93c5fd}
+.tag.critical{background:#7f1d1d;color:#fecaca}
+.tag.high{background:#7c2d12;color:#fdba74}
+.tag.medium{background:#713f12;color:#fde68a}
+.tag.low{background:#1e293b;color:#cbd5e1}
+.tag.service{background:#3b0764;color:#d8b4fe}
+.tag.user{background:#0c4a6e;color:#67e8f9}
+button.act{background:var(--accent);color:#fff;border:none;padding:5px 12px;
+  border-radius:4px;cursor:pointer;font-size:12px}
+button.act:hover{background:#2563eb}
+button.ghost{background:transparent;color:var(--muted);border:1px solid var(--border);
+  padding:5px 12px;border-radius:4px;cursor:pointer}
+input,select{background:#0f172a;color:var(--fg);border:1px solid var(--border);
+  padding:5px 8px;border-radius:4px;font-size:12px}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:4px 10px;font-size:12px}
+.kv b{color:var(--muted);font-weight:500}
+.timeline{position:relative;padding-left:18px;border-left:2px solid var(--border)}
+.timeline .ev{margin-bottom:10px;position:relative}
+.timeline .ev::before{content:"";position:absolute;left:-23px;top:6px;
+  width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.bar{height:10px;background:#0f172a;border-radius:5px;overflow:hidden}
+.bar>span{display:block;height:100%;background:var(--accent)}
+.bar.r>span{background:var(--crit)} .bar.w>span{background:var(--warn)}
+.bar.g>span{background:var(--ok)}
+.heat{display:grid;grid-template-columns:120px repeat(4,1fr);gap:4px;font-size:11px}
+.heat .cell{padding:8px;border-radius:4px;text-align:center}
+.heat .head{color:var(--muted);background:transparent}
+.mono{font-family:Consolas,Menlo,monospace;font-size:11px;color:#93c5fd}
+.err{color:var(--crit)} .ok-t{color:var(--ok)}
+details{margin-top:6px} summary{cursor:pointer;color:var(--info)}
+#status{padding:6px 12px;font-size:11px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>身份安全与 IAM 控制台</h1>
+    <div class="sub">Identity Security &amp; IAM · 第 17 轮升级方向 3 · 治理 / 审计 / 检测 / 特权 / SSO / 运营</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span id="status">就绪</span>
+    <span class="badge">v17.3</span>
+  </div>
+</header>
+
+<nav>
+  <button class="tabbtn active" data-tab="t1">身份治理</button>
+  <button class="tabbtn" data-tab="t2">权限审计</button>
+  <button class="tabbtn" data-tab="t3">威胁检测</button>
+  <button class="tabbtn" data-tab="t4">特权管理</button>
+  <button class="tabbtn" data-tab="t5">访问认证</button>
+  <button class="tabbtn" data-tab="t6">运营仪表盘</button>
+</nav>
+
+<main>
+<!-- ============ Tab 1 身份治理 ============ -->
+<section id="t1" class="tab active">
+  <div class="grid grid-4" id="gov-kpi"></div>
+  <div class="grid grid-2" style="margin-top:14px">
+    <div class="card">
+      <h3>用户目录</h3>
+      <div style="margin-bottom:8px">
+        <input id="gov-q" placeholder="搜索姓名/邮箱" style="width:160px">
+        <select id="gov-dept"><option value="">全部部门</option></select>
+        <select id="gov-state"><option value="">全部状态</option></select>
+        <button class="act" onclick="loadUsers()">查询</button>
+      </div>
+      <div style="max-height:380px;overflow:auto">
+        <table id="gov-users"><thead><tr>
+          <th>UID</th><th>姓名</th><th>部门</th><th>职位</th>
+          <th>状态</th><th>MFA</th><th>角色</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+    <div class="card">
+      <h3>身份图谱（用户 → 角色 / 汇报线）</h3>
+      <svg id="gov-graph" width="100%" height="420"
+           viewBox="0 0 600 420" style="background:#0a0f1c;border-radius:6px"></svg>
+    </div>
+  </div>
+  <div class="grid grid-2" style="margin-top:14px">
+    <div class="card">
+      <h3>生命周期事件</h3>
+      <div id="gov-lifecycle" class="timeline"></div>
+    </div>
+    <div class="card">
+      <h3>身份数据质量</h3>
+      <div id="gov-quality"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h3>身份目录集成（AD / LDAP / Okta / Azure AD / 本地 HRIS）</h3>
+    <table id="gov-dirs"><thead><tr>
+      <th>ID</th><th>类型</th><th>名称</th><th>服务器</th>
+      <th>同步状态</th><th>最后同步</th><th>用户数</th><th>错误</th><th>操作</th></tr></thead>
+      <tbody></tbody></table>
+  </div>
+</section>
+
+<!-- ============ Tab 2 权限审计 ============ -->
+<section id="t2" class="tab">
+  <div class="grid grid-4" id="perm-kpi"></div>
+  <div class="card" style="margin-top:14px">
+    <h3>权限矩阵（用户 → 角色 → 有效权限）</h3>
+    <div style="max-height:300px;overflow:auto">
+      <table id="perm-matrix"><thead><tr>
+        <th>UID</th><th>姓名</th><th>部门</th><th>角色</th>
+        <th>有效权限数</th><th>有效权限列表</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+  <div class="grid grid-2" style="margin-top:14px">
+    <div class="card">
+      <h3>风险权限账户（颜色编码）</h3>
+      <div id="perm-risk"></div>
+    </div>
+    <div class="card">
+      <h3>最小权限建议</h3>
+      <div id="perm-lp"></div>
+    </div>
+  </div>
+  <div class="grid grid-2" style="margin-top:14px">
+    <div class="card">
+      <h3>权限复核工作流</h3>
+      <table id="perm-reviews"><thead><tr>
+        <th>ID</th><th>范围</th><th>Owner</th><th>周期</th>
+        <th>状态</th><th>进度</th><th>截止</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="card">
+      <h3>权限变更日志</h3>
+      <div id="perm-changes"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Tab 3 威胁检测 ============ -->
+<section id="t3" class="tab">
+  <div class="grid grid-4" id="thr-kpi"></div>
+  <div class="card" style="margin-top:14px">
+    <h3>异常登录事件</h3>
+    <table id="thr-events"><thead><tr>
+      <th>时间</th><th>用户</th><th>类型</th><th>城市</th>
+      <th>IP</th><th>方式</th><th>结果</th><th>说明</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="grid grid-2" style="margin-top:14px">
+    <div class="card">
+      <h3>登录行为基线</h3>
+      <div id="thr-baseline"></div>
+    </div>
+    <div class="card">
+      <h3>身份攻击链时间线（ATT&amp;CK 映射）</h3>
+      <div id="thr-chains"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h3>MFA 与认证分析</h3>
+    <div id="thr-mfa"></div>
+  </div>
+</section>
+
+<!-- ============ Tab 4 特权管理 ============ -->
+<section id="t4" class="tab">
+  <div class="grid grid-4" id="pam-kpi"></div>
+  <div class="card" style="margin-top:14px">
+    <h3>特权账户清单</h3>
+    <table id="pam-accounts"><thead><tr>
+      <th>ID</th><th>账户</th><th>类型</th><th>Owner</th>
+      <th>共享</th><th>密码龄(天)</th><th>MFA</th>
+      <th>30天使用</th><th>风险分</th><th>状态</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="grid grid-2" style="margin-top:14px">
+    <div class="card">
+      <h3>特权会话记录</h3>
+      <div id="pam-sessions"></div>
+    </div>
+    <div class="card">
+      <h3>特权访问审批</h3>
+      <div id="pam-requests"></div>
+    </div>
+  </div>
+  <div class="grid grid-2" style="margin-top:14px">
+    <div class="card">
+      <h3>服务账户与密码轮换</h3>
+      <div id="pam-svc"></div>
+    </div>
+    <div class="card">
+      <h3>特权风险 Top 账户</h3>
+      <div id="pam-risk"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Tab 5 访问认证 ============ -->
+<section id="t5" class="tab">
+  <div class="grid grid-3" id="auth-kpi"></div>
+  <div class="card" style="margin-top:14px">
+    <h3>认证策略</h3>
+    <div id="auth-policies"></div>
+  </div>
+  <div class="grid grid-2" style="margin-top:14px">
+    <div class="card">
+      <h3>SSO 应用清单</h3>
+      <table id="auth-sso"><thead><tr>
+        <th>ID</th><th>应用</th><th>协议</th><th>SSO</th>
+        <th>JIT</th><th>用户数</th><th>MFA</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="card">
+      <h3>访问控制模型与冲突</h3>
+      <div id="auth-models"></div>
+    </div>
+  </div>
+  <div class="grid grid-2" style="margin-top:14px">
+    <div class="card">
+      <h3>访问申请审批</h3>
+      <div id="auth-requests"></div>
+    </div>
+    <div class="card">
+      <h3>认证日志审计</h3>
+      <div id="auth-logs"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Tab 6 运营仪表盘 ============ -->
+<section id="t6" class="tab">
+  <div class="grid grid-4" id="dash-kpi"></div>
+  <div class="grid grid-2" style="margin-top:14px">
+    <div class="card">
+      <h3>身份威胁告警</h3>
+      <div id="dash-alerts" style="max-height:380px;overflow:auto"></div>
+    </div>
+    <div class="card">
+      <h3>身份风险热力图（部门 × 严重度）</h3>
+      <div id="dash-heat"></div>
+    </div>
+  </div>
+  <div class="grid grid-2" style="margin-top:14px">
+    <div class="card">
+      <h3>合规状态</h3>
+      <div id="dash-compliance"></div>
+    </div>
+    <div class="card">
+      <h3>关键度量 7 日趋势</h3>
+      <svg id="dash-metrics" width="100%" height="260"
+           viewBox="0 0 600 260" style="background:#0a0f1c;border-radius:6px"></svg>
+    </div>
+  </div>
+</section>
+</main>
+
+<script>
+const BASE = "/api/v1/identity-security";
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+function setStatus(s){ $("#status").textContent = s; }
+
+async function api(path){
+  setStatus("加载 " + path + " ...");
+  try{
+    const r = await fetch(BASE + path);
+    const j = await r.json();
+    setStatus("OK " + path);
+    return j;
+  }catch(e){
+    setStatus("ERR " + path + ": " + e);
+    return {success:false, error:String(e), data:null};
+  }
+}
+
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,
+  c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]); }
+function tag(cls, txt){ return `<span class="tag ${cls}">${esc(txt)}</span>`; }
+function levelClass(v){ return v>=70?"critical":v>=40?"high":v>=20?"medium":"low"; }
+
+// ---------------- Tab switching ----------------
+$$(".tabbtn").forEach(b=>b.addEventListener("click",()=>{
+  $$(".tabbtn").forEach(x=>x.classList.remove("active"));
+  $$(".tab").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  $("#"+b.dataset.tab).classList.add("active");
+  loadTab(b.dataset.tab);
+}));
+
+const loaded = {};
+function loadTab(t){
+  if(t==="t1" && !loaded.t1){ loadGov(); loaded.t1=true; }
+  if(t==="t2" && !loaded.t2){ loadPerm(); loaded.t2=true; }
+  if(t==="t3" && !loaded.t3){ loadThreat(); loaded.t3=true; }
+  if(t==="t4" && !loaded.t4){ loadPAM(); loaded.t4=true; }
+  if(t==="t5" && !loaded.t5){ loadAuth(); loaded.t5=true; }
+  if(t==="t6" && !loaded.t6){ loadDash(); loaded.t6=true; }
+}
+
+// ---------------- 身份治理 ----------------
+async function loadGov(){
+  const u = await api("/governance/users");
+  if(!u.data) return;
+  const d = u.data;
+  $("#gov-dept").innerHTML = '<option value="">全部部门</option>' +
+    d.depts.map(x=>`<option>${esc(x)}</option>`).join("");
+  $("#gov-state").innerHTML = '<option value="">全部状态</option>' +
+    d.states.map(x=>`<option>${esc(x)}</option>`).join("");
+  renderUsers(d.users);
+  const dirs = await api("/governance/directories");
+  if(dirs.data) renderDirs(dirs.data.directories);
+  const lc = await api("/governance/lifecycle");
+  if(lc.data) renderLifecycle(lc.data.events);
+  const q = await api("/governance/data-quality");
+  if(q.data) renderQuality(q.data.result);
+  const g = await api("/governance/graph");
+  if(g.data) renderGraph(g.data);
+}
+function renderUsers(users){
+  const rows = users.map(u=>`<tr>
+    <td class="mono">${esc(u.uid)}</td><td>${esc(u.name)}</td>
+    <td>${esc(u.dept)}</td><td>${esc(u.title)}</td>
+    <td>${tag(u.state, u.state)}</td>
+    <td>${u.mfa_enabled?tag("active","是"):tag("high","否")}</td>
+    <td class="mono">${(u.roles||[]).map(esc).join(", ")}</td></tr>`).join("");
+  $("#gov-users tbody").innerHTML = rows;
+}
+window.loadUsers = async function(){
+  const q = $("#gov-q").value;
+  const dept = $("#gov-dept").value;
+  const state = $("#gov-state").value;
+  const r = await api(`/governance/users?q=${encodeURIComponent(q)}&dept=${encodeURIComponent(dept)}&state=${encodeURIComponent(state)}`);
+  if(r.data) renderUsers(r.data.users);
+};
+function renderDirs(dirs){
+  $("#gov-dirs tbody").innerHTML = dirs.map(d=>`<tr>
+    <td class="mono">${esc(d.dir_id)}</td><td>${esc(d.type)}</td>
+    <td>${esc(d.name)}</td><td class="mono">${esc(d.server)}</td>
+    <td>${tag(d.sync_status, d.sync_status)}</td>
+    <td>${esc(d.last_sync)}</td>
+    <td>${d.users_total}</td>
+    <td>${d.errors>0?`<span class="err">${d.errors}</span>`:d.errors}</td>
+    <td><button class="act" onclick="syncDir('${d.dir_id}')">同步</button></td>
+  </tr>`).join("");
+}
+window.syncDir = async function(id){
+  const r = await api(`/governance/directories/${id}/sync`, {method:"POST"});
+  alert(r.success ? "已触发同步" : "失败: " + r.error);
+  loadGov();
+};
+function renderLifecycle(evts){
+  $("#gov-lifecycle").innerHTML = evts.map(e=>`<div class="ev">
+    <b>${esc(e.uid)}</b> · ${tag("info",e.stage)}<br>
+    <span class="mono">${esc(e.timestamp)}</span> · ${esc(e.action)}
+    <br><small class="err">${esc(e.result)}</small></div>`).join("");
+}
+function renderQuality(q){
+  if(!q){ $("#gov-quality").innerHTML = ""; return; }
+  const s = q.summary;
+  $("#gov-quality").innerHTML = `
+    <div class="kv">
+      <b>质量评分</b><span class="stat ${s.quality_score>=70?"ok":"warn"}">
+        <span class="v">${s.quality_score}</span></span>
+      <b>用户总数</b><span>${s.total_users}</span>
+      <b>孤儿账户</b><span class="err">${s.orphan_accounts}</span>
+      <b>重复账户</b><span class="err">${s.duplicate_accounts}</span>
+      <b>属性不完整</b><span>${s.incomplete_profiles}</span>
+      <b>无 MFA 用户</b><span class="err">${s.no_mfa_users}</span>
+    </div>
+    <h4 style="margin:10px 0 4px">建议</h4>
+    <ul>${q.suggestions.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+    <h4 style="margin:10px 0 4px">问题清单</h4>
+    <table><thead><tr><th>类型</th><th>对象</th><th>严重度</th><th>说明</th></tr></thead>
+    <tbody>${q.issues.map(i=>`<tr>
+      <td>${esc(i.type)}</td><td>${esc(i.name)}</td>
+      <td>${tag(i.severity, i.severity)}</td><td>${esc(i.desc)}</td></tr>`).join("")}
+    </tbody></table>`;
+}
+function renderGraph(g){
+  const svg = $("#gov-graph");
+  const W = 600, H = 420;
+  const users = g.nodes.filter(n=>n.kind==="user");
+  const roles = g.nodes.filter(n=>n.kind==="role");
+  let out = "";
+  // layout: users left, roles right
+  const ux = 120, rx = 470;
+  const pos = {};
+  users.forEach((u,i)=>{
+    const y = 30 + i*(H-60)/Math.max(users.length-1,1);
+    pos[u.id] = {x:ux,y};
+  });
+  roles.forEach((r,i)=>{
+    const y = 30 + i*(H-60)/Math.max(roles.length-1,1);
+    pos[r.id] = {x:rx,y};
+  });
+  g.edges.forEach(e=>{
+    const a = pos[e.src], b = pos[e.dst];
+    if(!a||!b) return;
+    const col = e.type==="reports_to" ? "#6b7280" : "#3b82f6";
+    out += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"
+      stroke="${col}" stroke-width="1" stroke-opacity="0.5"/>`;
+  });
+  users.forEach(u=>{
+    const p = pos[u.id];
+    const col = u.state==="active"?"#10b981":u.state==="suspended"?"#f59e0b":"#ef4444";
+    out += `<circle cx="${p.x}" cy="${p.y}" r="8" fill="${col}"/>`;
+    out += `<text x="${p.x+12}" y="${p.y+4}" fill="#e5e7eb" font-size="10">
+      ${esc(u.label)}</text>`;
+  });
+  roles.forEach(r=>{
+    const p = pos[r.id];
+    out += `<rect x="${p.x-30}" y="${p.y-8}" width="60" height="16" rx="3"
+      fill="#1e3a8a"/>`;
+    out += `<text x="${p.x-26}" y="${p.y+4}" fill="#bfdbfe" font-size="9">
+      ${esc(r.label.replace("ROLE:",""))}</text>`;
+  });
+  svg.innerHTML = out;
+}
+
+// ---------------- 权限审计 ----------------
+async function loadPerm(){
+  const m = await api("/permission/matrix");
+  if(m.data){
+    $("#perm-matrix tbody").innerHTML = m.data.matrix.map(r=>`<tr>
+      <td class="mono">${esc(r.uid)}</td><td>${esc(r.name)}</td>
+      <td>${esc(r.dept)}</td>
+      <td class="mono">${r.roles.map(esc).join(", ")}</td>
+      <td>${r.effective_count}</td>
+      <td class="mono">${r.effective_permissions.map(esc).join(", ")}</td></tr>`).join("");
+  }
+  const rk = await api("/permission/risk");
+  if(rk.data){
+    const res = rk.data.result;
+    $("#perm-kpi").innerHTML = `
+      <div class="card stat"><span class="l">风险账户数</span>
+        <span class="v err">${res.findings.length}</span></div>
+      <div class="card stat"><span class="l">Critical</span>
+        <span class="v" style="color:var(--crit)">${res.distribution.critical}</span></div>
+      <div class="card stat"><span class="l">High</span>
+        <span class="v" style="color:var(--warn)">${res.distribution.high}</span></div>
+      <div class="card stat"><span class="l">Medium</span>
+        <span class="v" style="color:var(--info)">${res.distribution.medium}</span></div>`;
+    $("#perm-risk").innerHTML = res.findings.map(f=>`
+      <div style="border-left:3px solid var(--${f.level==="critical"?"crit":f.level==="high"?"warn":"info"});
+        padding:6px 8px;margin-bottom:6px;background:#0e1424">
+        <b>${esc(f.name)}</b> (${esc(f.dept)})
+        ${tag(f.level, f.risk_score+"分")}
+        <ul style="margin:4px 0 0 16px;font-size:11px">
+          ${f.reasons.map(x=>`<li>${esc(x)}</li>`).join("")}
+        </ul></div>`).join("");
+  }
+  const lp = await api("/permission/least-privilege");
+  if(lp.data){
+    $("#perm-lp").innerHTML = lp.data.recommendations.map(r=>`
+      <div style="margin-bottom:6px;padding:6px;background:#0e1424;border-radius:4px">
+        <b>${esc(r.name)}</b> · 当前 ${r.current_count} → 建议 ${r.target_count}
+        <div class="mono" style="color:#fca5a5">
+          移除: ${r.recommended_remove.join(", ") || "—"}</div>
+      </div>`).join("");
+  }
+  const rv = await api("/permission/reviews");
+  if(rv.data){
+    $("#perm-reviews tbody").innerHTML = rv.data.reviews.map(r=>{
+      const pct = r.total_roles?Math.round(r.approved*100/r.total_roles):0;
+      return `<tr><td class="mono">${esc(r.review_id)}</td>
+        <td>${esc(r.scope)}</td><td>${esc(r.owner)}</td>
+        <td>${esc(r.period)}</td><td>${tag(r.status,r.status)}</td>
+        <td><div class="bar ${pct>=80?"g":pct>=50?"w":"r"}">
+          <span style="width:${pct}%"></span></div>${pct}%</td>
+        <td>${esc(r.due)}</td></tr>`;
+    }).join("");
+  }
+  const ch = await api("/permission/changes");
+  if(ch.data){
+    $("#perm-changes").innerHTML = ch.data.changes.map(c=>`
+      <div style="border-left:3px solid var(--info);padding:4px 8px;margin-bottom:4px">
+        <span class="mono">${esc(c.ts)}</span> ·
+        <b>${esc(c.uid)}</b> ${tag(c.action,c.action)}
+        <span class="mono">${esc(c.role)}</span>
+        <br><small>by ${esc(c.actor)} · reason: ${esc(c.reason)}
+        · approver: ${esc(c.approved_by)}</small>
+      </div>`).join("");
+  }
+}
+
+// ---------------- 威胁检测 ----------------
+async function loadThreat(){
+  const e = await api("/threat/anomalous-logins");
+  if(e.data){
+    $("#thr-events tbody").innerHTML = e.data.events.map(x=>`<tr>
+      <td class="mono">${esc(x.ts)}</td>
+      <td>${esc(x.user)}</td>
+      <td>${tag("high", x.type)}</td>
+      <td>${esc(x.city)}</td>
+      <td class="mono">${esc(x.ip)}</td>
+      <td>${esc(x.method)}</td>
+      <td>${x.result==="success"?tag("active","成功"):tag("medium","失败")}</td>
+      <td style="max-width:260px">${esc(x.desc)}</td></tr>`).join("");
+    const d = e.data.type_distribution;
+    $("#thr-kpi").innerHTML = Object.entries(d).map(([k,v])=>`
+      <div class="card stat warn"><span class="l">${esc(k)}</span>
+        <span class="v">${v}</span></div>`).join("");
+  }
+  const b = await api("/threat/baselines");
+  if(b.data){
+    $("#thr-baseline").innerHTML = Object.entries(b.data.baselines)
+      .map(([u,v])=>`<div style="margin-bottom:6px;padding:6px;background:#0e1424">
+        <b>${esc(u)}</b> · 城市 ${v.typical_cities.join("/") || "—"}
+        <br><small class="mono">时段: [${v.typical_hours.join(",")}]
+        · 设备: ${v.typical_devices.join(",")}
+        · p90 频率 ${v.p90_freq_per_day}/天</small></div>`).join("");
+  }
+  const c = await api("/threat/attack-chains");
+  if(c.data){
+    $("#thr-chains").innerHTML = c.data.chains.map(ch=>`
+      <div style="margin-bottom:8px">
+        <b>${esc(ch.chain_id)}</b> ${tag(ch.severity,ch.severity)}
+        ${tag("info",ch.status)}
+        <div class="timeline">
+          ${ch.stages.map(s=>`<div class="ev">
+            <span class="mono">${esc(s.ts)}</span> ·
+            <b>${esc(s.name)}</b>
+            <br><small class="mono">${esc(s.ttp)} → ${esc(s.result)}</small>
+          </div>`).join("")}
+        </div></div>`).join("");
+  }
+  const m = await api("/threat/mfa-analysis");
+  if(m.data){
+    $("#thr-mfa").innerHTML = `
+      <div class="grid grid-3">
+        <div class="stat"><span class="l">MFA 覆盖率</span>
+          <span class="v">${m.data.mfa_coverage_pct}%</span></div>
+        <div class="stat"><span class="l">24h 认证成功率</span>
+          <span class="v ok">${m.data.auth_success_pct_24h}%</span></div>
+        <div class="stat"><span class="l">仅 SMS 用户</span>
+          <span class="v" style="color:var(--warn)">${m.data.sms_only_users}</span></div>
+      </div>
+      <h4>风险用户</h4>
+      <table><tbody>${m.data.bypass_risk.map(x=>`<tr>
+        <td class="mono">${esc(x.uid)}</td><td>${esc(x.reason)}</td>
+        <td>${tag(x.risk,x.risk)}</td></tr>`).join("")}</tbody></table>`;
+  }
+}
+
+// ---------------- PAM ----------------
+async function loadPAM(){
+  const inv = await api("/pam/accounts");
+  if(inv.data){
+    $("#pam-kpi").innerHTML = `
+      <div class="card stat"><span class="l">特权账户总数</span>
+        <span class="v">${inv.data.total}</span></div>
+      <div class="card stat"><span class="l">域管理员</span>
+        <span class="v" style="color:var(--crit)">${inv.data.by_type.domain_admin||0}</span></div>
+      <div class="card stat"><span class="l">服务账户</span>
+        <span class="v" style="color:var(--purple)">${inv.data.by_type.service_account||0}</span></div>
+      <div class="card stat"><span class="l">Break-glass</span>
+        <span class="v" style="color:var(--warn)">${inv.data.by_type.break_glass||0}</span></div>`;
+    $("#pam-accounts tbody").innerHTML = inv.data.accounts.map(a=>`<tr>
+      <td class="mono">${esc(a.acct_id)}</td>
+      <td class="mono">${esc(a.username)}</td>
+      <td>${tag("service",a.type)}</td><td>${esc(a.owner)}</td>
+      <td>${a.shared?"是":"否"}</td>
+      <td>${a.pwd_age_days>180?`<span class="err">${a.pwd_age_days}</span>`:a.pwd_age_days}</td>
+      <td>${a.mfa?tag("active","是"):tag("high","否")}</td>
+      <td>${a.uses_30d}</td>
+      <td>${tag(levelClass(a.risk_score),a.risk_score)}</td>
+      <td>${tag(a.status,a.status)}</td></tr>`).join("");
+  }
+  const rk = await api("/pam/risk");
+  if(rk.data){
+    $("#pam-risk").innerHTML = rk.data.findings.slice(0,6).map(f=>`
+      <div style="border-left:3px solid var(--${f.level==="critical"?"crit":f.level==="high"?"warn":"ok"});
+        padding:6px;margin-bottom:4px;background:#0e1424">
+        <b>${esc(f.username)}</b> ${tag(f.level,f.risk_score)}
+        <ul style="margin:4px 0 0 16px;font-size:11px">
+          ${f.reasons.slice(0,3).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`).join("");
+  }
+  const s = await api("/pam/sessions");
+  if(s.data){
+    $("#pam-sessions").innerHTML = s.data.sessions.map(x=>`
+      <div style="padding:6px;border-left:3px solid ${x.abnormal?"var(--crit)":"var(--ok)"};
+        margin-bottom:4px;background:#0e1424">
+        <b class="mono">${esc(x.sid)}</b> ${esc(x.acct)} · ${esc(x.user)}
+        <br><small>${esc(x.host)} · ${esc(x.protocol)} ·
+        ${esc(x.started)} → ${esc(x.ended)}</small>
+        ${x.note?`<br><small class="err">⚠ ${esc(x.note)}</small>`:""}
+        <br><button class="ghost" onclick="replaySess('${x.sid}')">回放</button>
+      </div>`).join("");
+  }
+  const rq = await api("/pam/requests");
+  if(rq.data){
+    $("#pam-requests").innerHTML = rq.data.requests.map(x=>`
+      <div style="padding:6px;border-bottom:1px solid var(--border)">
+        <b>${esc(x.requester)}</b> 申请 ${esc(x.acct)}
+        ${tag(x.status,x.status)}
+        <br><small>${esc(x.justification)} · ${x.duration_min} 分钟
+        · 审批人: ${esc(x.approver)}</small></div>`).join("");
+  }
+  const sv = await api("/pam/service-accounts");
+  if(sv.data){
+    $("#pam-svc").innerHTML = sv.data.service_accounts.map(x=>`
+      <div style="padding:6px;border-bottom:1px solid var(--border)">
+        <b class="mono">${esc(x.svc)}</b>
+        ${x.hardcoded_in_repo?tag("high","硬编码!"):tag("low","已纳管")}
+        ${x.healthy?tag("active","健康"):tag("high","异常")}
+        <br><small>依赖: ${(x.depends_on||[]).map(esc).join(", ")}
+        <br>上次轮换: ${esc(x.last_rotated)} · 下次: ${esc(x.next_rotate_due)}</small>
+      </div>`).join("");
+  }
+}
+window.replaySess = async function(sid){
+  const r = await api(`/pam/sessions/${sid}/replay`);
+  if(!r.data) return;
+  const s = r.data.session;
+  alert(`会话 ${sid}\n用户: ${s.user}\n主机: ${s.host}\n`+
+    `时间: ${s.started} → ${s.ended}\n命令数: ${s.command_count}\n`+
+    `命令: \n  ${(s.commands||[]).join("\n  ")||"(录像中未记录交互命令)"}`);
+};
+
+// ---------------- 访问认证 ----------------
+async function loadAuth(){
+  const p = await api("/auth/policies");
+  if(p.data){
+    $("#auth-policies").innerHTML = p.data.policies.map(x=>`
+      <div style="padding:8px;border:1px solid var(--border);margin-bottom:6px;
+        border-radius:4px">
+        <b>${esc(x.name)}</b> (${esc(x.policy_id)})
+        ${tag("info",x.template)}
+        <div class="kv" style="margin-top:6px">
+          <b>密码长度</b><span>${x.password_min_len}</span>
+          <b>锁定阈值</b><span>${x.lockout_threshold}</span>
+          <b>MFA</b><span>${x.mfa_required?"必须":"可选"}</span>
+          <b>会话时长</b><span>${x.session_minutes} 分钟</span>
+          <b>应用范围</b><span>${esc(x.applies_to.join(", "))}</span>
+          <b>更新时间</b><span>${esc(x.updated_at)}</span>
+        </div></div>`).join("");
+  }
+  const s = await api("/auth/sso");
+  if(s.data){
+    $("#auth-kpi").innerHTML = `
+      <div class="card stat"><span class="l">应用总数</span>
+        <span class="v">${s.data.total_apps}</span></div>
+      <div class="card stat"><span class="l">已接入 SSO</span>
+        <span class="v ok">${s.data.sso_apps}</span></div>
+      <div class="card stat"><span class="l">SSO 覆盖率</span>
+        <span class="v" style="color:var(--info)">${s.data.sso_coverage_pct}%</span></div>`;
+    $("#auth-sso tbody").innerHTML = s.data.apps.map(a=>`<tr>
+      <td class="mono">${esc(a.app_id)}</td><td>${esc(a.name)}</td>
+      <td>${tag("info",a.protocol)}</td>
+      <td>${a.sso_enabled?tag("active","是"):tag("high","否")}</td>
+      <td>${a.just_in_time?tag("active","是"):tag("medium","否")}</td>
+      <td>${a.user_count}</td>
+      <td>${a.mfa_enforced?tag("active","是"):tag("high","否")}</td></tr>`).join("");
+  }
+  const m = await api("/auth/access-models");
+  if(m.data){
+    $("#auth-models").innerHTML =
+      `<div class="kv"><b>支持模型</b><span>${m.data.models.join(" / ")}</span></div>` +
+      m.data.policies.map(p=>`<div style="margin-top:6px;padding:6px;background:#0e1424">
+        <b>${esc(p.policy_id)}</b> ${tag("info",p.model)}
+        <div class="mono">${esc(p.rule)}</div></div>`).join("") +
+      `<h4>冲突</h4>` +
+      (m.data.conflicts.length? m.data.conflicts.map(c=>
+        `<div class="err">⚠ ${esc(c.desc)}</div>`).join("")
+        : "<span class='ok-t'>无冲突</span>");
+  }
+  const r = await api("/auth/access-requests");
+  if(r.data){
+    $("#auth-requests").innerHTML = r.data.requests.map(x=>`
+      <div style="padding:6px;border-bottom:1px solid var(--border)">
+        <b>${esc(x.requester)}</b> 申请 ${esc(x.app)} ·
+        <span class="mono">${esc(x.entitlement)}</span>
+        ${tag(x.status,x.status)}
+        <br><small>${esc(x.justification)} · ${x.duration_days} 天
+        · 审批人: ${esc(x.approver)}</small></div>`).join("");
+  }
+  const l = await api("/auth/logs");
+  if(l.data){
+    $("#auth-logs").innerHTML = `
+      <div class="kv">
+        <b>成功率</b><span class="ok-t">${l.data.success_pct}%</span>
+        <b>日志保留</b><span>${l.data.retention_days} 天</span>
+      </div>
+      <table><thead><tr><th>时间</th><th>用户</th><th>应用</th>
+      <th>方式</th><th>结果</th><th>决策</th><th>风险</th></tr></thead>
+      <tbody>${l.data.logs.map(x=>`<tr>
+        <td class="mono">${esc(x.ts)}</td>
+        <td class="mono">${esc(x.uid)}</td>
+        <td>${esc(x.app)}</td>
+        <td>${esc(x.method)}</td>
+        <td>${x.result==="success"?tag("active","成功"):tag("high","失败")}</td>
+        <td>${esc(x.decision)}</td>
+        <td>${tag(x.risk_level,x.risk_level)}</td></tr>`).join("")}</tbody></table>`;
+  }
+}
+
+// ---------------- 仪表盘 ----------------
+async function loadDash(){
+  const p = await api("/dashboard/posture");
+  if(p.data){
+    const d = p.data;
+    $("#dash-kpi").innerHTML = `
+      <div class="card stat"><span class="l">用户总数</span><span class="v">${d.users_total}</span></div>
+      <div class="card stat ${d.risky_accounts>5?"crit":"warn"}"><span class="l">风险账户</span><span class="v">${d.risky_accounts}</span></div>
+      <div class="card stat warn"><span class="l">24h 异常登录</span><span class="v">${d.anomalous_logins_24h}</span></div>
+      <div class="card stat info"><span class="l">MFA 覆盖率</span><span class="v">${d.mfa_coverage_pct}%</span></div>
+      <div class="card stat"><span class="l">特权账户</span><span class="v">${d.privileged_accounts}</span></div>
+      <div class="card stat crit"><span class="l">孤儿账户</span><span class="v">${d.orphan_accounts}</span></div>
+      <div class="card stat ok"><span class="l">数据质量分</span><span class="v">${d.data_quality_score}</span></div>
+      <div class="card stat"><span class="l">有效权限总数</span><span class="v">${d.effective_permissions_total}</span></div>`;
+  }
+  const a = await api("/dashboard/alerts");
+  if(a.data){
+    $("#dash-alerts").innerHTML = a.data.alerts.map(x=>`
+      <div style="padding:6px;border-left:3px solid var(--${x.level==="critical"?"crit":x.level==="high"?"warn":"info"});
+        margin-bottom:4px;background:#0e1424">
+        <b class="mono">${esc(x.alert_id)}</b>
+        ${tag(x.level,x.level)}
+        <span class="mono">${esc(x.ts)}</span>
+        <br><b>${esc(x.title)}</b>
+        <br><small>${esc(x.desc)}</small></div>`).join("");
+  }
+  const h = await api("/dashboard/heatmap");
+  if(h.data){
+    let html = "<h4>按部门</h4><div class='heat'>";
+    html += "<div class='cell head'>部门</div><div class='cell head'>Critical</div>"+
+            "<div class='cell head'>High</div><div class='cell head'>Medium</div>"+
+            "<div class='cell head'>Score</div>";
+    h.data.by_dept.forEach(d=>{
+      html += `<div class="cell">${esc(d.dim)}</div>`+
+        `<div class="cell" style="background:rgba(239,68,68,${(d.critical||0)/4})">${d.critical}</div>`+
+        `<div class="cell" style="background:rgba(245,158,11,${(d.high||0)/5})">${d.high}</div>`+
+        `<div class="cell" style="background:rgba(6,182,212,${(d.medium||0)/7})">${d.medium}</div>`+
+        `<div class="cell" style="background:rgba(139,92,246,${d.score/100})">${d.score}</div>`;
+    });
+    html += "</div>";
+    html += "<h4 style='margin-top:10px'>按地理位置</h4><div class='heat'>";
+    html += "<div class='cell head'>位置</div><div class='cell head'>Critical</div>"+
+            "<div class='cell head'>High</div><div class='cell head'>Medium</div>"+
+            "<div class='cell head'>Score</div>";
+    h.data.by_geo.forEach(d=>{
+      html += `<div class="cell">${esc(d.dim)}</div>`+
+        `<div class="cell" style="background:rgba(239,68,68,${(d.critical||0)/2})">${d.critical}</div>`+
+        `<div class="cell" style="background:rgba(245,158,11,${(d.high||0)/3})">${d.high}</div>`+
+        `<div class="cell" style="background:rgba(6,182,212,${(d.medium||0)/3})">${d.medium}</div>`+
+        `<div class="cell" style="background:rgba(139,92,246,${d.score/100})">${d.score}</div>`;
+    });
+    html += "</div>";
+    $("#dash-heat").innerHTML = html;
+  }
+  const c = await api("/dashboard/compliance");
+  if(c.data){
+    $("#dash-compliance").innerHTML = c.data.items.map(x=>`
+      <div style="margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;font-size:12px">
+          <span>${esc(x.name)}</span>
+          <span class="mono">${x.value}% / 目标 ${x.target}%</span></div>
+        <div class="bar ${x.value>=x.target?"g":"r"}">
+          <span style="width:${Math.min(x.value,100)}%"></span></div>
+      </div>`).join("");
+  }
+  const m = await api("/dashboard/metrics");
+  if(m.data){
+    drawMetricChart(m.data.history);
+  }
+}
+function drawMetricChart(hist){
+  const svg = $("#dash-metrics");
+  const W=600,H=260,pad=30;
+  let out = "";
+  // axes
+  out += `<line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#374151"/>`;
+  out += `<line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#374151"/>`;
+  const n = hist.length;
+  const xs = hist.map((_,i)=> pad + (W-2*pad)*(i/(n-1)));
+  const ys = hist.map(x=> H-pad - (x.anomaly_rate/3)*(H-2*pad));
+  const ys2 = hist.map(x=> H-pad - (x.mttd/30)*(H-2*pad));
+  // line anomaly_rate
+  out += `<polyline points="${xs.map((x,i)=>x+","+ys[i]).join(" ")}"
+    fill="none" stroke="#ef4444" stroke-width="2"/>`;
+  out += `<polyline points="${xs.map((x,i)=>x+","+ys2[i]).join(" ")}"
+    fill="none" stroke="#3b82f6" stroke-width="2"/>`;
+  hist.forEach((x,i)=>{
+    out += `<text x="${xs[i]-18}" y="${H-pad+14}" fill="#8b93a7" font-size="9">
+      ${esc(x.day.slice(5))}</text>`;
+    out += `<circle cx="${xs[i]}" cy="${ys[i]}" r="3" fill="#ef4444"/>`;
+    out += `<circle cx="${xs[i]}" cy="${ys2[i]}" r="3" fill="#3b82f6"/>`;
+  });
+  out += `<text x="${pad}" y="${pad-10}" fill="#ef4444" font-size="10">— 异常登录率(%)</text>`;
+  out += `<text x="${pad+140}" y="${pad-10}" fill="#3b82f6" font-size="10">— MTTD(分钟)</text>`;
+  svg.innerHTML = out;
+}
+
+// initial load first tab
+loadTab("t1");
+</script>
+</body>
+</html>

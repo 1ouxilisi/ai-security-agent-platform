@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>移动端适配测试 — AI Hacking Agent</title>
+<link rel="stylesheet" href="/static/css/responsive.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0d1117; color: #c9d1d9;
+  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-size: 14px; padding: 16px;
+}
+h1 { color: #58a6ff; font-size: 20px; margin-bottom: 12px; }
+h2 { color: #e6edf3; font-size: 16px; margin: 20px 0 10px; border-bottom: 1px solid #30363d; padding-bottom: 6px; }
+.card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 14px; margin-bottom: 12px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+button {
+  background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
+  border-radius: 4px; padding: 8px 16px; cursor: pointer; min-height: 44px;
+}
+button.primary { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+button.danger { background: #da3633; border-color: #da3633; color: #fff; }
+button:hover { border-color: #58a6ff; }
+input, select, textarea {
+  background: #0d1117; border: 1px solid #30363d; color: #c9d1d9;
+  border-radius: 4px; padding: 8px 10px; font-size: 14px; width: 100%; min-height: 44px;
+}
+label { display: block; color: #8b949e; font-size: 12px; margin: 8px 0 4px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #30363d; }
+th { color: #8b949e; font-weight: 500; font-size: 12px; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 4px; }
+.b-crit { background: #f8514933; color: #f85149; }
+.b-high { background: #d2992233; color: #d29922; }
+.b-med  { background: #1f6feb33; color: #58a6ff; }
+.b-low  { background: #8b949e33; color: #8b949e; }
+.chart-demo { height: 200px; background: linear-gradient(180deg, #161b22, #0d1117);
+  border: 1px solid #30363d; border-radius: 6px; position: relative; overflow: hidden; }
+.chart-demo .bar { position: absolute; bottom: 0; background: linear-gradient(180deg, #58a6ff, #1f6feb); border-radius: 3px 3px 0 0; }
+.modal-demo { background: #161b22; border: 1px solid #58a6ff; border-radius: 8px; padding: 16px; }
+.device-bar { position: sticky; top: 0; background: #0d1117; padding: 10px 0; z-index: 100; }
+.device-bar button { margin-right: 6px; }
+.device-frame { border: 1px solid #30363d; border-radius: 12px; padding: 8px; transition: width .3s; margin: 0 auto; }
+.list-item { padding: 10px; border-bottom: 1px solid #21262d; display: flex; justify-content: space-between; }
+.progress-wrap { background: #21262d; border-radius: 4px; height: 18px; overflow: hidden; }
+.progress-bar { height: 100%; background: linear-gradient(90deg, #1f6feb, #58a6ff); }
+</style>
+</head>
+<body>
+
+<div class="device-bar">
+  <strong>设备预览：</strong>
+  <button onclick="setDevice(375)">手机 375px</button>
+  <button onclick="setDevice(768)">平板 768px</button>
+  <button onclick="setDevice(1024)">桌面 1024px</button>
+  <button onclick="setDevice(0)">全屏</button>
+</div>
+
+<div class="device-frame" id="device-frame">
+  <h1>移动端组件测试台</h1>
+
+  <h2>1. 按钮 (44px 触控)</h2>
+  <div class="row">
+    <button class="primary">主要按钮</button>
+    <button>次要按钮</button>
+    <button class="danger">危险按钮</button>
+  </div>
+
+  <h2>2. 表单</h2>
+  <div class="card">
+    <label>目标 URL</label>
+    <input placeholder="https://example.com">
+    <label>端口范围</label>
+    <input placeholder="80,443,8000-9000">
+    <label>备注</label>
+    <textarea rows="3" placeholder="输入备注..."></textarea>
+    <button class="primary" style="margin-top:10px">提交</button>
+  </div>
+
+  <h2>3. 表格 (移动端转卡片)</h2>
+  <div class="table-responsive">
+    <table>
+      <thead><tr><th>CVE</th><th>严重程度</th><th>目标</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td data-label="CVE">CVE-2024-1234</td><td data-label="严重程度"><span class="badge b-crit">严重</span></td><td data-label="目标">10.0.0.5</td><td data-label="状态">运行中</td></tr>
+        <tr><td data-label="CVE">CVE-2024-5678</td><td data-label="严重程度"><span class="badge b-high">高危</span></td><td data-label="目标">10.0.0.6</td><td data-label="状态">已完成</td></tr>
+        <tr><td data-label="CVE">CVE-2024-9012</td><td data-label="严重程度"><span class="badge b-med">中危</span></td><td data-label="目标">10.0.0.7</td><td data-label="状态">失败</td></tr>
+        <tr><td data-label="CVE">CVE-2024-3456</td><td data-label="严重程度"><span class="badge b-low">低危</span></td><td data-label="目标">10.0.0.8</td><td data-label="状态">待处理</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>4. 卡片网格</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;">
+    <div class="card"><strong>Web 扫描</strong><br><small>主动爬虫</small></div>
+    <div class="card"><strong>网络扫描</strong><br><small>端口识别</small></div>
+    <div class="card"><strong>API 扫描</strong><br><small>OpenAPI</small></div>
+    <div class="card"><strong>靶场</strong><br><small>实战环境</small></div>
+  </div>
+
+  <h2>5. 图表 (纯 CSS 模拟)</h2>
+  <div class="chart-demo">
+    <div class="bar" style="left:5%;  width:8%; height:40%"></div>
+    <div class="bar" style="left:18%; width:8%; height:70%"></div>
+    <div class="bar" style="left:31%; width:8%; height:55%"></div>
+    <div class="bar" style="left:44%; width:8%; height:85%"></div>
+    <div class="bar" style="left:57%; width:8%; height:60%"></div>
+    <div class="bar" style="left:70%; width:8%; height:95%"></div>
+    <div class="bar" style="left:83%; width:8%; height:30%"></div>
+  </div>
+
+  <h2>6. 进度条</h2>
+  <div class="progress-wrap"><div class="progress-bar" style="width:65%"></div></div>
+
+  <h2>7. 列表</h2>
+  <div class="card">
+    <div class="list-item"><span>任务 #1001 端口扫描</span><span class="badge b-crit">严重</span></div>
+    <div class="list-item"><span>任务 #1002 Web 爬虫</span><span class="badge b-med">中危</span></div>
+    <div class="list-item"><span>任务 #1003 API Fuzz</span><span class="badge b-low">低危</span></div>
+  </div>
+
+  <h2>8. 弹窗 (移动端底部弹出)</h2>
+  <div class="modal-demo">
+    <p>这是一个弹窗示例。在 &lt;768px 时会变成底部弹出 (bottom-sheet)。</p>
+    <div class="row" style="margin-top:10px">
+      <button>取消</button>
+      <button class="primary">确认</button>
+    </div>
+  </div>
+
+  <p style="margin-top:20px;color:#8b949e;font-size:12px;">
+    提示：点击左上角 ☰ 打开侧边栏；手机端底部出现 5 项导航；左滑侧边栏可关闭。
+  </p>
+</div>
+
+<script>
+function setDevice(w) {
+  var f = document.getElementById('device-frame');
+  if (w === 0) { f.style.width = '100%'; }
+  else { f.style.width = w + 'px'; f.style.maxWidth = '100%'; }
+}
+</script>
+<script src="/static/js/mobile-nav.js"></script>
+</body>
+</html>

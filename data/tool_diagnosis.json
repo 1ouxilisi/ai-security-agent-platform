@@ -1,0 +1,59 @@
+{
+  "check_time": "2026-09-10T19:30:27.892505",
+  "tool_status": {
+    "total_tools": 5,
+    "available_tools": 4,
+    "missing_tools": 1,
+    "tools": [
+      {
+        "name": "nmap",
+        "binary": "nmap",
+        "available": true,
+        "path": "C:\\Program Files (x86)\\Nmap\\nmap.exe",
+        "wrapper": null,
+        "enabled": true
+      },
+      {
+        "name": "sqlmap",
+        "binary": "sqlmap",
+        "available": true,
+        "path": "C:\\Users\\ASUS\\tools\\sqlmap.BAT",
+        "wrapper": null,
+        "enabled": true
+      },
+      {
+        "name": "nuclei",
+        "binary": "nuclei",
+        "available": true,
+        "path": "C:\\Users\\ASUS\\tools\\nuclei.exe",
+        "wrapper": null,
+        "enabled": true
+      },
+      {
+        "name": "masscan",
+        "binary": "masscan",
+        "available": false,
+        "path": null,
+        "wrapper": null,
+        "enabled": false
+      },
+      {
+        "name": "nikto",
+        "binary": "nikto",
+        "available": true,
+        "path": "C:\\Users\\ASUS\\tools\\nikto.BAT",
+        "wrapper": null,
+        "enabled": true
+      }
+    ]
+  },
+  "dependencies": {
+    "Python": "C:\\Users\\ASUS\\AppData\\Local\\Doubao\\User Data\\sandbox_runtime\\bases\\c98c5042338ed152c6f10ecd8591889f\\python\\python.EXE",
+    "Git": "C:\\Program Files\\Git\\cmd\\git.EXE",
+    "Perl": null,
+    "Nmap": "C:\\Program Files (x86)\\Nmap\\nmap.EXE",
+    "Nuclei": "C:\\Users\\ASUS\\tools\\nuclei.EXE"
+  },
+  "recommendation": "安装 Strawberry Perl (nikto 依赖)；安装缺失工具: masscan；运行 install_tools.bat 一键安装；或在 config/tools_config.json 中手动配置工具路径",
+  "config_file": "E:\\BaiduNetdiskDownload\\yuanbao\\ai-hacking-agent\\config\\tools_config.json"
+}

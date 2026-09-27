@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>企业级安全与合规控制台 · 方向5</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--txt:#e6edf3;
+        --muted:#8b949e;--ok:#3fb950;--warn:#d29922;--bad:#f85149;--acc:#58a6ff}
+  *{box-sizing:border-box}
+  body{font-family:"Segoe UI",sans-serif;margin:0;background:var(--bg);color:var(--txt)}
+  header{padding:14px 24px;background:var(--panel);border-bottom:1px solid var(--border);
+         display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  header h1{margin:0;font-size:19px}
+  .wrap{padding:18px 24px;max-width:1280px;margin:0 auto}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+  .tab{padding:7px 14px;border:1px solid var(--border);border-radius:6px;cursor:pointer;
+       background:var(--panel);color:var(--muted)}
+  .tab.active{background:#1f6feb;color:#fff;border-color:#1f6feb}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;
+        padding:14px;margin:12px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+  .kpi b{font-size:24px;display:block;margin-top:4px}
+  .ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}.acc{color:var(--acc)}
+  table{border-collapse:collapse;width:100%;margin-top:8px}
+  th,td{border:1px solid var(--border);padding:6px 9px;text-align:left;font-size:12.5px}
+  th{background:#0d1117}
+  button{background:#238636;color:#fff;border:0;border-radius:6px;padding:7px 14px;cursor:pointer}
+  button.ghost{background:#21262d;border:1px solid var(--border);color:var(--txt)}
+  button:hover{filter:brightness(1.1)}
+  input,select{background:#0d1117;color:var(--txt);border:1px solid var(--border);
+               border-radius:6px;padding:6px 8px}
+  .muted{color:var(--muted);font-size:12px}
+  pre{background:#0d1117;padding:10px;border-radius:6px;overflow:auto;font-size:12px;
+      max-height:300px;white-space:pre-wrap;word-break:break-all}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+  .pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px}
+</style>
+</head>
+<body>
+<header>
+  <h1>企业级安全与合规控制台 <span class="muted">方向5 · RBAC / 审计 / 加密 / 基线 / 合规</span></h1>
+  <span class="muted">模拟调用者:</span>
+  <select id="whoami" onchange="setWho()">
+    <option value="U00001">管理员 (admin)</option>
+    <option value="U00002">分析师 (analyst)</option>
+    <option value="U00003">审计员 (auditor)</option>
+    <option value="U00004">只读用户 (viewer)</option>
+  </select>
+</header>
+<div class="wrap">
+  <div class="tabs">
+    <div class="tab active" data-t="overview" onclick="go('overview')">总览</div>
+    <div class="tab" data-t="rbac" onclick="go('rbac')">RBAC 权限</div>
+    <div class="tab" data-t="audit" onclick="go('audit')">审计日志</div>
+    <div class="tab" data-t="crypto" onclick="go('crypto')">数据加密</div>
+    <div class="tab" data-t="baseline" onclick="go('baseline')">安全基线</div>
+    <div class="tab" data-t="compliance" onclick="go('compliance')">合规报告</div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div id="tab-overview">
+    <div class="grid" id="kpis"></div>
+    <div class="card"><b>最近审计事件</b><div id="recentAudit" class="muted">加载中…</div></div>
+    <div class="card"><b>子系统健康</b><pre id="health">—</pre></div>
+  </div>
+
+  <!-- RBAC -->
+  <div id="tab-rbac" style="display:none">
+    <div class="card">
+      <b>创建用户</b>
+      <div class="row">
+        <input id="nu_name" placeholder="姓名" value="新分析师">
+        <select id="nu_role">
+          <option value="admin">管理员</option>
+          <option value="analyst" selected>分析师</option>
+          <option value="auditor">审计员</option>
+          <option value="viewer">只读用户</option>
+        </select>
+        <button onclick="createUser()">创建</button>
+      </div>
+    </div>
+    <div class="card"><b>用户列表</b><table id="userTable"></table></div>
+    <div class="card"><b>角色权限矩阵</b><div id="roleMatrix" class="muted">加载中…</div></div>
+  </div>
+
+  <!-- AUDIT -->
+  <div id="tab-audit" style="display:none">
+    <div class="card">
+      <b>筛选查询</b>
+      <div class="row">
+        <input id="f_user" placeholder="用户ID (如 U00001)">
+        <input id="f_action" placeholder="操作类型 (如 user.create)">
+        <select id="f_result"><option value="">全部结果</option>
+          <option value="success">success</option><option value="denied">denied</option>
+          <option value="failed">failed</option></select>
+        <button onclick="loadLogs()">查询</button>
+        <button class="ghost" onclick="exportAudit('html')">导出HTML</button>
+        <button class="ghost" onclick="exportAudit('csv')">导出CSV</button>
+      </div>
+    </div>
+    <div class="card"><b>审计统计</b><pre id="auditStats">—</pre></div>
+    <div class="card"><b>日志</b><table id="logTable"></table></div>
+  </div>
+
+  <!-- CRYPTO -->
+  <div id="tab-crypto" style="display:none">
+    <div class="grid" id="cryptoKpi"></div>
+    <div class="card">
+      <b>写入加密凭据</b>
+      <div class="row">
+        <input id="sec_name" placeholder="名称" value="github_token">
+        <input id="sec_val" placeholder="明文" value="ghp_demoSecretToken123">
+        <button onclick="storeSecret()">加密存储</button>
+      </div>
+    </div>
+    <div class="card"><b>凭据库（不回显密文）</b><table id="secretTable"></table></div>
+    <div class="card"><b>解密演示</b>
+      <div class="row"><input id="reveal_name" placeholder="名称" value="scan_engine_token">
+      <button class="ghost" onclick="revealSecret()">解密(授权后)</button></div>
+      <pre id="revealOut">—</pre></div>
+  </div>
+
+  <!-- BASELINE -->
+  <div id="tab-baseline" style="display:none">
+    <div class="row"><button onclick="runBaseline()">运行安全基线检查</button>
+      <span id="blState" class="muted"></span></div>
+    <div class="grid" id="blKpi"></div>
+    <div class="card"><b>检查明细</b><table id="blTable"></table></div>
+  </div>
+
+  <!-- COMPLIANCE -->
+  <div id="tab-compliance" style="display:none">
+    <div class="row">
+      <button onclick="genCompliance('mlps2')">生成等保2.0报告</button>
+      <button onclick="genCompliance('iso27001')">生成ISO27001报告</button>
+    </div>
+    <div class="card"><b>报告列表</b><table id="compTable"></table></div>
+  </div>
+</div>
+
+<script>
+const B = "/api/v1/enterprise";
+let uid = "U00001";
+function setWho(){ uid = document.getElementById("whoami").value; refresh(); }
+function hdr(){ return {"X-User-Id":uid, "Content-Type":"application/json"}; }
+async function api(path, opt={}){
+  opt.headers = hdr();
+  if(opt.body) opt.body = JSON.stringify(opt.body);
+  const r = await fetch(B+path, opt);
+  const j = await r.json().catch(()=>({success:false,error:"bad json"}));
+  return j;
+}
+function go(t){
+  document.querySelectorAll(".tab").forEach(e=>e.classList.toggle("active",e.dataset.t===t));
+  ["overview","rbac","audit","crypto","baseline","compliance"]
+    .forEach(x=>document.getElementById("tab-"+x).style.display = x===t?"":"none");
+  if(t==="overview") loadOverview();
+  if(t==="rbac") loadUsers();
+  if(t==="audit"){ loadStats(); loadLogs(); }
+  if(t==="crypto"){ loadCrypto(); loadSecrets(); }
+  if(t==="baseline") loadBaseline();
+  if(t==="compliance") loadCompliance();
+}
+function refresh(){ const a=document.querySelector(".tab.active"); go(a.dataset.t); }
+function badge(s){ return s==="pass"||s==="success"?'<span class="ok">✓ '+s+'</span>':
+  s==="fail"?'<span class="bad">✗ '+s+'</span>':'<span class="warn">⚠ '+s+'</span>'; }
+
+async function loadOverview(){
+  const j = await api("/dashboard/overview");
+  if(!j.success){ document.getElementById("kpis").innerHTML="<pre>"+j.error+"</pre>"; return; }
+  const k=j.data.kpis;
+  document.getElementById("kpis").innerHTML = `
+    <div class="card kpi">用户<b>${k.total_users}</b><span class="muted">活跃角色 ${k.active_roles.join(",")||"-"}</span></div>
+    <div class="card kpi">审计事件<b>${k.audit_events}</b><span class="muted">成功率 ${k.audit_success_rate}%</span></div>
+    <div class="card kpi">加密<b>${k.encryption}</b><span class="muted roundtrip: ${k.enc_roundtrip_ok?'<span class="ok">正常</span>':'<span class="bad">异常</span>'}</span></div>
+    <div class="card kpi">基线得分<b>${k.baseline_score??"未跑"}</b><span class="muted">等级 ${k.baseline_grade}</span></div>`;
+  const rows=(j.data.recent_audit||[]).map(r=>`<tr><td>${r.timestamp}</td><td>${r.user_id}</td><td>${r.action}</td><td>${r.target}</td><td>${badge(r.result)}</td></tr>`).join("");
+  document.getElementById("recentAudit").innerHTML = `<table><thead><tr><th>时间</th><th>用户</th><th>操作</th><th>对象</th><th>结果</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const h = await api("/dashboard/health");
+  document.getElementById("health").textContent = JSON.stringify(h.data||h.error,null,2);
+}
+
+async function loadUsers(){
+  const j = await api("/rbac/users");
+  if(!j.success){ document.getElementById("userTable").innerHTML="<tr><td class='bad'>"+j.error+"</td></tr>"; return; }
+  document.getElementById("userTable").innerHTML =
+   `<thead><tr><th>ID</th><th>用户名</th><th>姓名</th><th>角色</th><th>数据范围</th><th>状态</th></tr></thead><tbody>`+
+   j.data.users.map(u=>`<tr><td>${u.user_id}</td><td>${u.username}</td><td>${u.display_name}</td>
+     <td>${u.role_name} (${u.role})</td><td>${u.data_scope}</td><td>${u.is_active?'<span class="ok">启用</span>':'<span class="bad">禁用</span>'}</td></tr>`).join("")+`</tbody>`;
+  const rm = await api("/rbac/roles");
+  if(rm.success){
+    const rp=rm.data.role_permissions, ps=rm.data.permissions;
+    let html="<table><thead><tr><th>权限</th><th>"+Object.keys(rp).join("</th><th>")+"</th></tr></thead><tbody>";
+    Object.keys(ps).forEach(p=>{
+      html+=`<tr><td>${p}</td>`+Object.keys(rp).map(r=>`<td class="${rp[r].includes(p)?'ok':'muted'}">${rp[r].includes(p)?'✓':'·'}</td>`).join("")+`</tr>`;
+    });
+    document.getElementById("roleMatrix").innerHTML=html+"</tbody></table>";
+  }
+}
+async function createUser(){
+  const j = await api("/rbac/users/create",{method:"POST",body:{
+    display_name:document.getElementById("nu_name").value,
+    role:document.getElementById("nu_role").value}});
+  alert(j.success?("已创建 "+j.data.user_id):("失败: "+j.error));
+  loadUsers();
+}
+
+async function loadStats(){ const j=await api("/audit/stats");
+  document.getElementById("auditStats").textContent=JSON.stringify(j.data||j.error,null,2); }
+async function loadLogs(){
+  const q=new URLSearchParams();
+  const u=document.getElementById("f_user").value, a=document.getElementById("f_action").value,
+        res=document.getElementById("f_result").value;
+  if(u)q.set("user_id",u); if(a)q.set("action",a); if(res)q.set("result",res);
+  const j=await api("/audit/logs?"+q);
+  if(!j.success){document.getElementById("logTable").innerHTML="<tr><td class='bad'>"+j.error+"</td></tr>";return;}
+  document.getElementById("logTable").innerHTML=
+   `<thead><tr><th>#</th><th>时间</th><th>用户</th><th>操作</th><th>对象</th><th>IP</th><th>结果</th></tr></thead><tbody>`+
+   j.data.items.map(r=>`<tr><td>${r.seq}</td><td>${r.timestamp}</td><td>${r.user_id}</td><td>${r.action}</td><td>${r.target}</td><td>${r.ip}</td><td>${badge(r.result)}</td></tr>`).join("")+`</tbody></table>`;
+}
+async function exportAudit(fmt){
+  const j=await api("/audit/export",{method:"POST",body:{fmt}});
+  if(!j.success){alert("失败: "+j.error);return;}
+  const w=window.open("","_blank"); w.document.write(j.data.content||JSON.stringify(j.data.items,null,2)); w.document.close();
+}
+
+async function loadCrypto(){
+  const s=await api("/crypto/self-test");
+  if(s.success) document.getElementById("cryptoKpi").innerHTML=`
+    <div class="card kpi">算法<b>${s.data.algorithm}</b><span class="muted">密钥长度 ${s.data.key_bits} bit</span></div>
+    <div class="card kpi">密钥来源<b>${s.data.key_from_env?'<span class="ok">环境变量</span>':'<span class="warn">进程内随机</span>'}</b></div>
+    <div class="card kpi">加解密自检<b>${s.data.roundtrip_ok?'<span class="ok">通过</span>':'<span class="bad">失败</span>'}</b></div>`;
+}
+async function loadSecrets(){
+  const j=await api("/crypto/secrets");
+  if(!j.success){document.getElementById("secretTable").innerHTML="<tr><td class='bad'>"+j.error+"</td></tr>";return;}
+  const list=Object.values(j.data.secrets);
+  document.getElementById("secretTable").innerHTML=
+   `<thead><tr><th>名称</th><th>算法</th><th>是否存在</th></tr></thead><tbody>`+
+   list.map(s=>`<tr><td>${s.name}</td><td>${s.algorithm}</td><td class="ok">已加密存储</td></tr>`).join("")+`</tbody></table>`;
+}
+async function storeSecret(){
+  const j=await api("/crypto/secrets/store",{method:"POST",body:{
+    name:document.getElementById("sec_name").value,
+    plaintext:document.getElementById("sec_val").value}});
+  alert(j.success?"已加密存储(密文不落明文)":("失败: "+j.error)); loadSecrets();
+}
+async function revealSecret(){
+  const j=await api("/crypto/secrets/"+encodeURIComponent(document.getElementById("reveal_name").value)+"/reveal");
+  document.getElementById("revealOut").textContent = j.success?
+    "明文: "+j.data.plaintext+"\n脱敏: "+j.data.masked : "失败: "+j.error;
+}
+
+async function runBaseline(){
+  document.getElementById("blState").textContent="检查中…";
+  const j=await api("/security-baseline/run",{method:"POST",body:{}});
+  document.getElementById("blState").textContent="";
+  loadBaseline();
+}
+async function loadBaseline(){
+  const j=await api("/security-baseline/report");
+  if(!j.success){document.getElementById("blKpi").innerHTML="<div class='card'>"+j.error+"</div>";return;}
+  const s=j.data.summary;
+  document.getElementById("blKpi").innerHTML=`
+    <div class="card kpi">得分<b>${s.score}</b><span class="muted">等级 ${s.grade}</span></div>
+    <div class="card kpi">通过<b class="ok">${s.passed}</b></div>
+    <div class="card kpi">告警<b class="warn">${s.warned}</b></div>
+    <div class="card kpi">失败<b class="bad">${s.failed}</b></div>`;
+  document.getElementById("blTable").innerHTML=
+   `<thead><tr><th>域/分组</th><th>检查项</th><th>状态</th><th>级别</th><th>详情</th></tr></thead><tbody>`+
+   j.data.items.map(i=>`<tr><td>${i.section}</td><td>${i.check}</td><td>${badge(i.status)}</td><td>${i.severity}</td><td>${i.detail}</td></tr>`).join("")+`</tbody></table>`;
+}
+
+async function genCompliance(fw){
+  const j=await api("/compliance/generate",{method:"POST",body:{framework:fw}});
+  if(!j.success){alert("失败: "+j.error);return;}
+  alert("已生成 "+j.data.report_id+" 符合率 "+j.data.score+"% 结论:"+j.data.level);
+  loadCompliance();
+}
+async function loadCompliance(){
+  const j=await api("/compliance/reports");
+  if(!j.success){document.getElementById("compTable").innerHTML="<tr><td class='bad'>"+j.error+"</td></tr>";return;}
+  document.getElementById("compTable").innerHTML=
+   `<thead><tr><th>报告ID</th><th>框架</th><th>符合率</th><th>结论</th><th>不符合/部分</th><th>时间</th><th>操作</th></tr></thead><tbody>`+
+   j.data.reports.map(r=>`<tr><td>${r.report_id}</td><td>${r.framework_name}</td><td>${r.score}%</td><td>${r.level}</td><td>${r.failed}/${r.partial}</td><td>${r.generated_at}</td>
+     <td><button class="ghost" onclick="window.open('/api/v1/enterprise/compliance/reports/${r.report_id}/html')">HTML</button></td></tr>`).join("")+`</tbody></table>`;
+}
+loadOverview();
+</script>
+</body>
+</html>

@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CTF Pro · 夺旗赛平台</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#121821; --panel2:#18212d; --border:#243040;
+  --fg:#e6edf3; --muted:#8b98a8; --accent:#4fc3f7; --ok:#2ecc71;
+  --warn:#f1c40f; --high:#ff7043; --crit:#ff1744; --ai:#ce93d8;
+  --blood:#ffd54f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  font-size:13px;line-height:1.5;}
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 18px;background:linear-gradient(90deg,#10161d,#16202c);
+  border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+header h1{font-size:16px;margin:0;color:var(--accent)}
+header .sub{color:var(--muted);font-size:12px;margin-left:10px}
+button{background:#1c2733;color:var(--fg);border:1px solid var(--border);
+  padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px}
+button:hover{background:#243240}
+button.primary{background:#1565c0;border-color:#1976d2}
+button.danger{background:#b71c1c;border-color:#c62828}
+.tabbar{display:flex;gap:2px;padding:8px 18px;background:#0e141b;
+  border-bottom:1px solid var(--border);overflow-x:auto}
+.tabbar .tab{padding:6px 14px;cursor:pointer;border-radius:4px;
+  color:var(--muted);white-space:nowrap}
+.tabbar .tab.active{background:#1c2733;color:var(--accent)}
+main{padding:14px 18px}
+.panel{background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;padding:12px;margin-bottom:12px}
+.panel h3{margin:0 0 8px;font-size:13px;color:var(--accent)}
+.grid{display:grid;gap:12px}
+.grid.c2{grid-template-columns:1fr 1fr}
+.grid.c3{grid-template-columns:1fr 1fr 1fr}
+.grid.c4{grid-template-columns:repeat(4,1fr)}
+.grid.c5{grid-template-columns:repeat(5,1fr)}
+@media(max-width:1100px){.grid.c3,.grid.c4,.grid.c5{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.grid.c2,.grid.c3,.grid.c4,.grid.c5{grid-template-columns:1fr}}
+.kpi{background:var(--panel2);border:1px solid var(--border);
+  border-radius:6px;padding:10px 12px}
+.kpi .v{font-size:22px;font-weight:600}
+.kpi .l{color:var(--muted);font-size:11px}
+.kpi.crit .v{color:var(--crit)} .kpi.high .v{color:var(--high)}
+.kpi.ok .v{color:var(--ok)} .kpi.ai .v{color:var(--ai)}
+.kpi.blood .v{color:var(--blood)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:5px 8px;border-bottom:1px solid var(--border);
+  text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+.badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px}
+.badge.入门{background:#1f3a4a;color:#81d4fa}
+.badge.简单{background:#1f4a2e;color:#a5d6a7}
+.badge.中等{background:#4a3d16;color:#ffd54f}
+.badge.困难{background:#4e2a1a;color:#ffab91}
+.badge.地狱{background:#5b1320;color:#ff8a80}
+.bar{height:8px;background:#1c2733;border-radius:4px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent)}
+.stage{display:flex;align-items:center;gap:8px;padding:6px 0;
+  border-bottom:1px dashed var(--border)}
+.stage .dot{width:10px;height:10px;border-radius:50%;
+  background:#2a3441;flex:none}
+.stage.done .dot{background:var(--ok)}
+.stage.active .dot{background:var(--accent);
+  box-shadow:0 0 8px var(--accent)}
+.log{background:#0a0e13;border:1px solid var(--border);
+  border-radius:4px;padding:8px;height:260px;overflow:auto;
+  font-family:Consolas,monospace;font-size:11px;white-space:pre-wrap}
+.log .l{color:#4fc3f7}.log .ok{color:#2ecc71}
+.log .warn{color:#f1c40f}.log .err{color:#ff5252}
+.log .ai{color:#ce93d8}.log .think{color:#b39ddb}
+.log .blood{color:#ffd54f}
+.thought{background:#1a1425;border-left:3px solid var(--ai);
+  padding:6px 10px;margin:4px 0;border-radius:3px;color:var(--ai);
+  font-style:italic;font-size:12px}
+.muted{color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input,select,textarea{background:#0e141b;color:var(--fg);
+  border:1px solid var(--border);padding:5px 8px;border-radius:4px;font-size:12px}
+canvas{background:#0a0e13;border-radius:4px;width:100%}
+.hidden{display:none}
+footer{padding:8px 18px;color:var(--muted);font-size:11px;
+  border-top:1px solid var(--border)}
+.tag{display:inline-block;background:#1c2733;border:1px solid var(--border);
+  border-radius:3px;padding:0 6px;margin:1px;font-size:11px}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🚩 CTF Pro <span class="sub">夺旗赛平台 · 八阶段闭环</span></h1></div>
+  <div class="row">
+    <button class="primary" onclick="startRun()">▶ 启动八阶段全流程</button>
+    <button onclick="refreshAll()">🔄 刷新大屏</button>
+    <span id="taskBadge" class="muted">未启动任务</span>
+  </div>
+</header>
+
+<div class="tabbar">
+  <div class="tab active" data-tab="screen">📊 CTF大屏</div>
+  <div class="tab" data-tab="flow">🔄 八阶段流程</div>
+  <div class="tab" data-tab="comp">🏁 赛事管理</div>
+  <div class="tab" data-tab="chal">🧩 题目管理</div>
+  <div class="tab" data-tab="play">⚔️ 比赛进行</div>
+  <div class="tab" data-tab="rank">🏆 实时排名</div>
+  <div class="tab" data-tab="pm">📝 比赛复盘</div>
+  <div class="tab" data-tab="train">🎓 训练模式</div>
+  <div class="tab" data-tab="team">👥 战队管理</div>
+  <div class="tab" data-tab="ai">🤖 AI分析</div>
+  <div class="tab" data-tab="report">📄 报告</div>
+</div>
+
+<main>
+<!-- ====================== CTF 大屏 ====================== -->
+<section id="tab-screen">
+  <div class="grid c5">
+    <div class="kpi"><div class="l">赛事场次</div><div class="v" id="kpiComp">-</div></div>
+    <div class="kpi"><div class="l">参赛队伍</div><div class="v" id="kpiTeams">-</div></div>
+    <div class="kpi"><div class="l">题目总数</div><div class="v" id="kpiChal">-</div></div>
+    <div class="kpi ok"><div class="l">已解题数</div><div class="v" id="kpiSolved">-</div></div>
+    <div class="kpi blood"><div class="l">一血数</div><div class="v" id="kpiBlood">-</div></div>
+  </div>
+  <div class="grid c2" style="margin-top:12px">
+    <div class="panel">
+      <h3>提交趋势</h3>
+      <canvas id="trendChart" width="520" height="220"></canvas>
+    </div>
+    <div class="panel">
+      <h3>实时事件流</h3>
+      <div id="dashEvents" class="log" style="height:220px"></div>
+    </div>
+  </div>
+  <div class="grid c2" style="margin-top:12px">
+    <div class="panel">
+      <h3>积分榜 Top10</h3>
+      <table><thead><tr><th>#</th><th>队伍</th><th>总分</th><th>解题</th><th>一血</th></tr></thead>
+      <tbody id="dashRank"></tbody></table>
+    </div>
+    <div class="panel">
+      <h3>题目分布（按题型）</h3>
+      <div id="dashChalDist"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== 八阶段流程 ====================== -->
+<section id="tab-flow" class="hidden">
+  <div class="panel">
+    <h3>执行进度</h3>
+    <div class="bar" style="margin-bottom:8px"><i id="overallBar" style="width:0%"></i></div>
+    <div class="muted" id="overallText">等待启动</div>
+  </div>
+  <div class="grid c2">
+    <div class="panel">
+      <h3>八阶段</h3>
+      <div id="stageList"></div>
+    </div>
+    <div class="panel">
+      <h3>实时日志流</h3>
+      <div id="flowLog" class="log"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>AI 思考过程</h3>
+    <div id="flowThought"></div>
+  </div>
+</section>
+
+<!-- ====================== 赛事管理 ====================== -->
+<section id="tab-comp" class="hidden">
+  <div class="panel">
+    <h3>赛事列表</h3>
+    <table><thead><tr><th>ID</th><th>名称</th><th>类型</th><th>状态</th><th>报名</th></tr></thead>
+    <tbody id="compTable"></tbody></table>
+  </div>
+  <div class="row">
+    <input id="compName" placeholder="新赛事名称" value="AI Hacking CTF">
+    <select id="compType"><option>Jeopardy</option><option>Attack-Defense</option>
+      <option>邀请赛</option><option>公开赛</option></select>
+    <button class="primary" onclick="createComp()">创建赛事</button>
+  </div>
+</section>
+
+<!-- ====================== 题目管理 ====================== -->
+<section id="tab-chal" class="hidden">
+  <div class="panel">
+    <h3>题目列表（8 大题型）</h3>
+    <table><thead><tr><th>ID</th><th>标题</th><th>题型</th><th>难度</th><th>分值</th><th>状态</th></tr></thead>
+    <tbody id="chalTable"></tbody></table>
+  </div>
+</section>
+
+<!-- ====================== 比赛进行 ====================== -->
+<section id="tab-play" class="hidden">
+  <div class="grid c2">
+    <div class="panel">
+      <h3>提交 flag</h3>
+      <div class="row" style="margin-bottom:8px">
+        <input id="subChal" placeholder="题目ID">
+        <input id="subTeam" placeholder="队伍ID" value="team-alpha">
+        <input id="subFlag" placeholder="flag">
+        <button class="primary" onclick="submitFlag()">提交</button>
+      </div>
+      <div id="subResult" class="muted"></div>
+    </div>
+    <div class="panel">
+      <h3>Docker 部署状态</h3>
+      <div id="depStatus" class="muted">-</div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>提交记录</h3>
+    <table><thead><tr><th>时间</th><th>队伍</th><th>题目</th><th>结果</th><th>分值</th><th>血</th></tr></thead>
+    <tbody id="subTable"></tbody></table>
+  </div>
+</section>
+
+<!-- ====================== 实时排名 ====================== -->
+<section id="tab-rank" class="hidden">
+  <div class="panel">
+    <h3>积分榜</h3>
+    <table><thead><tr><th>#</th><th>队伍</th><th>总分</th><th>解题</th><th>一血</th><th>二血</th><th>三血</th></tr></thead>
+    <tbody id="rankTable"></tbody></table>
+  </div>
+</section>
+
+<!-- ====================== 比赛复盘 ====================== -->
+<section id="tab-pm" class="hidden">
+  <div class="panel">
+    <h3>解题统计</h3>
+    <table><thead><tr><th>题目</th><th>题型</th><th>难度</th><th>解题数</th><th>一血时间</th></tr></thead>
+    <tbody id="pmTable"></tbody></table>
+  </div>
+</section>
+
+<!-- ====================== 训练模式 ====================== -->
+<section id="tab-train" class="hidden">
+  <div class="panel">
+    <h3>学习路径</h3>
+    <div id="trainPaths" class="muted">-</div>
+  </div>
+  <div class="panel">
+    <h3>能力评估（admin）</h3>
+    <div id="abilityBox" class="muted">-</div>
+  </div>
+</section>
+
+<!-- ====================== 战队管理 ====================== -->
+<section id="tab-team" class="hidden">
+  <div class="panel">
+    <h3>战队列表</h3>
+    <table><thead><tr><th>战队</th><th>成员数</th><th>积分</th><th>解题</th><th>胜率</th></tr></thead>
+    <tbody id="teamTable"></tbody></table>
+  </div>
+</section>
+
+<!-- ====================== AI 分析 ====================== -->
+<section id="tab-ai" class="hidden">
+  <div class="panel">
+    <h3>AI 出题 / 难度评估</h3>
+    <div class="row" style="margin-bottom:8px">
+      <select id="aiCat"><option>Web</option><option>Reverse</option><option>Pwn</option>
+        <option>Crypto</option><option>Misc</option></select>
+      <button class="primary" onclick="aiGen()">AI 出题</button>
+    </div>
+    <pre id="aiOut" class="log" style="height:180px"></pre>
+  </div>
+</section>
+
+<!-- ====================== 报告 ====================== -->
+<section id="tab-report" class="hidden">
+  <div class="row" style="margin-bottom:8px">
+    <button class="primary" onclick="genReport()">生成赛事报告</button>
+    <span id="reportPath" class="muted"></span>
+  </div>
+  <pre id="reportMd" class="log" style="height:420px"></pre>
+</section>
+</main>
+
+<footer>CTF Pro · 八阶段夺旗赛平台 · 深色主题 · 全内存模拟存储</footer>
+
+<script>
+const API = "/api/v1/ctf-pro";
+let currentTask = null, ws = null;
+
+async function jget(url){const r=await fetch(API+url);return r.json();}
+async function jpost(url,body){const r=await fetch(API+url,{method:"POST",
+  headers:{"Content-Type":"application/json"},body:JSON.stringify(body||{})});return r.json();}
+
+// tabs
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
+  document.getElementById("tab-"+t.dataset.tab).classList.remove("hidden");
+  refreshTab(t.dataset.tab);
+});
+
+async function refreshAll(){
+  const d=await jget("/dashboard/full");
+  if(!d.success)return;
+  const k=d.data.kpi;
+  document.getElementById("kpiComp").textContent=k.competitions;
+  document.getElementById("kpiTeams").textContent=k.teams;
+  document.getElementById("kpiChal").textContent=k.challenges;
+  document.getElementById("kpiSolved").textContent=k.solved;
+  document.getElementById("kpiBlood").textContent=k.first_bloods;
+  // leaderboard
+  const lb=d.data.top_teams||[];
+  document.getElementById("dashRank").innerHTML=lb.map((r,i)=>
+    `<tr><td>${i+1}</td><td>${r.team_name}</td><td>${r.score}</td>
+    <td>${r.solved}</td><td>${r.first_bloods}</td></tr>`).join("")
+    ||"<tr><td colspan=5 class=muted>暂无数据</td></tr>";
+  // dist
+  const cd=d.data.challenge_distribution||{};
+  document.getElementById("dashChalDist").innerHTML=Object.entries(
+    cd.count_by_category||{}).map(([k,v])=>
+    `<div class=stage><span style="flex:1">${k}</span><b>${v}</b></div>`).join("")
+    ||"<span class=muted>暂无题目</span>";
+  // events
+  document.getElementById("dashEvents").innerHTML=(d.data.recent_events||[])
+    .map(e=>`<div>[${e.timestamp||""}] ${e.team_id||""} ${e.correct?"✅":"❌"} ${e.chal_id||""}</div>`)
+    .join("");
+  drawTrend(d.data.submission_trend||[]);
+}
+
+function drawTrend(series){
+  const c=document.getElementById("trendChart"),ctx=c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+  if(!series.length)return;
+  const max=Math.max(...series.map(p=>p.value),1);
+  const bw=c.width/series.length;
+  series.forEach((p,i)=>{
+    const h=p.value/max*(c.height-30);
+    ctx.fillStyle="#4fc3f7";ctx.fillRect(i*bw+4,c.height-h,bw-8,h);
+  });
+}
+
+async function refreshTab(tab){
+  if(tab==="comp"){
+    const d=await jget("/competitions");
+    document.getElementById("compTable").innerHTML=(d.data.competitions||[]).map(c=>
+      `<tr><td>${c.comp_id}</td><td>${c.name}</td><td>${c.comp_type}</td>
+      <td>${c.status}</td><td>${c.reg_stats.approved}</td></tr>`).join("");
+  }
+  if(tab==="chal"){
+    const d=await jget("/challenges?include_flag=false");
+    document.getElementById("chalTable").innerHTML=(d.data.challenges||[]).map(c=>
+      `<tr><td>${c.chal_id}</td><td>${c.title}</td><td>${c.category}</td>
+      <td><span class="badge ${c.difficulty}">${c.difficulty}</span></td>
+      <td>${c.base_score}</td><td>${c.status}</td></tr>`).join("");
+  }
+  if(tab==="rank"){
+    const d=await jget("/ranking/leaderboard");
+    document.getElementById("rankTable").innerHTML=(d.data.leaderboard||[]).map(r=>
+      `<tr><td>${r.rank}</td><td>${r.team_name}</td><td>${r.score}</td>
+      <td>${r.solved}</td><td>${r.first_bloods}</td><td>${r.second_bloods}</td>
+      <td>${r.third_bloods}</td></tr>`).join("")||"<tr><td colspan=7 class=muted>暂无</td></tr>";
+  }
+  if(tab==="pm"){
+    const d=await jget("/postmortem/solve-stats");
+    document.getElementById("pmTable").innerHTML=(d.data.stats||[]).map(s=>
+      `<tr><td>${s.title}</td><td>${s.category}</td>
+      <td><span class="badge ${s.difficulty}">${s.difficulty}</span></td>
+      <td>${s.solver_count}</td><td>${s.first_blood_time||"-"}</td></tr>`).join("")
+      ||"<tr><td colspan=5 class=muted>暂无</td></tr>";
+  }
+  if(tab==="train"){
+    const p=await jget("/training/paths");
+    document.getElementById("trainPaths").innerHTML=Object.values(p.data.paths||{})
+      .map(x=>`<div><b>${x.name}</b>：${x.steps.join(" → ")}</div>`).join("");
+    const a=await jget("/training/ability?user=admin");
+    if(a.success&&a.data.scores){
+      document.getElementById("abilityBox").innerHTML=Object.entries(a.data.scores)
+        .map(([k,v])=>`<span class=tag>${k} ${v.toFixed(0)}</span>`).join("");
+    }
+  }
+  if(tab==="team"){
+    const d=await jget("/teams");
+    document.getElementById("teamTable").innerHTML=(d.data.teams||[]).map(t=>
+      `<tr><td>${t.name}</td><td>${t.member_count}</td><td>${t.score}</td>
+      <td>${t.solved}</td><td>${t.win_rate}</td></tr>`).join("")
+      ||"<tr><td colspan=5 class=muted>暂无战队</td></tr>";
+  }
+  if(tab==="play"){
+    const d=await jget("/deploy/docker-status");
+    if(d.success){
+      document.getElementById("depStatus").innerHTML=
+        `Docker: ${d.data.docker?"✅":"❌"} 守护进程: ${d.data.daemon_running?"✅":"❌"} `+
+        `版本: ${d.data.server_version||"-"}`;
+    }
+    const s=await jget("/submissions?limit=20");
+    document.getElementById("subTable").innerHTML=(s.data.submissions||[]).map(x=>
+      `<tr><td>${x.timestamp}</td><td>${x.team_id}</td><td>${x.chal_id}</td>
+      <td>${x.correct?"✅正确":"❌错误"}</td><td>${x.score}</td>
+      <td>${x.blood?"🩸"+x.blood:""}</td></tr>`).join("");
+  }
+}
+
+async function createComp(){
+  const name=document.getElementById("compName").value;
+  const type=document.getElementById("compType").value;
+  await jpost("/competitions",{name,comp_type:type,organizer:"AI Hacking Agent"});
+  refreshTab("comp");
+}
+
+async function submitFlag(){
+  const r=await jpost("/submit",{
+    chal_id:document.getElementById("subChal").value,
+    team_id:document.getElementById("subTeam").value,
+    flag:document.getElementById("subFlag").value});
+  document.getElementById("subResult").textContent=JSON.stringify(r.data||r.error);
+  refreshTab("play");
+}
+
+async function aiGen(){
+  const cat=document.getElementById("aiCat").value;
+  const r=await jpost("/ai/generate-challenge",{category:cat,difficulty:"简单"});
+  document.getElementById("aiOut").textContent=JSON.stringify(r.data,null,2);
+}
+
+async function genReport(){
+  const r=await jpost("/report/generate",{fmt:"both"});
+  if(r.success){
+    document.getElementById("reportPath").textContent=r.data.md_path;
+    document.getElementById("reportMd").textContent=r.data.markdown;
+  }
+}
+
+// stages list
+const STAGES=[["competition_management","1.赛事管理"],["challenge_management","2.题目管理"],
+["challenge_deployment","3.题目部署"],["game_play","4.比赛进行"],
+["realtime_ranking","5.实时排名"],["postmortem","6.比赛复盘"],
+["training_mode","7.训练模式"],["team_management","8.战队管理"]];
+document.getElementById("stageList").innerHTML=STAGES.map((s,i)=>
+  `<div class="stage" id="stg-${s[0]}"><span class=dot></span>
+  <span style="flex:1">${s[1]}</span></div>`).join("");
+
+function setStage(active,done){
+  STAGES.forEach(s=>{
+    const el=document.getElementById("stg-"+s[0]);
+    el.classList.remove("done","active");
+  });
+  const doneSet=new Set(done||[]);
+  STAGES.forEach(s=>{
+    const el=document.getElementById("stg-"+s[0]);
+    if(doneSet.has(s[0]))el.classList.add("done");
+    else if(s[0]===active)el.classList.add("active");
+  });
+}
+
+function logLine(cls,msg){
+  const el=document.getElementById("flowLog");
+  const div=document.createElement("div");
+  div.className=cls;div.textContent=msg;el.appendChild(div);
+  el.scrollTop=el.scrollHeight;
+}
+function addThought(t){
+  const el=document.getElementById("flowThought");
+  const div=document.createElement("div");
+  div.className="thought";div.textContent="💭 "+t;el.appendChild(div);
+}
+
+async function startRun(){
+  const r=await jpost("/start",{name:"CTF 八阶段全流程"});
+  if(!r.success)return;
+  currentTask=r.data.task_id;
+  document.getElementById("taskBadge").textContent="任务: "+currentTask;
+  connectWs(currentTask);
+}
+
+function connectWs(tid){
+  if(ws)ws.close();
+  const proto=location.protocol==="https:"?"wss":"ws";
+  ws=new WebSocket(`${proto}://${location.host}${API}/ws/${tid}`);
+  ws.onmessage=async(ev)=>{
+    const m=JSON.parse(ev.data);
+    if(m.type==="progress"){
+      document.getElementById("overallBar").style.width=m.overall+"%";
+      document.getElementById("overallText").textContent=`${m.stage_label} · ${m.overall}%`;
+      const done=STAGES.filter(s=>STAGES.findIndex(x=>x[0]===m.stage)>=STAGES.findIndex(x=>x[0]===s[0])&&m.overall<100).map(s=>s[0]);
+      setStage(m.stage, STAGES.filter((s,i)=>STAGES.findIndex(x=>x[0]===m.stage)>i).map(s=>s[0]));
+    }
+    if(m.type==="log")logLine(m.level.toLowerCase(),`[${m.timestamp}] ${m.message}`);
+    if(m.type==="thought")addThought(m.thought);
+    if(m.type==="result"){refreshAll();}
+    if(m.type==="done"||m.type==="result"){refreshAll();}
+  };
+}
+
+refreshAll();
+</script>
+</body>
+</html>

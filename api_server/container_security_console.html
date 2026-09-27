@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>容器与Kubernetes安全运营中心</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--border:#30363d;--fg:#e6edf3;--fg2:#8b949e;--accent:#58a6ff;--red:#f85149;--orange:#d29922;--green:#3fb950;--purple:#bc8cff;--cyan:#39d2c0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--fg);font-size:14px;line-height:1.6}
+.header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.header h1{font-size:18px;font-weight:600;color:var(--accent)}
+.header .status{font-size:12px;color:var(--fg2)}
+.tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;overflow-x:auto}
+.tab-btn{background:none;border:none;color:var(--fg2);padding:12px 20px;cursor:pointer;font-size:13px;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s}
+.tab-btn:hover{color:var(--fg)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-content{display:none;padding:24px;max-width:1600px;margin:0 auto}
+.tab-content.active{display:block}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.card h3{font-size:14px;margin-bottom:12px;color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px}
+.grid{display:grid;gap:16px}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(380px,1fr))}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.grid-4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.stat-box{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px;text-align:center}
+.stat-box .num{font-size:28px;font-weight:700}
+.stat-box .label{font-size:12px;color:var(--fg2);margin-top:4px}
+.stat-critical .num{color:var(--red)}
+.stat-high .num{color:var(--orange)}
+.stat-medium .num{color:var(--yellow)}
+.stat-low .num{color:var(--green)}
+.stat-info .num{color:var(--cyan)}
+input,select,textarea{background:var(--bg);border:1px solid var(--border);color:var(--fg);padding:8px 12px;border-radius:4px;font-size:13px;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+button{background:var(--accent);color:#fff;border:none;padding:8px 20px;border-radius:4px;cursor:pointer;font-size:13px;font-weight:500}
+button:hover{opacity:.9}
+button.secondary{background:var(--bg3);color:var(--fg);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--fg2);font-weight:600;background:var(--bg3)}
+tr:hover{background:var(--bg3)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-critical{background:rgba(248,81,73,.15);color:var(--red)}
+.badge-high{background:rgba(210,153,34,.15);color:var(--orange)}
+.badge-medium{background:rgba(188,140,255,.15);color:var(--purple)}
+.badge-low{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-pass{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-fail{background:rgba(248,81,73,.15);color:var(--red)}
+.badge-normal{background:rgba(139,148,158,.15);color:var(--fg2)}
+.progress-bar{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin:4px 0}
+.progress-fill{height:100%;border-radius:4px;transition:width .3s}
+.feedback{padding:10px;border-radius:4px;margin:8px 0;font-size:13px}
+.feedback-ok{background:rgba(63,185,80,.1);border:1px solid var(--green);color:var(--green)}
+.feedback-err{background:rgba(248,81,73,.1);border:1px solid var(--red);color:var(--red)}
+.feedback-info{background:rgba(88,166,255,.1);border:1px solid var(--accent);color:var(--accent)}
+pre{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:12px;overflow-x:auto;font-size:12px;max-height:400px;overflow-y:auto}
+.muted{color:var(--fg2);font-size:12px}
+.flex{display:flex;gap:12px;align-items:center}
+.flex-between{display:flex;justify-content:space-between;align-items:center}
+.mini-chart{height:60px;display:flex;align-items:flex-end;gap:3px;padding:4px 0}
+.mini-bar{flex:1;background:var(--accent);border-radius:2px 2px 0 0;min-height:2px;opacity:.7}
+.row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.row>*{flex:1;min-width:150px}
+.score-ring{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;margin:0 auto}
+@media(max-width:768px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}.tab-content{padding:12px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Container &amp; Kubernetes Security Operations Center</h1>
+  <span class="status" id="clock">--:--:--</span>
+</div>
+<div class="tabs">
+  <button class="tab-btn active" data-tab="tab-images">镜像扫描</button>
+  <button class="tab-btn" data-tab="tab-runtime">运行时安全</button>
+  <button class="tab-btn" data-tab="tab-k8sconfig">K8s配置审计</button>
+  <button class="tab-btn" data-tab="tab-k8srt">K8s运行时</button>
+  <button class="tab-btn" data-tab="tab-infra">基础设施</button>
+  <button class="tab-btn" data-tab="tab-dash">运营仪表盘</button>
+</div>
+
+<!-- ============ Tab 1: 镜像扫描 ============ -->
+<div class="tab-content active" id="tab-images">
+  <div class="card">
+    <h3>镜像安全扫描</h3>
+    <div class="row">
+      <input id="img-input" placeholder="输入镜像名称，如 nginx:alpine" value="nginx:alpine">
+      <button onclick="scanImage()">开始扫描</button>
+      <button class="secondary" onclick="loadImageHistory()">扫描历史</button>
+    </div>
+    <div id="img-feedback"></div>
+  </div>
+  <div id="img-result"></div>
+  <div class="card">
+    <h3>扫描历史</h3>
+    <div id="img-history"></div>
+  </div>
+</div>
+
+<!-- ============ Tab 2: 运行时安全 ============ -->
+<div class="tab-content" id="tab-runtime">
+  <div class="card">
+    <h3>容器列表</h3>
+    <div id="rt-containers"></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card"><h3>进程监控</h3><div id="rt-processes">点击容器加载</div></div>
+    <div class="card"><h3>文件系统监控</h3><div id="rt-fs">点击容器加载</div></div>
+    <div class="card"><h3>网络监控</h3><div id="rt-net">点击容器加载</div></div>
+    <div class="card"><h3>系统调用审计</h3><div id="rt-syscalls">点击容器加载</div></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card"><h3>运行时威胁告警</h3><div id="rt-threats">加载中...</div></div>
+    <div class="card"><h3>容器隔离检查</h3><div id="rt-isolation">加载中...</div></div>
+  </div>
+</div>
+
+<!-- ============ Tab 3: K8s配置审计 ============ -->
+<div class="tab-content" id="tab-k8sconfig">
+  <div class="card">
+    <h3>K8s 配置审计</h3>
+    <div class="row">
+      <button onclick="loadK8sConfig()">加载审计结果</button>
+      <button class="secondary" onclick="loadK8sResources()">资源清单</button>
+      <button class="secondary" onclick="loadK8sRBAC()">RBAC审计</button>
+      <button class="secondary" onclick="loadK8sSecrets()">Secret检查</button>
+      <button class="secondary" onclick="loadK8sNetPol()">网络策略</button>
+      <button class="secondary" onclick="loadK8sCIS()">CIS基准(100+项)</button>
+    </div>
+    <div id="k8sconfig-feedback"></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card"><h3>安全配置检查</h3><div id="k8s-secconfig">点击按钮加载</div></div>
+    <div class="card"><h3>RBAC权限审计</h3><div id="k8s-rbac">点击按钮加载</div></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card"><h3>Secret管理检查</h3><div id="k8s-secrets">点击按钮加载</div></div>
+    <div class="card"><h3>网络策略检查</h3><div id="k8s-netpol">点击按钮加载</div></div>
+  </div>
+  <div class="card"><h3>CIS Kubernetes Benchmark</h3><div id="k8s-cis">点击按钮加载</div></div>
+</div>
+
+<!-- ============ Tab 4: K8s运行时 ============ -->
+<div class="tab-content" id="tab-k8srt">
+  <div class="card">
+    <h3>K8s 运行时安全</h3>
+    <div class="row">
+      <button onclick="loadK8sRtAPI()">API审计日志</button>
+      <button onclick="loadK8sRtPods()">Pod异常检测</button>
+      <button onclick="loadK8sRtThreats()">集群威胁(ATT&CK)</button>
+      <button onclick="loadK8sRtAdmission()">准入控制</button>
+      <button onclick="loadK8sRtResources()">集群资源监控</button>
+    </div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card"><h3>API审计异常</h3><div id="kr-api">点击按钮加载</div></div>
+    <div class="card"><h3>Pod异常检测</h3><div id="kr-pods">点击按钮加载</div></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card"><h3>集群威胁检测 (MITRE ATT&CK)</h3><div id="kr-threats">点击按钮加载</div></div>
+    <div class="card"><h3>准入控制策略</h3><div id="kr-admission">点击按钮加载</div></div>
+  </div>
+  <div class="card"><h3>集群资源监控</h3><div id="kr-resources">点击按钮加载</div></div>
+</div>
+
+<!-- ============ Tab 5: 基础设施 ============ -->
+<div class="tab-content" id="tab-infra">
+  <div class="card">
+    <h3>容器基础设施安全</h3>
+    <div class="row">
+      <button onclick="loadInfraDocker()">Docker daemon</button>
+      <button onclick="loadInfraContainerd()">containerd</button>
+      <button onclick="loadInfraRuntime()">运行时隔离</button>
+      <button onclick="loadInfraRegistry()">镜像仓库</button>
+      <button onclick="loadInfraCICD()">CI/CD管道</button>
+      <button onclick="loadInfraIaC()">IaC扫描</button>
+    </div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card"><h3>Docker daemon 配置</h3><div id="infra-docker">点击按钮加载</div></div>
+    <div class="card"><h3>containerd 配置</h3><div id="infra-containerd">点击按钮加载</div></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card"><h3>运行时安全 (runc/gVisor/Kata)</h3><div id="infra-runtime">点击按钮加载</div></div>
+    <div class="card"><h3>镜像仓库安全</h3><div id="infra-registry">点击按钮加载</div></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card"><h3>CI/CD 管道安全</h3><div id="infra-cicd">点击按钮加载</div></div>
+    <div class="card"><h3>IaC 安全扫描</h3><div id="infra-iac">点击按钮加载</div></div>
+  </div>
+</div>
+
+<!-- ============ Tab 6: 运营仪表盘 ============ -->
+<div class="tab-content" id="tab-dash">
+  <div class="card">
+    <h3>安全态势总览</h3>
+    <div class="grid grid-4" id="dash-posture"></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card"><h3>资产全景</h3><div id="dash-assets">加载中...</div></div>
+    <div class="card"><h3>实时告警</h3><div id="dash-alerts">加载中...</div></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card"><h3>漏洞管理</h3><div id="dash-vulns">加载中...</div></div>
+    <div class="card"><h3>合规状态</h3><div id="dash-compliance">加载中...</div></div>
+  </div>
+  <div class="card"><h3>安全度量</h3><div id="dash-metrics">加载中...</div></div>
+</div>
+
+<script>
+const API = '/api/v1/container-security';
+async function api(path, opts) {
+  try {
+    const r = await fetch(API + path, opts);
+    const j = await r.json();
+    if (!j.success) throw new Error(j.error || 'API error');
+    return j.data;
+  } catch(e) { showFb('img-feedback','err','请求失败: '+e.message); throw e; }
+}
+function showFb(id, type, msg) {
+  const el = document.getElementById(id);
+  el.innerHTML = `<div class="feedback feedback-${type}">${msg}</div>`;
+}
+function badge(sev) {
+  const map = {critical:'critical',high:'high',medium:'medium',low:'low',pass:'pass',fail:'fail',normal:'normal'};
+  return `<span class="badge badge-${map[sev]||'normal'}">${sev||'normal'}</span>`;
+}
+function table(headers, rows) {
+  return `<table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r}</tr>`).join('')}</tbody></table>`;
+}
+
+// Tabs
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  };
+});
+
+// Clock
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleString('zh-CN')},1000);
+
+// === Tab 1: Image Scan ===
+async function scanImage() {
+  const ref = document.getElementById('img-input').value.trim() || 'nginx:alpine';
+  showFb('img-feedback','info','正在扫描镜像 '+ref+' ...');
+  const d = await api('/images/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image_ref:ref})});
+  const r = d.result;
+  const s = r.summary;
+  document.getElementById('img-feedback').innerHTML = `<div class="feedback feedback-ok">扫描完成 | 评分: ${r.score} | 风险: ${badge(r.risk_level)}</div>`;
+  let html = `<div class="grid grid-4">
+    <div class="stat-box"><div class="num">${r.score}</div><div class="label">安全评分</div></div>
+    <div class="stat-box"><div class="num" style="color:var(--red)">${s.critical}</div><div class="label">Critical</div></div>
+    <div class="stat-box"><div class="num" style="color:var(--orange)">${s.high}</div><div class="label">High</div></div>
+    <div class="stat-box"><div class="num" style="color:var(--purple)">${s.sensitive_findings}</div><div class="label">敏感信息</div></div>
+  </div>`;
+  html += `<div class="card" style="margin-top:16px"><h3>OS包漏洞</h3>`;
+  html += table(['CVE','包','已装版本','修复版本','CVSS','严重程度'],
+    r.os_vulnerabilities.map(v=>`<td>${v.cve_id}</td><td>${v.package}</td><td>${v.installed_version}</td><td>${v.fixed_version}</td><td>${v.cvss}</td><td>${badge(v.severity)}</td>`));
+  html += `</div>`;
+  html += `<div class="card"><h3>敏感信息检测 (${r.sensitive_count} 项)</h3>`;
+  if(r.sensitive_findings.length){
+    html += table(['文件','类型','预览','熵值','严重程度'],
+      r.sensitive_findings.map(f=>`<td>${f.file}</td><td>${f.label}</td><td><code>${f.match_preview}</code></td><td>${f.entropy}</td><td>${badge(f.severity)}</td>`));
+  } else { html += '<p class="muted">未发现敏感信息</p>'; }
+  html += `</div>`;
+  html += `<div class="card"><h3>配置检查 (${r.config_violations_count} 违规)</h3>`;
+  html += table(['ID','检查项','结果','严重程度','修复建议'],
+    r.config_checks.map(c=>`<td>${c.id}</td><td>${c.check}</td><td>${c.passed?badge('pass'):badge('fail')}</td><td>${badge(c.severity)}</td><td>${c.remediation||'-'}</td>`));
+  html += `</div>`;
+  html += `<div class="card"><h3>修复建议</h3><ul style="padding-left:20px">${r.remediation.map(x=>`<li>${x}</li>`).join('')}</ul></div>`;
+  document.getElementById('img-result').innerHTML = html;
+}
+async function loadImageHistory() {
+  const d = await api('/images/history');
+  document.getElementById('img-history').innerHTML = table(['扫描ID','镜像','评分','风险','漏洞数','时间'],
+    d.history.map(h=>`<td>${h.scan_id}</td><td>${h.image_ref}</td><td>${h.score}</td><td>${badge(h.risk_level)}</td><td>${h.vulns}</td><td>${h.scanned_at}</td>`));
+}
+
+// === Tab 2: Runtime ===
+async function loadRTContainers() {
+  const d = await api('/runtime/containers');
+  document.getElementById('rt-containers').innerHTML = table(['ID','名称','镜像','状态','CPU%','内存MB','重启','特权'],
+    d.containers.map(c=>`<td><code>${c.container_id.slice(0,12)}</code></td><td>${c.name}</td><td>${c.image}</td><td>${c.status}</td><td>${c.cpu_usage_pct}</td><td>${c.memory_mb}</td><td>${c.restart_count}</td><td>${c.privileged?badge('critical'):badge('pass')}</td>`));
+}
+async function loadRTDetail(cid, type, elId) {
+  const d = await api(`/runtime/${cid}/${type}`);
+  const el = document.getElementById(elId);
+  if(type==='processes'){
+    el.innerHTML = table(['PID','进程','命令行','CPU%','可疑'],
+      d.processes.map(p=>`<td>${p.pid}</td><td>${p.name}</td><td><code>${p.cmdline}</code></td><td>${p.cpu_pct}</td><td>${p.suspicious?badge('critical'):''}</td>`));
+  } else if(type==='filesystem'){
+    el.innerHTML = table(['路径','操作','用户','大小','严重程度'],
+      d.events.map(e=>`<td>${e.path}</td><td>${e.operation}</td><td>${e.user}</td><td>${e.size_bytes}</td><td>${badge(e.severity)}</td>`));
+  } else if(type==='network'){
+    el.innerHTML = table(['源','目的','协议','状态','风险'],
+      d.connections.map(c=>`<td>${c.src_ip}:${c.src_port}</td><td>${c.dst_ip}:${c.dst_port}</td><td>${c.protocol}</td><td>${c.state}</td><td>${badge(c.risk==='normal'?'low':c.risk)}</td>`));
+  } else if(type==='syscalls'){
+    el.innerHTML = table(['系统调用','风险','进程','描述'],
+      d.suspicious_syscalls.map(s=>`<td><code>${s.syscall}</code></td><td>${badge(s.risk)}</td><td>${s.process}</td><td>${s.description}</td>`));
+  }
+}
+async function loadRTThreats() {
+  const d = await api('/runtime/threats');
+  document.getElementById('rt-threats').innerHTML = table(['ID','类型','严重程度','标题','容器','建议'],
+    d.threats.map(t=>`<td>${t.id}</td><td>${t.type}</td><td>${badge(t.severity)}</td><td>${t.title}</td><td>${t.container}</td><td>${t.action}</td>`));
+}
+async function loadRTIsolation() {
+  const d = await api('/runtime/isolation-checks');
+  document.getElementById('rt-isolation').innerHTML = table(['ID','检查项','结果','严重程度','修复'],
+    d.checks.map(c=>`<td>${c.id}</td><td>${c.check}</td><td>${c.passed?badge('pass'):badge('fail')}</td><td>${badge(c.severity)}</td><td>${c.remediation||'-'}</td>`));
+}
+
+// === Tab 3: K8s Config ===
+async function loadK8sConfig() {
+  showFb('k8sconfig-feedback','info','正在执行K8s配置审计...');
+  const d = await api('/k8s-config/audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({manifest:''})});
+  const r = d.result;
+  document.getElementById('k8sconfig-feedback').innerHTML = `<div class="feedback feedback-ok">审计完成 | 评分: ${r.score} | 合规率: ${r.compliance_pct}%</div>`;
+  document.getElementById('k8s-secconfig').innerHTML = table(['ID','检查项','结果','严重程度','修复'],
+    r.security_config_checks.map(c=>`<td>${c.id}</td><td>${c.check}</td><td>${c.passed?badge('pass'):badge('fail')}</td><td>${badge(c.severity)}</td><td>${c.remediation||'-'}</td>`));
+}
+async function loadK8sResources() {
+  const d = await api('/k8s-config/resources');
+  let html = '<div class="grid grid-4">';
+  for(const[k,v] of Object.entries(d)){
+    if(Array.isArray(v)) html += `<div class="stat-box"><div class="num">${v.length}</div><div class="label">${k}</div></div>`;
+  }
+  html += '</div>';
+  document.getElementById('k8s-secconfig').innerHTML = html;
+}
+async function loadK8sRBAC() {
+  const d = await api('/k8s-config/rbac');
+  let html = `<p class="muted">过度权限: ${d.summary.overprivileged_count} | 通配符: ${d.summary.wildcard_count}</p>`;
+  html += table(['角色','类型','风险','详情'],
+    d.overprivileged_roles.map(r=>`<td>${r.name}</td><td>${r.kind}</td><td>${badge(r.risk)}</td><td>${r.detail}</td>`));
+  document.getElementById('k8s-rbac').innerHTML = html;
+}
+async function loadK8sSecrets() {
+  const d = await api('/k8s-config/secrets');
+  document.getElementById('k8s-secrets').innerHTML = table(['名称','命名空间','问题','严重程度','修复'],
+    d.findings.map(f=>`<td>${f.name}</td><td>${f.namespace}</td><td>${f.issue}</td><td>${badge(f.severity)}</td><td>${f.remediation}</td>`));
+}
+async function loadK8sNetPol() {
+  const d = await api('/k8s-config/network-policies');
+  document.getElementById('k8s-netpol').innerHTML = `<p class="muted">覆盖率: ${d.coverage_pct}%</p>` + table(['命名空间','问题','严重程度','修复'],
+    d.findings.map(f=>`<td>${f.namespace}</td><td>${f.issue}</td><td>${badge(f.severity)}</td><td>${f.remediation}</td>`));
+}
+async function loadK8sCIS() {
+  const d = await api('/k8s-config/cis-benchmark');
+  document.getElementById('k8s-cis').innerHTML = `<p class="muted">${d.benchmark} | 总计: ${d.total_checks} | 通过: ${d.passed} | 失败: ${d.failed} | 合规率: ${d.compliance_pct}%</p>` +
+    table(['ID','分类','检查项','结果','级别'],
+      d.results.slice(0,30).map(r=>`<td>${r.id}</td><td>${r.section}</td><td>${r.check}</td><td>${badge(r.status)}</td><td>${r.level}</td>`));
+}
+
+// === Tab 4: K8s Runtime ===
+async function loadK8sRtAPI() {
+  const d = await api('/k8s-runtime/api-audit');
+  document.getElementById('kr-api').innerHTML = table(['时间','用户','操作','资源','风险'],
+    d.anomalies.map(a=>`<td>${a.timestamp}</td><td>${a.user}</td><td>${a.verb}</td><td>${a.resource}</td><td>${badge(a.risk)}</td>`));
+}
+async function loadK8sRtPods() {
+  const d = await api('/k8s-runtime/pod-anomalies');
+  document.getElementById('kr-pods').innerHTML = table(['ID','类型','严重程度','Pod','详情','建议'],
+    d.anomalies.map(a=>`<td>${a.id}</td><td>${a.type}</td><td>${badge(a.severity)}</td><td>${a.pod}</td><td>${a.detail}</td><td>${a.recommendation}</td>`));
+}
+async function loadK8sRtThreats() {
+  const d = await api('/k8s-runtime/threats');
+  let html = table(['威胁ID','战术','技术','严重程度','详情'],
+    d.threats.map(t=>`<td>${t.id}</td><td>${t.tactic}</td><td>${t.technique} ${t.technique_name}</td><td>${badge(t.severity)}</td><td>${t.detail}</td>`));
+  document.getElementById('kr-threats').innerHTML = html;
+}
+async function loadK8sRtAdmission() {
+  const d = await api('/k8s-runtime/admission');
+  document.getElementById('kr-admission').innerHTML = table(['策略','类型','强制','阻断数'],
+    d.policies.map(p=>`<td>${p.name}</td><td>${p.type}</td><td>${p.enforced?badge('pass'):badge('fail')}</td><td>${p.violations_blocked}</td>`));
+}
+async function loadK8sRtResources() {
+  const d = await api('/k8s-runtime/cluster-resources');
+  let html = `<p class="muted">集群: ${d.cluster} | K8s: ${d.kubernetes_version} | Pods: ${d.total_pods} | CPU: ${d.cluster_cpu_used_pct}% | 内存: ${d.cluster_memory_used_pct}%</p>`;
+  html += table(['节点','状态','CPU%','内存%','Pods','版本'],
+    d.nodes.map(n=>`<td>${n.name}</td><td>${n.status}</td><td>${n.cpu_used_pct}%</td><td>${n.memory_used_pct}%</td><td>${n.pods_running}</td><td>${n.kubelet_version}</td>`));
+  document.getElementById('kr-resources').innerHTML = html;
+}
+
+// === Tab 5: Infrastructure ===
+async function loadInfraDocker() {
+  const d = await api('/infra/docker-daemon');
+  document.getElementById('infra-docker').innerHTML = `<p class="muted">版本: ${d.daemon_version} | 监听: ${d.listening_address} | TLS: ${d.tls_enabled?'是':'否'} | 评分: ${d.score}</p>` +
+    table(['ID','检查项','结果','严重程度','修复'],
+      d.checks.map(c=>`<td>${c.id}</td><td>${c.check}</td><td>${c.passed?badge('pass'):badge('fail')}</td><td>${badge(c.severity)}</td><td>${c.remediation||'-'}</td>`));
+}
+async function loadInfraContainerd() {
+  const d = await api('/infra/containerd');
+  document.getElementById('infra-containerd').innerHTML = `<p class="muted">版本: ${d.containerd_version}</p>` +
+    table(['ID','检查项','结果','严重程度'],
+      d.checks.map(c=>`<td>${c.id}</td><td>${c.check}</td><td>${c.passed?badge('pass'):badge('fail')}</td><td>${badge(c.severity)}</td>`));
+}
+async function loadInfraRuntime() {
+  const d = await api('/infra/runtime');
+  document.getElementById('infra-runtime').innerHTML = table(['运行时','版本','隔离级别','逃逸面','沙箱','评估'],
+    d.runtimes.map(r=>`<td>${r.name}</td><td>${r.version}</td><td>${r.isolation_level}</td><td>${badge(r.escape_surface)}</td><td>${r.sandbox?'是':'否'}</td><td>${r.assessment}</td>`));
+}
+async function loadInfraRegistry() {
+  const d = await api('/infra/registry');
+  document.getElementById('infra-registry').innerHTML = table(['名称','地址','认证','TLS','签名','扫描','风险'],
+    d.registries.map(r=>`<td>${r.name}</td><td>${r.url}</td><td>${r.auth_required?'是':'否'}</td><td>${r.tls?'是':'否'}</td><td>${r.signed_images?'是':'否'}</td><td>${r.vuln_scan_integrated?'是':'否'}</td><td>${badge(r.risk)}</td>`));
+}
+async function loadInfraCICD() {
+  const d = await api('/infra/cicd');
+  document.getElementById('infra-cicd').innerHTML = `<p class="muted">构建隔离: ${d.build_isolation_compliance}% | 镜像扫描: ${d.image_scan_coverage}% | 部署审批: ${d.deployment_approval_compliance}%</p>` +
+    table(['管道','平台','隔离','扫描','审批','风险'],
+      d.pipelines.map(p=>`<td>${p.name}</td><td>${p.platform}</td><td>${p.build_isolation}</td><td>${p.image_scan?badge('pass'):badge('fail')}</td><td>${p.deployment_approval?badge('pass'):badge('fail')}</td><td>${badge(p.risk)}</td>`));
+}
+async function loadInfraIaC() {
+  const d = await api('/infra/iac');
+  let html = `<p class="muted">扫描文件: ${d.files_scanned} | 总发现: ${d.total_findings} | Critical: ${d.critical} | High: ${d.high} | 风险评分: ${d.risk_score}</p>`;
+  for(const f of d.results){
+    html += `<p style="margin-top:8px"><b>${f.file}</b></p>`;
+    html += table(['规则','严重程度','行号','修复'],
+      f.findings.map(x=>`<td>${x.rule}</td><td>${badge(x.severity)}</td><td>${x.line}</td><td>${x.remediation}</td>`));
+  }
+  document.getElementById('infra-iac').innerHTML = html;
+}
+
+// === Tab 6: Dashboard ===
+async function loadDash() {
+  const p = await api('/dashboard/posture');
+  document.getElementById('dash-posture').innerHTML = `
+    <div class="stat-box stat-critical"><div class="num">${p.critical_vulns}</div><div class="label">Critical漏洞</div></div>
+    <div class="stat-box stat-high"><div class="num">${p.high_vulns}</div><div class="label">High漏洞</div></div>
+    <div class="stat-box"><div class="num">${p.config_violations}</div><div class="label">配置违规</div></div>
+    <div class="stat-box stat-medium"><div class="num">${p.runtime_alerts}</div><div class="label">运行时告警</div></div>
+    <div class="stat-box"><div class="num">${p.compliance_rate}%</div><div class="label">合规率</div></div>
+    <div class="stat-box stat-info"><div class="num">${p.risk_images}</div><div class="label">风险镜像</div></div>
+    <div class="stat-box stat-high"><div class="num">${p.risk_containers}</div><div class="label">风险容器</div></div>
+    <div class="stat-box stat-critical"><div class="num">${p.overall_risk}</div><div class="label">总体风险</div></div>`;
+  const a = await api('/dashboard/assets');
+  document.getElementById('dash-assets').innerHTML = table(['指标','数量'],
+    [['总镜像',a.summary.total_images],['风险镜像',a.summary.risk_images],['总容器',a.summary.total_containers],['风险容器',a.summary.risk_containers],['Pod数',a.total_pods],['节点数',a.nodes],['命名空间',a.namespaces],['工作负载',a.workloads]].map(x=>`<td>${x[0]}</td><td>${x[1]}</td>`));
+  const al = await api('/dashboard/alerts');
+  document.getElementById('dash-alerts').innerHTML = table(['ID','类型','严重程度','标题','来源','状态'],
+    al.alerts.map(a=>`<td>${a.id}</td><td>${a.type}</td><td>${badge(a.severity)}</td><td>${a.title}</td><td>${a.source}</td><td>${a.status}</td>`));
+  const v = await api('/dashboard/vulnerabilities');
+  document.getElementById('dash-vulns').innerHTML = table(['CVE','严重程度','CVSS','包','修复版本','优先级','状态'],
+    v.vulnerabilities.map(x=>`<td>${x.cve}</td><td>${badge(x.severity)}</td><td>${x.cvss}</td><td>${x.package}</td><td>${x.fixed_version}</td><td>${x.priority}</td><td>${x.status}</td>`));
+  const c = await api('/dashboard/compliance');
+  document.getElementById('dash-compliance').innerHTML = table(['框架','通过/总计','合规率'],
+    [['CIS Docker',`${c.cis_docker.passed}/${c.cis_docker.total_checks}`,`${c.cis_docker.compliance_pct}%`],['CIS K8s',`${c.cis_k8s.passed}/${c.cis_k8s.total_checks}`,`${c.cis_k8s.compliance_pct}%`],['Pod安全标准',`${c.pod_security.restricted+}/${c.pod_security.total_namespaces}`,`${c.pod_security.compliance_pct}%`]].map(x=>`<td>${x[0]}</td><td>${x[1]}</td><td>${x[2]}</td>`));
+  const m = await api('/dashboard/metrics');
+  let bars = m.alert_volume_trend.map(t=>`<div class="mini-bar" style="height:${Math.max(2,t.alerts*2)}px" title="${t.date}: ${t.alerts}"></div>`).join('');
+  document.getElementById('dash-metrics').innerHTML = `
+    <div class="grid grid-4">
+      <div class="stat-box"><div class="num">${m.vuln_fix_rate}%</div><div class="label">漏洞修复率</div></div>
+      <div class="stat-box"><div class="num">${m.config_compliance_rate}%</div><div class="label">配置合规率</div></div>
+      <div class="stat-box"><div class="num">${m.runtime_intercept_rate}%</div><div class="label">运行时拦截率</div></div>
+      <div class="stat-box"><div class="num">${m.mttr_hours}h</div><div class="label">MTTR</div></div>
+    </div>
+    <p class="muted" style="margin-top:12px">告警量趋势 (7天)</p>
+    <div class="mini-chart">${bars}</div>
+    <p class="muted" style="margin-top:8px">Top威胁</p>
+    <table><thead><tr><th>类型</th><th>数量</th><th>严重程度</th></tr></thead><tbody>
+    ${m.top_threats.map(t=>`<tr><td>${t.type}</td><td>${t.count}</td><td>${badge(t.severity)}</td></tr>`).join('')}
+    </tbody></table>`;
+}
+
+// Init
+loadRTContainers();
+loadRTThreats();
+loadRTIsolation();
+loadDash();
+</script>
+</body>
+</html>

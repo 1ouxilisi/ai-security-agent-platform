@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>威胁狩猎专业级控制台 · Round 17</title>
+<style>
+  :root {
+    --bg: #0a0e17; --panel: #111827; --panel2: #1a2332; --border: #1e3a5f;
+    --text: #c9d6e8; --muted: #5a7a9a; --accent: #00d4ff; --accent2: #ff4757;
+    --crit: #ff4757; --high: #ff6b35; --med: #ffd93d; --low: #6bcb77; --info: #4d96ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text);
+    font-family: "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; font-size: 14px; }
+  header { background: linear-gradient(90deg,#0d1b2a,#1b263b); padding: 14px 22px;
+    border-bottom: 1px solid var(--border); display:flex; align-items:center; gap:14px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 18px; color: var(--accent); }
+  header .tag { background: var(--panel2); padding: 3px 10px; border-radius: 10px; font-size: 12px; color: var(--muted); }
+  nav { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px 22px; background: #0d1520; border-bottom: 1px solid var(--border); }
+  nav button { background: transparent; color: var(--muted); border: 1px solid var(--border);
+    padding: 8px 16px; cursor: pointer; border-radius: 6px; font-size: 13px; transition: all .2s; }
+  nav button.active { background: var(--accent); color: #001; border-color: var(--accent); font-weight: 600; }
+  nav button:hover { color: var(--text); border-color: var(--accent); }
+  main { padding: 18px 22px; max-width: 1480px; margin: 0 auto; }
+  .tab { display: none; } .tab.active { display: block; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 1000px) { .grid, .grid-3 { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .card h3 { margin: 0 0 10px; font-size: 14px; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  label { display:block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+  input, textarea, select { width: 100%; background: #0c1322; color: var(--text);
+    border: 1px solid var(--border); border-radius: 5px; padding: 7px 9px; font-size: 13px; }
+  textarea { min-height: 80px; font-family: Consolas,"Cascadia Code",monospace; }
+  button.action { background: var(--accent); color: #001; border: none; padding: 9px 20px;
+    border-radius: 5px; cursor: pointer; font-weight: 600; margin-top: 10px; }
+  button.action:hover { opacity: .88; }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  button.small { padding: 4px 10px; font-size: 12px; margin-top: 4px; }
+  .status { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .status.running { color: var(--med); } .status.done { color: var(--low); } .status.error { color: var(--crit); }
+  pre { background: #080d16; border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px; overflow: auto; max-height: 400px; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { border-bottom: 1px solid var(--border); padding: 6px 8px; text-align: left; }
+  th { color: var(--accent); background: #0e1828; position: sticky; top: 0; }
+  tr:hover { background: rgba(0,212,255,.05); }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .pill.critical, .pill.crit { background: rgba(255,71,87,.18); color: var(--crit); }
+  .pill.high { background: rgba(255,107,53,.18); color: var(--high); }
+  .pill.medium, .pill.med { background: rgba(255,217,61,.18); color: var(--med); }
+  .pill.low { background: rgba(107,203,119,.18); color: var(--low); }
+  .pill.info { background: rgba(77,150,255,.18); color: var(--info); }
+  .pill.informational { background: rgba(90,122,168,.18); color: var(--muted); }
+  .pill.active { background: rgba(0,212,255,.18); color: var(--accent); }
+  .pill.draft { background: rgba(255,217,61,.15); color: var(--med); }
+  .pill.validated { background: rgba(107,203,119,.18); color: var(--low); }
+  .pill.falsified { background: rgba(255,71,87,.15); color: var(--crit); }
+  .pill.healthy { background: rgba(107,203,119,.18); color: var(--low); }
+  .pill.degraded { background: rgba(255,107,53,.18); color: var(--high); }
+  .kv { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+  .kv div b { color: var(--accent); font-size: 20px; display: block; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .bar { height: 8px; background: var(--panel2); border-radius: 4px; overflow: hidden; margin: 4px 0; }
+  .bar > span { display: block; height: 100%; transition: width .3s; }
+  .editor { background: #060b14; border: 1px solid var(--border); border-radius: 6px;
+    padding: 12px; font-family: Consolas,monospace; font-size: 13px; min-height: 120px;
+    color: #a5e8ff; resize: vertical; }
+  .template-list { max-height: 300px; overflow-y: auto; }
+  .template-item { padding: 8px 10px; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .template-item:hover { background: rgba(0,212,255,.08); }
+  .template-item .name { color: var(--text); font-weight: 600; }
+  .template-item .desc { color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .timeline { position: relative; padding-left: 20px; }
+  .timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .timeline-item { position: relative; padding: 8px 0 8px 20px; }
+  .timeline-item::before { content: ''; position: absolute; left: -16px; top: 14px; width: 10px; height: 10px;
+    border-radius: 50%; background: var(--accent); border: 2px solid var(--bg); }
+  .graph-container { background: #060b14; border: 1px solid var(--border); border-radius: 8px; min-height: 300px; position: relative; }
+  .metric-card { text-align: center; padding: 16px; }
+  .metric-card .value { font-size: 28px; font-weight: 700; color: var(--accent); }
+  .metric-card .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .metric-card .trend-up { color: var(--low); font-size: 12px; }
+  .metric-card .trend-down { color: var(--crit); font-size: 12px; }
+  .step-list { counter-reset: step; }
+  .step-item { padding: 10px 12px; border-left: 3px solid var(--border); margin-bottom: 8px; background: var(--panel2); border-radius: 0 6px 6px 0; }
+  .step-item.done { border-left-color: var(--low); }
+  .step-item.current { border-left-color: var(--med); }
+  .step-item .step-num { font-weight: 700; color: var(--accent); margin-right: 8px; }
+  .level-bar { display: flex; gap: 4px; margin: 10px 0; }
+  .level-seg { flex: 1; height: 24px; background: var(--panel2); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted); }
+  .level-seg.active { background: var(--accent); color: #001; font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🔴 威胁狩猎专业级控制台</h1>
+  <span class="tag">Round 17 · threat-hunt</span>
+  <span class="muted" style="margin-left:auto">仅用于授权防御性狩猎 · 检测/分析/管理视角</span>
+</header>
+
+<nav id="nav">
+  <button data-tab="query" class="active">🔍 狩猎查询</button>
+  <button data-tab="hypothesis">💡 假设驱动</button>
+  <button data-tab="behavior">🧠 行为分析</button>
+  <button data-tab="ioc">🎯 IOC富化</button>
+  <button data-tab="data">📊 数据管理</button>
+  <button data-tab="report">📋 报告度量</button>
+</nav>
+
+<main>
+
+<!-- ==================== Tab 1: 狩猎查询 ==================== -->
+<div class="tab active" id="tab-query">
+  <div class="grid">
+    <div class="card">
+      <h3>📝 查询编辑器</h3>
+      <label>狩猎查询语句（类SQL）</label>
+      <textarea class="editor" id="queryEditor" spellcheck="false">FROM process WHERE process_name = 'powershell.exe' AND command_line MATCHES '-enc|-e |-encodedcommand'</textarea>
+      <div class="row">
+        <button class="action" onclick="executeQuery()">▶ 执行查询</button>
+        <button class="action ghost" onclick="validateQuery()">✓ 验证语法</button>
+        <button class="action ghost" onclick="optimizeQuery()">⚡ 性能优化</button>
+        <button class="action ghost" onclick="saveQuery()">💾 保存查询</button>
+      </div>
+      <div class="status" id="queryStatus">就绪</div>
+    </div>
+    <div class="card">
+      <h3>📚 查询模板库</h3>
+      <div class="row" style="margin-bottom:8px">
+        <select id="tplCategory" style="width:auto" onchange="loadTemplates()">
+          <option value="">全部分类</option>
+          <option value="process">进程</option>
+          <option value="network">网络</option>
+          <option value="file">文件</option>
+          <option value="registry">注册表</option>
+          <option value="user">用户</option>
+          <option value="login">登录</option>
+          <option value="combined">组合链</option>
+        </select>
+      </div>
+      <div class="template-list" id="templateList"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📋 查询结果</h3>
+    <div class="kv" id="resultMeta">
+      <div><b id="resTotal">0</b> 总匹配</div>
+      <div><b id="resTime">0ms</b> 执行时间</div>
+      <div><b id="resScanned">0</b> 扫描记录</div>
+    </div>
+    <div style="overflow:auto;max-height:350px">
+      <table id="resultTable">
+        <thead><tr><th>#</th><th>字段</th><th>值</th></tr></thead>
+        <tbody id="resultBody"><tr><td colspan="3" class="muted">暂无结果，执行查询后显示</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🕐 查询历史</h3>
+    <div id="queryHistoryList" style="max-height:200px;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 2: 假设驱动 ==================== -->
+<div class="tab" id="tab-hypothesis">
+  <div class="grid">
+    <div class="card">
+      <h3>💡 狩猎假设</h3>
+      <div id="hypothesisList"></div>
+    </div>
+    <div class="card">
+      <h3>📁 项目看板</h3>
+      <div id="projectList"></div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>📖 狩猎剧本</h3>
+      <div id="playbookList"></div>
+    </div>
+    <div class="card">
+      <h3>🚨 狩猎发现</h3>
+      <div class="kv" id="findingSummary"></div>
+      <div id="findingList" style="max-height:300px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Tab 3: 行为分析 ==================== -->
+<div class="tab" id="tab-behavior">
+  <div class="grid-3">
+    <div class="card metric-card">
+      <div class="value" id="behScore">--</div>
+      <div class="label">综合风险评分</div>
+    </div>
+    <div class="card metric-card">
+      <div class="value" id="behAnomalies">0</div>
+      <div class="label">检测到异常</div>
+    </div>
+    <div class="card metric-card">
+      <div class="value" id="behChains">0</div>
+      <div class="label">行为链重建</div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>👤 实体行为画像</h3>
+      <div id="profileList"></div>
+    </div>
+    <div class="card">
+      <h3>⚠️ 异常行为列表</h3>
+      <div id="anomalyList" style="max-height:350px;overflow-y:auto"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>🔗 行为链时间线</h3>
+    <div class="timeline" id="chainTimeline"></div>
+  </div>
+  <div class="card">
+    <h3>📏 评分规则</h3>
+    <table id="scoringRulesTable">
+      <thead><tr><th>规则</th><th>权重</th><th>说明</th></tr></thead>
+      <tbody id="scoringRulesBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== Tab 4: IOC富化 ==================== -->
+<div class="tab" id="tab-ioc">
+  <div class="row" style="margin-bottom:14px">
+    <select id="iocTypeFilter" style="width:auto" onchange="loadIOCs()">
+      <option value="">全部类型</option>
+      <option value="ip">IP地址</option>
+      <option value="domain">域名</option>
+      <option value="url">URL</option>
+      <option value="hash">哈希</option>
+      <option value="email">邮箱</option>
+    </select>
+    <button class="action small ghost" onclick="loadIOCs()">刷新</button>
+    <button class="action small ghost" onclick="exportIOCs()">📤 导出</button>
+    <button class="action small ghost" onclick="showAddIOC()">➕ 添加IOC</button>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>🎯 IOC列表</h3>
+      <div id="iocList" style="max-height:400px;overflow-y:auto"></div>
+    </div>
+    <div class="card">
+      <h3>🔬 富化详情</h3>
+      <div id="iocEnrichDetail" class="muted">选择左侧IOC查看富化详情</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>🕸️ IOC关系图谱</h3>
+    <div class="graph-container" id="iocGraph">
+      <svg id="iocGraphSvg" width="100%" height="320" viewBox="0 0 800 320"></svg>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Tab 5: 数据管理 ==================== -->
+<div class="tab" id="tab-data">
+  <div class="grid">
+    <div class="card">
+      <h3>📡 数据源状态</h3>
+      <table>
+        <thead><tr><th>数据源</th><th>类型</th><th>状态</th><th>数据量</th><th>新鲜度</th></tr></thead>
+        <tbody id="sourceTable"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>🔍 跨源查询构建器</h3>
+      <label>搜索关键词</label>
+      <input id="searchQuery" placeholder="输入搜索关键词...">
+      <div class="row">
+        <label style="margin:0">时间范围</label>
+        <select id="searchRange" style="width:auto">
+          <option value="last_1h">最近1小时</option>
+          <option value="last_24h" selected>最近24小时</option>
+          <option value="last_7d">最近7天</option>
+          <option value="last_30d">最近30天</option>
+        </select>
+      </div>
+      <button class="action" onclick="crossSearch()">▶ 跨源搜索</button>
+      <div class="status" id="searchStatus"></div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>⚙️ 数据管道</h3>
+      <div id="pipelineList"></div>
+    </div>
+    <div class="card">
+      <h3>📐 数据质量监控</h3>
+      <div id="qualitySummary" class="kv"></div>
+      <table>
+        <thead><tr><th>数据源</th><th>完整性</th><th>延迟</th><th>状态</th></tr></thead>
+        <tbody id="qualityTable"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <h3>📦 证据包导出</h3>
+    <div class="row">
+      <label style="margin:0">证据类型</label>
+      <select id="exportType" style="width:auto">
+        <option value="hunt_evidence">狩猎证据包</option>
+        <option value="process_logs">进程日志片段</option>
+        <option value="network_pcap">网络PCAP</option>
+      </select>
+      <button class="action" onclick="exportEvidence()">📦 导出证据包</button>
+    </div>
+    <div id="exportResult" class="status"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 6: 报告度量 ==================== -->
+<div class="tab" id="tab-report">
+  <div class="grid-3">
+    <div class="card metric-card">
+      <div class="value" id="mMttd">--</div>
+      <div class="label">MTTD (小时)</div>
+    </div>
+    <div class="card metric-card">
+      <div class="value" id="mCoverage">--</div>
+      <div class="label">狩猎覆盖率</div>
+    </div>
+    <div class="card metric-card">
+      <div class="value" id="mDiscovery">--</div>
+      <div class="label">发现率</div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>📈 月度趋势</h3>
+      <div id="trendChart"></div>
+    </div>
+    <div class="card">
+      <h3>🏆 分析师排名</h3>
+      <table>
+        <thead><tr><th>分析师</th><th>发现数</th><th>查询数</th><th>效率</th></tr></thead>
+        <tbody id="analystRank"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>📊 狩猎成熟度评估</h3>
+      <div id="maturityLevels"></div>
+      <div id="gapAnalysis"></div>
+    </div>
+    <div class="card">
+      <h3>📝 生成狩猎报告</h3>
+      <label>报告标题</label>
+      <input id="reportTitle" placeholder="例如：Q3季度威胁狩猎报告">
+      <label>狩猎目标</label>
+      <input id="reportGoal" placeholder="狩猎目标描述">
+      <button class="action" onclick="generateReport()">📋 生成报告</button>
+      <div id="reportResult" class="status"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>📚 知识库</h3>
+    <div id="knowledgeBase"></div>
+  </div>
+</div>
+
+</main>
+
+<script>
+const API = '/api/v1/threat-hunt';
+let currentIocId = null;
+
+// ---- Tab switching ----
+document.querySelectorAll('#nav button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('#nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    loadTabData(btn.dataset.tab);
+  };
+});
+
+function loadTabData(tab) {
+  if (tab === 'query') { loadTemplates(); loadHistory(); }
+  if (tab === 'hypothesis') { loadHypotheses(); loadProjects(); loadPlaybooks(); loadFindings(); }
+  if (tab === 'behavior') { loadBaselines(); loadProfiles(); loadAnomalies(); loadChains(); loadScoringRules(); }
+  if (tab === 'ioc') { loadIOCs(); loadIOCGraph(); }
+  if (tab === 'data') { loadSources(); loadPipelines(); loadQuality(); }
+  if (tab === 'report') { loadMetrics(); loadMaturity(); loadKnowledge(); loadDashboard(); }
+}
+
+async function api(path, method='GET', body=null) {
+  const opts = { method, headers: {'Content-Type': 'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  try {
+    const r = await fetch(API + path, opts);
+    const j = await r.json();
+    return j;
+  } catch(e) {
+    return { success: false, error: String(e), data: null };
+  }
+}
+
+function pill(text, cls) { return `<span class="pill ${cls}">${text}</span>`; }
+
+// ============ Tab 1: Query ============
+async function loadTemplates() {
+  const cat = document.getElementById('tplCategory').value;
+  const j = await api('/query/templates' + (cat ? '?category=' + cat : ''));
+  const el = document.getElementById('templateList');
+  if (!j.success) { el.innerHTML = '<div class="muted">加载失败</div>'; return; }
+  el.innerHTML = j.data.map(t =>
+    `<div class="template-item" onclick="useTemplate('${t.template_id}')">
+      <div class="name">${t.name} ${pill(t.severity, t.severity)}</div>
+      <div class="desc">${t.mitre_technique} · ${t.description}</div>
+    </div>`).join('');
+}
+
+async function useTemplate(tid) {
+  const j = await api('/query/templates/' + tid);
+  if (j.success) {
+    document.getElementById('queryEditor').value = j.data.query;
+  }
+}
+
+async function executeQuery() {
+  const q = document.getElementById('queryEditor').value;
+  document.getElementById('queryStatus').textContent = '执行中...';
+  document.getElementById('queryStatus').className = 'status running';
+  const j = await api('/query/execute', 'POST', { query: q, page: 1, page_size: 20 });
+  const st = document.getElementById('queryStatus');
+  if (j.success) {
+    st.textContent = `执行完成 · 耗时 ${j.data.execution_time_ms}ms`;
+    st.className = 'status done';
+    document.getElementById('resTotal').textContent = j.data.total;
+    document.getElementById('resTime').textContent = j.data.execution_time_ms + 'ms';
+    document.getElementById('resScanned').textContent = j.data.scanned_records;
+    const body = document.getElementById('resultBody');
+    if (j.data.results.length === 0) {
+      body.innerHTML = '<tr><td colspan="3" class="muted">无匹配结果</td></tr>';
+    } else {
+      body.innerHTML = j.data.results.map((r, i) => {
+        const keys = Object.keys(r);
+        return `<tr><td>${i+1}</td><td>${keys.slice(0,3).join(', ')}</td><td>${keys.slice(0,3).map(k => r[k]).join(' | ')}</td></tr>`;
+      }).join('');
+    }
+    loadHistory();
+  } else {
+    st.textContent = '查询失败: ' + j.error;
+    st.className = 'status error';
+  }
+}
+
+async function validateQuery() {
+  const q = document.getElementById('queryEditor').value;
+  const j = await api('/query/validate', 'POST', { query: q });
+  const st = document.getElementById('queryStatus');
+  if (j.success) {
+    if (j.data.valid) { st.textContent = '语法验证通过 ✓'; st.className = 'status done'; }
+    else { st.textContent = '语法错误: ' + j.data.errors.join('; '); st.className = 'status error'; }
+  }
+}
+
+async function optimizeQuery() {
+  const q = document.getElementById('queryEditor').value;
+  const j = await api('/query/optimize?query=' + encodeURIComponent(q));
+  if (j.success) {
+    const sug = j.data.query_rewrite_suggestions.join('; ') || '无优化建议';
+    const idx = j.data.index_suggestions.join('; ');
+    document.getElementById('queryStatus').textContent = `优化建议: ${sug} | 索引: ${idx}`;
+    document.getElementById('queryStatus').className = 'status done';
+  }
+}
+
+async function saveQuery() {
+  const q = document.getElementById('queryEditor').value;
+  const name = prompt('查询名称:', '我的狩猎查询');
+  if (!name) return;
+  const j = await api('/query/save', 'POST', { name, query: q });
+  if (j.success) alert('查询已保存: ' + j.data.query_id);
+}
+
+async function loadHistory() {
+  const j = await api('/query/history?limit=10');
+  const el = document.getElementById('queryHistoryList');
+  if (!j.success) return;
+  el.innerHTML = j.data.map(h =>
+    `<div style="padding:6px 0;border-bottom:1px solid var(--border)">
+      <span class="muted">${h.executed_at}</span> · ${h.matches}条匹配 · ${h.execution_time_ms}ms<br>
+      <span class="muted" style="font-family:monospace">${h.query.substring(0,80)}...</span>
+    </div>`).join('') || '<div class="muted">暂无历史</div>';
+}
+
+// ============ Tab 2: Hypothesis ============
+async function loadHypotheses() {
+  const j = await api('/hypotheses');
+  const el = document.getElementById('hypothesisList');
+  if (!j.success) { el.innerHTML = '<div class="muted">加载失败</div>'; return; }
+  el.innerHTML = j.data.map(h =>
+    `<div style="padding:10px;border-bottom:1px solid var(--border)">
+      <div>${h.title} ${pill(h.priority, h.priority)} ${pill(h.status, h.status)}</div>
+      <div class="muted" style="margin-top:4px">${h.description}</div>
+      <div class="muted" style="margin-top:4px">ATT&CK: ${h.mitre_techniques.join(', ') || '未映射'}</div>
+    </div>`).join('');
+}
+
+async function loadProjects() {
+  const j = await api('/projects');
+  const el = document.getElementById('projectList');
+  if (!j.success) return;
+  el.innerHTML = j.data.map(p =>
+    `<div style="padding:10px;border-bottom:1px solid var(--border)">
+      <div>${p.name} ${pill(p.status, p.status)}</div>
+      <div class="muted" style="margin-top:4px">目标: ${p.goal}</div>
+      <div class="muted">范围: ${p.scope} · 发现: ${p.findings_count}</div>
+    </div>`).join('');
+}
+
+async function loadPlaybooks() {
+  const j = await api('/playbooks');
+  const el = document.getElementById('playbookList');
+  if (!j.success) return;
+  el.innerHTML = j.data.map(pb =>
+    `<div style="margin-bottom:12px">
+      <div style="font-weight:600;color:var(--accent)">${pb.name} ${pill(pb.status, pb.status)}</div>
+      <div class="muted" style="margin:4px 0">${pb.description}</div>
+      <div class="step-list">
+        ${pb.steps.map((s, i) =>
+          `<div class="step-item ${s.status === 'completed' ? 'done' : (i === pb.current_step ? 'current' : '')}">
+            <span class="step-num">Step ${s.step}</span>${s.name}
+            <div class="muted" style="margin-top:2px;font-family:monospace;font-size:11px">${s.query}</div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+async function loadFindings() {
+  const s = await api('/findings/summary');
+  const se = document.getElementById('findingSummary');
+  if (s.success) {
+    se.innerHTML = `<div><b>${s.data.total}</b> 总发现</div><div><b style="color:var(--crit)">${s.data.critical}</b> 严重</div><div><b style="color:var(--high)">${s.data.high}</b> 高危</div>`;
+  }
+  const j = await api('/findings');
+  const el = document.getElementById('findingList');
+  if (!j.success) return;
+  el.innerHTML = j.data.map(f =>
+    `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+      <div>${f.title} ${pill(f.severity, f.severity)} ${pill(f.status, f.status)}</div>
+      <div class="muted" style="margin-top:2px">系统: ${f.affected_systems.join(', ')}</div>
+      <div class="muted">TTP: ${f.ttps.join(', ')}</div>
+    </div>`).join('');
+}
+
+// ============ Tab 3: Behavior ============
+async function loadBaselines() {
+  const j = await api('/behavior/baselines');
+  // just count
+  if (j.success) document.getElementById('behChains').textContent = j.data.length;
+}
+
+async function loadProfiles() {
+  const j = await api('/behavior/profiles');
+  const el = document.getElementById('profileList');
+  if (!j.success) return;
+  el.innerHTML = j.data.map(p =>
+    `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+      <div>${p.entity_type}: <b>${p.entity_id}</b></div>
+      <div class="muted" style="margin-top:2px">风险: ${p.risk_score || '--'} · 年龄: ${p.profile_age_days || '--'}天</div>
+    </div>`).join('');
+}
+
+async function loadAnomalies() {
+  const j = await api('/behavior/anomalies');
+  const el = document.getElementById('anomalyList');
+  if (!j.success) { el.innerHTML = '<div class="muted">暂无异常数据</div>'; return; }
+  document.getElementById('behAnomalies').textContent = j.data.length;
+  if (j.data.length === 0) {
+    el.innerHTML = '<div class="muted">当前无异常行为</div>';
+    return;
+  }
+  el.innerHTML = j.data.map(a =>
+    `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+      <div>${pill(a.type, 'info')} ${pill(a.severity, a.severity)}</div>
+      <div style="margin-top:2px">${a.description}</div>
+      <div class="muted">${a.user} · ${a.hostname} · ${a.timestamp}</div>
+    </div>`).join('');
+}
+
+async function loadChains() {
+  const j = await api('/behavior/chains');
+  const el = document.getElementById('chainTimeline');
+  if (!j.success || j.data.length === 0) {
+    el.innerHTML = '<div class="muted">暂无行为链数据，执行狩猎查询后自动重建</div>';
+    return;
+  }
+  document.getElementById('behChains').textContent = j.data.length;
+  el.innerHTML = j.data.map(c =>
+    `<div class="timeline-item">
+      <div style="font-weight:600">${c.hostname}: ${c.attack_chain_stage}</div>
+      <div class="muted">${c.time_span} · ${c.event_count}个事件</div>
+    </div>`).join('');
+}
+
+async function loadScoringRules() {
+  const j = await api('/behavior/scoring-rules');
+  const el = document.getElementById('scoringRulesBody');
+  if (!j.success) return;
+  el.innerHTML = j.data.map(r =>
+    `<tr><td>${r.rule}</td><td>${r.weight}</td><td>${r.description}</td></tr>`).join('');
+}
+
+// ============ Tab 4: IOC ============
+async function loadIOCs() {
+  const type = document.getElementById('iocTypeFilter').value;
+  const j = await api('/iocs' + (type ? '?ioc_type=' + type : ''));
+  const el = document.getElementById('iocList');
+  if (!j.success) { el.innerHTML = '<div class="muted">加载失败</div>'; return; }
+  el.innerHTML = j.data.map(i =>
+    `<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="enrichIOC('${i.ioc_id}')">
+      <div><b>${i.value}</b> ${pill(i.ioc_type, 'info')} ${pill(i.classification, 'medium')}</div>
+      <div class="muted" style="margin-top:2px">${i.source} · 出现${i.occurrence_count}次 · ${i.last_seen}</div>
+    </div>`).join('');
+}
+
+async function enrichIOC(iocId) {
+  currentIocId = iocId;
+  const j = await api('/iocs/' + iocId + '/enrich');
+  const el = document.getElementById('iocEnrichDetail');
+  if (!j.success) { el.textContent = '富化失败'; return; }
+  const d = j.data;
+  let html = `<div><b>值:</b> ${d.value}</div>`;
+  if (d.geolocation) html += `<div style="margin-top:8px"><b>地理位置:</b> ${d.geolocation.city}, ${d.geolocation.country}</div>
+    <div class="muted">ASN: ${d.asn} · ISP: ${d.geolocation.isp}</div>
+    <div>${d.blacklisted ? pill('已黑名单', 'critical') : pill('未列入黑名单', 'low')}</div>`;
+  if (d.reputation_score !== undefined) html += `<div style="margin-top:8px"><b>信誉评分:</b> ${d.reputation_score}/100</div>`;
+  if (d.whois) html += `<div style="margin-top:8px"><b>WHOIS:</b> 注册商: ${d.whois.registrar} · 创建: ${d.whois.creation_date}</div>`;
+  if (d.virus_total_like) html += `<div style="margin-top:8px"><b>检测:</b> ${d.virus_total_like.detections}/${d.virus_total_like.total_engines} 引擎检出 · ${d.virus_total_like.family}</div>`;
+  html += `<div class="muted" style="margin-top:8px">富化时间: ${d.enriched_at}</div>`;
+  el.innerHTML = html;
+}
+
+async function loadIOCGraph() {
+  const j = await api('/iocs/graph');
+  const svg = document.getElementById('iocGraphSvg');
+  if (!j.success) return;
+  const nodes = j.data.nodes;
+  const edges = j.data.edges;
+  let svgContent = '';
+  const cx = 400, cy = 160, r = 100;
+  nodes.forEach((n, i) => {
+    const angle = (2 * Math.PI * i) / Math.max(nodes.length, 1);
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    const colors = { ip: '#ff6b6b', domain: '#ffd93d', hash: '#4d96ff', email: '#6bcb77', url: '#c084fc' };
+    const c = colors[n.type] || '#00d4ff';
+    svgContent += `<circle cx="${x}" cy="${y}" r="18" fill="${c}" opacity="0.3"/><circle cx="${x}" cy="${y}" r="8" fill="${c}"/>`;
+    svgContent += `<text x="${x+12}" y="${y+4}" fill="#c9d6e8" font-size="10">${n.label.substring(0,20)}</text>`;
+    n._x = x; n._y = y;
+  });
+  edges.forEach(e => {
+    const s = nodes.find(n => n.id === e.source);
+    const t = nodes.find(n => n.id === e.target);
+    if (s && t) svgContent += `<line x1="${s._x}" y1="${s._y}" x2="${t._x}" y2="${t._y}" stroke="#1e3a5f" stroke-width="1"/>`;
+  });
+  svg.innerHTML = svgContent;
+}
+
+async function exportIOCs() {
+  const j = await api('/iocs/export?fmt=json');
+  if (j.success) alert('IOC导出完成，共导出数据');
+}
+
+function showAddIOC() { alert('添加IOC功能: POST /api/v1/threat-hunt/iocs'); }
+
+// ============ Tab 5: Data ============
+async function loadSources() {
+  const j = await api('/data/sources');
+  const el = document.getElementById('sourceTable');
+  if (!j.success) return;
+  el.innerHTML = j.data.map(s =>
+    `<tr><td>${s.name}</td><td>${s.log_type}</td><td>${pill(s.index_status, s.index_status)}</td><td>${s.data_volume_gb}GB</td><td>${s.freshness_seconds}s</td></tr>`).join('');
+}
+
+async function crossSearch() {
+  const q = document.getElementById('searchQuery').value;
+  const range = document.getElementById('searchRange').value;
+  const st = document.getElementById('searchStatus');
+  st.textContent = '搜索中...'; st.className = 'status running';
+  const j = await api('/data/search', 'POST', { query: q, time_range: range });
+  if (j.success) {
+    st.textContent = `找到 ${j.data.total_matches} 条结果，耗时 ${j.data.search_time_ms}ms`;
+    st.className = 'status done';
+  } else { st.textContent = '搜索失败'; st.className = 'status error'; }
+}
+
+async function loadPipelines() {
+  const j = await api('/data/pipelines');
+  const el = document.getElementById('pipelineList');
+  if (!j.success) return;
+  el.innerHTML = j.data.map(p =>
+    `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+      <div>${p.name} ${pill(p.status, 'healthy')}</div>
+      <div class="muted">${p.events_processed.toLocaleString()} 事件 · ${p.events_per_second}/s</div>
+    </div>`).join('');
+}
+
+async function loadQuality() {
+  const j = await api('/data/quality');
+  if (!j.success) return;
+  document.getElementById('qualitySummary').innerHTML =
+    `<div><b>${j.data.summary.healthy}</b> 健康</div><div><b>${j.data.summary.degraded}</b> 降级</div><div><b>${j.data.summary.avg_completeness}%</b> 平均完整性</div>`;
+  const el = document.getElementById('qualityTable');
+  el.innerHTML = j.data.details.map(q =>
+    `<tr><td>${q.source}</td><td>${q.completeness_pct}%</td><td>${q.latency_seconds}s</td><td>${pill(q.status, q.status)}</td></tr>`).join('');
+}
+
+async function exportEvidence() {
+  const type = document.getElementById('exportType').value;
+  const st = document.getElementById('exportResult');
+  const j = await api('/data/export-evidence', 'POST', { evidence_type: type, query: 'export current hunt' });
+  if (j.success) {
+    st.textContent = `证据包已导出: ${j.data.evidence_items}项 · SHA256: ${j.data.sha256_checksum.substring(0,16)}...`;
+    st.className = 'status done';
+  } else { st.textContent = '导出失败'; st.className = 'status error'; }
+}
+
+// ============ Tab 6: Report & Metrics ============
+async function loadMetrics() {
+  const j = await api('/metrics');
+  if (!j.success) return;
+  document.getElementById('mMttd').textContent = j.data.mttd_hours + 'h';
+  document.getElementById('mCoverage').textContent = j.data.hunt_coverage_pct + '%';
+  document.getElementById('mDiscovery').textContent = j.data.discovery_rate_pct + '%';
+}
+
+async function loadDashboard() {
+  const j = await api('/dashboard');
+  if (!j.success) return;
+  // Trend chart (simple bar)
+  const tc = document.getElementById('trendChart');
+  const months = j.data.trends.findings_by_month;
+  const maxVal = Math.max(...months.map(m => m.count));
+  tc.innerHTML = months.map(m =>
+    `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span style="width:60px" class="muted">${m.month}</span>
+      <div class="bar" style="flex:1"><span style="width:${(m.count/maxVal*100)}%;background:var(--accent)"></span></div>
+      <span style="width:30px">${m.count}</span>
+    </div>`).join('');
+  // Analyst ranking
+  const ar = document.getElementById('analystRank');
+  ar.innerHTML = j.data.analyst_rankings.map(a =>
+    `<tr><td>${a.name}</td><td>${a.findings}</td><td>${a.queries}</td><td>${a.efficiency}</td></tr>`).join('');
+}
+
+async function loadMaturity() {
+  const j = await api('/maturity');
+  if (!j.success) return;
+  const ml = document.getElementById('maturityLevels');
+  ml.innerHTML = `<div>当前等级: <b style="color:var(--accent)">Level ${j.data.current_level} - ${j.data.current_level_name}</b></div>
+    <div class="level-bar">
+      ${j.data.levels.map((l, i) => `<div class="level-seg ${i < j.data.current_level ? 'active' : ''}">L${l.level} ${l.name}</div>`).join('')}
+    </div>`;
+  const ga = document.getElementById('gapAnalysis');
+  ga.innerHTML = j.data.gap_analysis.map(g =>
+    `<div style="padding:6px 0;border-bottom:1px solid var(--border)">
+      <b>${g.area}</b>: ${g.current} → ${g.target}
+      <div class="muted">${g.gap}</div>
+    </div>`).join('');
+}
+
+async function loadKnowledge() {
+  const j = await api('/knowledge-base');
+  const el = document.getElementById('knowledgeBase');
+  if (!j.success) return;
+  el.innerHTML = `<div style="margin-bottom:10px"><b>TTP库 (${j.data.tps.length}):</b>
+    ${j.data.tps.map(t => `<div class="muted">${t.tp_id} ${t.name}</div>`).join('')}</div>
+    <div><b>案例库 (${j.data.cases.length}):</b>
+    ${j.data.cases.map(c => `<div class="muted">${c.case_id} ${c.title}</div>`).join('')}</div>`;
+}
+
+async function generateReport() {
+  const title = document.getElementById('reportTitle').value;
+  const goal = document.getElementById('reportGoal').value;
+  const st = document.getElementById('reportResult');
+  const j = await api('/reports', 'POST', { title, goal });
+  if (j.success) {
+    st.textContent = `报告已生成: ${j.data.report_id} · 摘要: ${j.data.executive_summary}`;
+    st.className = 'status done';
+  } else { st.textContent = '生成失败'; st.className = 'status error'; }
+}
+
+// ---- Init ----
+loadTemplates(); loadHistory();
+</script>
+</body>
+</html>

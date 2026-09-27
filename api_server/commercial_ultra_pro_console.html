@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>商业产品化 Ultra Pro · Admin Center</title>
+<style>
+:root{
+  --bg:#0d1117; --card:#161b22; --inset:#010409; --border:#30363d;
+  --fg:#e6edf3; --muted:#8b949e; --faint:#6e7681;
+  --accent:#f778ba; --ok:#3fb950; --warn:#d29922; --bad:#f85149; --info:#39d2c0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);
+  font-family:"Inter","Microsoft YaHei",system-ui,sans-serif;font-size:14px}
+header{padding:18px 26px;background:linear-gradient(90deg,#f778ba33,#f778ba00);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:20px}
+header .sub{color:var(--muted);font-size:13px}
+header .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+main{padding:22px 26px;max-width:1400px;margin:0 auto}
+.grid{display:grid;gap:16px}
+.g-2{grid-template-columns:1fr 1fr}
+.g-3{grid-template-columns:repeat(3,1fr)}
+.g-4{grid-template-columns:repeat(4,1fr)}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+.panel h2{font-size:15px;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.kpi .v{font-size:26px;font-weight:800}
+.kpi .l{color:var(--muted);font-size:12px;margin-top:4px}
+.kpi.ok{border-color:var(--ok)} .kpi.bad{border-color:var(--bad)}
+button{background:var(--accent);color:#0d1117;border:none;padding:8px 14px;border-radius:8px;
+  cursor:pointer;font-weight:600;font-size:13px}
+button:hover{filter:brightness(1.1)}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--border)}
+button.ghost:hover{border-color:var(--accent);color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:600}
+.tag{font-size:11px;padding:2px 8px;border-radius:10px;display:inline-block}
+.tag.ok{background:#3fb95022;color:var(--ok)}
+.tag.bad{background:#f8514922;color:var(--bad)}
+.tag.warn{background:#d2992222;color:var(--warn)}
+.tag.info{background:#39d2c022;color:var(--info)}
+pre{background:var(--inset);border:1px solid var(--border);border-radius:8px;padding:10px;
+  font-size:12px;overflow:auto;max-height:320px;white-space:pre-wrap;word-break:break-all}
+input,select{background:var(--inset);border:1px solid var(--border);color:var(--fg);
+  padding:7px 10px;border-radius:8px;min-width:160px;font-size:13px}
+.mono{font-family:Consolas,monospace;color:var(--info)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.tabs button{background:var(--inset);color:var(--muted);border:1px solid var(--border)}
+.tabs button.active{background:var(--accent);color:#0d1117}
+@media(max-width:1100px){.g-2,.g-3,.g-4{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🏢 商业产品化 Ultra Pro 管理后台</h1>
+    <div class="sub">方向4 · 支付 · 订阅 · 客户 · SLA · 工单 · API计费 · 多租户</div>
+  </div>
+  <div class="right">
+    <button class="ghost" onclick="loadAll()">🔄 刷新</button>
+    <span class="tag info" id="healthTag">admin-center</span>
+  </div>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="active" onclick="tab(this,'tab-overview')">📊 仪表盘</button>
+    <button onclick="tab(this,'tab-pay')">💳 支付</button>
+    <button onclick="tab(this,'tab-sub')">🔁 订阅</button>
+    <button onclick="tab(this,'tab-cust')">👥 客户</button>
+    <button onclick="tab(this,'tab-sla')">📈 SLA</button>
+    <button onclick="tab(this,'tab-ticket')">🎫 工单</button>
+    <button onclick="tab(this,'tab-api')">🔑 API计费</button>
+    <button onclick="tab(this,'tab-tenant')">🏗️ 多租户</button>
+  </div>
+
+  <!-- 仪表盘 -->
+  <div id="tab-overview">
+    <div class="grid g-4" style="margin-bottom:16px" id="kpiGrid"></div>
+    <div class="grid g-2">
+      <div class="panel"><h2>💰 收入概览</h2><pre id="revPre">加载中…</pre></div>
+      <div class="panel"><h2>📊 系统状态</h2><pre id="sysPre">加载中…</pre></div>
+    </div>
+  </div>
+
+  <!-- 支付 -->
+  <div id="tab-pay" style="display:none">
+    <div class="grid g-4" style="margin-bottom:16px" id="payKpi"></div>
+    <div class="panel">
+      <h2>💳 下单 / 支付 / 回调 / 退款</h2>
+      <div class="row">
+        <input id="pay-cid" placeholder="客户ID" value="CUS-DEMO">
+        <input id="pay-subject" placeholder="商品" value="专业版年付">
+        <input id="pay-amount" type="number" value="2990" style="min-width:90px">
+        <select id="pay-channel">
+          <option value="alipay">支付宝</option><option value="wechat">微信</option>
+          <option value="stripe">Stripe</option><option value="unionpay">银联</option>
+        </select>
+        <button onclick="createOrder()">创建订单</button>
+      </div>
+      <div class="row">
+        <input id="pay-oid" placeholder="订单号" style="min-width:260px">
+        <button onclick="payOrder()">发起支付</button>
+        <button class="ghost" onclick="notifyOrder()">模拟回调(支付成功)</button>
+        <button class="ghost" onclick="refundOrder()">退款</button>
+        <button class="ghost" onclick="recon()">对账</button>
+      </div>
+      <pre id="payOut">操作结果…</pre>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h2>📋 订单列表</h2>
+      <table><thead><tr><th>订单号</th><th>客户</th><th>金额</th><th>渠道</th><th>状态</th><th>模拟</th></tr></thead>
+      <tbody id="payTbody"><tr><td colspan="6">加载中…</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <!-- 订阅 -->
+  <div id="tab-sub" style="display:none">
+    <div class="grid g-2">
+      <div class="panel">
+        <h2>🔁 订阅操作</h2>
+        <div class="row">
+          <input id="sub-cid" placeholder="客户ID" value="CUS-DEMO">
+          <select id="sub-plan"><option value="free">免费</option>
+            <option value="pro" selected>专业</option><option value="enterprise">企业</option></select>
+          <select id="sub-period"><option value="monthly">按月</option>
+            <option value="yearly">按年</option></select>
+          <button onclick="subscribe()">订阅</button>
+        </div>
+        <div class="row">
+          <button class="ghost" onclick="loadPlans()">价目表</button>
+          <button class="ghost" onclick="loadReminders()">到期提醒</button>
+          <button class="ghost" onclick="loadSubStats()">订阅统计</button>
+        </div>
+        <pre id="subOut">操作结果…</pre>
+      </div>
+      <div class="panel">
+        <h2>📜 订阅计划</h2><pre id="plansPre">加载中…</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 客户 -->
+  <div id="tab-cust" style="display:none">
+    <div class="grid g-2">
+      <div class="panel">
+        <h2>👥 新建客户</h2>
+        <div class="row"><input id="cust-name" placeholder="公司名称" value="演示科技"></div>
+        <div class="row"><input id="cust-contact" placeholder="联系人" value="张三">
+          <input id="cust-phone" placeholder="电话" value="13800000000"></div>
+        <div class="row">
+          <select id="cust-level"><option>普通</option><option>重要</option>
+            <option>战略</option><option>VIP</option></select>
+          <select id="cust-source"><option>官网</option><option>销售</option>
+            <option>推荐</option><option>活动</option></select>
+          <select id="cust-status"><option>潜在</option><option>试用</option>
+            <option>活跃</option><option>流失</option></select>
+          <button onclick="createCustomer()">创建客户</button>
+        </div>
+        <pre id="custOut">操作结果…</pre>
+      </div>
+      <div class="panel">
+        <h2>📊 客户统计</h2><pre id="custStats">加载中…</pre>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h2>📋 客户列表</h2>
+      <table><thead><tr><th>ID</th><th>名称</th><th>等级</th><th>来源</th><th>状态</th></tr></thead>
+      <tbody id="custTbody"><tr><td colspan="5">加载中…</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <!-- SLA -->
+  <div id="tab-sla" style="display:none">
+    <div class="grid g-3">
+      <div class="panel"><h2>🫀 健康检查</h2>
+        <div class="row"><input id="sla-svc" value="api" style="min-width:90px">
+          <input id="sla-lat" type="number" value="12" style="min-width:70px" title="ms">
+          <button onclick="probe(true)">正常</button>
+          <button class="ghost" onclick="probe(false)">故障</button></div>
+        <pre id="slaProbe">—</pre></div>
+      <div class="panel"><h2>📈 可用性</h2><pre id="slaAvail">加载中…</pre></div>
+      <div class="panel"><h2>⏱️ 响应时间</h2><pre id="slaRt">加载中…</pre></div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h2>🚨 故障 / 告警 / 自动恢复</h2>
+      <div class="row">
+        <button onclick="loadIncidents()">故障列表</button>
+        <button class="ghost" onclick="loadAlerts()">告警列表</button>
+        <button class="ghost" onclick="autoRecover()">自动恢复(重启)</button>
+        <button class="ghost" onclick="slaReport()">SLA月度报告</button>
+      </div>
+      <pre id="slaOut">操作结果…</pre>
+    </div>
+  </div>
+
+  <!-- 工单 -->
+  <div id="tab-ticket" style="display:none">
+    <div class="grid g-2">
+      <div class="panel">
+        <h2>🎫 新建工单</h2>
+        <div class="row"><input id="tk-cid" placeholder="客户ID" value="CUS-DEMO">
+          <input id="tk-title" placeholder="标题" value="扫描失败"></div>
+        <div class="row">
+          <select id="tk-type"><option>技术支持</option><option>功能咨询</option>
+            <option>故障报告</option><option>投诉建议</option></select>
+          <select id="tk-pri"><option>低</option><option selected>中</option>
+            <option>高</option><option>紧急</option></select>
+          <button onclick="createTicket()">提交</button>
+        </div>
+        <pre id="tkOut">操作结果…</pre>
+      </div>
+      <div class="panel">
+        <h2>📊 工单统计</h2><pre id="tkStats">加载中…</pre>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h2>📋 工单列表</h2>
+      <table><thead><tr><th>工单号</th><th>标题</th><th>类型</th><th>优先级</th><th>状态</th><th>处理人</th></tr></thead>
+      <tbody id="tkTbody"><tr><td colspan="6">加载中…</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <!-- API计费 -->
+  <div id="tab-api" style="display:none">
+    <div class="grid g-2">
+      <div class="panel">
+        <h2>🔑 创建 API 密钥</h2>
+        <div class="row"><input id="ak-cid" placeholder="客户ID" value="CUS-DEMO">
+          <input id="ak-name" placeholder="密钥名" value="生产密钥"></div>
+        <div class="row">
+          <select id="ak-perm"><option value="read">只读</option>
+            <option value="write">读写</option><option value="admin">管理</option></select>
+          <button onclick="createKey()">创建密钥</button>
+        </div>
+        <pre id="akOut">操作结果…</pre>
+      </div>
+      <div class="panel">
+        <h2>📊 API 调用统计</h2><pre id="akStats">加载中…</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 多租户 -->
+  <div id="tab-tenant" style="display:none">
+    <div class="grid g-2">
+      <div class="panel">
+        <h2>🏗️ 创建租户</h2>
+        <div class="row"><input id="tn-name" placeholder="租户名称" value="演示企业"></div>
+        <div class="row">
+          <select id="tn-type"><option>个人</option><option selected>企业</option>
+            <option>试用</option><option>付费</option></select>
+          <button onclick="createTenant()">创建租户</button>
+        </div>
+        <pre id="tnOut">操作结果…</pre>
+      </div>
+      <div class="panel">
+        <h2>📊 租户统计</h2><pre id="tnStats">加载中…</pre>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const BASE = "/api/v1/commercial-ultra-pro";
+async function api(method, path, body){
+  const opt = {method, headers:{"Content-Type":"application/json"}};
+  if(body) opt.body = JSON.stringify(body);
+  const r = await fetch(BASE + path, opt);
+  const j = await r.json();
+  return j;
+}
+function show(id, obj){
+  document.getElementById(id).textContent = JSON.stringify(obj, null, 2);
+}
+function tab(btn, id){
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['tab-overview','tab-pay','tab-sub','tab-cust','tab-sla','tab-ticket','tab-api','tab-tenant']
+    .forEach(t=>document.getElementById(t).style.display = t===id?'':'none');
+}
+async function loadAll(){
+  const o = await api('GET','/dashboard/overview');
+  const d = o.data||{};
+  const kpi = [
+    ['收入(元)', d.revenue?.total, 'ok'],
+    ['客户数', d.customers?.customers, ''],
+    ['活跃订阅', d.subscriptions?.active, ''],
+    ['待处理工单', d.tickets?.open, 'warn'],
+    ['SLA未确认告警', d.sla?.alerts_unacked, d.sla?.alerts_unacked?'bad':'ok'],
+    ['活跃租户', d.tenants?.active_tenants, ''],
+  ];
+  document.getElementById('kpiGrid').innerHTML = kpi.map(([l,v,c])=>
+    `<div class="kpi ${c}"><div class="v">${v??'--'}</div><div class="l">${l}</div></div>`).join('');
+  show('revPre', d.revenue);
+  const h = await api('GET','/dashboard/system-health');
+  show('sysPre', h.data);
+  loadPay(); loadPlans(); loadCust(); loadSLA(); loadTicket(); loadAPI(); loadTenant();
+}
+async function loadPay(){
+  const s = await api('GET','/pay/stats');
+  const d = s.data||{};
+  document.getElementById('payKpi').innerHTML = [
+    ['订单数', d.total_orders,''],['支付成功', d.paid_orders,'ok'],
+    ['支付金额(元)', d.total_amount,'ok'],['成功率%', d.success_rate,''],
+  ].map(([l,v,c])=>`<div class="kpi ${c}"><div class="v">${v??'--'}</div><div class="l">${l}</div></div>`).join('');
+  const ls = await api('GET','/pay/orders');
+  document.getElementById('payTbody').innerHTML = (ls.data?.items||[]).map(o=>
+    `<tr><td class="mono">${o.order_id}</td><td>${o.customer_id}</td><td>${o.amount}</td>
+     <td>${o.channel_label}</td><td><span class="tag ${o.status==='paid'?'ok':'warn'}">${o.status}</span></td>
+     <td>${o.is_mock?'<span class="tag warn">模拟</span>':'<span class="tag info">真实</span>'}</td></tr>`).join('')
+    || '<tr><td colspan="6">暂无</td></tr>';
+}
+async function createOrder(){
+  const r = await api('POST','/pay/orders',{
+    customer_id:document.getElementById('pay-cid').value,
+    subject:document.getElementById('pay-subject').value,
+    amount:parseFloat(document.getElementById('pay-amount').value),
+    channel:document.getElementById('pay-channel').value});
+  show('payOut', r);
+  if(r.data) document.getElementById('pay-oid').value = r.data.order_id;
+  loadPay();
+}
+async function payOrder(){
+  const id = document.getElementById('pay-oid').value;
+  show('payOut', await api('POST',`/pay/orders/${id}/pay`));
+}
+async function notifyOrder(){
+  const id = document.getElementById('pay-oid').value;
+  show('payOut', await api('POST',`/pay/orders/${id}/notify`,{trade_status:"TRADE_SUCCESS"}));
+  loadPay();
+}
+async function refundOrder(){
+  const id = document.getElementById('pay-oid').value;
+  show('payOut', await api('POST',`/pay/orders/${id}/refund`,{}));
+  loadPay();
+}
+async function recon(){ show('payOut', await api('GET','/pay/reconciliation')); }
+
+async function loadPlans(){
+  const p = await api('GET','/sub/plans');
+  show('plansPre', p.data);
+}
+async function subscribe(){
+  const r = await api('POST','/sub/subscribe',{
+    customer_id:document.getElementById('sub-cid').value,
+    plan:document.getElementById('sub-plan').value,
+    period:document.getElementById('sub-period').value});
+  show('subOut', r);
+}
+async function loadReminders(){ show('subOut', await api('GET','/sub/reminders')); }
+async function loadSubStats(){ show('subOut', await api('GET','/sub/stats')); }
+
+async function loadCust(){
+  const s = await api('GET','/cust/stats'); show('custStats', s.data);
+  const ls = await api('GET','/cust/customers');
+  document.getElementById('custTbody').innerHTML = (ls.data?.items||[]).map(c=>
+    `<tr><td class="mono">${c.customer_id}</td><td>${c.name}</td><td>${c.level}</td>
+     <td>${c.source}</td><td>${c.status}</td></tr>`).join('') || '<tr><td colspan="5">暂无</td></tr>';
+}
+async function createCustomer(){
+  const r = await api('POST','/cust/customers',{
+    name:document.getElementById('cust-name').value,
+    contact:document.getElementById('cust-contact').value,
+    phone:document.getElementById('cust-phone').value,
+    level:document.getElementById('cust-level').value,
+    source:document.getElementById('cust-source').value,
+    status:document.getElementById('cust-status').value});
+  show('custOut', r); loadCust();
+}
+
+async function loadSLA(){
+  show('slaAvail', (await api('GET','/sla/availability')).data);
+  show('slaRt', (await api('GET','/sla/response-time')).data);
+}
+async function probe(ok){
+  const r = await api('POST','/sla/probe',{
+    service:document.getElementById('sla-svc').value, ok,
+    latency_ms:parseFloat(document.getElementById('sla-lat').value)});
+  show('slaProbe', r); loadSLA();
+}
+async function loadIncidents(){ show('slaOut', (await api('GET','/sla/incidents')).data); }
+async function loadAlerts(){ show('slaOut', (await api('GET','/sla/alerts')).data); }
+async function autoRecover(){
+  show('slaOut', await api('POST','/sla/auto-recover',{service:"api",action:"restart"}));
+  loadSLA();
+}
+async function slaReport(){ show('slaOut', await api('GET','/sla/report')); }
+
+async function loadTicket(){
+  show('tkStats', (await api('GET','/ticket/stats')).data);
+  const ls = await api('GET','/ticket/tickets');
+  document.getElementById('tkTbody').innerHTML = (ls.data?.items||[]).map(t=>
+    `<tr><td class="mono">${t.ticket_id}</td><td>${t.title}</td><td>${t.type}</td>
+     <td>${t.priority}</td><td>${t.status}</td><td>${t.assignee||'-'}</td></tr>`).join('')
+    || '<tr><td colspan="6">暂无</td></tr>';
+}
+async function createTicket(){
+  const r = await api('POST','/ticket/tickets',{
+    customer_id:document.getElementById('tk-cid').value,
+    title:document.getElementById('tk-title').value,
+    ttype:document.getElementById('tk-type').value,
+    priority:document.getElementById('tk-pri').value});
+  show('tkOut', r); loadTicket();
+}
+
+async function loadAPI(){
+  show('akStats', (await api('GET','/apibilling/stats')).data);
+}
+async function createKey(){
+  const r = await api('POST','/apibilling/keys',{
+    customer_id:document.getElementById('ak-cid').value,
+    name:document.getElementById('ak-name').value,
+    permission:document.getElementById('ak-perm').value});
+  show('akOut', r); loadAPI();
+}
+
+async function loadTenant(){
+  show('tnStats', (await api('GET','/tenant/stats')).data);
+}
+async function createTenant(){
+  const r = await api('POST','/tenant/tenants',{
+    name:document.getElementById('tn-name').value,
+    ttype:document.getElementById('tn-type').value});
+  show('tnOut', r); loadTenant();
+}
+loadAll();
+</script>
+</body>
+</html>

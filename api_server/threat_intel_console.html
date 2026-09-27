@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>威胁情报与攻击面管理控制台</title>
+<style>
+:root{
+  --bg:#0d1117; --bg2:#161b22; --bg3:#1f2630; --border:#2d333b;
+  --txt:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950;
+  --red:#f85149; --orange:#d29922; --purple:#bc8cff; --cyan:#39d2c0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.5}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);padding:16px 0;position:fixed;top:0;bottom:0;overflow-y:auto}
+.sidebar h1{font-size:15px;padding:0 18px 14px;color:var(--accent);border-bottom:1px solid var(--border);margin-bottom:8px}
+.nav-item{display:block;padding:10px 18px;cursor:pointer;color:var(--muted);border-left:3px solid transparent}
+.nav-item:hover{background:var(--bg3);color:var(--txt)}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3)}
+.main{margin-left:220px;flex:1;padding:22px;max-width:calc(100vw - 220px)}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.topbar h2{font-size:20px}
+.btn{background:var(--bg3);color:var(--txt);border:1px solid var(--border);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:var(--accent);color:#0d1117;border:none;font-weight:600}
+.btn-danger{background:var(--red);color:#fff;border:none}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px}
+.card .num{font-size:26px;font-weight:700;margin:6px 0}
+.card .label{color:var(--muted);font-size:12px}
+.card.c-red .num{color:var(--red)} .card.c-orange .num{color:var(--orange)}
+.card.c-green .num{color:var(--green)} .card.c-blue .num{color:var(--accent)}
+.card.c-purple .num{color:var(--purple)}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:18px}
+.panel h3{font-size:15px;margin-bottom:12px;color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:600;background:var(--bg3)}
+tr:hover td{background:var(--bg3)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.b-critical{background:rgba(248,81,73,.18);color:var(--red)}
+.b-high{background:rgba(210,153,34,.18);color:var(--orange)}
+.b-medium{background:rgba(88,166,255,.18);color:var(--accent)}
+.b-low{background:rgba(63,185,80,.18);color:var(--green)}
+.b-info{background:rgba(139,148,158,.18);color:var(--muted)}
+input,select,textarea{background:var(--bg);border:1px solid var(--border);color:var(--txt);padding:7px 10px;border-radius:6px;font-size:13px;width:100%}
+textarea{min-height:70px;font-family:monospace}
+.form-row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.form-row>div{flex:1;min-width:140px}
+.form-row label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.tag{display:inline-block;background:var(--bg3);color:var(--muted);padding:1px 7px;border-radius:4px;font-size:11px;margin:1px}
+.bar{height:10px;background:var(--bg3);border-radius:5px;overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--purple))}
+.alert{padding:10px 12px;border-radius:6px;margin-bottom:8px;border-left:3px solid}
+.alert.critical{border-color:var(--red);background:rgba(248,81,73,.1)}
+.alert.high{border-color:var(--orange);background:rgba(210,153,34,.1)}
+.alert.medium{border-color:var(--accent);background:rgba(88,166,255,.1)}
+.muted{color:var(--muted);font-size:12px}
+.mono{font-family:Consolas,monospace;font-size:12px}
+.section{display:none} .section.active{display:block}
+.toast{position:fixed;top:18px;right:18px;background:var(--bg3);border:1px solid var(--accent);padding:10px 16px;border-radius:8px;z-index:99;display:none}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.split{grid-template-columns:1fr}.sidebar{width:60px}.sidebar h1,.nav-item{font-size:0}.sidebar h1{padding:0}.main{margin-left:60px;max-width:calc(100vw - 60px)}}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="layout">
+  <aside class="sidebar">
+    <h1>🛡 威胁情报中心</h1>
+    <div class="nav-item active" data-sec="overview">📊 情报总览</div>
+    <div class="nav-item" data-sec="sources">📡 情报源</div>
+    <div class="nav-item" data-sec="ioc">🎯 IOC管理</div>
+    <div class="nav-item" data-sec="surface">🌐 攻击面</div>
+    <div class="nav-item" data-sec="vuln">🐛 漏洞情报</div>
+    <div class="nav-item" data-sec="actor">👤 威胁Actor</div>
+    <div class="nav-item" data-sec="alert">🔔 告警中心</div>
+    <div class="nav-item" data-sec="hunt">🔍 威胁狩猎</div>
+    <div class="nav-item" data-sec="settings">⚙️ 系统设置</div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <h2 id="title">情报总览</h2>
+      <div>
+        <button class="btn" onclick="loadAll()">刷新</button>
+        <button class="btn btn-primary" onclick="evaluateAlerts()">评估告警</button>
+      </div>
+    </div>
+
+    <!-- 总览 -->
+    <div class="section active" id="sec-overview">
+      <div class="cards" id="ov-cards"></div>
+      <div class="split">
+        <div class="panel"><h3>近7日趋势</h3><div id="ov-trend"></div></div>
+        <div class="panel"><h3>严重程度分布</h3><div id="ov-sev"></div></div>
+      </div>
+    </div>
+
+    <!-- 情报源 -->
+    <div class="section" id="sec-sources">
+      <div class="panel">
+        <h3>情报源列表</h3>
+        <table id="src-table"><thead><tr><th>名称</th><th>类别</th><th>类型</th><th>可信度</th><th>状态</th><th>操作</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="panel">
+        <h3>摄入情报（文本提取IOC）</h3>
+        <textarea id="ingest-text" placeholder="粘贴任意文本，自动提取IP/域名/URL/哈希/邮箱/CVE..."></textarea>
+        <div style="margin-top:8px"><button class="btn btn-primary" onclick="ingestText()">智能提取并摄入</button></div>
+        <div id="ingest-result" class="muted" style="margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- IOC -->
+    <div class="section" id="sec-ioc">
+      <div class="panel">
+        <h3>新增IOC</h3>
+        <div class="form-row">
+          <div><label>IOC值</label><input id="ioc-value" placeholder="如 1.2.3.4 / example.com"></div>
+          <div><label>严重程度</label><select id="ioc-sev"><option>medium</option><option>high</option><option>critical</option><option>low</option></select></div>
+          <div><label>关联Actor</label><input id="ioc-actor" placeholder="如 Emotet"></div>
+        </div>
+        <button class="btn btn-primary" onclick="addIoc()">添加IOC</button>
+        <button class="btn" onclick="validateIoc()">校验解析</button>
+        <span id="ioc-val-result" class="muted"></span>
+      </div>
+      <div class="panel">
+        <h3>IOC列表</h3>
+        <table id="ioc-table"><thead><tr><th>值</th><th>类型</th><th>级别</th><th>Actor</th><th>状态</th><th>命中</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="panel">
+        <h3>导出IOC规则</h3>
+        <button class="btn" onclick="exportIoc('suricata')">Suricata</button>
+        <button class="btn" onclick="exportIoc('snort')">Snort</button>
+        <button class="btn" onclick="exportIoc('yara')">YARA</button>
+        <button class="btn" onclick="exportIoc('stix')">STIX</button>
+        <button class="btn" onclick="exportIoc('csv')">CSV</button>
+        <pre id="export-out" class="mono" style="background:var(--bg);padding:10px;border-radius:6px;margin-top:10px;max-height:240px;overflow:auto"></pre>
+      </div>
+    </div>
+
+    <!-- 攻击面 -->
+    <div class="section" id="sec-surface">
+      <div class="cards" id="sf-cards"></div>
+      <div class="panel">
+        <h3>资产画像与风险</h3>
+        <table id="sf-table"><thead><tr><th>资产</th><th>类型</th><th>地址</th><th>端口</th><th>风险分</th><th>风险标签</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="panel">
+        <h3>子域名发现</h3>
+        <div class="form-row">
+          <div><label>目标域名</label><input id="disc-domain" placeholder="example.com"></div>
+          <div><label>操作</label><button class="btn btn-primary" onclick="discoverSub()">枚举子域名</button></div>
+        </div>
+        <div id="disc-result" class="muted"></div>
+      </div>
+    </div>
+
+    <!-- 漏洞 -->
+    <div class="section" id="sec-vuln">
+      <div class="panel">
+        <h3>漏洞情报库</h3>
+        <table id="vuln-table"><thead><tr><th>CVE</th><th>标题</th><th>CVSS</th><th>级别</th><th>在野利用</th><th>补丁</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="panel"><h3>漏洞趋势</h3><div id="vuln-trend"></div></div>
+    </div>
+
+    <!-- Actor -->
+    <div class="section" id="sec-actor">
+      <div class="panel">
+        <h3>威胁Actor画像</h3>
+        <table id="actor-table"><thead><tr><th>名称</th><th>别名</th><th>动机</th><th>目标行业</th><th>级别</th><th>工具</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="panel">
+        <h3>攻击模拟</h3>
+        <div class="form-row">
+          <div><label>选择Actor</label><select id="sim-actor"></select></div>
+          <div><label>目标画像</label><input id="sim-target" value="制造业"></div>
+          <div><label>&nbsp;</label><button class="btn btn-primary" onclick="runSim()">运行模拟</button></div>
+        </div>
+        <pre id="sim-out" class="mono" style="background:var(--bg);padding:10px;border-radius:6px"></pre>
+      </div>
+    </div>
+
+    <!-- 告警 -->
+    <div class="section" id="sec-alert">
+      <div class="cards" id="alt-cards"></div>
+      <div class="panel"><h3>告警列表</h3><div id="alt-list"></div></div>
+    </div>
+
+    <!-- 狩猎 -->
+    <div class="section" id="sec-hunt">
+      <div class="panel">
+        <h3>狩猎模板</h3><div id="hunt-tpl"></div>
+      </div>
+      <div class="panel">
+        <h3>执行狩猎</h3>
+        <div class="form-row">
+          <div><label>模式</label><select id="hunt-mode"><option value="ttp">TTP驱动</option><option value="ioc">IOC驱动</option><option value="hypothesis">假设驱动</option></select></div>
+          <div><label>查询</label><input id="hunt-q" placeholder="关键词/技术ID"></div>
+          <div><label>&nbsp;</label><button class="btn btn-primary" onclick="runHunt()">开始狩猎</button></div>
+        </div>
+        <pre id="hunt-out" class="mono" style="background:var(--bg);padding:10px;border-radius:6px"></pre>
+      </div>
+    </div>
+
+    <!-- 设置 -->
+    <div class="section" id="sec-settings">
+      <div class="panel">
+        <h3>全局设置</h3>
+        <div id="settings-box"></div>
+        <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:10px">保存设置</button>
+      </div>
+      <div class="panel">
+        <h3>告警规则</h3>
+        <table id="rule-table"><thead><tr><th>规则</th><th>条件</th><th>级别</th><th>通知</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const API = "/api/v1/threat-intel";
+async function api(path, opts={}){
+  try{
+    const r = await fetch(API+path, Object.assign({headers:{"Content-Type":"application/json"}}, opts));
+    const j = await r.json();
+    if(!j.success){ toast("错误: "+j.error); }
+    return j;
+  }catch(e){ toast("网络错误: "+e.message); return {success:false,error:e.message,data:null}; }
+}
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none",2600); }
+function badge(sev){ const m={critical:"c-critical",high:"b-high",medium:"b-medium",low:"b-low",info:"b-info"}; return `<span class="badge ${m[sev]||'b-info'}">${sev||'-'}</span>`; }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+// 导航
+document.querySelectorAll(".nav-item").forEach(n=>n.onclick=()=>{
+  document.querySelectorAll(".nav-item").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
+  n.classList.add("active");
+  document.getElementById("sec-"+n.dataset.sec).classList.add("active");
+  document.getElementById("title").textContent=n.textContent.trim();
+});
+
+async function loadAll(){
+  loadOverview(); loadSources(); loadIocs(); loadSurface();
+  loadVulns(); loadActors(); loadAlerts(); loadHunt(); loadSettings();
+}
+
+async function loadOverview(){
+  const j = await api("/dashboard/overview");
+  if(!j.data) return;
+  const c=j.data.cards;
+  document.getElementById("ov-cards").innerHTML=`
+    <div class="card c-blue"><div class="label">情报源</div><div class="num">${c.sources}</div></div>
+    <div class="card"><div class="label">IOC指标</div><div class="num">${c.iocs}</div></div>
+    <div class="card c-purple"><div class="label">漏洞情报</div><div class="num">${c.vulns}</div></div>
+    <div class="card"><div class="label">威胁Actor</div><div class="num">${c.actors}</div></div>
+    <div class="card c-red"><div class="label">活跃告警</div><div class="num">${c.alerts}</div></div>
+    <div class="card c-orange"><div class="label">攻击命中</div><div class="num">${c.matches}</div></div>
+    <div class="card c-green"><div class="label">纳管资产</div><div class="num">${c.assets}</div></div>
+    <div class="card c-red"><div class="label">高暴露资产</div><div class="num">${c.high_exposed}</div></div>`;
+  const maxT=Math.max(...j.data.trend.map(t=>t.iocs),1);
+  document.getElementById("ov-trend").innerHTML=j.data.trend.map(t=>
+    `<div style="margin-bottom:6px"><span class="muted">${t.day}</span> <div class="bar" style="display:inline-block;width:70%;vertical-align:middle"><i style="width:${t.iocs/maxT*100}%"></i></div> <span class="muted">${t.iocs}</span></div>`).join("");
+  const sd=j.data.severity_dist;
+  document.getElementById("ov-sev").innerHTML=Object.entries(sd).map(([k,v])=>
+    `<div style="margin-bottom:6px">${badge(k)} <span class="muted">${v}</span></div>`).join("");
+}
+
+async function loadSources(){
+  const j = await api("/intel-sources/list");
+  const tb=document.querySelector("#src-table tbody"); tb.innerHTML="";
+  (j.data||[]).forEach(s=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${esc(s.name)}</td><td>${esc(s.category)}</td><td>${esc(s.type)}</td>
+      <td>${s.credibility}</td><td><span class="badge ${s.enabled?'b-low':'b-medium'}">${s.enabled?'启用':'停用'}</span></td>
+      <td><button class="btn" onclick="pullSource('${s.id}')">拉取</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+async function pullSource(id){ const j=await api("/intel-sources/"+id+"/pull",{method:"POST"}); if(j.success) toast("已拉取，新增"+j.data.added+"条"); }
+async function ingestText(){
+  const text=document.getElementById("ingest-text").value;
+  const j=await api("/intel-sources/ingest-text",{method:"POST",body:JSON.stringify({text})});
+  document.getElementById("ingest-result").textContent="提取到 "+(j.data?.extracted?.length||0)+" 条IOC";
+  loadIocs();
+}
+
+async function loadIocs(){
+  const j=await api("/iocs/list");
+  const tb=document.querySelector("#ioc-table tbody"); tb.innerHTML="";
+  (j.data||[]).forEach(i=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td class="mono">${esc(i.value)}</td><td>${esc(i.type)}</td><td>${badge(i.severity)}</td>
+      <td>${esc(i.actor)}</td><td><span class="badge b-info">${esc(i.status)}</span></td><td>${i.hit_count}</td>`;
+    tb.appendChild(tr);
+  });
+}
+async function addIoc(){
+  const v=document.getElementById("ioc-value").value;
+  if(!v) return toast("请输入IOC值");
+  await api("/iocs",{method:"POST",body:JSON.stringify({value:v,severity:document.getElementById("ioc-sev").value,actor:document.getElementById("ioc-actor").value})});
+  toast("IOC已添加"); loadIocs();
+}
+async function validateIoc(){
+  const v=document.getElementById("ioc-value").value;
+  const j=await api("/iocs/validate",{method:"POST",body:JSON.stringify({ioc:v})});
+  document.getElementById("ioc-val-result").textContent=j.data?`识别类型:${j.data.detected_type} 有效:${j.data.valid}`:"";
+}
+async function exportIoc(fmt){
+  const j=await api("/iocs/export/"+fmt);
+  document.getElementById("export-out").textContent=j.data||"(空)";
+}
+
+async function loadSurface(){
+  const j=await api("/attack-surface/analyze");
+  const d=j.data||{};
+  document.getElementById("sf-cards").innerHTML=`
+    <div class="card"><div class="label">总资产</div><div class="num">${d.total_assets}</div></div>
+    <div class="card c-red"><div class="label">高暴露</div><div class="num">${d.high_exposed}</div></div>
+    <div class="card c-blue"><div class="label">平均风险分</div><div class="num">${d.avg_risk}</div></div>
+    <div class="card c-orange"><div class="label">最弱环节</div><div class="num" style="font-size:14px">${esc(d.weakest_link||'-')}</div></div>`;
+  const list=await api("/assets/list");
+  const tb=document.querySelector("#sf-table tbody"); tb.innerHTML="";
+  (list.data||[]).forEach(a=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${esc(a.name)}</td><td>${esc(a.type)}</td><td class="mono">${esc(a.value)}</td>
+      <td>${(a.ports||[]).join(", ")}</td><td>${a.risk_score}</td>
+      <td>${(a.risk_tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</td>`;
+    tb.appendChild(tr);
+  });
+}
+async function discoverSub(){
+  const d=document.getElementById("disc-domain").value;
+  if(!d) return toast("请输入域名");
+  const j=await api("/assets/discover/subdomains",{method:"POST",body:JSON.stringify({text:d})});
+  document.getElementById("disc-result").textContent="发现 "+(j.data?.assets?.length||0)+" 个子域名资产";
+  loadSurface();
+}
+
+async function loadVulns(){
+  const j=await api("/vulns/list");
+  const tb=document.querySelector("#vuln-table tbody"); tb.innerHTML="";
+  (j.data||[]).forEach(v=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td class="mono">${esc(v.cve)}</td><td>${esc(v.title)}</td><td>${v.cvss}</td>
+      <td>${badge(v.severity)}</td><td>${v.in_the_wild?'<span class="badge b-critical">在野</span>':'否'}</td>
+      <td class="muted">${esc(v.patch)}</td>`;
+    tb.appendChild(tr);
+  });
+  const t=await api("/vulns/trends");
+  if(t.data){ document.getElementById("vuln-trend").innerHTML=Object.entries(t.data.severity_dist).map(([k,v])=>`<div>${badge(k)}: ${v}</div>`).join("") + `<div class="muted" style="margin-top:8px">在野利用 ${t.data.in_the_wild} / 可利用 ${t.data.exploit_available}</div>`; }
+}
+
+async function loadActors(){
+  const j=await api("/actors/list");
+  const tb=document.querySelector("#actor-table tbody"); tb.innerHTML="";
+  const sel=document.getElementById("sim-actor"); sel.innerHTML="";
+  (j.data||[]).forEach(a=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${esc(a.name)}</td><td class="muted">${(a.aliases||[]).join(", ")}</td>
+      <td>${esc(a.motivation)}</td><td>${(a.target_industries||[]).join("/")}</td>
+      <td>${badge(a.severity)}</td><td class="muted">${(a.tools||[]).join(", ")}</td>`;
+    tb.appendChild(tr);
+    const o=document.createElement("option"); o.value=a.id; o.textContent=a.name; sel.appendChild(o);
+  });
+}
+async function runSim(){
+  const j=await api("/simulate",{method:"POST",body:JSON.stringify({actor_id:document.getElementById("sim-actor").value,target_profile:document.getElementById("sim-target").value})});
+  document.getElementById("sim-out").textContent=JSON.stringify(j.data,null,2);
+}
+
+async function loadAlerts(){
+  const s=await api("/alerts/stats");
+  if(s.data){ document.getElementById("alt-cards").innerHTML=`
+    <div class="card c-red"><div class="label">总告警</div><div class="num">${s.data.total}</div></div>
+    <div class="card c-red"><div class="label">危急</div><div class="num">${s.data.by_level.critical||0}</div></div>
+    <div class="card c-orange"><div class="label">高</div><div class="num">${s.data.by_level.high||0}</div></div>
+    <div class="card c-blue"><div class="label">待处理</div><div class="num">${s.data.by_status.open||0}</div></div>`; }
+  const j=await api("/alerts/list");
+  const box=document.getElementById("alt-list"); box.innerHTML="";
+  (j.data||[]).forEach(a=>{
+    const div=document.createElement("div");
+    div.className="alert "+(a.level||"medium");
+    div.innerHTML=`<b>[${a.level}] ${esc(a.message)}</b><br><span class="muted">${a.time} · ${a.type} · ${a.status}</span>
+      ${a.status==='open'?` <button class="btn" onclick="handleAlert('${a.id}')">处理</button>`:""}`;
+    box.appendChild(div);
+  });
+}
+async function evaluateAlerts(){ const j=await api("/alerts/evaluate",{method:"POST"}); toast("新增告警 "+(j.data?.new_alerts?.length||0)); loadAlerts(); }
+async function handleAlert(id){ await api("/alerts/"+id+"/handle",{method:"POST"}); loadAlerts(); }
+
+async function loadHunt(){
+  const t=await api("/hunt/templates");
+  document.getElementById("hunt-tpl").innerHTML=(t.data||[]).map(x=>`<div class="tag" style="cursor:pointer" onclick="useTpl('${x.id}')">${x.name}</div>`).join(" ");
+}
+function useTpl(id){ document.getElementById("hunt-q").value=id; }
+async function runHunt(){
+  const j=await api("/hunt/run",{method:"POST",body:JSON.stringify({mode:document.getElementById("hunt-mode").value,query:document.getElementById("hunt-q").value})});
+  document.getElementById("hunt-out").textContent=JSON.stringify(j.data,null,2);
+}
+
+async function loadSettings(){
+  const j=await api("/settings");
+  const s=j.data?.settings||{};
+  document.getElementById("settings-box").innerHTML=Object.entries(s).map(([k,v])=>
+    `<div class="form-row"><div><label>${k}</label><input id="set-${k}" value="${typeof v==='object'?JSON.stringify(v):v}"></div></div>`).join("");
+  const r=await api("/settings");
+  const tb=document.querySelector("#rule-table tbody"); tb.innerHTML="";
+  (j.data?.rules||[]).forEach(rule=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${esc(rule.name)}</td><td class="muted">${esc(rule.condition)}</td><td>${badge(rule.level)}</td><td>${(rule.notify||[]).join(",")}</td>`;
+    tb.appendChild(tr);
+  });
+}
+async function saveSettings(){
+  const patch={};
+  document.querySelectorAll("#settings-box input").forEach(inp=>{
+    const k=inp.id.replace("set-",""); let v=inp.value;
+    if(v==="true")v=true; else if(v==="false")v=false; else if(!isNaN(v)&&v!=="")v=Number(v);
+    patch[k]=v;
+  });
+  await api("/settings",{method:"POST",body:JSON.stringify({patch})}); toast("设置已保存");
+}
+
+loadAll();
+</script>
+</body>
+</html>

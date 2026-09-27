@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>审计日志控制台 - AI Hacking Agent</title>
+<link rel="stylesheet" href="/static/css/responsive.css">
+<script src="/static/js/i18n.js"></script>
+<style>
+  :root{
+    --bg:#0d1117; --card:#161b22; --border:#30363d; --fg:#c9d1d9;
+    --muted:#8b949e; --primary:#58a6ff; --green:#3fb950; --red:#f85149;
+    --yellow:#d29922; --purple:#bc8cff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--fg);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.5}
+  .wrap{max-width:1400px;margin:0 auto;padding:16px}
+  h1{font-size:20px;color:#fff;margin-bottom:4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+  .tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px}
+  .tab{padding:10px 16px;cursor:pointer;color:var(--muted);border:1px solid transparent;border-bottom:none;border-radius:6px 6px 0 0}
+  .tab.active{color:var(--primary);background:var(--card);border-color:var(--border)}
+  .pane{display:none}.pane.active{display:block}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px}
+  .card .num{font-size:26px;font-weight:700;color:#fff}
+  .card .lbl{color:var(--muted);font-size:12px;margin-top:4px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:600;background:#1c2129;position:sticky;top:0}
+  tr:hover td{background:#1c2129}
+  .filter{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+  input,select,button{background:#0d1117;color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px}
+  input:focus,select:focus{outline:none;border-color:var(--primary)}
+  button{cursor:pointer;background:#21262d}
+  button.primary{background:var(--primary);color:#0d1117;border-color:var(--primary);font-weight:600}
+  button.danger{background:var(--red);color:#fff;border-color:var(--red)}
+  button:hover{filter:brightness(1.15)}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+  .b-success{background:rgba(63,185,80,.15);color:var(--green)}
+  .b-failure,.b-critical{background:rgba(248,81,73,.15);color:var(--red)}
+  .b-warning{background:rgba(210,153,34,.15);color:var(--yellow)}
+  .b-info{background:rgba(88,166,255,.15);color:var(--primary)}
+  .b-high{background:rgba(188,140,255,.15);color:var(--purple)}
+  .scroll{max-height:560px;overflow:auto;border:1px solid var(--border);border-radius:8px}
+  .bar{height:10px;background:var(--primary);border-radius:4px}
+  .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .bar-row .name{width:140px;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar-row .val{font-size:12px;width:60px;text-align:right}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:99}
+  .modal.show{display:flex}
+  .modal-box{background:var(--card);border:1px solid var(--border);border-radius:10px;max-width:800px;width:92%;max-height:85vh;overflow:auto;padding:20px}
+  .kv{display:grid;grid-template-columns:140px 1fr;gap:6px;font-size:13px;margin-bottom:12px}
+  .kv .k{color:var(--muted)}
+  pre{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:10px;overflow:auto;font-size:12px;white-space:pre-wrap}
+  .diff{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:700px){.diff{grid-template-columns:1fr}}
+  .diff h4{margin-bottom:6px;font-size:13px}
+  .pager{display:flex;gap:8px;align-items:center;margin-top:10px;justify-content:flex-end}
+  .muted{color:var(--muted)}
+  .ok{color:var(--green)}.bad{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🛡️ 审计日志控制台</h1>
+  <div class="sub">操作审计 · 登录日志 · API 调用 · 数据访问 · 哈希链完整性校验</div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-pane="overview">审计总览</div>
+    <div class="tab" data-pane="operations">操作日志</div>
+    <div class="tab" data-pane="logins">登录日志</div>
+    <div class="tab" data-pane="api">API 日志</div>
+    <div class="tab" data-pane="data">数据访问</div>
+    <div class="tab" data-pane="manage">日志管理</div>
+  </div>
+
+  <!-- 总览 -->
+  <div class="pane active" id="pane-overview">
+    <div class="cards" id="ovCards"></div>
+    <div class="grid2">
+      <div class="card"><h3 style="margin-bottom:10px">操作类型分布</h3><div id="ovOpChart"></div></div>
+      <div class="card"><h3 style="margin-bottom:10px">登录趋势（近30天）</h3><div id="ovLoginChart"></div></div>
+    </div>
+  </div>
+
+  <!-- 操作日志 -->
+  <div class="pane" id="pane-operations">
+    <div class="filter">
+      <input id="opKw" placeholder="关键词搜索...">
+      <select id="opType"><option value="">全部类型</option>
+        <option>create</option><option>read</option><option>update</option><option>delete</option>
+        <option>execute</option><option>export</option><option>import</option>
+        <option>login</option><option>logout</option><option>config_change</option></select>
+      <input id="opOperator" placeholder="操作人">
+      <select id="opResult"><option value="">全部结果</option><option value="success">成功</option><option value="failure">失败</option></select>
+      <button class="primary" onclick="loadOperations(1)">查询</button>
+      <button onclick="exportOps()">导出CSV</button>
+      <button onclick="verifyChain()">校验哈希链</button>
+    </div>
+    <div class="scroll"><table><thead><tr>
+      <th>时间</th><th>操作人</th><th>类型</th><th>对象</th><th>结果</th><th>IP</th><th>详情</th>
+    </tr></thead><tbody id="opBody"></tbody></table></div>
+    <div class="pager">
+      <button onclick="loadOperations(curOpPage-1)">上一页</button>
+      <span id="opPageInfo"></span>
+      <button onclick="loadOperations(curOpPage+1)">下一页</button>
+    </div>
+  </div>
+
+  <!-- 登录日志 -->
+  <div class="pane" id="pane-logins">
+    <div class="cards" id="loginCards"></div>
+    <div class="filter">
+      <input id="lgUser" placeholder="用户名">
+      <select id="lgResult"><option value="">全部结果</option><option value="success">成功</option><option value="failure">失败</option></select>
+      <button class="primary" onclick="loadLogins(1)">查询</button>
+      <button onclick="loadAbnormalLogins()">查看异常登录</button>
+      <button onclick="loadSessions()">活跃会话</button>
+    </div>
+    <div class="scroll"><table><thead><tr>
+      <th>时间</th><th>用户</th><th>IP</th><th>地点</th><th>结果</th><th>失败原因</th><th>方式</th>
+    </tr></thead><tbody id="lgBody"></tbody></table></div>
+    <div id="abnBox" class="card" style="margin-top:12px;display:none">
+      <h3>异常登录</h3><div id="abnBody"></div>
+    </div>
+    <div id="sessBox" class="card" style="margin-top:12px;display:none">
+      <h3>活跃会话</h3>
+      <div class="scroll"><table><thead><tr><th>用户</th><th>IP</th><th>登录时间</th><th>最后活跃</th><th>操作</th></tr></thead>
+      <tbody id="sessBody"></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- API 日志 -->
+  <div class="pane" id="pane-api">
+    <div class="cards" id="apiPerfCards"></div>
+    <div class="filter">
+      <input id="apiEp" placeholder="端点">
+      <select id="apiMethod"><option value="">方法</option><option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option></select>
+      <input id="apiStatus" placeholder="状态码" style="width:80px">
+      <button class="primary" onclick="loadApiCalls(1)">查询</button>
+      <button onclick="loadSlow()">慢请求</button>
+      <button onclick="loadErrors()">错误请求</button>
+      <button onclick="loadPerf()">性能监控</button>
+    </div>
+    <div class="scroll"><table><thead><tr>
+      <th>时间</th><th>方法</th><th>端点</th><th>状态</th><th>耗时ms</th><th>IP</th>
+    </tr></thead><tbody id="apiBody"></tbody></table></div>
+  </div>
+
+  <!-- 数据访问 -->
+  <div class="pane" id="pane-data">
+    <div class="cards" id="daCards"></div>
+    <div class="filter">
+      <input id="daUser" placeholder="访问人">
+      <select id="daType"><option value="">数据类型</option>
+        <option value="vulnerability">漏洞</option><option value="asset">资产</option>
+        <option value="report">报告</option><option value="incident">事件</option>
+        <option value="user">用户</option><option value="config">配置</option></select>
+      <select id="daAt"><option value="">访问类型</option>
+        <option value="query">查询</option><option value="export">导出</option>
+        <option value="download">下载</option><option value="print">打印</option><option value="share">分享</option></select>
+      <button class="primary" onclick="loadDataAccess(1)">查询</button>
+      <button onclick="loadAbnormalAccess()">异常访问</button>
+      <button onclick="loadSensitiveReport()">敏感数据报告</button>
+    </div>
+    <div class="scroll"><table><thead><tr>
+      <th>时间</th><th>访问人</th><th>访问类型</th><th>数据类型</th><th>数据ID</th><th>IP</th>
+    </tr></thead><tbody id="daBody"></tbody></table></div>
+    <div id="abnAccessBox" class="card" style="margin-top:12px;display:none">
+      <h3>异常数据访问 / 敏感数据访问报告</h3><div id="abnAccessBody"></div>
+    </div>
+  </div>
+
+  <!-- 日志管理 -->
+  <div class="pane" id="pane-manage">
+    <div class="card" style="margin-bottom:12px">
+      <h3 style="margin-bottom:10px">跨日志全文搜索</h3>
+      <div class="filter">
+        <input id="gKw" placeholder="关键词（用户/IP/内容）" style="flex:1">
+        <button class="primary" onclick="globalSearch()">搜索</button>
+      </div>
+      <pre id="gSearchResult">点击搜索查看结果</pre>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3 style="margin-bottom:10px">完整性校验</h3>
+        <p class="muted" style="margin-bottom:8px">验证操作日志哈希链是否被篡改</p>
+        <button class="primary" onclick="verifyChain()">开始校验</button>
+        <pre id="integrityResult" style="margin-top:10px">未校验</pre>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:10px">日志配置</h3>
+        <div id="configBox"></div>
+        <button class="primary" style="margin-top:8px" onclick="saveConfig()">保存配置</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h3 style="margin-bottom:10px">归档与清理</h3>
+      <div class="filter">
+        <select id="arcType"><option value="operations">操作日志</option><option value="logins">登录日志</option><option value="api_calls">API日志</option><option value="data_access">数据访问</option></select>
+        <input id="arcDays" type="number" value="30" style="width:80px" title="归档多少天前">
+        <button onclick="doArchive()">归档历史</button>
+        <button class="danger" onclick="doClean()">清理过期日志</button>
+      </div>
+      <pre id="archiveResult" style="margin-top:8px">未执行</pre>
+    </div>
+  </div>
+</div>
+
+<!-- 详情弹窗 -->
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <h3 style="margin-bottom:12px" id="modalTitle">详情</h3>
+    <div id="modalBody"></div>
+    <div style="text-align:right;margin-top:12px"><button onclick="closeModal()">关闭</button></div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1/audit';
+let curOpPage = 1, curLgPage = 1, curApiPage = 1, curDaPage = 1;
+
+// ---------- 工具 ----------
+async function jget(url){ const r = await fetch(API+url); const j = await r.json(); return j; }
+async function jpost(url, body){ const r = await fetch(API+url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}); return r.json(); }
+async function jput(url, body){ const r = await fetch(API+url,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}); return r.json(); }
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function badge(v){ const c = (v==='success'||v==='active'||v==='success')?'b-success':(v==='failure'?'b-failure':(v==='warning'?'b-warning':(v==='critical'||v==='high'?'b-critical':'b-info'))); return `<span class="badge ${c}">${esc(v)}</span>`; }
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('pane-'+t.dataset.pane).classList.add('active');
+    const p=t.dataset.pane;
+    if(p==='overview') loadOverview();
+    if(p==='logins'){ loadLogins(1); loadLoginStats(); }
+    if(p==='api'){ loadApiCalls(1); loadPerf(); }
+    if(p==='data'){ loadDataAccess(1); loadDaStats(); }
+    if(p==='manage') loadConfig();
+  };
+});
+
+// ---------- 总览 ----------
+async function loadOverview(){
+  try{
+    const ov = (await jget('/logs/overview')).data || {};
+    const ic = ov.integrity||{};
+    document.getElementById('ovCards').innerHTML = `
+      <div class="card"><div class="num">${ov.operations?.total||0}</div><div class="lbl">操作日志总量（今日 ${ov.operations?.today||0}）</div></div>
+      <div class="card"><div class="num">${ov.logins?.total||0}</div><div class="lbl">登录日志总量（今日 ${ov.logins?.today||0}）</div></div>
+      <div class="card"><div class="num">${ov.api_calls?.total||0}</div><div class="lbl">API 调用总量（今日 ${ov.api_calls?.today||0}）</div></div>
+      <div class="card"><div class="num">${ov.data_access?.total||0}</div><div class="lbl">数据访问总量（今日 ${ov.data_access?.today||0}）</div></div>
+      <div class="card"><div class="num ${ov.abnormal_count? 'bad':'ok'}">${ov.abnormal_count||0}</div><div class="lbl">异常行为数量</div></div>
+      <div class="card"><div class="num ${ic.intact!==false?'ok':'bad'}">${ic.intact===false?'已篡改':'完整'}</div><div class="lbl">哈希链完整性</div></div>`;
+    // 操作类型分布
+    const st = (await jget('/operations/stats')).data || {};
+    drawBars('ovOpChart', st.by_operation_type||[]);
+    // 登录趋势
+    const ls = (await jget('/logins/stats')).data || {};
+    document.getElementById('ovLoginChart').innerHTML = (ls.by_day||[]).slice().reverse().map(d=>`
+      <div class="bar-row"><span class="name">${esc(d.date)}</span>
+      <div style="flex:1;background:#21262d;border-radius:4px;height:14px;position:relative">
+        <div style="position:absolute;left:0;top:0;bottom:0;background:var(--green);width:${Math.min(100,(d.success||0)/Math.max(1,(d.success||0)+(d.failure||0))*100)}%"></div>
+      </div><span class="val">${d.success||0}↑/${d.failure||0}↓</span></div>`).join('') || '<p class="muted">暂无数据</p>';
+  }catch(e){ console.error(e); }
+}
+function drawBars(el, data){
+  const max = Math.max(1, ...data.map(x=>x.count||0));
+  document.getElementById(el).innerHTML = data.map(x=>`
+    <div class="bar-row"><span class="name">${esc(x.name)}</span>
+    <div style="flex:1;background:#21262d;border-radius:4px;height:14px"><div class="bar" style="width:${(x.count/max*100)}%"></div></div>
+    <span class="val">${x.count}</span></div>`).join('') || '<p class="muted">暂无数据</p>';
+}
+
+// ---------- 操作日志 ----------
+async function loadOperations(page){
+  curOpPage = Math.max(1, page);
+  const p = new URLSearchParams({page:curOpPage, page_size:20});
+  const kw = document.getElementById('opKw').value.trim();
+  const op = document.getElementById('opType').value;
+  const us = document.getElementById('opOperator').value.trim();
+  const rs = document.getElementById('opResult').value;
+  if(kw) p.set('keyword',kw);
+  if(op) p.set('operation_type',op);
+  if(us) p.set('operator',us);
+  if(rs) p.set('result',rs);
+  const d = (await jget('/operations?'+p)).data || {};
+  document.getElementById('opBody').innerHTML = (d.items||[]).map(r=>`
+    <tr>
+      <td>${esc(r.operation_time)}</td><td>${esc(r.operator)}</td>
+      <td>${badge(r.operation_type)}</td><td>${esc(r.operation_object)}</td>
+      <td>${badge(r.result)}</td><td>${esc(r.ip_address)}</td>
+      <td><button onclick='showOpDetail("${r.id}")'>查看</button></td>
+    </tr>`).join('') || '<tr><td colspan="7" class="muted">无数据</td></tr>';
+  document.getElementById('opPageInfo').textContent = `第 ${curOpPage} 页 / 共 ${d.total||0} 条`;
+}
+async function showOpDetail(id){
+  const d = (await jget('/operations/'+id)).data || {};
+  const det = d.operation_detail || {};
+  document.getElementById('modalTitle').textContent = '操作详情';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="kv">
+      <span class="k">操作人</span><span>${esc(d.operator)}</span>
+      <span class="k">类型</span><span>${esc(d.operation_type)}</span>
+      <span class="k">对象</span><span>${esc(d.operation_object)} / ${esc(d.object_id)}</span>
+      <span class="k">时间</span><span>${esc(d.operation_time)}</span>
+      <span class="k">IP / UA</span><span>${esc(d.ip_address)}<br>${esc(d.user_agent)}</span>
+      <span class="k">结果</span><span>${badge(d.result)} ${esc(d.failure_reason||'')}</span>
+      <span class="k">prev_hash</span><span class="muted" style="font-size:11px">${esc((d.prev_hash||'').slice(0,16))}…</span>
+      <span class="k">hash</span><span class="muted" style="font-size:11px">${esc((d.hash||'').slice(0,16))}…</span>
+    </div>
+    <div class="diff">
+      <div><h4>修改前 (before)</h4><pre>${esc(JSON.stringify(det.before||det, null, 2))}</pre></div>
+      <div><h4>修改后 (after)</h4><pre>${esc(JSON.stringify(det.after||{}, null, 2))}</pre></div>
+    </div>`;
+  document.getElementById('modal').classList.add('show');
+}
+async function exportOps(){
+  const fmt = 'csv';
+  const r = await fetch(API+'/operations/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fmt})});
+  const blob = await r.blob(); const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'operations.csv'; a.click();
+}
+async function verifyChain(){
+  const d = (await jget('/logs/integrity')).data || {};
+  const txt = JSON.stringify(d, null, 2);
+  document.getElementById('integrityResult').textContent = txt;
+  alert(d.intact!==false ? '✅ 哈希链完整，未发现篡改' : `⚠️ 发现 ${(d.types?.operations?.violations||[]).length} 处异常`);
+}
+function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+
+// ---------- 登录日志 ----------
+async function loadLogins(page){
+  curLgPage = Math.max(1, page);
+  const p = new URLSearchParams({page:curLgPage, page_size:20});
+  const u = document.getElementById('lgUser').value.trim();
+  const r = document.getElementById('lgResult').value;
+  if(u) p.set('username',u);
+  if(r) p.set('result',r);
+  const d = (await jget('/logins?'+p)).data || {};
+  document.getElementById('lgBody').innerHTML = (d.items||[]).map(x=>`
+    <tr style="${x.result==='failure'?'background:rgba(248,81,73,.08)':''}">
+      <td>${esc(x.login_time)}</td><td>${esc(x.username)}</td>
+      <td>${esc(x.login_ip)}</td><td>${esc(x.login_location||'未知')}</td>
+      <td>${badge(x.result)}</td><td>${esc(x.failure_reason||'-')}</td>
+      <td>${badge(x.login_method)}</td>
+    </tr>`).join('') || '<tr><td colspan="7" class="muted">无数据</td></tr>';
+}
+async function loadLoginStats(){
+  const d = (await jget('/logins/stats')).data || {};
+  document.getElementById('loginCards').innerHTML = `
+    <div class="card"><div class="num">${d.total||0}</div><div class="lbl">登录总数</div></div>
+    <div class="card"><div class="num ok">${d.success||0}</div><div class="lbl">成功 (${d.success_rate||0}%)</div></div>
+    <div class="card"><div class="num bad">${d.failure||0}</div><div class="lbl">失败</div></div>
+    <div class="card"><div class="num ${(d.abnormal_count>0)?'bad':'ok'}">${d.abnormal_count||0}</div><div class="lbl">异常登录</div></div>`;
+}
+async function loadAbnormalLogins(){
+  const d = (await jget('/logins/abnormal')).data || {};
+  document.getElementById('abnBox').style.display='block';
+  document.getElementById('abnBody').innerHTML = (d.items||[]).map(a=>`
+    <p style="margin:4px 0">${badge(a.severity)} <b>${esc(a.type)}</b> — ${esc(a.username)}：${esc(a.detail)}</p>`).join('') || '<p class="muted">未发现异常</p>';
+}
+async function loadSessions(){
+  const d = (await jget('/logins/sessions')).data || {};
+  document.getElementById('sessBox').style.display='block';
+  document.getElementById('sessBody').innerHTML = (d.items||[]).map(s=>`
+    <tr><td>${esc(s.username)}</td><td>${esc(s.login_ip)}</td>
+    <td>${esc(s.login_time)}</td><td>${esc(s.last_active_time)}</td>
+    <td><button class="danger" onclick="revokeSess('${esc(s.session_id)}')">强制登出</button></td></tr>`).join('') || '<tr><td colspan="5" class="muted">无活跃会话</td></tr>';
+}
+async function revokeSess(sid){
+  await jpost('/logins/sessions/'+sid+'/revoke',{});
+  loadSessions();
+}
+
+// ---------- API 日志 ----------
+async function loadApiCalls(page){
+  curApiPage = Math.max(1, page);
+  const p = new URLSearchParams({page:curApiPage, page_size:20});
+  const e = document.getElementById('apiEp').value.trim();
+  const m = document.getElementById('apiMethod').value;
+  const s = document.getElementById('apiStatus').value.trim();
+  if(e) p.set('endpoint',e);
+  if(m) p.set('method',m);
+  if(s) p.set('status_code',s);
+  const d = (await jget('/api-calls?'+p)).data || {};
+  document.getElementById('apiBody').innerHTML = (d.items||[]).map(x=>{
+    const slow = x.response_time_ms>=1000;
+    const err = x.response_status_code>=400;
+    return `<tr style="${(slow||err)?'background:rgba(210,153,34,.08)':''}">
+      <td>${esc(x.call_time)}</td><td>${badge(x.request_method)}</td>
+      <td>${esc(x.api_endpoint)}</td><td>${badge(x.response_status_code)}</td>
+      <td class="${(slow||err)?'bad':''}">${esc(x.response_time_ms)}</td>
+      <td>${esc(x.request_ip)}</td></tr>`;
+  }).join('') || '<tr><td colspan="6" class="muted">无数据</td></tr>';
+}
+async function loadSlow(){ const d=(await jget('/api-calls/slow')).data||{}; document.getElementById('apiBody').innerHTML=(d.items||[]).map(x=>`<tr style="background:rgba(210,153,34,.08)"><td>${esc(x.call_time)}</td><td>${esc(x.request_method)}</td><td>${esc(x.api_endpoint)}</td><td>${badge(x.response_status_code)}</td><td class="bad">${esc(x.response_time_ms)}</td><td>${esc(x.request_ip)}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">无慢请求</td></tr>'; }
+async function loadErrors(){ const d=(await jget('/api-calls/errors')).data||{}; document.getElementById('apiBody').innerHTML=(d.items||[]).map(x=>`<tr style="background:rgba(248,81,73,.08)"><td>${esc(x.call_time)}</td><td>${esc(x.request_method)}</td><td>${esc(x.api_endpoint)}</td><td class="bad">${badge(x.response_status_code)}</td><td>${esc(x.response_time_ms)}</td><td>${esc(x.request_ip)}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">无错误请求</td></tr>'; }
+async function loadPerf(){
+  const d = (await jget('/api-calls/performance')).data || {};
+  document.getElementById('apiPerfCards').innerHTML = `
+    <div class="card"><div class="num">${d.total_calls||0}</div><div class="lbl">总调用量</div></div>
+    <div class="card"><div class="num">${d.avg_response_ms||0}</div><div class="lbl">平均响应(ms)</div></div>
+    <div class="card"><div class="num">${d.p50_ms||0}</div><div class="lbl">P50 (ms)</div></div>
+    <div class="card"><div class="num">${d.p95_ms||0}</div><div class="lbl">P95 (ms)</div></div>
+    <div class="card"><div class="num">${d.p99_ms||0}</div><div class="lbl">P99 (ms)</div></div>
+    <div class="card"><div class="num ${(d.error_rate||0)>5?'bad':'ok'}">${d.error_rate||0}%</div><div class="lbl">错误率</div></div>`;
+}
+
+// ---------- 数据访问 ----------
+async function loadDataAccess(page){
+  curDaPage = Math.max(1, page);
+  const p = new URLSearchParams({page:curDaPage, page_size:20});
+  const u = document.getElementById('daUser').value.trim();
+  const t = document.getElementById('daType').value;
+  const a = document.getElementById('daAt').value;
+  if(u) p.set('access_user',u);
+  if(t) p.set('data_type',t);
+  if(a) p.set('access_type',a);
+  const d = (await jget('/data-access?'+p)).data || {};
+  document.getElementById('daBody').innerHTML = (d.items||[]).map(x=>`
+    <tr><td>${esc(x.access_time)}</td><td>${esc(x.access_user)}</td>
+    <td>${badge(x.access_type)}</td><td>${badge(x.data_type)}</td>
+    <td>${esc(x.data_id)}</td><td>${esc(x.ip_address)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">无数据</td></tr>';
+}
+async function loadDaStats(){
+  const d = (await jget('/data-access/stats')).data || {};
+  document.getElementById('daCards').innerHTML = `
+    <div class="card"><div class="num">${d.total||0}</div><div class="lbl">访问总次数</div></div>
+    <div class="card"><div class="num">${(d.by_data_type||[]).length}</div><div class="lbl">涉及数据类型</div></div>
+    <div class="card"><div class="num">${(d.by_access_type||[]).length}</div><div class="lbl">访问类型数</div></div>
+    <div class="card"><div class="num">${(d.by_user||[]).length}</div><div class="lbl">访问人数</div></div>`;
+}
+async function loadAbnormalAccess(){
+  const d = (await jget('/data-access/abnormal')).data || {};
+  document.getElementById('abnAccessBox').style.display='block';
+  document.getElementById('abnAccessBody').innerHTML = (d.items||[]).map(a=>`
+    <p style="margin:4px 0">${badge(a.severity)} <b>${esc(a.type)}</b> — ${esc(a.user)}：${esc(a.detail)}</p>`).join('') || '<p class="muted">未发现异常访问</p>';
+}
+async function loadSensitiveReport(){
+  const d = (await jget('/data-access/sensitive-report')).data || {};
+  document.getElementById('abnAccessBox').style.display='block';
+  document.getElementById('abnAccessBody').innerHTML = '<table><thead><tr><th>时间</th><th>访问人</th><th>类型</th><th>数据</th><th>说明</th></tr></thead><tbody>'
+    + (d.items||[]).map(x=>`<tr><td>${esc(x.access_time)}</td><td>${esc(x.access_user)}</td><td>${badge(x.access_type)}/${esc(x.data_type)}</td><td>${esc(x.data_id)}</td><td>${esc(x.data_summary)}</td></tr>`).join('') + '</tbody></table>';
+}
+
+// ---------- 日志管理 ----------
+async function globalSearch(){
+  const kw = document.getElementById('gKw').value.trim();
+  if(!kw){ alert('请输入关键词'); return; }
+  const d = (await jget('/logs/search?keyword='+encodeURIComponent(kw))).data || {};
+  document.getElementById('gSearchResult').textContent = JSON.stringify(d, null, 2);
+}
+async function loadConfig(){
+  const d = (await jget('/logs/config')).data || {};
+  document.getElementById('configBox').innerHTML = Object.entries(d).map(([k,v])=>`
+    <div style="margin-bottom:8px">
+      <label class="muted" style="display:block;font-size:12px">${esc(k)} — ${esc(v.description||'')}</label>
+      <input id="cfg_${esc(k)}" value="${esc(v.value||'')}" style="width:100%">
+    </div>`).join('');
+}
+async function saveConfig(){
+  const inputs = document.querySelectorAll('#configBox input');
+  const body = {};
+  inputs.forEach(i=>{ body[i.id.replace('cfg_','')] = i.value; });
+  const d = await jput('/logs/config', {config:body});
+  alert(d.data?.success ? '✅ 配置已保存' : '保存失败');
+}
+async function doArchive(){
+  const t = document.getElementById('arcType').value;
+  const days = parseInt(document.getElementById('arcDays').value)||30;
+  const d = await jpost('/logs/archive', {log_type:t, days_ago:days});
+  document.getElementById('archiveResult').textContent = JSON.stringify(d.data||d, null, 2);
+}
+async function doClean(){
+  if(!confirm('确认按保留策略清理过期日志？此操作不可恢复。')) return;
+  const d = await jpost('/logs/clean', {});
+  document.getElementById('archiveResult').textContent = JSON.stringify(d.data||d, null, 2);
+}
+
+// 初始化
+loadOverview();
+</script>
+</body>
+</html>

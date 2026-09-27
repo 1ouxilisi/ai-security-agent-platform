@@ -1,0 +1,50 @@
+{
+  "enabled": true,
+  "min_severity": "high",
+  "keywords": [
+    "rce",
+    "sql injection",
+    "xss",
+    "ssrf",
+    "0day",
+    "ransomware",
+    "wormable"
+  ],
+  "vendors": [
+    "microsoft",
+    "apache",
+    "oracle",
+    "cisco",
+    "fortinet",
+    "vmware",
+    "adobe"
+  ],
+  "products": [],
+  "check_interval_hours": 6,
+  "notification_channels": {
+    "webhook": {
+      "enabled": false,
+      "url": ""
+    },
+    "email": {
+      "enabled": false,
+      "smtp_host": "",
+      "smtp_port": 587,
+      "username": "",
+      "password": "",
+      "to": []
+    },
+    "dingtalk": {
+      "enabled": false,
+      "webhook": "",
+      "secret": ""
+    },
+    "wecom": {
+      "enabled": false,
+      "webhook": ""
+    },
+    "console": {
+      "enabled": true
+    }
+  }
+}

@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实战能力中心 - AI Hacking Agent</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 20px 30px;
+            border-bottom: 1px solid #2a2a4a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 24px;
+            background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00ff88;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .container {
+            display: flex;
+            min-height: calc(100vh - 80px);
+        }
+        .sidebar {
+            width: 260px;
+            background: #1a1a2e;
+            border-right: 1px solid #2a2a4a;
+            padding: 20px 0;
+        }
+        .nav-section {
+            margin-bottom: 20px;
+        }
+        .nav-title {
+            padding: 8px 20px;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #666;
+            letter-spacing: 1px;
+        }
+        .nav-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+        .nav-item:hover {
+            background: #252545;
+            color: #00d4ff;
+        }
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(0,212,255,0.1), transparent);
+            color: #00d4ff;
+            border-left: 3px solid #00d4ff;
+        }
+        .nav-icon {
+            width: 20px;
+            text-align: center;
+        }
+        .main {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        .page { display: none; }
+        .page.active { display: block; }
+        .page-title {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        .card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #00d4ff;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #aaa;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            background: #0f0f1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            color: #fff;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,212,255,0.3);
+        }
+        .btn-danger {
+            background: #ff4444;
+            color: #fff;
+        }
+        .btn-success {
+            background: #00cc66;
+            color: #fff;
+        }
+        .result-box {
+            background: #0f0f1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+        .template-card {
+            background: #0f0f1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .template-card:hover {
+            border-color: #00d4ff;
+            transform: translateY(-4px);
+        }
+        .template-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .template-desc {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+        .template-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+        }
+        .meta-tag {
+            padding: 4px 10px;
+            background: #2a2a4a;
+            border-radius: 20px;
+            color: #aaa;
+        }
+        .meta-tag.risk-high { background: rgba(255,68,68,0.2); color: #ff6666; }
+        .meta-tag.risk-critical { background: rgba(255,0,0,0.3); color: #ff4444; }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #2a2a4a;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+            transition: width 0.3s;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: #888;
+            margin-top: 4px;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #2a2a4a;
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .back-link {
+            color: #00d4ff;
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚔️ 实战能力中心</h1>
+        <div class="status">
+            <span class="status-dot"></span>
+            <span>API服务运行中</span>
+            <span id="current-time"></span>
+        </div>
+    </div>
+    <div class="container">
+        <div class="sidebar">
+            <div class="nav-section">
+                <div class="nav-title">总览</div>
+                <div class="nav-item active" onclick="showPage('dashboard')">
+                    <span class="nav-icon">📊</span> 实战总览
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-title">SQL注入</div>
+                <div class="nav-item" onclick="showPage('sql-scan')">
+                    <span class="nav-icon">🔍</span> SQL注入扫描
+                </div>
+                <div class="nav-item" onclick="showPage('sql-dump')">
+                    <span class="nav-icon">💾</span> 数据库Dump
+                </div>
+                <div class="nav-item" onclick="showPage('sql-cmd')">
+                    <span class="nav-icon">⚡</span> OS命令执行
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-title">Metasploit</div>
+                <div class="nav-item" onclick="showPage('msf-exploit')">
+                    <span class="nav-icon">💥</span> 漏洞利用
+                </div>
+                <div class="nav-item" onclick="showPage('msf-quick')">
+                    <span class="nav-icon">🚀</span> 快速利用
+                </div>
+                <div class="nav-item" onclick="showPage('msf-sessions')">
+                    <span class="nav-icon">🖥️</span> 会话管理
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-title">AD域攻击</div>
+                <div class="nav-item" onclick="showPage('ad-chain')">
+                    <span class="nav-icon">🔗</span> 完整攻击链
+                </div>
+                <div class="nav-item" onclick="showPage('ad-kerberoast')">
+                    <span class="nav-icon">🎫</span> Kerberoasting
+                </div>
+                <div class="nav-item" onclick="showPage('ad-golden')">
+                    <span class="nav-icon">👑</span> 黄金票据
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-title">Web漏洞</div>
+                <div class="nav-item" onclick="showPage('web-scan')">
+                    <span class="nav-icon">🌐</span> 全面扫描
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-title">一键模板</div>
+                <div class="nav-item" onclick="showPage('templates')">
+                    <span class="nav-icon">📋</span> 攻击模板
+                </div>
+            </div>
+        </div>
+        <div class="main">
+            <a href="/console-v7" class="back-link">← 返回统一控制台</a>
+
+            <!-- 实战总览 -->
+            <div id="page-dashboard" class="page active">
+                <h2 class="page-title">实战能力总览</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">5</div>
+                        <div class="stat-label">实战模块</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">22</div>
+                        <div class="stat-label">API端点</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">4</div>
+                        <div class="stat-label">攻击模板</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">8</div>
+                        <div class="stat-label">漏洞类型</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">实战能力覆盖</div>
+                    <div style="line-height: 2;">
+                        <p>✅ <strong>SQL注入</strong>：自动检测、数据库Dump、OS命令执行、文件读写</p>
+                        <p>✅ <strong>Metasploit</strong>：漏洞利用、Payload生成、Session管理、后渗透</p>
+                        <p>✅ <strong>AD域攻击</strong>：Kerberoasting、AS-REP Roasting、黄金票据、DCSync</p>
+                        <p>✅ <strong>Web漏洞</strong>：SQL注入、XSS、SSRF、命令注入、目录遍历、文件上传</p>
+                        <p>✅ <strong>一键模板</strong>：Web渗透、内网渗透、AD攻击链、快速扫描</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">快速开始</div>
+                    <p style="margin-bottom: 12px; color: #aaa;">选择左侧功能开始实战操作，或使用一键攻击模板自动执行完整流程。</p>
+                    <button class="btn btn-primary" onclick="showPage('templates')">查看攻击模板 →</button>
+                </div>
+            </div>
+
+            <!-- SQL注入扫描 -->
+            <div id="page-sql-scan" class="page">
+                <h2 class="page-title">SQL注入扫描</h2>
+                <div class="card">
+                    <div class="card-title">扫描配置</div>
+                    <div class="form-group">
+                        <label>目标URL</label>
+                        <input type="text" id="sql-url" placeholder="http://target.com/page?id=1">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>测试参数（可选）</label>
+                            <input type="text" id="sql-params" placeholder="id,username">
+                        </div>
+                        <div class="form-group">
+                            <label>测试级别</label>
+                            <select id="sql-level">
+                                <option value="1">1 - 简单</option>
+                                <option value="2">2 - 基础</option>
+                                <option value="3" selected>3 - 标准</option>
+                                <option value="4">4 - 深入</option>
+                                <option value="5">5 - 全面</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>风险级别</label>
+                            <select id="sql-risk">
+                                <option value="1">1 - 低</option>
+                                <option value="2" selected>2 - 中</option>
+                                <option value="3">3 - 高</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Cookie（可选）</label>
+                            <input type="text" id="sql-cookies" placeholder="session=xxx">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="runSqlScan()">开始扫描</button>
+                </div>
+                <div id="sql-scan-result" style="display:none;">
+                    <div class="card">
+                        <div class="card-title">扫描结果</div>
+                        <div id="sql-scan-output" class="result-box"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据库Dump -->
+            <div id="page-sql-dump" class="page">
+                <h2 class="page-title">数据库Dump</h2>
+                <div class="card">
+                    <div class="card-title">Dump配置</div>
+                    <div class="form-group">
+                        <label>目标URL（需存在SQL注入）</label>
+                        <input type="text" id="dump-url" placeholder="http://target.com/page?id=1">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>数据库名（可选）</label>
+                            <input type="text" id="dump-db" placeholder="target_db">
+                        </div>
+                        <div class="form-group">
+                            <label>表名（可选，逗号分隔）</label>
+                            <input type="text" id="dump-tables" placeholder="users,products">
+                        </div>
+                    </div>
+                    <button class="btn btn-danger" onclick="runSqlDump()">开始Dump</button>
+                </div>
+                <div id="sql-dump-result" style="display:none;">
+                    <div class="card">
+                        <div class="card-title">Dump结果</div>
+                        <div id="sql-dump-output" class="result-box"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OS命令执行 -->
+            <div id="page-sql-cmd" class="page">
+                <h2 class="page-title">SQL注入OS命令执行</h2>
+                <div class="card">
+                    <div class="card-title">命令执行配置</div>
+                    <div class="form-group">
+                        <label>目标URL</label>
+                        <input type="text" id="cmd-url" placeholder="http://target.com/page?id=1">
+                    </div>
+                    <div class="form-group">
+                        <label>要执行的命令</label>
+                        <input type="text" id="cmd-command" placeholder="whoami / id / ipconfig">
+                    </div>
+                    <button class="btn btn-danger" onclick="runSqlCmd()">执行命令</button>
+                </div>
+                <div id="sql-cmd-result" style="display:none;">
+                    <div class="card">
+                        <div class="card-title">命令输出</div>
+                        <div id="sql-cmd-output" class="result-box"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metasploit漏洞利用 -->
+            <div id="page-msf-exploit" class="page">
+                <h2 class="page-title">Metasploit漏洞利用</h2>
+                <div class="card">
+                    <div class="card-title">利用配置</div>
+                    <div class="form-group">
+                        <label>漏洞利用模块</label>
+                        <input type="text" id="msf-module" placeholder="exploit/windows/smb/ms17_010_eternalblue">
+                    </div>
+                    <div class="form-group">
+                        <label>模块选项（JSON格式）</label>
+                        <textarea id="msf-options" rows="4" placeholder='{"RHOSTS": "192.168.1.1", "RPORT": "445"}'></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Payload（可选）</label>
+                            <input type="text" id="msf-payload" placeholder="windows/meterpreter/reverse_tcp">
+                        </div>
+                        <div class="form-group">
+                            <label>Payload选项（JSON）</label>
+                            <input type="text" id="msf-payload-opts" placeholder='{"LHOST": "192.168.1.100", "LPORT": "4444"}'>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="runMsfExploit()">执行利用</button>
+                </div>
+                <div id="msf-exploit-result" style="display:none;">
+                    <div class="card">
+                        <div class="card-title">利用结果</div>
+                        <div id="msf-exploit-output" class="result-box"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速利用 -->
+            <div id="page-msf-quick" class="page">
+                <h2 class="page-title">Metasploit快速利用</h2>
+                <div class="card">
+                    <div class="card-title">快速利用配置（自动选择模块）</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>目标IP</label>
+                            <input type="text" id="quick-target" placeholder="192.168.1.1">
+                        </div>
+                        <div class="form-group">
+                            <label>目标端口</label>
+                            <input type="number" id="quick-port" value="445">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Payload监听地址</label>
+                            <input type="text" id="quick-lhost" placeholder="192.168.1.100">
+                        </div>
+                        <div class="form-group">
+                            <label>Payload监听端口</label>
+                            <input type="number" id="quick-lport" value="4444">
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="runMsfQuick()">快速利用</button>
+                </div>
+                <div id="msf-quick-result" style="display:none;">
+                    <div class="card">
+                        <div class="card-title">利用结果</div>
+                        <div id="msf-quick-output" class="result-box"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 会话管理 -->
+            <div id="page-msf-sessions" class="page">
+                <h2 class="page-title">Metasploit会话管理</h2>
+                <div class="card">
+                    <div class="card-title">活跃会话</div>
+                    <button class="btn btn-primary" onclick="loadMsfSessions()">刷新会话列表</button>
+                    <div id="msf-sessions-list" style="margin-top: 16px;"></div>
+                </div>
+            </div>
+
+            <!-- AD完整攻击链 -->
+            <div id="page-ad-chain" class="page">
+                <h2 class="page-title">AD域完整攻击链</h2>
+                <div class="card">
+                    <div class="card-title">攻击链配置（9阶段全自动）</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>域控IP</label>
+                            <input type="text" id="ad-dc-ip" placeholder="192.168.1.1">
+                        </div>
+                        <div class="form-group">
+                            <label>域名</label>
+                            <input type="text" id="ad-domain" placeholder="test.local">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>用户名（可选）</label>
+                            <input type="text" id="ad-username" placeholder="jdoe">
+                        </div>
+                        <div class="form-group">
+                            <label>密码（可选）</label>
+                            <input type="password" id="ad-password" placeholder="Password123!">
+                        </div>
+                    </div>
+                    <div style="margin: 16px 0; padding: 12px; background: #0f0f1a; border-radius: 8px; font-size: 13px; color: #aaa;">
+                        <strong>执行阶段：</strong>信息收集 → SPN枚举 → 无预认证枚举 → Kerberoasting → AS-REP Roasting → 哈希传递 → 黄金票据 → DCSync → 路径分析
+                    </div>
+                    <button class="btn btn-danger" onclick="runAdChain()">执行完整攻击链</button>
+                </div>
+                <div id="ad-chain-result" style="display:none;">
+                    <div class="card">
+                        <div class="card-title">攻击链执行进度</div>
+                        <div class="progress-bar"><div class="progress-fill" id="ad-progress" style="width: 0%"></div></div>
+                        <div id="ad-chain-output" class="result-box"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kerberoasting -->
+            <div id="page-ad-kerberoast" class="page">
+                <h2 class="page-title">Kerberoasting攻击</h2>
+                <div class="card">
+                    <div class="card-title">Kerberoasting配置</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>域控IP</label>
+                            <input type="text" id="krb-dc-ip" placeholder="192.168.1.1">
+                        </div>
+                        <div class="form-group">
+                            <label>域名</label>
+                            <input type="text" id="krb-domain" placeholder="test.local">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>用户名</label>
+                            <input type="text" id="krb-username" placeholder="jdoe">
+                        </div>
+                        <div class="form-group">
+                            <label>密码</label>
+                            <input type="password" id="krb-password" placeholder="Password123!">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="runKerberoast()">执行Kerberoasting</button>
+                </div>
+                <div id="krb-result" style="display:none;">
+                    <div class="card">
+                        <div class="card-title">Kerberoasting结果</div>
+                        <div id="krb-output" class="result-box"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 黄金票据 -->
+            <div id="page-ad-golden" class="page">
+                <h2 class="page-title">黄金票据生成</h2>
+                <div class="card">
+                    <div class="card-title">黄金票据配置</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>域控IP</label>
+                            <input type="text" id="gt-dc-ip" placeholder="192.168.1.1">
+                        </div>
+                        <div class="form-group">
+                            <label>域名</label>
+                            <input type="text" id="gt-domain" placeholder="test.local">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>krbtgt哈希（NT）</label>
+                            <input type="text" id="gt-krbtgt" placeholder="568d1f2f...">
+                        </div>
+                        <div class="form-group">
+                            <label>伪造用户名</label>
+                            <input type="text" id="gt-username" value="Administrator">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>域SID（可选）</label>
+                        <input type="text" id="gt-sid" placeholder="S-1-5-21-xxx">
+                    </div>
+                    <button class="btn btn-danger" onclick="runGoldenTicket()">生成黄金票据</button>
+                </div>
+                <div id="gt-result" style="display:none;">
+                    <div class="card">
+                        <div class="card-title">黄金票据结果</div>
+                        <div id="gt-output" class="result-box"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Web全面扫描 -->
+            <div id="page-web-scan" class="page">
+                <h2 class="page-title">Web漏洞全面扫描</h2>
+                <div class="card">
+                    <div class="card-title">扫描配置（8种漏洞检测）</div>
+                    <div class="form-group">
+                        <label>目标URL</label>
+                        <input type="text" id="web-url" placeholder="http://target.com">
+                    </div>
+                    <div class="form-group">
+                        <label>扫描类型（逗号分隔，留空=全部）</label>
+                        <input type="text" id="web-types" placeholder="sql_injection,xss,ssrf,command_injection,directory_traversal,open_redirect,file_upload">
+                    </div>
+                    <div class="form-group">
+                        <label>Cookie（JSON格式，可选）</label>
+                        <input type="text" id="web-cookies" placeholder='{"session": "xxx"}'>
+                    </div>
+                    <button class="btn btn-primary" onclick="runWebScan()">开始全面扫描</button>
+                </div>
+                <div id="web-scan-result" style="display:none;">
+                    <div class="card">
+                        <div class="card-title">扫描结果</div>
+                        <div id="web-scan-output" class="result-box"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 攻击模板 -->
+            <div id="page-templates" class="page">
+                <h2 class="page-title">一键攻击模板</h2>
+                <div class="template-grid" id="template-list"></div>
+            </div>
+
+            <!-- 模板执行 -->
+            <div id="page-template-execute" class="page">
+                <h2 class="page-title" id="template-execute-title">执行模板</h2>
+                <div class="card">
+                    <div class="card-title">执行配置</div>
+                    <div class="form-group">
+                        <label>目标</label>
+                        <input type="text" id="tpl-target" placeholder="http://target.com 或 192.168.1.1">
+                    </div>
+                    <div class="form-group">
+                        <label>变量覆盖（JSON格式，可选）</label>
+                        <textarea id="tpl-variables" rows="3" placeholder='{"wordlist": "/path/to/wordlist.txt"}'></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="tpl-dry-run" checked> 试运行模式（不实际执行）
+                        </label>
+                    </div>
+                    <button class="btn btn-danger" onclick="executeTemplate()">执行模板</button>
+                </div>
+                <div id="tpl-result" style="display:none;">
+                    <div class="card">
+                        <div class="card-title">执行结果</div>
+                        <div class="progress-bar"><div class="progress-fill" id="tpl-progress" style="width: 0%"></div></div>
+                        <div id="tpl-output" class="result-box"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 时间更新
+        function updateTime() {
+            document.getElementById('current-time').textContent = new Date().toLocaleString('zh-CN');
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // 页面切换
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active');
+            event.target.closest('.nav-item').classList.add('active');
+        }
+
+        // API请求辅助函数
+        async function apiRequest(url, method = 'GET', data = null) {
+            const options = { method, headers: { 'Content-Type': 'application/json' } };
+            if (data) options.body = JSON.stringify(data);
+            const response = await fetch(url, options);
+            return await response.json();
+        }
+
+        // SQL注入扫描
+        async function runSqlScan() {
+            const url = document.getElementById('sql-url').value;
+            if (!url) { alert('请输入目标URL'); return; }
+            document.getElementById('sql-scan-result').style.display = 'block';
+            document.getElementById('sql-scan-output').innerHTML = '<span class="loading"></span> 扫描中...';
+            try {
+                const result = await apiRequest('/api/v1/combat/sql/scan', 'POST', {
+                    url, parameters: document.getElementById('sql-params').value || null,
+                    level: parseInt(document.getElementById('sql-level').value),
+                    risk: parseInt(document.getElementById('sql-risk').value),
+                    cookies: document.getElementById('sql-cookies').value || null,
+                });
+                document.getElementById('sql-scan-output').textContent = JSON.stringify(result, null, 2);
+            } catch (e) {
+                document.getElementById('sql-scan-output').textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 数据库Dump
+        async function runSqlDump() {
+            const url = document.getElementById('dump-url').value;
+            if (!url) { alert('请输入目标URL'); return; }
+            document.getElementById('sql-dump-result').style.display = 'block';
+            document.getElementById('sql-dump-output').innerHTML = '<span class="loading"></span> Dump中...';
+            try {
+                const result = await apiRequest('/api/v1/combat/sql/dump', 'POST', {
+                    url, database: document.getElementById('dump-db').value || null,
+                    tables: document.getElementById('dump-tables').value ? document.getElementById('dump-tables').value.split(',') : null,
+                });
+                document.getElementById('sql-dump-output').textContent = JSON.stringify(result, null, 2);
+            } catch (e) {
+                document.getElementById('sql-dump-output').textContent = '错误: ' + e.message;
+            }
+        }
+
+        // OS命令执行
+        async function runSqlCmd() {
+            const url = document.getElementById('cmd-url').value;
+            const command = document.getElementById('cmd-command').value;
+            if (!url || !command) { alert('请输入URL和命令'); return; }
+            document.getElementById('sql-cmd-result').style.display = 'block';
+            document.getElementById('sql-cmd-output').innerHTML = '<span class="loading"></span> 执行中...';
+            try {
+                const result = await apiRequest('/api/v1/combat/sql/os-command', 'POST', { url, command });
+                document.getElementById('sql-cmd-output').textContent = JSON.stringify(result, null, 2);
+            } catch (e) {
+                document.getElementById('sql-cmd-output').textContent = '错误: ' + e.message;
+            }
+        }
+
+        // Metasploit漏洞利用
+        async function runMsfExploit() {
+            const module = document.getElementById('msf-module').value;
+            if (!module) { alert('请输入漏洞利用模块'); return; }
+            document.getElementById('msf-exploit-result').style.display = 'block';
+            document.getElementById('msf-exploit-output').innerHTML = '<span class="loading"></span> 利用中...';
+            try {
+                let options = {};
+                try { options = JSON.parse(document.getElementById('msf-options').value || '{}'); } catch(e) {}
+                let payloadOpts = {};
+                try { payloadOpts = JSON.parse(document.getElementById('msf-payload-opts').value || '{}'); } catch(e) {}
+                const result = await apiRequest('/api/v1/combat/msf/exploit', 'POST', {
+                    module, options,
+                    payload: document.getElementById('msf-payload').value || null,
+                    payload_options: payloadOpts,
+                });
+                document.getElementById('msf-exploit-output').textContent = JSON.stringify(result, null, 2);
+            } catch (e) {
+                document.getElementById('msf-exploit-output').textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 快速利用
+        async function runMsfQuick() {
+            const target = document.getElementById('quick-target').value;
+            if (!target) { alert('请输入目标IP'); return; }
+            document.getElementById('msf-quick-result').style.display = 'block';
+            document.getElementById('msf-quick-output').innerHTML = '<span class="loading"></span> 利用中...';
+            try {
+                const result = await apiRequest('/api/v1/combat/msf/quick', 'POST', {
+                    target, port: parseInt(document.getElementById('quick-port').value),
+                    payload_lhost: document.getElementById('quick-lhost').value || null,
+                    payload_lport: parseInt(document.getElementById('quick-lport').value),
+                });
+                document.getElementById('msf-quick-output').textContent = JSON.stringify(result, null, 2);
+            } catch (e) {
+                document.getElementById('msf-quick-output').textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 加载会话列表
+        async function loadMsfSessions() {
+            document.getElementById('msf-sessions-list').innerHTML = '<span class="loading"></span> 加载中...';
+            try {
+                const result = await apiRequest('/api/v1/combat/msf/sessions');
+                const sessions = result.data || [];
+                if (sessions.length === 0) {
+                    document.getElementById('msf-sessions-list').innerHTML = '<p style="color:#888;">暂无活跃会话</p>';
+                } else {
+                    let html = '';
+                    sessions.forEach(s => {
+                        html += `<div style="padding:12px;background:#0f0f1a;border-radius:8px;margin-bottom:8px;">
+                            <strong>会话 #${s.id}</strong> (${s.type})<br>
+                            目标: ${s.target_host}:${s.target_port}<br>
+                            平台: ${s.platform}<br>
+                            利用: ${s.via_exploit}<br>
+                            Payload: ${s.via_payload}
+                        </div>`;
+                    });
+                    document.getElementById('msf-sessions-list').innerHTML = html;
+                }
+            } catch (e) {
+                document.getElementById('msf-sessions-list').textContent = '错误: ' + e.message;
+            }
+        }
+
+        // AD完整攻击链
+        async function runAdChain() {
+            const dcIp = document.getElementById('ad-dc-ip').value;
+            const domain = document.getElementById('ad-domain').value;
+            if (!dcIp || !domain) { alert('请输入域控IP和域名'); return; }
+            document.getElementById('ad-chain-result').style.display = 'block';
+            document.getElementById('ad-progress').style.width = '10%';
+            document.getElementById('ad-chain-output').innerHTML = '<span class="loading"></span> 执行攻击链...';
+            try {
+                const result = await apiRequest('/api/v1/combat/ad/full-chain', 'POST', {
+                    dc_ip: dcIp, domain,
+                    username: document.getElementById('ad-username').value || null,
+                    password: document.getElementById('ad-password').value || null,
+                });
+                document.getElementById('ad-progress').style.width = '100%';
+                document.getElementById('ad-chain-output').textContent = JSON.stringify(result, null, 2);
+            } catch (e) {
+                document.getElementById('ad-chain-output').textContent = '错误: ' + e.message;
+            }
+        }
+
+        // Kerberoasting
+        async function runKerberoast() {
+            const dcIp = document.getElementById('krb-dc-ip').value;
+            const domain = document.getElementById('krb-domain').value;
+            if (!dcIp || !domain) { alert('请输入域控IP和域名'); return; }
+            document.getElementById('krb-result').style.display = 'block';
+            document.getElementById('krb-output').innerHTML = '<span class="loading"></span> 执行Kerberoasting...';
+            try {
+                const result = await apiRequest('/api/v1/combat/ad/kerberoast', 'POST', {
+                    dc_ip: dcIp, domain,
+                    username: document.getElementById('krb-username').value || null,
+                    password: document.getElementById('krb-password').value || null,
+                });
+                document.getElementById('krb-output').textContent = JSON.stringify(result, null, 2);
+            } catch (e) {
+                document.getElementById('krb-output').textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 黄金票据
+        async function runGoldenTicket() {
+            const dcIp = document.getElementById('gt-dc-ip').value;
+            const domain = document.getElementById('gt-domain').value;
+            const krbtgt = document.getElementById('gt-krbtgt').value;
+            if (!dcIp || !domain || !krbtgt) { alert('请填写所有必填项'); return; }
+            document.getElementById('gt-result').style.display = 'block';
+            document.getElementById('gt-output').innerHTML = '<span class="loading"></span> 生成黄金票据...';
+            try {
+                const result = await apiRequest('/api/v1/combat/ad/golden-ticket', 'POST', {
+                    dc_ip: dcIp, domain, krbtgt_hash: krbtgt,
+                    username: document.getElementById('gt-username').value,
+                    domain_sid: document.getElementById('gt-sid').value || null,
+                });
+                document.getElementById('gt-output').textContent = JSON.stringify(result, null, 2);
+            } catch (e) {
+                document.getElementById('gt-output').textContent = '错误: ' + e.message;
+            }
+        }
+
+        // Web全面扫描
+        async function runWebScan() {
+            const url = document.getElementById('web-url').value;
+            if (!url) { alert('请输入目标URL'); return; }
+            document.getElementById('web-scan-result').style.display = 'block';
+            document.getElementById('web-scan-output').innerHTML = '<span class="loading"></span> 扫描中...';
+            try {
+                let cookies = null;
+                try { cookies = JSON.parse(document.getElementById('web-cookies').value || 'null'); } catch(e) {}
+                const result = await apiRequest('/api/v1/combat/web/scan', 'POST', {
+                    url,
+                    scan_types: document.getElementById('web-types').value ? document.getElementById('web-types').value.split(',') : null,
+                    cookies,
+                });
+                document.getElementById('web-scan-output').textContent = JSON.stringify(result, null, 2);
+            } catch (e) {
+                document.getElementById('web-scan-output').textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 加载模板列表
+        async function loadTemplates() {
+            try {
+                const result = await apiRequest('/api/v1/combat/templates');
+                const templates = result.data || [];
+                let html = '';
+                templates.forEach(t => {
+                    const riskClass = t.risk_level === 'critical' ? 'risk-critical' : (t.risk_level === 'high' ? 'risk-high' : '');
+                    html += `<div class="template-card" onclick="selectTemplate('${t.id}', '${t.name}')">
+                        <div class="template-name">${t.name}</div>
+                        <div class="template-desc">${t.description}</div>
+                        <div class="template-meta">
+                            <span class="meta-tag">${t.task_count}个任务</span>
+                            <span class="meta-tag ${riskClass}">${t.risk_level}</span>
+                            <span class="meta-tag">${t.estimated_time}</span>
+                        </div>
+                    </div>`;
+                });
+                document.getElementById('template-list').innerHTML = html;
+            } catch (e) {
+                document.getElementById('template-list').innerHTML = '加载失败: ' + e.message;
+            }
+        }
+
+        let currentTemplateId = null;
+        function selectTemplate(id, name) {
+            currentTemplateId = id;
+            document.getElementById('template-execute-title').textContent = '执行: ' + name;
+            showPage('template-execute');
+        }
+
+        async function executeTemplate() {
+            const target = document.getElementById('tpl-target').value;
+            if (!currentTemplateId) { alert('请先选择模板'); return; }
+            if (!target) { alert('请输入目标'); return; }
+            document.getElementById('tpl-result').style.display = 'block';
+            document.getElementById('tpl-progress').style.width = '20%';
+            document.getElementById('tpl-output').innerHTML = '<span class="loading"></span> 执行模板...';
+            try {
+                let variables = null;
+                try { variables = JSON.parse(document.getElementById('tpl-variables').value || 'null'); } catch(e) {}
+                const result = await apiRequest('/api/v1/combat/templates/execute', 'POST', {
+                    template_id: currentTemplateId,
+                    target,
+                    variables,
+                    dry_run: document.getElementById('tpl-dry-run').checked,
+                });
+                document.getElementById('tpl-progress').style.width = '100%';
+                document.getElementById('tpl-output').textContent = JSON.stringify(result, null, 2);
+            } catch (e) {
+                document.getElementById('tpl-output').textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 初始化
+        loadTemplates();
+    </script>
+</body>
+</html>

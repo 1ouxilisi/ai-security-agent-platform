@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>云安全 Pro 控制台 · 方向3</title>
+<style>
+:root{
+  --bg:#0f1115; --panel:#171a21; --panel2:#1f232c; --border:#2a2f3a;
+  --text:#e6e8ee; --muted:#8a90a0; --accent:#4fc3f7; --ok:#2ecc71;
+  --warn:#f1c40f; --high:#e67e22; --crit:#e74c3c; --info:#95a5a6;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+header{padding:16px 24px;background:linear-gradient(90deg,#1a1f2a,#171a21);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:8px}
+header h1{margin:0;font-size:18px}
+header .badge{background:var(--accent);color:#000;padding:2px 10px;
+  border-radius:999px;font-size:12px;font-weight:bold}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.col{flex:1;min-width:320px}
+.card{background:var(--panel);border:1px solid var(--border);
+  border-radius:10px;padding:16px;margin-bottom:16px}
+.card h2{margin:0 0 12px;font-size:15px;color:var(--accent);
+  border-bottom:1px solid var(--border);padding-bottom:8px}
+input,select,button{background:var(--panel2);border:1px solid var(--border);
+  color:var(--text);padding:8px 12px;border-radius:6px;font-size:14px;
+  font-family:inherit}
+input[type=text]{flex:1}
+button{cursor:pointer;background:var(--accent);color:#000;border:none;font-weight:bold}
+button:hover{opacity:.85}
+button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.stages{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.stage{flex:1;min-width:130px;background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:10px;text-align:center}
+.stage.active{border-color:var(--accent);box-shadow:0 0 12px rgba(79,195,247,.3)}
+.stage.done{border-color:var(--ok)}
+.stage .num{display:inline-block;width:26px;height:26px;line-height:26px;
+  border-radius:50%;background:var(--border);font-weight:bold;margin-bottom:6px}
+.stage.active .num{background:var(--accent);color:#000}
+.stage.done .num{background:var(--ok);color:#000}
+.stage .label{font-size:13px;font-weight:bold}
+.stage .prog{font-size:11px;color:var(--muted);margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:normal}
+tr:hover td{background:var(--panel2)}
+.sev{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;
+  font-weight:bold;color:#000}
+.sev.critical{background:var(--crit)} .sev.high{background:var(--high)}
+.sev.medium{background:var(--warn)} .sev.low{background:var(--accent)}
+.sev.info{background:var(--info);color:#fff}
+code,pre{background:#0a0c10;padding:2px 6px;border-radius:4px;
+  font-family:Consolas,Monaco,monospace;font-size:12px}
+pre{padding:12px;overflow:auto;max-height:320px;white-space:pre-wrap}
+.muted{color:var(--muted)}
+.stat{display:inline-block;margin-right:16px} .stat b{font-size:22px;display:block}
+.log{background:#0a0c10;padding:10px;border-radius:6px;height:260px;
+  overflow-y:auto;font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap}
+.log div{margin:1px 0}
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.progress-bar{height:10px;background:var(--border);border-radius:5px;overflow:hidden}
+.progress-bar>div{height:100%;background:linear-gradient(90deg,#4fc3f7,#2ecc71);
+  transition:width .4s}
+.tag{display:inline-block;background:var(--panel2);border:1px solid var(--border);
+  padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}
+.tab-row{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.tab{padding:6px 14px;border-radius:6px;cursor:pointer;background:var(--panel2);
+  border:1px solid var(--border)}
+.tab.active{background:var(--accent);color:#000;font-weight:bold}
+.tab-pane{display:none} .tab-pane.active{display:block}
+.thought{border-left:3px solid #9b59b6;padding:6px 10px;margin:6px 0;
+  background:#1a1520;font-size:12px;border-radius:0 6px 6px 0}
+.heat{display:inline-block;height:14px;border-radius:2px}
+.ws-dot{width:9px;height:9px;border-radius:50%;background:var(--info);
+  display:inline-block;margin-right:6px}
+.ws-dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+@media(max-width:768px){.row{flex-direction:column}.col{min-width:0}}
+</style>
+</head>
+<body>
+<header>
+  <h1>☁️ 云安全 Pro 控制台 <span class="badge">方向3 · 五阶段 · 真实云API</span></h1>
+  <div><span class="ws-dot" id="wsDot"></span><span class="muted" id="wsText">WS 未连接</span>
+    &nbsp;<span class="muted" id="clock"></span></div>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>五阶段流程</h2>
+    <div class="stages" id="stages">
+      <div class="stage" data-k="asset_discovery"><span class="num">1</span><div class="label">资产发现</div><div class="prog">AWS/阿里云 API</div></div>
+      <div class="stage" data-k="config_check"><span class="num">2</span><div class="label">配置检查</div><div class="prog">18 条基线规则</div></div>
+      <div class="stage" data-k="risk_rating"><span class="num">3</span><div class="label">风险评级</div><div class="prog">0-100 评分</div></div>
+      <div class="stage" data-k="vuln_detect"><span class="num">4</span><div class="label">漏洞检测</div><div class="prog">CVE 匹配</div></div>
+      <div class="stage" data-k="compliance_audit"><span class="num">5</span><div class="label">合规审计</div><div class="prog">等保/ISO/CIS</div></div>
+      <div class="stage" data-k="ai_report"><span class="num">6</span><div class="label">AI+报告</div><div class="prog">整改建议/报告</div></div>
+    </div>
+    <div class="toolbar">
+      <select id="provider">
+        <option value="aws">AWS</option>
+        <option value="aliyun">阿里云</option>
+      </select>
+      <input type="text" id="region" placeholder="区域(可选, 如 cn-north-1)">
+      <button id="btnStart">🚀 一键启动五阶段评估</button>
+      <button class="secondary" id="btnCred">🔑 凭证状态</button>
+      <button class="secondary" id="btnRefresh">🔄 刷新概览</button>
+    </div>
+    <div class="progress-bar"><div id="progBar" style="width:0%"></div></div>
+    <div class="muted" id="progText" style="margin-top:6px">就绪 · 提示：未配置云凭证时不会 mock 数据</div>
+  </div>
+
+  <div class="card">
+    <h2>概览</h2>
+    <div id="overview"><span class="stat muted">加载中...</span></div>
+    <div id="credBox" style="margin-top:8px"></div>
+  </div>
+
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <h2>实时日志流 <span class="muted" style="font-weight:normal">(WebSocket · 8级)</span></h2>
+        <div class="log" id="logBox"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <h2>AI 思考过程</h2>
+        <div id="thoughtBox"><span class="muted">等待任务...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-row">
+    <div class="tab active" data-tab="asset">① 资产</div>
+    <div class="tab" data-tab="config">② 配置风险</div>
+    <div class="tab" data-tab="risk">③ 风险评级</div>
+    <div class="tab" data-tab="vuln">④ 漏洞</div>
+    <div class="tab" data-tab="comp">⑤ 合规</div>
+    <div class="tab" data-tab="ai">⑥ AI 分析</div>
+    <div class="tab" data-tab="report">⑦ 报告</div>
+  </div>
+
+  <div class="tab-pane active" id="tab-asset"><div class="card"><h2>资产清单</h2><div id="assetBody" class="muted">未执行</div></div></div>
+  <div class="tab-pane" id="tab-config"><div class="card"><h2>配置检查发现</h2><div id="configBody" class="muted">未执行</div></div></div>
+  <div class="tab-pane" id="tab-risk"><div class="card"><h2>风险评级</h2><div id="riskBody" class="muted">未执行</div></div></div>
+  <div class="tab-pane" id="tab-vuln"><div class="card"><h2>云服务漏洞</h2><div id="vulnBody" class="muted">未执行</div></div></div>
+  <div class="tab-pane" id="tab-comp"><div class="card"><h2>合规状态</h2><div id="compBody" class="muted">未执行</div></div></div>
+  <div class="tab-pane" id="tab-ai">
+    <div class="card"><h2>AI 分析</h2><div id="aiBody" class="muted">未执行</div></div>
+    <div class="card"><h2>攻击路径</h2><div id="pathBody" class="muted">未执行</div></div>
+  </div>
+  <div class="tab-pane" id="tab-report">
+    <div class="toolbar">
+      <button id="btnMd">📄 查看 Markdown</button>
+      <button id="btnHtml">🌐 查看 HTML</button>
+    </div>
+    <pre id="reportBody" class="muted">未生成报告</pre>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1/cloud-security-pro';
+let currentTaskId = null, pollTimer = null;
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function sevBadge(s){return `<span class="sev ${s||'info'}">${esc(s||'info')}</span>`;}
+async function api(p, opt){
+  try{
+    const r = await fetch(API+p, Object.assign({headers:{'Content-Type':'application/json'}}, opt||{}));
+    return await r.json();
+  }catch(e){return {success:false,error:String(e)};}
+}
+
+// clock
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleString('zh-CN');},1000);
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('tab-'+t.dataset.tab).classList.add('active');
+});
+
+// websocket
+let ws;
+function connectWS(){
+  const proto = location.protocol==='https:'?'wss':'ws';
+  ws = new WebSocket(`${proto}://${location.host}${API}/ws`);
+  ws.onopen=()=>{document.getElementById('wsDot').classList.add('on');
+    document.getElementById('wsText').textContent='WS 已连接';};
+  ws.onclose=()=>{document.getElementById('wsDot').classList.remove('on');
+    document.getElementById('wsText').textContent='WS 断开, 重连中...';
+    setTimeout(connectWS,3000);};
+  ws.onmessage=(e)=>{
+    const m = JSON.parse(e.data);
+    if(m.type==='log'){
+      const div=document.createElement('div');
+      div.style.color=m.color||'#fff';
+      div.textContent=`[${m.ts}] [${m.level}] ${m.message}`;
+      const lb=document.getElementById('logBox'); lb.appendChild(div);
+      lb.scrollTop=lb.scrollHeight;
+    } else if(m.type==='thought'){
+      const div=document.createElement('div');
+      div.className='thought';
+      div.textContent=`💭 ${m.thought}`;
+      const tb=document.getElementById('thoughtBox');
+      if(tb.querySelector('.muted')) tb.innerHTML='';
+      tb.appendChild(div);
+    } else if(m.type==='progress'){
+      document.getElementById('progBar').style.width=m.percent+'%';
+      document.getElementById('progText').textContent=
+        `${m.stage_label} — ${m.percent}%`+(m.eta_sec?` (ETA ~${m.eta_sec}s)`:'');
+    }
+  };
+}
+connectWS();
+
+// start
+document.getElementById('btnStart').onclick=async()=>{
+  document.getElementById('logBox').innerHTML='';
+  document.getElementById('thoughtBox').innerHTML='<span class="muted">思考中...</span>';
+  const provider=document.getElementById('provider').value;
+  const region=document.getElementById('region').value||null;
+  const r=await api('/start',{method:'POST',body:JSON.stringify({provider,region})});
+  if(!r.success) return alert(r.error);
+  currentTaskId=r.data.task_id;
+  log('[*] 任务已启动: '+currentTaskId);
+  pollTimer=setInterval(pollStatus,1500);
+};
+function log(msg){const lb=document.getElementById('logBox');const d=document.createElement('div');
+  d.style.color='#4fc3f7';d.textContent=msg;lb.appendChild(d);lb.scrollTop=lb.scrollHeight;}
+
+async function pollStatus(){
+  if(!currentTaskId) return;
+  const r=await api('/task/'+currentTaskId+'/status');
+  if(!r.success) return;
+  const d=r.data;
+  document.getElementById('progBar').style.width=d.progress+'%';
+  document.getElementById('progText').textContent=`${d.stage} — ${d.progress}%`;
+  markStages(d.stage);
+  if(d.status==='done'||d.status==='error'||d.status==='cancelled'){
+    clearInterval(pollTimer);
+    loadResults();
+  }
+}
+function markStages(stage){
+  document.querySelectorAll('#stages .stage').forEach(s=>{
+    s.classList.toggle('active',s.dataset.k===stage);
+  });
+}
+
+async function loadResults(){
+  const r=await api('/task/'+currentTaskId+'/results');
+  if(!r.success) return;
+  const d=r.data;
+  // asset
+  const inv=d.inventory||{};
+  const bt=inv.by_type||{};
+  document.getElementById('assetBody').innerHTML=`
+    <p>资源总数: <b>${inv.resource_count||0}</b></p>
+    <p>${Object.entries(bt).map(([k,v])=>`<span class="tag">${esc(k)} ×${v}</span>`).join('')||'<span class="muted">无资源</span>'}</p>
+    ${(inv.credential_status&&!inv.credential_status.credentials_configured)?
+      `<p class="muted">⚠️ ${esc(inv.credential_status.hint||'未配置凭证')}</p>`:''}
+    <table><tr><th>ID</th><th>类型</th><th>名称</th><th>状态</th></tr>
+    ${(inv.resources||[]).slice(0,30).map(x=>`<tr><td>${esc(x.resource_id)}</td><td>${esc(x.resource_type)}</td><td>${esc(x.name)}</td><td>${esc(x.state)}</td></tr>`).join('')}</table>`;
+  // config
+  const cfg=d.config||{};
+  const fs=cfg.findings||[];
+  document.getElementById('configBody').innerHTML=fs.length?`
+    <table><tr><th>规则</th><th>严重度</th><th>标题</th><th>资源</th><th>整改</th></tr>
+    ${fs.map(x=>`<tr><td><code>${esc(x.rule_id)}</code></td><td>${sevBadge(x.severity)}</td><td>${esc(x.title)}</td><td><code>${esc(x.resource_id)}</code></td><td>${esc(x.remediation)}</td></tr>`).join('')}</table>`
+    :'<p class="muted">无配置风险（或因未配置凭证未执行检查）</p>';
+  // risk
+  const risk=d.risk||{};
+  document.getElementById('riskBody').innerHTML=`
+    <p>评分: <b style="font-size:28px">${risk.score??'-'}</b>/100 · 等级 ${sevBadge(risk.level)} (${esc(risk.grade)})</p>
+    <p>分布: ${Object.entries(risk.by_severity||{}).map(([k,v])=>`${sevBadge(k)} ${v}`).join(' ')}</p>
+    <h3 style="font-size:13px;color:var(--muted)">Top 风险</h3>
+    <table><tr><th>规则</th><th>严重度</th><th>标题</th></tr>
+    ${(risk.top_risks||[]).map(x=>`<tr><td><code>${esc(x.rule_id)}</code></td><td>${sevBadge(x.severity)}</td><td>${esc(x.title)}</td></tr>`).join('')}</table>
+    <p class="muted">${esc((risk.trend||{}).message||'')}</p>`;
+  // vuln
+  const vuln=d.vuln||{};
+  document.getElementById('vulnBody').innerHTML=(vuln.vulns||[]).length?`
+    <table><tr><th>CVE</th><th>严重度</th><th>产品</th><th>版本</th><th>CVSS</th><th>可利用性</th></tr>
+    ${vuln.vulns.map(x=>`<tr><td><b>${esc(x.cve_id)}</b></td><td>${sevBadge(x.severity)}</td><td>${esc(x.product)}</td><td>${esc(x.version)}</td><td>${x.cvss}</td><td>${esc(x.exploit_likelihood)}</td></tr>`).join('')}</table>`
+    :'<p class="muted">无 CVE 匹配（资源软件版本未知或无已知漏洞）</p>';
+  // compliance
+  const comp=d.compliance||{};
+  document.getElementById('compBody').innerHTML=`
+    <p>总合规通过率: <b>${comp.pass_rate??0}%</b></p>
+    <table><tr><th>框架</th><th>通过</th><th>总计</th><th>通过率</th><th>状态</th></tr>
+    ${Object.entries(comp.frameworks||{}).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${v.pass}</td><td>${v.total}</td><td>${v.pass_rate}%</td><td>${esc(v.status)}</td></tr>`).join('')}</table>`;
+  // ai
+  const ai=d.ai||{};
+  document.getElementById('aiBody').innerHTML=`
+    <p>${esc(ai.summary||'')}</p>
+    <h3 style="font-size:13px;color:var(--muted)">优先级整改项</h3>
+    <ul>${(ai.priorities||[]).map(p=>`<li><span class="sev ${p.severity}">${p.priority}</span> ${esc(p.title)} — ${esc(p.remediation)}</li>`).join('')||'<li class="muted">无</li>'}</ul>
+    <h3 style="font-size:13px;color:var(--muted)">成本优化</h3>
+    <ul>${(ai.cost_optimizations||[]).map(c=>`<li>${esc(c.item)}: ${esc(c.advice)}</li>`).join('')}</ul>`;
+  document.getElementById('pathBody').innerHTML=(ai.attack_paths||[]).length?ai.attack_paths.map(p=>`
+    <div style="border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px">
+      <b>${esc(p.name)}</b> <span class="muted">(难度: ${esc(p.difficulty)})</span>
+      <p class="muted">${esc(p.description)}</p>
+      <ol>${(p.steps||[]).map(s=>`<li><b>${esc(s.phase)}</b>: ${esc(s.action)}</li>`).join('')}</ol>
+    </div>`).join(''):'<span class="muted">无攻击路径</span>';
+};
+
+document.getElementById('btnMd').onclick=async()=>{
+  if(!currentTaskId) return alert('先启动任务');
+  const r=await api('/report/'+currentTaskId+'?fmt=md');
+  if(r.success) document.getElementById('reportBody').textContent=r.data.markdown||'(空)';
+};
+document.getElementById('btnHtml').onclick=async()=>{
+  if(!currentTaskId) return alert('先启动任务');
+  const r=await api('/report/'+currentTaskId+'?fmt=html');
+  if(r.success){const w=window.open('','_blank');w.document.write(r.data.html);}
+};
+
+document.getElementById('btnCred').onclick=async()=>{
+  const p=document.getElementById('provider').value;
+  const r=await api('/credential/status?provider='+p);
+  if(!r.success) return;
+  const c=r.data;
+  document.getElementById('credBox').innerHTML=`
+    <p>${c.sdk_installed?'✅ SDK 已安装':'❌ SDK 未安装'} · ${c.credentials_configured?'✅ 凭证已配置':'❌ 凭证未配置'} · 区域: ${esc(c.region||'-')}</p>
+    <p class="muted">${esc(c.hint)}</p>`;
+};
+
+async function loadOverview(){
+  const r=await api('/dashboard/overview');
+  if(!r.success) return;
+  const d=r.data;
+  document.getElementById('overview').innerHTML=`
+    <span class="stat">任务<b>${d.task_total}</b></span>
+    <span class="stat">运行<b style="color:var(--warn)">${d.task_running}</b></span>
+    <span class="stat">完成<b style="color:var(--ok)">${d.task_done}</b></span>
+    <span class="stat">风险分<b>${d.latest_risk_score??'-'}</b></span>
+    <span class="stat">合规率<b>${d.compliance_pass_rate??'-'}%</b></span>`;
+}
+document.getElementById('btnRefresh').onclick=loadOverview;
+loadOverview();
+</script>
+</body>
+</html>

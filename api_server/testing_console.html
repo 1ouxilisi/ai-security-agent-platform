@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>测试体系与 CI/CD 控制台</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --border:#30363d; --fg:#e6edf3;
+  --muted:#8b949e; --accent:#58a6ff; --ok:#3fb950; --warn:#d29922;
+  --high:#f85149; --critical:#ff6b6b; --chip:#21262d; --purple:#bc8cff;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);font-size:14px;line-height:1.5}
+header{padding:18px 28px;border-bottom:1px solid var(--border);
+  background:linear-gradient(90deg,#161b22,#0d1117)}
+header h1{margin:0;font-size:20px;letter-spacing:1px}
+header .sub{color:var(--muted);font-size:12px;margin-top:4px}
+.tabs{display:flex;gap:4px;padding:0 28px;background:var(--panel);
+  border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{padding:12px 18px;cursor:pointer;border:none;background:transparent;
+  color:var(--muted);font-size:14px;border-bottom:2px solid transparent;white-space:nowrap}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover{color:var(--fg)}
+main{padding:24px 28px;max-width:1400px;margin:0 auto}
+.panel{display:none}
+.panel.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:14px;margin-bottom:20px}
+.card{background:var(--panel);border:1px solid var(--border);
+  border-radius:8px;padding:16px}
+.card .label{color:var(--muted);font-size:12px}
+.card .value{font-size:24px;font-weight:600;margin-top:6px}
+.card .bar{height:6px;background:var(--chip);border-radius:3px;margin-top:10px}
+.card .bar > i{display:block;height:100%;border-radius:3px;
+  background:var(--accent);transition:width .4s}
+.row{display:flex;gap:14px;flex-wrap:wrap}
+.col{flex:1;min-width:320px}
+.box{background:var(--panel);border:1px solid var(--border);
+  border-radius:8px;padding:16px;margin-bottom:16px}
+.box h3{margin:0 0 12px;font-size:15px;color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:500;font-size:12px}
+tr:hover td{background:#1c2129}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;
+  background:var(--chip);color:var(--muted)}
+.badge.critical{background:#3d1418;color:var(--critical)}
+.badge.high{background:#3d2418;color:var(--high)}
+.badge.medium{background:#3d3418;color:var(--warn)}
+.badge.low{background:#1a2f1a;color:var(--ok)}
+.badge.ok{background:#1a2f1a;color:var(--ok)}
+button{background:var(--accent);color:#0d1117;border:none;padding:8px 16px;
+  border-radius:6px;cursor:pointer;font-size:13px;font-weight:500}
+button.secondary{background:var(--chip);color:var(--fg)}
+button:hover{opacity:.9}
+textarea,input,select{width:100%;background:#0d1117;color:var(--fg);
+  border:1px solid var(--border);border-radius:6px;padding:8px 10px;
+  font-family:inherit;font-size:13px}
+textarea{min-height:100px;resize:vertical}
+label{display:block;color:var(--muted);font-size:12px;margin:10px 0 4px}
+.pre{background:#0d1117;border:1px solid var(--border);border-radius:6px;
+  padding:12px;font-family:Consolas,monospace;font-size:12px;
+  white-space:pre-wrap;word-break:break-all;max-height:420px;overflow:auto}
+.muted{color:var(--muted);font-size:12px}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:6px 12px;font-size:13px}
+.kv .k{color:var(--muted)}
+.actions{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+.alert{padding:10px 14px;border-radius:6px;margin:10px 0;font-size:13px}
+.alert.err{background:#3d1418;color:var(--critical);border:1px solid #5b2028}
+.alert.ok{background:#1a2f1a;color:var(--ok);border:1px solid #244a24}
+.heat{display:flex;gap:2px;align-items:flex-end;height:80px}
+.heat i{flex:1;background:var(--accent);opacity:.7;min-height:4px;border-radius:2px 2px 0 0}
+footer{padding:18px 28px;color:var(--muted);font-size:12px;
+  border-top:1px solid var(--border);text-align:center}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--muted);
+  border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;
+  vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>测试体系与 CI/CD 控制台</h1>
+  <div class="sub">第19轮升级 · 单元 / 集成 / 性能 / 安全 / 流水线 / 仪表盘 · 工程质量视角</div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-tab="unit">单元测试</button>
+  <button class="tab" data-tab="integration">集成测试</button>
+  <button class="tab" data-tab="performance">性能测试</button>
+  <button class="tab" data-tab="security">安全测试</button>
+  <button class="tab" data-tab="cicd">CI/CD 流水线</button>
+  <button class="tab" data-tab="dashboard">测试仪表盘</button>
+</div>
+
+<main>
+<!-- ============ 单元测试 ============ -->
+<section class="panel active" id="panel-unit">
+  <div class="cards">
+    <div class="card"><div class="label">pytest</div><div class="value" id="u-pytest">–</div></div>
+    <div class="card"><div class="label">已发现用例</div><div class="value" id="u-discovery">–</div></div>
+    <div class="card"><div class="label">行覆盖率</div><div class="value" id="u-cov">–</div>
+      <div class="bar"><i id="u-cov-bar" style="width:0%"></i></div></div>
+    <div class="card"><div class="label">Mock 注册数</div><div class="value" id="u-mocks">–</div></div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="box">
+        <h3>测试框架配置</h3>
+        <div class="actions">
+          <button onclick="loadUnitConfig()">加载 pytest 配置</button>
+          <button class="secondary" onclick="loadDiscover()">测试发现</button>
+        </div>
+        <div class="pre" id="u-config">点击按钮加载…</div>
+      </div>
+      <div class="box">
+        <h3>覆盖率报告</h3>
+        <div class="actions"><button onclick="runCoverage()">运行覆盖率测量</button></div>
+        <div class="pre" id="u-cov-report">–</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="box">
+        <h3>核心模块扫描与用例模板</h3>
+        <div class="actions">
+          <button onclick="scanModules()">扫描项目模块</button>
+        </div>
+        <label>模块路径（如 vuln_management/engine.py）</label>
+        <input id="u-modpath" placeholder="vuln_management/engine.py">
+        <div class="actions">
+          <button onclick="genTemplate()">生成单元测试模板</button>
+        </div>
+        <div class="pre" id="u-modules">–</div>
+      </div>
+      <div class="box">
+        <h3>测试数据工厂与 Mock 库</h3>
+        <div class="actions">
+          <button onclick="loadDataTpl()">数据模板</button>
+          <button class="secondary" onclick="loadMocks()">Mock 列表</button>
+        </div>
+        <div class="pre" id="u-data">–</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 集成测试 ============ -->
+<section class="panel" id="panel-integration">
+  <div class="cards">
+    <div class="card"><div class="label">扫描到端点</div><div class="value" id="i-endpoints">–</div></div>
+    <div class="card"><div class="label">路由文件</div><div class="value" id="i-files">–</div></div>
+    <div class="card"><div class="label">契约</div><div class="value" id="i-contract">–</div></div>
+    <div class="card"><div class="label">E2E 场景</div><div class="value" id="i-e2e">–</div></div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="box">
+        <h3>API 集成测试（真实端点）</h3>
+        <div class="actions">
+          <button onclick="scanApiEndpoints()">扫描 API 端点</button>
+          <button class="secondary" onclick="genIntegrationCases()">生成用例骨架</button>
+        </div>
+        <div class="pre" id="i-api">–</div>
+      </div>
+      <div class="box">
+        <h3>数据库集成测试</h3>
+        <div class="actions"><button onclick="runDb()">运行 CRUD/事务/并发</button></div>
+        <div class="pre" id="i-db">–</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="box">
+        <h3>服务集成测试</h3>
+        <div class="actions"><button onclick="runService()">模块交互/事件/缓存</button></div>
+        <div class="pre" id="i-svc">–</div>
+      </div>
+      <div class="box">
+        <h3>端到端测试（Playwright）</h3>
+        <div class="actions"><button onclick="loadE2e()">加载 E2E 脚本</button></div>
+        <div class="pre" id="i-e2e-pre">–</div>
+      </div>
+      <div class="box">
+        <h3>契约测试</h3>
+        <div class="actions"><button onclick="verifyContract()">验证契约</button></div>
+        <div class="pre" id="i-contract-pre">–</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 性能测试 ============ -->
+<section class="panel" id="panel-performance">
+  <div class="cards">
+    <div class="card"><div class="label">基线端点数</div><div class="value" id="p-baseline">–</div></div>
+    <div class="card"><div class="label">工具</div><div class="value" id="p-tool">–</div></div>
+    <div class="card"><div class="label">P95 健康线</div><div class="value">&lt;500ms</div></div>
+    <div class="card"><div class="label">退化阈值</div><div class="value">+10%</div></div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="box">
+        <h3>负载测试</h3>
+        <div class="kv">
+          <span class="k">并发用户</span><input id="p-users" value="200">
+          <span class="k">时长(秒)</span><input id="p-dur" value="180">
+        </div>
+        <div class="actions"><button onclick="runLoad()">启动负载</button></div>
+        <div class="pre" id="p-load">–</div>
+      </div>
+      <div class="box">
+        <h3>压力 / 尖峰测试</h3>
+        <div class="actions">
+          <button onclick="runStress()">压力测试</button>
+          <button class="secondary" onclick="runSpike()">尖峰测试</button>
+        </div>
+        <div class="pre" id="p-stress">–</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="box">
+        <h3>Soak 长稳测试</h3>
+        <div class="actions"><button onclick="runSoak()">运行 24h（模拟）</button></div>
+        <div class="pre" id="p-soak">–</div>
+      </div>
+      <div class="box">
+        <h3>性能基线</h3>
+        <div class="actions"><button onclick="loadBaselines()">查看基线</button></div>
+        <div class="pre" id="p-baselines">–</div>
+      </div>
+      <div class="box">
+        <h3>Locust 脚本</h3>
+        <div class="actions"><button onclick="loadLocust()">生成脚本</button></div>
+        <div class="pre" id="p-locust">–</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 安全测试 ============ -->
+<section class="panel" id="panel-security">
+  <div class="cards">
+    <div class="card"><div class="label">SAST 规则</div><div class="value" id="s-rules">–</div></div>
+    <div class="card"><div class="label">DAST 规则</div><div class="value" id="s-dast">–</div></div>
+    <div class="card"><div class="label">依赖包</div><div class="value" id="s-pkgs">–</div></div>
+    <div class="card"><div class="label">高危发现</div><div class="value" id="s-high">–</div></div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="box">
+        <h3>SAST 静态扫描（真实代码）</h3>
+        <div class="actions"><button onclick="runSast()">扫描源码</button></div>
+        <div class="pre" id="s-sast">–</div>
+      </div>
+      <div class="box">
+        <h3>DAST 动态扫描</h3>
+        <div class="actions"><button onclick="runDast()">运行时探针</button></div>
+        <div class="pre" id="s-dast-pre">–</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="box">
+        <h3>依赖漏洞扫描</h3>
+        <div class="actions"><button onclick="runDeps()">扫描 requirements.txt</button></div>
+        <div class="pre" id="s-deps">–</div>
+      </div>
+      <div class="box">
+        <h3>模糊测试</h3>
+        <label>目标端点</label>
+        <input id="f-target" value="/api/v1/testing/unit/overview">
+        <div class="actions"><button onclick="runFuzz()">开始模糊</button></div>
+        <div class="pre" id="s-fuzz">–</div>
+      </div>
+      <div class="box">
+        <h3>安全回归</h3>
+        <div class="actions"><button onclick="runRegression()">检查复发</button></div>
+        <div class="pre" id="s-reg">–</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CI/CD 流水线 ============ -->
+<section class="panel" id="panel-cicd">
+  <div class="cards">
+    <div class="card"><div class="label">阶段数</div><div class="value" id="c-stages">–</div></div>
+    <div class="card"><div class="label">门禁规则</div><div class="value" id="c-gate">–</div></div>
+    <div class="card"><div class="label">成功率</div><div class="value" id="c-rate">–</div></div>
+    <div class="card"><div class="label">平均耗时</div><div class="value" id="c-dur">–</div></div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="box">
+        <h3>流水线定义</h3>
+        <div class="actions">
+          <button onclick="loadPipeline('github')">GitHub Actions</button>
+          <button class="secondary" onclick="loadPipeline('gitlab')">GitLab CI</button>
+        </div>
+        <div class="pre" id="c-yaml">–</div>
+      </div>
+      <div class="box">
+        <h3>质量门禁评估</h3>
+        <div class="actions"><button onclick="runGate()">评估门禁</button></div>
+        <div class="pre" id="c-gate-pre">–</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="box">
+        <h3>自动化部署</h3>
+        <div class="actions">
+          <button onclick="runDeploy('staging','rolling')">部署 staging</button>
+          <button class="secondary" onclick="runDeploy('prod','canary')">金丝雀 prod</button>
+        </div>
+        <div class="pre" id="c-deploy">–</div>
+      </div>
+      <div class="box">
+        <h3>制品管理</h3>
+        <div class="actions"><button onclick="listArtifacts()">制品列表</button></div>
+        <div class="pre" id="c-art">–</div>
+      </div>
+      <div class="box">
+        <h3>流水线监控</h3>
+        <div class="actions"><button onclick="loadMonitor()">构建历史</button></div>
+        <div class="pre" id="c-monitor">–</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 测试仪表盘 ============ -->
+<section class="panel" id="panel-dashboard">
+  <div class="cards">
+    <div class="card"><div class="label">质量评分</div><div class="value" id="d-score">–</div>
+      <div class="bar"><i id="d-score-bar" style="width:0%"></i></div></div>
+    <div class="card"><div class="label">通过率</div><div class="value" id="d-pass">–</div></div>
+    <div class="card"><div class="label">未关闭缺陷</div><div class="value" id="d-bugs">–</div></div>
+    <div class="card"><div class="label">修复率</div><div class="value" id="d-fix">–</div></div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="box">
+        <h3>测试用例库</h3>
+        <div class="actions">
+          <button onclick="listCases()">用例列表</button>
+        </div>
+        <div class="pre" id="d-cases">–</div>
+      </div>
+      <div class="box">
+        <h3>测试执行与报告</h3>
+        <div class="actions">
+          <button onclick="startRun()">启动一轮</button>
+          <button class="secondary" onclick="loadReport()">综合报告</button>
+        </div>
+        <div class="pre" id="d-run">–</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="box">
+        <h3>缺陷管理</h3>
+        <div class="actions"><button onclick="listBugs()">缺陷列表</button></div>
+        <div class="pre" id="d-bug-pre">–</div>
+      </div>
+      <div class="box">
+        <h3>测试度量与质量趋势</h3>
+        <div class="actions"><button onclick="loadMetrics()">刷新度量</button></div>
+        <div class="heat" id="d-trend"></div>
+        <div class="pre" id="d-metrics">–</div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>testing-console · 第19轮方向4 · 所有数据来自 /api/v1/testing/* 真实接口</footer>
+
+<script>
+const API = '/api/v1/testing';
+const $ = id => document.getElementById(id);
+
+async function jget(url){
+  const r = await fetch(url); return r.json();
+}
+async function jpost(url, body){
+  const r = await fetch(url, {method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body||{})});
+  return r.json();
+}
+function show(id, obj){ $(id).textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2); }
+function errBox(id, e){ $(id).innerHTML = '<span class="alert err">请求失败: '+e+'</span>'; }
+function setVal(id, v){ $(id).textContent = v; }
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    $('panel-'+t.dataset.tab).classList.add('active');
+  };
+});
+
+// ---------- 单元测试 ----------
+async function loadUnitConfig(){
+  try{ const d = await jget(API+'/unit/framework/config');
+    show('u-config', d.data || d.error); }catch(e){ errBox('u-config', e); }
+}
+async function loadDiscover(){
+  try{ const d = await jget(API+'/unit/discover');
+    if(d.data){ setVal('u-discovery', d.data.total_cases);
+      show('u-config', {总文件:d.data.total_files, 分类:d.data.by_category, 工具:d.data.tools}); }
+  }catch(e){ errBox('u-config', e); }
+}
+async function scanModules(){
+  try{ const d = await jget(API+'/unit/scan-modules?limit=30');
+    show('u-modules', d.data); setVal('u-pytest', 'OK');
+  }catch(e){ errBox('u-modules', e); }
+}
+async function genTemplate(){
+  const p = $('u-modpath').value.trim();
+  try{ const d = await jpost(API+'/unit/generate-template', {module_path:p});
+    show('u-modules', d.data && d.data.result ? d.data.result.template : d);
+  }catch(e){ errBox('u-modules', e); }
+}
+async function runCoverage(){
+  try{ const d = await jget(API+'/unit/coverage/run');
+    if(d.data){ const s=d.data.summary; setVal('u-cov', s.line+'%');
+      $('u-cov-bar').style.width = s.line+'%'; show('u-cov-report', d.data); }
+  }catch(e){ errBox('u-cov-report', e); }
+}
+async function loadDataTpl(){
+  try{ const d = await jget(API+'/unit/data/templates'); show('u-data', d.data); }
+  catch(e){ errBox('u-data', e); }
+}
+async function loadMocks(){
+  try{ const d = await jget(API+'/unit/mocks');
+    if(d.data) setVal('u-mocks', d.data.count); show('u-data', d.data); }
+  catch(e){ errBox('u-data', e); }
+}
+
+// ---------- 集成测试 ----------
+async function scanApiEndpoints(){
+  try{ const d = await jget(API+'/integration/scan-api');
+    if(d.data){ setVal('i-endpoints', d.data.total_endpoints);
+      setVal('i-files', d.data.route_files);
+      show('i-api', {方法分布:d.data.method_distribution, 顶级模块:d.data.top_modules}); }
+  }catch(e){ errBox('i-api', e); }
+}
+async function genIntegrationCases(){
+  try{ const d = await jget(API+'/integration/generate-cases?limit=8');
+    show('i-api', d.data && d.data.result ? d.data.result.pytest_skeleton : d);
+  }catch(e){ errBox('i-api', e); }
+}
+async function runDb(){
+  try{ const d = await jget(API+'/integration/db/run'); show('i-db', d.data); }
+  catch(e){ errBox('i-db', e); }
+}
+async function runService(){
+  try{ const d = await jget(API+'/integration/service/run'); show('i-svc', d.data); }
+  catch(e){ errBox('i-svc', e); }
+}
+async function loadE2e(){
+  try{ const d = await jget(API+'/integration/e2e/script');
+    if(d.data){ setVal('i-e2e', d.data.scenarios.length);
+      show('i-e2e-pre', d.data.script); }
+  }catch(e){ errBox('i-e2e-pre', e); }
+}
+async function verifyContract(){
+  try{ const d = await jget(API+'/integration/contract/verify');
+    if(d.data){ setVal('i-contract', d.data.verified); show('i-contract-pre', d.data); }
+  }catch(e){ errBox('i-contract-pre', e); }
+}
+
+// ---------- 性能测试 ----------
+async function runLoad(){
+  const u = parseInt($('p-users').value||'200');
+  const dur = parseInt($('p-dur').value||'180');
+  try{ const d = await jpost(API+'/performance/load/run', {users:u, duration_s:dur});
+    show('p-load', d.data && d.data.result ? d.data.result : d);
+  }catch(e){ errBox('p-load', e); }
+}
+async function runStress(){
+  try{ const d = await jget(API+'/performance/stress/run');
+    show('p-stress', d.data && d.data.result ? d.data.result : d); }
+  catch(e){ errBox('p-stress', e); }
+}
+async function runSpike(){
+  try{ const d = await jget(API+'/performance/spike/run');
+    show('p-stress', d.data && d.data.result ? d.data.result : d); }
+  catch(e){ errBox('p-stress', e); }
+}
+async function runSoak(){
+  try{ const d = await jget(API+'/performance/soak/run?hours=24');
+    show('p-soak', d.data && d.data.result ? d.data.result : d); }
+  catch(e){ errBox('p-soak', e); }
+}
+async function loadBaselines(){
+  try{ const d = await jget(API+'/performance/baseline/list');
+    if(d.data) setVal('p-baseline', d.data.count); show('p-baselines', d.data); }
+  catch(e){ errBox('p-baselines', e); }
+}
+async function loadLocust(){
+  try{ const d = await jget(API+'/performance/script/locust');
+    if(d.data){ setVal('p-tool', d.data.tool_available ? 'locust' : '内置');
+      show('p-locust', d.data.script); }
+  }catch(e){ errBox('p-locust', e); }
+}
+
+// ---------- 安全测试 ----------
+async function runSast(){
+  try{ const d = await jget(API+'/security/sast/run?limit_files=300');
+    if(d.data && d.data.result){ const r=d.data.result;
+      setVal('s-high', (r.severity_distribution.high||0));
+      show('s-sast', {扫描文件:r.scanned_files, 总发现:r.total_findings,
+        分布:r.severity_distribution, Top:r.top_findings}); }
+  }catch(e){ errBox('s-sast', e); }
+}
+async function runDast(){
+  try{ const d = await jget(API+'/security/dast/run'); show('s-dast-pre', d.data); }
+  catch(e){ errBox('s-dast-pre', e); }
+}
+async function runDeps(){
+  try{ const d = await jget(API+'/security/deps/scan');
+    if(d.data && d.data.result){ setVal('s-pkgs', d.data.result.packages);
+      show('s-deps', d.data.result); }
+  }catch(e){ errBox('s-deps', e); }
+}
+async function runFuzz(){
+  const t = $('f-target').value;
+  try{ const d = await jpost(API+'/security/fuzz/run', {target:t, iterations:2000});
+    show('s-fuzz', d.data && d.data.result ? d.data.result : d); }
+  catch(e){ errBox('s-fuzz', e); }
+}
+async function runRegression(){
+  try{ const d = await jget(API+'/security/regression/check'); show('s-reg', d.data); }
+  catch(e){ errBox('s-reg', e); }
+}
+async function loadRules(){
+  try{ const d = await jget(API+'/security/rules');
+    if(d.data){ setVal('s-rules', d.data.sast_rules.length);
+      setVal('s-dast', d.data.dast_rules.length); }
+  }catch(e){}
+}
+
+// ---------- CI/CD ----------
+async function loadPipeline(kind){
+  try{ const d = await jget(API+'/cicd/pipeline/yaml?kind='+kind);
+    show('c-yaml', d.data && d.data.yaml); }
+  catch(e){ errBox('c-yaml', e); }
+}
+async function runGate(){
+  const metrics = {pass_rate:96, line_coverage:76.4, branch_coverage:68.1,
+    sast_high:0, duplication:2.1, complexity:11, lint_errors:0, perf_regression:4.0};
+  try{ const d = await jpost(API+'/cicd/gate/evaluate', {metrics});
+    show('c-gate-pre', d.data); }
+  catch(e){ errBox('c-gate-pre', e); }
+}
+async function runDeploy(env, strategy){
+  try{ const d = await jpost(API+'/cicd/deploy/run', {env, strategy});
+    show('c-deploy', d.data && d.data.result ? d.data.result : d); }
+  catch(e){ errBox('c-deploy', e); }
+}
+async function listArtifacts(){
+  try{ const d = await jget(API+'/cicd/artifact/list'); show('c-art', d.data); }
+  catch(e){ errBox('c-art', e); }
+}
+async function loadMonitor(){
+  try{ const d = await jget(API+'/cicd/monitor/dashboard');
+    if(d.data){ setVal('c-rate', d.data.success_rate+'%');
+      setVal('c-dur', d.data.avg_duration_s+'s'); show('c-monitor', d.data); }
+  }catch(e){ errBox('c-monitor', e); }
+}
+async function loadCicdOverview(){
+  try{ const d = await jget(API+'/cicd/overview');
+    if(d.data){ setVal('c-stages', d.data.stages.length);
+      setVal('c-gate', d.data.gate_rules); }
+  }catch(e){}
+}
+
+// ---------- 仪表盘 ----------
+async function listCases(){
+  try{ const d = await jget(API+'/dashboard/cases'); show('d-cases', d.data); }
+  catch(e){ errBox('d-cases', e); }
+}
+async function startRun(){
+  try{ const d = await jpost(API+'/dashboard/executions/start?name=manual&ctype=all');
+    show('d-run', d.data); }
+  catch(e){ errBox('d-run', e); }
+}
+async function loadReport(){
+  try{ const d = await jget(API+'/dashboard/report?kind=comprehensive');
+    show('d-run', d.data && d.data.markdown); }
+  catch(e){ errBox('d-run', e); }
+}
+async function listBugs(){
+  try{ const d = await jget(API+'/dashboard/bugs'); show('d-bug-pre', d.data); }
+  catch(e){ errBox('d-bug-pre', e); }
+}
+async function loadMetrics(){
+  try{ const d = await jget(API+'/dashboard/metrics');
+    if(d.data){ setVal('d-pass', d.data.pass_rate+'%');
+      setVal('d-bugs', d.data.open_bugs);
+      setVal('d-fix', d.data.fix_rate+'%');
+      show('d-metrics', d.data);
+      const box = $('d-trend'); box.innerHTML='';
+      d.data.trend.forEach(t=>{ const i=document.createElement('i');
+        i.style.height = Math.max(8, t.pass_rate)+'%'; i.title=t.day+' '+t.pass_rate+'%';
+        box.appendChild(i); });
+    }
+  }catch(e){ errBox('d-metrics', e); }
+}
+async function loadDash(){
+  try{ const d = await jget(API+'/dashboard/view');
+    if(d.data){ setVal('d-score', d.data.quality_score+' ('+d.data.quality_grade+')');
+      $('d-score-bar').style.width = d.data.quality_score+'%'; }
+  }catch(e){}
+}
+
+// 初始化
+loadDash(); loadMetrics(); loadCicdOverview(); loadRules();
+</script>
+</body>
+</html>

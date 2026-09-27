@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>漏洞数据库管理 - AI Hacking Agent</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid #334155;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+        .header h1 span {
+            color: #38bdf8;
+        }
+        .header .stats {
+            display: flex;
+            gap: 20px;
+        }
+        .stat-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 10px 18px;
+            text-align: center;
+        }
+        .stat-card .num {
+            font-size: 24px;
+            font-weight: 700;
+            color: #38bdf8;
+        }
+        .stat-card .label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        .container {
+            padding: 24px 30px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .toolbar {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+        .search-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .search-row input, .search-row select {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 10px 14px;
+            color: #e2e8f0;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-row input:focus, .search-row select:focus {
+            border-color: #38bdf8;
+        }
+        .search-row input[type="text"] {
+            flex: 1;
+            min-width: 250px;
+        }
+        .btn {
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #0284c7; }
+        .btn-secondary {
+            background: #475569;
+        }
+        .btn-secondary:hover { background: #334155; }
+        .btn-success {
+            background: #10b981;
+        }
+        .btn-success:hover { background: #059669; }
+        .btn-warning {
+            background: #f59e0b;
+        }
+        .btn-warning:hover { background: #d97706; }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .filter-row label {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        .filter-row select {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 7px 12px;
+            color: #e2e8f0;
+            font-size: 13px;
+            outline: none;
+        }
+        .checkbox-group {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            color: #cbd5e1;
+            cursor: pointer;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #38bdf8;
+        }
+        .sync-bar {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .sync-info {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        .sync-info strong {
+            color: #e2e8f0;
+        }
+        .sync-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .table-container {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead {
+            background: #0f172a;
+        }
+        th {
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #334155;
+        }
+        td {
+            padding: 14px 16px;
+            font-size: 14px;
+            border-bottom: 1px solid #1e293b;
+        }
+        tr:hover {
+            background: #0f172a;
+        }
+        .cve-id {
+            font-weight: 600;
+            color: #38bdf8;
+            cursor: pointer;
+        }
+        .cve-id:hover {
+            text-decoration: underline;
+        }
+        .severity {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .severity-critical { background: #7f1d1d; color: #fca5a5; }
+        .severity-high { background: #7c2d12; color: #fdba74; }
+        .severity-medium { background: #713f12; color: #fde047; }
+        .severity-low { background: #14532d; color: #86efac; }
+        .severity-info { background: #1e3a5f; color: #7dd3fc; }
+        .cvss {
+            font-weight: 700;
+            font-size: 15px;
+        }
+        .cvss-high { color: #f87171; }
+        .cvss-medium { color: #fbbf24; }
+        .cvss-low { color: #34d399; }
+        .tag {
+            display: inline-block;
+            background: #334155;
+            color: #cbd5e1;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin: 2px;
+        }
+        .tag-kev {
+            background: #7f1d1d;
+            color: #fca5a5;
+        }
+        .tag-exploit {
+            background: #7c2d12;
+            color: #fdba74;
+        }
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: #0f172a;
+            border-top: 1px solid #334155;
+        }
+        .pagination-info {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        .pagination-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .modal-header h2 {
+            font-size: 20px;
+            color: #f8fafc;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 24px;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .modal-close:hover { color: #e2e8f0; }
+        .modal-body {
+            padding: 24px;
+        }
+        .detail-row {
+            display: flex;
+            margin-bottom: 14px;
+            font-size: 14px;
+        }
+        .detail-label {
+            width: 120px;
+            color: #94a3b8;
+            flex-shrink: 0;
+        }
+        .detail-value {
+            color: #e2e8f0;
+            flex: 1;
+        }
+        .detail-value a {
+            color: #38bdf8;
+            text-decoration: none;
+        }
+        .detail-value a:hover {
+            text-decoration: underline;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f8fafc;
+            margin: 20px 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #334155;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 14px 20px;
+            color: #e2e8f0;
+            font-size: 14px;
+            z-index: 2000;
+            display: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .toast.success { border-left: 4px solid #10b981; }
+        .toast.error { border-left: 4px solid #ef4444; }
+        .toast.info { border-left: 4px solid #38bdf8; }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #94a3b8;
+        }
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #334155;
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 12px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 漏洞数据库 <span>管理中心</span></h1>
+        <div class="stats" id="headerStats">
+            <div class="stat-card">
+                <div class="num" id="totalVulns">-</div>
+                <div class="label">总漏洞数</div>
+            </div>
+            <div class="stat-card">
+                <div class="num" id="criticalVulns">-</div>
+                <div class="label">严重漏洞</div>
+            </div>
+            <div class="stat-card">
+                <div class="num" id="exploitVulns">-</div>
+                <div class="label">有利用代码</div>
+            </div>
+            <div class="stat-card">
+                <div class="num" id="kevVulns">-</div>
+                <div class="label">KEV漏洞</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 同步状态栏 -->
+        <div class="sync-bar">
+            <div class="sync-info">
+                <div>最近同步: <strong id="lastSync">-</strong></div>
+                <div style="margin-top:4px;">数据来源: NVD / Exploit-DB / Vulners / 本地POC库</div>
+            </div>
+            <div class="sync-buttons">
+                <button class="btn btn-success btn-sm" onclick="syncNVD()">🔄 同步NVD</button>
+                <button class="btn btn-warning btn-sm" onclick="syncExploitDB()">📦 同步POC</button>
+                <button class="btn btn-secondary btn-sm" onclick="checkAlerts()">🔔 检查新漏洞</button>
+                <button class="btn btn-secondary btn-sm" onclick="refreshStats()">📊 刷新统计</button>
+            </div>
+        </div>
+
+        <!-- 搜索工具栏 -->
+        <div class="toolbar">
+            <div class="search-row">
+                <input type="text" id="searchKeyword" placeholder="搜索关键词（CVE编号、漏洞名称、厂商、产品...）" onkeypress="if(event.key==='Enter')searchVulns()">
+                <select id="searchSeverity">
+                    <option value="">全部严重程度</option>
+                    <option value="critical">严重 Critical</option>
+                    <option value="high">高危 High</option>
+                    <option value="medium">中危 Medium</option>
+                    <option value="low">低危 Low</option>
+                </select>
+                <button class="btn" onclick="searchVulns()">🔍 搜索</button>
+                <button class="btn btn-secondary" onclick="resetSearch()">重置</button>
+            </div>
+            <div class="filter-row">
+                <label>厂商:</label>
+                <input type="text" id="filterVendor" placeholder="如 Apache、Microsoft" style="width:150px;background:#0f172a;border:1px solid #334155;border-radius:6px;padding:7px 12px;color:#e2e8f0;font-size:13px;outline:none;">
+                <label>产品:</label>
+                <input type="text" id="filterProduct" placeholder="如 Log4j、Windows" style="width:150px;background:#0f172a;border:1px solid #334155;border-radius:6px;padding:7px 12px;color:#e2e8f0;font-size:13px;outline:none;">
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="filterExploit"> 仅有利用代码</label>
+                    <label><input type="checkbox" id="filterPOC"> 仅有POC</label>
+                    <label><input type="checkbox" id="filterKEV"> 仅KEV漏洞</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 漏洞列表 -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:140px;">CVE编号</th>
+                        <th>漏洞名称</th>
+                        <th style="width:90px;">严重程度</th>
+                        <th style="width:70px;">CVSS</th>
+                        <th style="width:120px;">厂商/产品</th>
+                        <th style="width:100px;">标签</th>
+                        <th style="width:100px;">发布日期</th>
+                    </tr>
+                </thead>
+                <tbody id="vulnTableBody">
+                    <tr><td colspan="7" class="loading"><div class="spinner"></div>加载中...</td></tr>
+                </tbody>
+            </table>
+            <div class="pagination">
+                <div class="pagination-info" id="paginationInfo">共 0 条</div>
+                <div class="pagination-buttons">
+                    <button class="btn btn-secondary btn-sm" onclick="prevPage()" id="prevBtn">上一页</button>
+                    <span id="pageInfo" style="padding:6px 12px;font-size:13px;color:#94a3b8;">第 1 页</span>
+                    <button class="btn btn-secondary btn-sm" onclick="nextPage()" id="nextBtn">下一页</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 漏洞详情弹窗 -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">漏洞详情</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="loading"><div class="spinner"></div>加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast提示 -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API_BASE = '';
+        let currentPage = 1;
+        const pageSize = 20;
+        let totalResults = 0;
+        let currentResults = [];
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshStats();
+            searchVulns();
+        });
+
+        // 显示Toast
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 4000);
+        }
+
+        // 刷新统计
+        async function refreshStats() {
+            try {
+                const res = await fetch(API_BASE + '/api/v1/vuln/stats');
+                const data = await res.json();
+                document.getElementById('totalVulns').textContent = data.total || 0;
+                document.getElementById('criticalVulns').textContent = (data.by_severity && data.by_severity.critical) || 0;
+                document.getElementById('exploitVulns').textContent = data.with_exploit || 0;
+                document.getElementById('kevVulns').textContent = data.kev_count || 0;
+
+                // 最近同步时间
+                if (data.last_sync) {
+                    const times = Object.values(data.last_sync).filter(t => t);
+                    if (times.length > 0) {
+                        const latest = new Date(Math.max(...times.map(t => new Date(t))));
+                        document.getElementById('lastSync').textContent = latest.toLocaleString('zh-CN');
+                    }
+                }
+            } catch (e) {
+                console.error('获取统计失败:', e);
+            }
+        }
+
+        // 搜索漏洞
+        async function searchVulns() {
+            currentPage = 1;
+            await loadVulns();
+        }
+
+        // 加载漏洞列表
+        async function loadVulns() {
+            const tbody = document.getElementById('vulnTableBody');
+            tbody.innerHTML = '<tr><td colspan="7" class="loading"><div class="spinner"></div>加载中...</td></tr>';
+
+            const params = new URLSearchParams({
+                keyword: document.getElementById('searchKeyword').value,
+                severity: document.getElementById('searchSeverity').value,
+                vendor: document.getElementById('filterVendor').value,
+                product: document.getElementById('filterProduct').value,
+                has_exploit: document.getElementById('filterExploit').checked,
+                has_poc: document.getElementById('filterPOC').checked,
+                kev_only: document.getElementById('filterKEV').checked,
+                limit: pageSize,
+                offset: (currentPage - 1) * pageSize
+            });
+
+            try {
+                const res = await fetch(API_BASE + '/api/v1/vuln/search?' + params);
+                const data = await res.json();
+                totalResults = data.total || 0;
+                currentResults = data.results || [];
+                renderTable(currentResults);
+                renderPagination();
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><div class="icon">⚠️</div>加载失败: ' + e.message + '</td></tr>';
+            }
+        }
+
+        // 渲染表格
+        function renderTable(vulns) {
+            const tbody = document.getElementById('vulnTableBody');
+            if (vulns.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><div class="icon">📭</div>未找到匹配的漏洞<br><small>尝试调整搜索条件，或点击"同步NVD"扩充漏洞库</small></td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = vulns.map(v => {
+                const severityClass = 'severity-' + (v.severity || 'info');
+                const cvssClass = v.cvss_score >= 7 ? 'cvss-high' : (v.cvss_score >= 4 ? 'cvss-medium' : 'cvss-low');
+                let tags = '';
+                if (v.kev) tags += '<span class="tag tag-kev">KEV</span>';
+                if (v.exploits && v.exploits.length > 0) tags += '<span class="tag tag-exploit">有EXP</span>';
+                if (v.tags && v.tags.length > 0) {
+                    v.tags.slice(0, 2).forEach(t => { tags += '<span class="tag">' + t + '</span>'; });
+                }
+                return `
+                    <tr>
+                        <td><span class="cve-id" onclick="showDetail('${v.cve_id}')">${v.cve_id}</span></td>
+                        <td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${v.title || ''}">${v.title || v.description?.substring(0, 80) || '-'}</td>
+                        <td><span class="severity ${severityClass}">${v.severity || 'info'}</span></td>
+                        <td class="cvss ${cvssClass}">${v.cvss_score ? v.cvss_score.toFixed(1) : '-'}</td>
+                        <td style="font-size:12px;color:#94a3b8;">${v.vendor || '-'}<br>${v.product || ''}</td>
+                        <td>${tags}</td>
+                        <td style="font-size:12px;color:#94a3b8;">${v.published_date || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 渲染分页
+        function renderPagination() {
+            const totalPages = Math.ceil(totalResults / pageSize) || 1;
+            document.getElementById('paginationInfo').textContent = `共 ${totalResults} 条，每页 ${pageSize} 条`;
+            document.getElementById('pageInfo').textContent = `第 ${currentPage} / ${totalPages} 页`;
+            document.getElementById('prevBtn').disabled = currentPage <= 1;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+        }
+
+        function prevPage() {
+            if (currentPage > 1) { currentPage--; loadVulns(); }
+        }
+        function nextPage() {
+            const totalPages = Math.ceil(totalResults / pageSize);
+            if (currentPage < totalPages) { currentPage++; loadVulns(); }
+        }
+
+        // 重置搜索
+        function resetSearch() {
+            document.getElementById('searchKeyword').value = '';
+            document.getElementById('searchSeverity').value = '';
+            document.getElementById('filterVendor').value = '';
+            document.getElementById('filterProduct').value = '';
+            document.getElementById('filterExploit').checked = false;
+            document.getElementById('filterPOC').checked = false;
+            document.getElementById('filterKEV').checked = false;
+            searchVulns();
+        }
+
+        // 显示漏洞详情
+        async function showDetail(cveId) {
+            const modal = document.getElementById('detailModal');
+            const body = document.getElementById('modalBody');
+            document.getElementById('modalTitle').textContent = cveId;
+            body.innerHTML = '<div class="loading"><div class="spinner"></div>加载中...</div>';
+            modal.classList.add('active');
+
+            try {
+                const res = await fetch(API_BASE + '/api/v1/vuln/' + encodeURIComponent(cveId));
+                const v = await res.json();
+
+                const severityClass = 'severity-' + (v.severity || 'info');
+                let html = `
+                    <div class="detail-row">
+                        <div class="detail-label">CVE编号</div>
+                        <div class="detail-value"><strong style="color:#38bdf8;">${v.cve_id}</strong></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">漏洞名称</div>
+                        <div class="detail-value">${v.title || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">严重程度</div>
+                        <div class="detail-value"><span class="severity ${severityClass}">${v.severity || 'info'}</span> &nbsp; CVSS: <strong>${v.cvss_score || '-'}</strong></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">CVSS向量</div>
+                        <div class="detail-value" style="font-family:monospace;font-size:12px;">${v.cvss_vector || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">厂商/产品</div>
+                        <div class="detail-value">${v.vendor || '-'} / ${v.product || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">发布日期</div>
+                        <div class="detail-value">${v.published_date || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">最后修改</div>
+                        <div class="detail-value">${v.last_modified || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">CWE编号</div>
+                        <div class="detail-value">${(v.cwe_ids || []).join(', ') || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">数据来源</div>
+                        <div class="detail-value">${v.source || 'local'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">特殊标记</div>
+                        <div class="detail-value">
+                            ${v.kev ? '<span class="tag tag-kev">CISA KEV</span>' : ''}
+                            ${v.in_the_wild ? '<span class="tag tag-exploit">在野利用</span>' : ''}
+                            ${v.is_0day ? '<span class="tag" style="background:#7c2d12;color:#fdba74;">0day</span>' : ''}
+                        </div>
+                    </div>
+                `;
+
+                if (v.description) {
+                    html += `<div class="section-title">漏洞描述</div><div style="font-size:14px;line-height:1.7;color:#cbd5e1;">${v.description}</div>`;
+                }
+
+                if (v.exploits && v.exploits.length > 0) {
+                    html += `<div class="section-title">利用代码 (${v.exploits.length})</div>`;
+                    v.exploits.forEach(e => {
+                        html += `<div style="background:#0f172a;padding:10px 14px;border-radius:6px;margin-bottom:8px;font-size:13px;">
+                            <strong>${e.title || e.id || '未知'}</strong>
+                            ${e.type ? ' <span class="tag">' + e.type + '</span>' : ''}
+                            ${e.platform ? ' <span class="tag">' + e.platform + '</span>' : ''}
+                            ${e.url ? '<br><a href="' + e.url + '" target="_blank">' + e.url + '</a>' : ''}
+                        </div>`;
+                    });
+                }
+
+                if (v.poc_urls && v.poc_urls.length > 0) {
+                    html += `<div class="section-title">POC链接 (${v.poc_urls.length})</div>`;
+                    v.poc_urls.forEach(url => {
+                        html += `<div style="margin-bottom:6px;font-size:13px;"><a href="${url}" target="_blank">${url}</a></div>`;
+                    });
+                }
+
+                if (v.references && v.references.length > 0) {
+                    html += `<div class="section-title">参考链接 (${v.references.length})</div>`;
+                    v.references.slice(0, 10).forEach(url => {
+                        html += `<div style="margin-bottom:4px;font-size:13px;"><a href="${url}" target="_blank">${url}</a></div>`;
+                    });
+                    if (v.references.length > 10) {
+                        html += `<div style="font-size:12px;color:#64748b;">...还有 ${v.references.length - 10} 条</div>`;
+                    }
+                }
+
+                if (v.affected_versions && v.affected_versions.length > 0) {
+                    html += `<div class="section-title">受影响版本</div><div style="font-size:13px;color:#cbd5e1;">${v.affected_versions.join(', ')}</div>`;
+                }
+
+                body.innerHTML = html;
+            } catch (e) {
+                body.innerHTML = '<div class="empty-state"><div class="icon">❌</div>加载失败: ' + e.message + '</div>';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        // 点击遮罩关闭
+        document.getElementById('detailModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // 同步NVD
+        async function syncNVD() {
+            if (!confirm('确定要同步NVD漏洞数据吗？这可能需要几分钟时间。')) return;
+            showToast('NVD同步已启动，后台执行中...', 'info');
+            try {
+                const res = await fetch(API_BASE + '/api/v1/vuln/sync/nvd', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ days: 30, max_results: 5000 })
+                });
+                const data = await res.json();
+                showToast(data.message || 'NVD同步已启动', 'success');
+            } catch (e) {
+                showToast('启动NVD同步失败: ' + e.message, 'error');
+            }
+        }
+
+        // 同步Exploit-DB
+        async function syncExploitDB() {
+            showToast('Exploit-DB POC同步已启动...', 'info');
+            try {
+                const res = await fetch(API_BASE + '/api/v1/vuln/sync/exploit-db?max_cves=100', { method: 'POST' });
+                const data = await res.json();
+                showToast(data.message || 'POC同步已启动', 'success');
+            } catch (e) {
+                showToast('启动POC同步失败: ' + e.message, 'error');
+            }
+        }
+
+        // 检查新漏洞
+        async function checkAlerts() {
+            showToast('正在检查新漏洞...', 'info');
+            try {
+                const res = await fetch(API_BASE + '/api/v1/vuln/alerts/check?hours=24', { method: 'POST' });
+                const data = await res.json();
+                showToast(data.message || '漏洞检查已启动', 'success');
+            } catch (e) {
+                showToast('检查失败: ' + e.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

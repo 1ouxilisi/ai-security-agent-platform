@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>网络流量分析 NTA/NDR 控制台 · Round 17</title>
+<style>
+  :root {
+    --bg: #0b0f17; --panel: #131a26; --panel2: #1a2333; --border: #233049;
+    --text: #d6deee; --muted: #7a8aa8; --accent: #39c5bb; --accent2: #ff6b6b;
+    --crit: #ff4d4f; --high: #fa8c16; --med: #fadb14; --low: #52c41a; --info: #1890ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text);
+    font-family: "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; font-size: 14px; }
+  header { background: linear-gradient(90deg,#0d1522,#16223a); padding: 14px 22px;
+    border-bottom: 1px solid var(--border); display:flex; align-items:center; gap:14px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; color: var(--accent); }
+  header .tag { background: var(--panel2); padding: 3px 10px; border-radius: 10px; font-size: 12px; color: var(--muted); }
+  nav { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px 22px; background: #0e1522; border-bottom: 1px solid var(--border); }
+  nav button { background: transparent; color: var(--muted); border: 1px solid var(--border);
+    padding: 7px 14px; cursor: pointer; border-radius: 6px; font-size: 13px; }
+  nav button.active { background: var(--accent); color: #001; border-color: var(--accent); font-weight: 600; }
+  nav button:hover { color: var(--text); }
+  main { padding: 18px 22px; max-width: 1500px; margin: 0 auto; }
+  .tab { display: none; } .tab.active { display: block; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 900px) { .grid, .grid3 { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .card h3 { margin: 0 0 10px; font-size: 14px; color: var(--accent); }
+  label { display:block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+  input, textarea, select { width: 100%; background: #0c1320; color: var(--text);
+    border: 1px solid var(--border); border-radius: 5px; padding: 7px 9px; font-size: 13px; }
+  textarea { min-height: 80px; font-family: Consolas, monospace; }
+  button.action { background: var(--accent); color: #001; border: none; padding: 9px 18px;
+    border-radius: 5px; cursor: pointer; font-weight: 600; margin-top: 10px; }
+  button.action:hover { opacity: .9; }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  button.danger { background: var(--crit); color: #fff; border: none; }
+  .status { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .status.running { color: var(--med); } .status.done { color: var(--low); } .status.error { color: var(--crit); }
+  pre { background: #0a101c; border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px; overflow: auto; max-height: 420px; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { border-bottom: 1px solid var(--border); padding: 6px 8px; text-align: left; }
+  th { color: var(--accent); background: #0e1626; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .pill.critical { background: rgba(255,77,79,.18); color: var(--crit); }
+  .pill.high { background: rgba(250,140,22,.18); color: var(--high); }
+  .pill.medium { background: rgba(250,219,20,.18); color: var(--med); }
+  .pill.low { background: rgba(82,196,26,.18); color: var(--low); }
+  .pill.info { background: rgba(24,144,255,.18); color: var(--info); }
+  .kv { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+  .kv div b { color: var(--accent); font-size: 18px; display: block; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .bar { height: 8px; background: var(--panel2); border-radius: 4px; overflow: hidden; margin: 4px 0; }
+  .bar > span { display: block; height: 100%; }
+  .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+  .stat-card .num { font-size: 28px; font-weight: 700; color: var(--accent); }
+  .stat-card .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .stat-card.crit .num { color: var(--crit); }
+  .stat-card.high .num { color: var(--high); }
+  svg.graph { width: 100%; height: 320px; background: #0a101c; border-radius: 6px; border: 1px solid var(--border); }
+  .hex-view { font-family: Consolas, monospace; font-size: 11px; line-height: 1.5;
+    background: #0a101c; padding: 10px; border-radius: 6px; max-height: 300px; overflow: auto; }
+  .hex-view .offset { color: #555; } .hex-view .hex { color: var(--accent); } .hex-view .ascii { color: var(--muted); }
+  .tooltip { position: relative; }
+  .chart-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .chart-row .bar-wrap { flex: 1; height: 16px; background: var(--panel2); border-radius: 3px; overflow: hidden; }
+  .chart-row .bar-wrap > span { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+  .chart-row .label { width: 100px; font-size: 12px; color: var(--muted); }
+  .chart-row .val { width: 60px; text-align: right; font-size: 12px; }
+  .threat-line { stroke: var(--crit); stroke-width: 1.5; fill: none; opacity: 0.7; }
+  .threat-dot { fill: var(--crit); }
+  .node-circle { fill: var(--info); stroke: var(--bg); stroke-width: 2; }
+  .node-external { fill: var(--high); }
+  .node-label { fill: var(--muted); font-size: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌐 网络流量分析 NTA/NDR 控制台</h1>
+  <span class="tag">Round 17 · network-analysis</span>
+  <span class="muted" style="margin-left:auto">仅用于授权网络流量安全分析 · 检测/监控视角</span>
+</header>
+
+<nav id="nav">
+  <button data-tab="capture" class="active">📡 流量捕获</button>
+  <button data-tab="anomaly">🚨 异常检测</button>
+  <button data-tab="behavior">🧬 行为分析</button>
+  <button data-tab="rules">📜 威胁规则</button>
+  <button data-tab="forensics">🔍 流量取证</button>
+  <button data-tab="dashboard">📊 NDR仪表盘</button>
+</nav>
+
+<main>
+
+<!-- ==================== Tab 1: 流量捕获 ==================== -->
+<div class="tab active" id="tab-capture">
+  <div class="grid">
+    <div class="card">
+      <h3>🎛️ 抓包控制</h3>
+      <label>网络接口</label>
+      <select id="cap-interface"><option value="eth0">eth0 (以太网)</option></select>
+      <label>BPF 过滤表达式</label>
+      <input id="cap-bpf" placeholder="例如: tcp port 80 or tcp port 443">
+      <label>最大包数</label>
+      <input id="cap-max" type="number" value="1000">
+      <div class="row">
+        <button class="action" onclick="startCapture()">▶ 开始抓包</button>
+        <button class="action danger" onclick="stopCapture()">⏹ 停止抓包</button>
+        <button class="action ghost" onclick="refreshLiveStats()">🔄 刷新统计</button>
+      </div>
+      <div class="status" id="cap-status">空闲</div>
+    </div>
+    <div class="card">
+      <h3>📊 实时统计</h3>
+      <div class="kv">
+        <div><b id="stat-pkts">0</b>包</div>
+        <div><b id="stat-rate">0</b>pps</div>
+        <div><b id="stat-bytes">0</b>MB</div>
+        <div><b id="stat-flows">0</b>流</div>
+      </div>
+      <div id="live-stats-detail"></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>📦 协议分布</h3>
+      <div id="proto-chart"></div>
+    </div>
+    <div class="card">
+      <h3>🗣️ Top 说话者</h3>
+      <div id="top-speakers"></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>🔌 Top 端口</h3>
+      <div id="top-ports"></div>
+    </div>
+    <div class="card">
+      <h3>📂 包大小分布</h3>
+      <div id="size-dist"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Tab 2: 异常检测 ==================== -->
+<div class="tab" id="tab-anomaly">
+  <div class="grid3">
+    <div class="stat-card"><div class="num" id="anom-total">0</div><div class="label">异常事件总数</div></div>
+    <div class="stat-card crit"><div class="num" id="anom-critical">0</div><div class="label">严重</div></div>
+    <div class="stat-card high"><div class="num" id="anom-high">0</div><div class="label">高危</div></div>
+  </div>
+
+  <div class="card">
+    <h3>🚨 异常事件列表</h3>
+    <div class="row" style="margin-bottom:10px">
+      <button class="action" onclick="runAnomalyDetect()">🔍 运行异常检测</button>
+      <button class="action ghost" onclick="learnBaseline()">📚 学习基线</button>
+      <button class="action ghost" onclick="loadBaselines()">📋 查看基线</button>
+    </div>
+    <div id="anomaly-table"></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>🕳️ 隧道检测结果</h3>
+      <div class="row" style="margin-bottom:10px">
+        <button class="action" onclick="runTunnelDetect()">🕳️ 检测隧道</button>
+      </div>
+      <div id="tunnel-results"></div>
+    </div>
+    <div class="card">
+      <h3>🎲 DGA 域名检测</h3>
+      <div class="row" style="margin-bottom:10px">
+        <button class="action" onclick="runDgaDetect()">🎲 检测DGA</button>
+      </div>
+      <div id="dga-results"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🔭 端口扫描检测</h3>
+    <div class="row" style="margin-bottom:10px">
+      <button class="action" onclick="runScanDetect()">🔭 检测扫描</button>
+    </div>
+    <div id="scan-results"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 3: 行为分析 ==================== -->
+<div class="tab" id="tab-behavior">
+  <div class="grid3">
+    <div class="stat-card"><div class="num" id="beh-entities">0</div><div class="label">追踪实体</div></div>
+    <div class="stat-card"><div class="num" id="beh-graph">0</div><div class="label">图谱节点</div></div>
+    <div class="stat-card high"><div class="num" id="beh-lateral">0</div><div class="label">横向移动告警</div></div>
+  </div>
+
+  <div class="card">
+    <h3>👤 网络实体画像</h3>
+    <div class="row" style="margin-bottom:10px">
+      <button class="action" onclick="loadProfiles()">👤 构建画像</button>
+    </div>
+    <div id="profile-cards"></div>
+  </div>
+
+  <div class="card">
+    <h3>🕸️ 通信关系图谱 (SVG)</h3>
+    <div class="row" style="margin-bottom:10px">
+      <button class="action" onclick="loadGraph()">🕸️ 构建图谱</button>
+    </div>
+    <svg class="graph" id="comm-graph" viewBox="0 0 800 320"></svg>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>🏠 网络拓扑发现</h3>
+      <div class="row" style="margin-bottom:10px">
+        <button class="action" onclick="loadTopology()">🏠 发现拓扑</button>
+      </div>
+      <div id="topology-data"></div>
+    </div>
+    <div class="card">
+      <h3>↔️ 横向移动 & 数据渗出</h3>
+      <div class="row" style="margin-bottom:10px">
+        <button class="action" onclick="runLateral()">↔️ 横向移动检测</button>
+        <button class="action ghost" onclick="runExfil()">💧 渗出检测</button>
+      </div>
+      <div id="lateral-results"></div>
+      <div id="exfil-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Tab 4: 威胁规则 ==================== -->
+<div class="tab" id="tab-rules">
+  <div class="grid3">
+    <div class="stat-card"><div class="num" id="rule-sig">50+</div><div class="label">签名规则</div></div>
+    <div class="stat-card"><div class="num" id="rule-yara">6</div><div class="label">YARA规则</div></div>
+    <div class="stat-card"><div class="num" id="rule-custom">1+</div><div class="label">自定义规则</div></div>
+  </div>
+
+  <div class="card">
+    <h3>📜 规则列表（签名/行为/YARA/情报）</h3>
+    <div class="row" style="margin-bottom:10px">
+      <button class="action" onclick="loadSignatures()">📜 签名规则</button>
+      <button class="action ghost" onclick="loadYaraRules()">🦠 YARA规则</button>
+      <button class="action ghost" onclick="runSignatureDetect()">▶ 运行签名检测</button>
+      <button class="action ghost" onclick="runBehaviorDetect()">🧠 运行行为检测</button>
+      <button class="action ghost" onclick="runYaraScan()">🦠 YARA扫描</button>
+      <button class="action ghost" onclick="runIocMatch()">🎯 IOC匹配</button>
+    </div>
+    <div id="rules-table"></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>✏️ 自定义规则编辑器</h3>
+      <label>规则名称</label>
+      <input id="cr-name" placeholder="例如: 异常DNS频率告警">
+      <label>条件 (JSON)</label>
+      <textarea id="cr-conditions">{"protocol": "DNS", "query_rate_gt": 100}</textarea>
+      <label>严重程度</label>
+      <select id="cr-severity"><option value="low">低</option><option value="medium" selected>中</option><option value="high">高</option><option value="critical">严重</option></select>
+      <button class="action" onclick="createCustomRule()">➕ 创建规则</button>
+      <div id="cr-result" class="status"></div>
+    </div>
+    <div class="card">
+      <h3>📈 规则命中统计</h3>
+      <button class="action ghost" onclick="loadRuleStats()">📊 刷新统计</button>
+      <div id="rule-stats"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Tab 5: 流量取证 ==================== -->
+<div class="tab" id="tab-forensics">
+  <div class="card">
+    <h3>📁 PCAP 文件列表</h3>
+    <div class="row" style="margin-bottom:10px">
+      <button class="action" onclick="loadPcaps()">📁 加载PCAP列表</button>
+    </div>
+    <div id="pcap-table"></div>
+  </div>
+
+  <div class="card">
+    <h3>🔍 流量搜索</h3>
+    <div class="row">
+      <input id="search-query" placeholder="搜索关键词/IP/端口" style="flex:1">
+      <button class="action" onclick="searchTraffic()">🔍 搜索</button>
+    </div>
+    <div id="search-results"></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>🎬 会话回放 (十六进制+ASCII)</h3>
+      <div class="row" style="margin-bottom:10px">
+        <button class="action" onclick="loadSessions()">📋 会话列表</button>
+      </div>
+      <div id="session-list"></div>
+      <div class="hex-view" id="hex-view" style="margin-top:10px">选择会话查看十六进制+ASCII双视图...</div>
+    </div>
+    <div class="card">
+      <h3>📎 文件提取</h3>
+      <div class="row" style="margin-bottom:10px">
+        <button class="action" onclick="extractFiles()">📎 提取文件</button>
+      </div>
+      <div id="extracted-files"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📦 证据包生成</h3>
+    <div class="grid">
+      <div>
+        <label>证据包名称</label>
+        <input id="ep-name" placeholder="例如: 9月14日C2事件证据包">
+        <label>模板</label>
+        <select id="ep-template">
+          <option value="incident_response">事件响应</option>
+          <option value="compliance_audit">合规审计</option>
+          <option value="threat_hunt">威胁狩猎</option>
+          <option value="network_incident">网络事件</option>
+        </select>
+      </div>
+      <div>
+        <label>分析师</label>
+        <input id="ep-analyst" value="security_analyst">
+        <label>备注</label>
+        <input id="ep-notes" placeholder="可选备注">
+      </div>
+    </div>
+    <button class="action" onclick="generateEvidencePack()">📦 生成证据包</button>
+    <div id="ep-result" class="status"></div>
+    <div id="ep-list" style="margin-top:14px"></div>
+  </div>
+</div>
+
+<!-- ==================== Tab 6: NDR仪表盘 ==================== -->
+<div class="tab" id="tab-dashboard">
+  <div class="grid3">
+    <div class="stat-card"><div class="num" id="dash-traffic">0</div><div class="label">流量速率 Mbps</div></div>
+    <div class="stat-card"><div class="num" id="dash-conn">0</div><div class="label">活跃连接</div></div>
+    <div class="stat-card crit"><div class="num" id="dash-alerts">0</div><div class="label">今日告警</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>📈 实时流量监控</h3>
+      <div class="row" style="margin-bottom:10px">
+        <button class="action" onclick="loadRealtime()">🔄 刷新实时数据</button>
+      </div>
+      <div id="realtime-data"></div>
+    </div>
+    <div class="card">
+      <h3>🚨 告警列表</h3>
+      <div class="row" style="margin-bottom:10px">
+        <button class="action" onclick="loadDashAlerts()">🚨 加载告警</button>
+      </div>
+      <div id="dash-alert-list"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🌍 威胁地图 (SVG)</h3>
+    <button class="action ghost" onclick="loadThreatMap()">🌍 刷新威胁地图</button>
+    <svg class="graph" id="threat-map-svg" viewBox="0 0 800 400" style="height:400px"></svg>
+    <div id="threat-map-legend"></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>💚 网络健康状态</h3>
+      <button class="action ghost" onclick="loadHealth()">💚 刷新健康状态</button>
+      <div id="health-data"></div>
+    </div>
+    <div class="card">
+      <h3>📏 NDR 度量指标</h3>
+      <button class="action ghost" onclick="loadMetrics()">📏 刷新度量</button>
+      <div id="metrics-data"></div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+const API = '/api/v1/network-analysis';
+let currentTab = 'capture';
+
+// Tab switching
+document.querySelectorAll('#nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    currentTab = btn.dataset.tab;
+  });
+});
+
+async function api(path, opts = {}) {
+  try {
+    const res = await fetch(API + path, {
+      headers: {'Content-Type': 'application/json'}, ...opts
+    });
+    const json = await res.json();
+    if (!json.success) {
+      console.error('API error:', json.error);
+      return null;
+    }
+    return json.data;
+  } catch(e) {
+    console.error('Fetch error:', e);
+    return null;
+  }
+}
+
+function pill(sev) {
+  return `<span class="pill ${sev}">${sev}</span>`;
+}
+function barRow(label, val, max, color) {
+  const pct = Math.min(100, (val / max * 100) || 0);
+  return `<div class="chart-row"><span class="label">${label}</span>
+    <div class="bar-wrap"><span style="width:${pct}%;background:${color||'var(--accent)'}"></span></div>
+    <span class="val">${val}</span></div>`;
+}
+
+// ========== Tab 1: 流量捕获 ==========
+async function loadInterfaces() {
+  const data = await api('/capture/interfaces');
+  if (!data) return;
+  const sel = document.getElementById('cap-interface');
+  sel.innerHTML = data.map(i => `<option value="${i.name}">${i.name} (${i.description})</option>`).join('');
+}
+async function startCapture() {
+  const iface = document.getElementById('cap-interface').value;
+  const bpf = document.getElementById('cap-bpf').value;
+  const maxP = parseInt(document.getElementById('cap-max').value) || 1000;
+  const data = await api('/capture/start', {method:'POST', body: JSON.stringify({interface: iface, bpf_filter: bpf, max_packets: maxP})});
+  const el = document.getElementById('cap-status');
+  if (data) {
+    el.textContent = `抓包运行中... ID: ${data.capture_id}, 接口: ${data.interface}, 初始包: ${data.initial_packets}`;
+    el.className = 'status running';
+    refreshLiveStats();
+  } else { el.textContent = '启动失败'; el.className = 'status error'; }
+}
+async function stopCapture() {
+  const data = await api('/capture/stop', {method:'POST'});
+  const el = document.getElementById('cap-status');
+  if (data) {
+    el.textContent = `已停止. 持续 ${data.duration_sec}s, 总包数: ${data.total_packets}`;
+    el.className = 'status done';
+    renderStats(data.statistics);
+  } else { el.textContent = '停止失败'; el.className = 'status error'; }
+}
+async function refreshLiveStats() {
+  const data = await api('/capture/live-stats');
+  if (!data) return;
+  document.getElementById('stat-pkts').textContent = data.packets_captured || 0;
+  document.getElementById('stat-rate').textContent = data.packet_rate_pps || 0;
+  document.getElementById('live-stats-detail').innerHTML =
+    `<div class="muted">状态: ${data.status} | 已运行: ${data.elapsed_sec||0}s | 接口: ${data.interface||'N/A'}</div>`;
+}
+async function loadCaptureStats() {
+  const data = await api('/capture/statistics');
+  if (data) renderStats(data);
+}
+function renderStats(s) {
+  if (!s) return;
+  document.getElementById('stat-bytes').textContent = s.total_mb || 0;
+  document.getElementById('stat-flows').textContent = s.unique_flows || 0;
+  // Protocol chart
+  const pd = s.protocol_distribution || {};
+  const maxP = Math.max(...Object.values(pd), 1);
+  document.getElementById('proto-chart').innerHTML =
+    Object.entries(pd).map(([k,v]) => barRow(k, v, maxP)).join('') || '<div class="muted">无数据</div>';
+  // Top speakers
+  document.getElementById('top-speakers').innerHTML =
+    (s.top_speakers || []).map(t => `<div class="chart-row"><span class="label">${t.ip}</span><div class="bar-wrap"><span style="width:${Math.min(100,t.packets/20)}%"></span></div><span class="val">${t.packets}</span></div>`).join('') || '<div class="muted">无数据</div>';
+  // Top ports
+  document.getElementById('top-ports').innerHTML =
+    (s.top_ports || []).map(t => `<div class="chart-row"><span class="label">:${t.port}</span><div class="bar-wrap"><span style="width:${Math.min(100,t.packets/20)}%;background:var(--info)"></span></div><span class="val">${t.packets}</span></div>`).join('') || '<div class="muted">无数据</div>';
+  // Size distribution
+  const sd = s.packet_size_distribution || {};
+  document.getElementById('size-dist').innerHTML =
+    Object.entries(sd).map(([k,v]) => barRow(k, v, Math.max(...Object.values(sd),1), 'var(--med)')).join('') || '<div class="muted">无数据</div>';
+}
+
+// ========== Tab 2: 异常检测 ==========
+async function runAnomalyDetect() {
+  const data = await api('/anomaly/detect');
+  if (!data) return;
+  document.getElementById('anom-total').textContent = data.total_anomalies;
+  document.getElementById('anom-critical').textContent = (data.by_severity||{}).critical || 0;
+  document.getElementById('anom-high').textContent = (data.by_severity||{}).high || 0;
+  document.getElementById('anomaly-table').innerHTML =
+    `<table><tr><th>ID</th><th>类型</th><th>严重度</th><th>描述</th><th>源</th><th>目标</th><th>时间</th></tr>` +
+    (data.anomalies||[]).map(a => `<tr><td>${a.anomaly_id}</td><td>${a.name}</td><td>${pill(a.severity)}</td><td>${a.description}</td><td>${a.source_ip}</td><td>${a.destination_ip}</td><td class="muted">${a.timestamp}</td></tr>`).join('') + '</table>';
+}
+async function learnBaseline() {
+  const data = await api('/anomaly/baseline/learn', {method:'POST', body: JSON.stringify({duration_minutes:30})});
+  if (data) alert('基线学习完成: ' + (data.result?.baseline_id || data.baseline_id));
+}
+async function loadBaselines() {
+  const data = await api('/anomaly/baselines');
+  if (data) alert('已加载 ' + data.length + ' 条基线');
+}
+async function runTunnelDetect() {
+  const data = await api('/anomaly/tunnels');
+  if (!data) return;
+  document.getElementById('tunnel-results').innerHTML =
+    (data.tunnels||[]).map(t => `<div style="margin-bottom:8px;padding:8px;background:var(--panel2);border-radius:5px">
+      <b>${t.name}</b> ${pill(t.severity)} <span class="muted">熵值: ${t.entropy_score}/${t.entropy_threshold}</span><br>
+      <span class="muted">${t.source_ip} → ${t.destination_ip} | 匹配: ${t.indicators_matched.join(', ')}</span></div>`).join('') || '<div class="muted">未检测到隧道</div>';
+}
+async function runDgaDetect() {
+  const data = await api('/anomaly/dga', {method:'POST', body: JSON.stringify({domains:[]})});
+  if (!data) return;
+  document.getElementById('dga-results').innerHTML =
+    `<div class="kv"><div><b>${data.total_checked}</b>检测</div><div><b style="color:var(--crit)">${data.dga_detected}</b>DGA命中</div><div><b style="color:var(--low)">${data.benign_count}</b>正常</div></div>` +
+    '<table><tr><th>域名</th><th>熵值</th><th>风险</th><th>DGA家族</th></tr>' +
+    (data.results||[]).slice(0,10).map(r => `<tr><td>${r.domain}</td><td>${r.entropy}</td><td>${pill(r.risk_level)}</td><td>${r.dga_family||'-'}</td></tr>`).join('') + '</table>';
+}
+async function runScanDetect() {
+  const data = await api('/anomaly/port-scans');
+  if (!data) return;
+  document.getElementById('scan-results').innerHTML =
+    (data.scans||[]).map(s => `<div style="margin-bottom:8px;padding:8px;background:var(--panel2);border-radius:5px">
+      <b>${s.name}</b> ${pill(s.severity)} <span class="muted">${s.source} → ${s.target}</span><br>
+      <span class="muted">端口数: ${s.port_count} | SYN速率: ${s.syn_packet_rate}/s | 端口: ${(s.ports_scanned||[]).join(', ')}</span></div>`).join('') || '<div class="muted">未检测到扫描</div>';
+}
+
+// ========== Tab 3: 行为分析 ==========
+async function loadProfiles() {
+  const data = await api('/behavior/profiles');
+  if (!data) return;
+  document.getElementById('beh-entities').textContent = data.total_entities;
+  document.getElementById('profile-cards').innerHTML =
+    '<div class="grid3">' + (data.profiles||[]).slice(0,9).map(p =>
+      `<div class="card" style="margin-bottom:0"><b>${p.ip}</b> <span class="muted">(${p.role})</span><br>
+      <span class="muted">主机: ${p.hostname}</span><br>
+      <span class="muted">对端: ${p.peer_count} | 协议: ${(p.protocols_used||[]).join(',')}</span><br>
+      风险分: ${pill(p.risk_score>70?'high':p.risk_score>40?'medium':'low')} <b>${p.risk_score}</b></div>`).join('') + '</div>';
+}
+async function loadGraph() {
+  const data = await api('/behavior/graph');
+  if (!data) return;
+  document.getElementById('beh-graph').textContent = data.total_nodes;
+  const svg = document.getElementById('comm-graph');
+  const W = 800, H = 320;
+  let html = '';
+  // edges
+  (data.edges||[]).forEach(e => {
+    const s = (data.nodes||[]).find(n => n.id === e.source);
+    const t = (data.nodes||[]).find(n => n.id === e.target);
+    if (s && t) {
+      const sx = ((s.id.charCodeAt(0)+s.id.length*13) % W);
+      const sy = ((s.id.charCodeAt(s.id.length-1)*7) % H);
+      const tx = ((t.id.charCodeAt(0)+t.id.length*13) % W);
+      const ty = ((t.id.charCodeAt(t.id.length-1)*7) % H);
+      html += `<line x1="${sx}" y1="${sy}" x2="${tx}" y2="${ty}" stroke="#233049" stroke-width="0.5" opacity="0.5"/>`;
+    }
+  });
+  // nodes
+  (data.nodes||[]).forEach(n => {
+    const x = ((n.id.charCodeAt(0)+n.id.length*13) % W);
+    const y = ((n.id.charCodeAt(n.id.length-1)*7) % H);
+    const cls = n.type === 'external' ? 'node-circle node-external' : 'node-circle';
+    html += `<circle cx="${x}" cy="${y}" r="${Math.max(4, n.size/2)}" class="${cls}"/>`;
+    if (n.size > 12) html += `<text x="${x+8}" y="${y+3}" class="node-label">${n.id}</text>`;
+  });
+  svg.innerHTML = html;
+}
+async function loadTopology() {
+  const data = await api('/behavior/topology');
+  if (!data) return;
+  document.getElementById('topology-data').innerHTML =
+    `<b>设备数:</b> ${data.device_count}<br><b>子网:</b> ${(data.subnets||[]).map(s=>s.cidr).join(', ')}<br>` +
+    '<table><tr><th>IP</th><th>类型</th><th>厂商</th></tr>' +
+    (data.devices||[]).map(d => `<tr><td>${d.ip}</td><td>${d.type}</td><td>${d.vendor}</td></tr>`).join('') + '</table>';
+}
+async function runLateral() {
+  const data = await api('/behavior/lateral-movement');
+  if (!data) return;
+  document.getElementById('beh-lateral').textContent = data.total_alerts;
+  document.getElementById('lateral-results').innerHTML =
+    (data.alerts||[]).map(a => `<div style="margin-bottom:6px;padding:6px;background:var(--panel2);border-radius:4px">
+      <b>${a.name}</b> ${pill(a.severity)} <span class="muted">${a.source_ip} → ${a.target_ip}</span></div>`).join('') || '<div class="muted">无横向移动告警</div>';
+}
+async function runExfil() {
+  const data = await api('/behavior/exfiltration');
+  if (!data) return;
+  document.getElementById('exfil-results').innerHTML =
+    (data.alerts||[]).map(a => `<div style="margin-bottom:6px;padding:6px;background:var(--panel2);border-radius:4px">
+      <b>${a.name}</b> ${pill(a.severity)} <span class="muted">${a.source_ip} → ${a.destination_ip} | ${a.data_volume_mb}MB</span></div>`).join('') || '<div class="muted">无渗出告警</div>';
+}
+
+// ========== Tab 4: 威胁规则 ==========
+async function loadSignatures() {
+  const data = await api('/rules/signatures');
+  if (!data) return;
+  document.getElementById('rules-table').innerHTML =
+    '<table><tr><th>SID</th><th>规则</th><th>优先级</th><th>类别</th><th>协议</th><th>端口</th></tr>' +
+    data.slice(0,20).map(r => `<tr><td>${r.sid}</td><td>${r.msg}</td><td>P${r.priority}</td><td>${r.category}</td><td>${r.protocol}</td><td>${r.dst_port||'any'}</td></tr>`).join('') + '</table>';
+}
+async function loadYaraRules() {
+  const data = await api('/rules/yara');
+  if (!data) return;
+  document.getElementById('rules-table').innerHTML =
+    '<table><tr><th>ID</th><th>规则名</th><th>类别</th><th>字符串数</th><th>描述</th></tr>' +
+    data.map(r => `<tr><td>${r.rule_id}</td><td>${r.name}</td><td>${r.category}</td><td>${r.strings_count}</td><td>${r.description}</td></tr>`).join('') + '</table>';
+}
+async function runSignatureDetect() {
+  const data = await api('/rules/signatures/run');
+  if (!data) return;
+  document.getElementById('rules-table').innerHTML =
+    `<div class="kv"><div><b>${data.total_hits}</b>命中</div><div><b>${data.enabled_rules}</b>启用规则</div></div>` +
+    '<table><tr><th>Alert ID</th><th>SID</th><th>规则</th><th>优先级</th><th>源→目标</th></tr>' +
+    (data.alerts||[]).map(a => `<tr><td>${a.alert_id}</td><td>${a.sid}</td><td>${a.rule_msg}</td><td>P${a.priority}</td><td>${a.source_ip} → ${a.destination_ip}</td></tr>`).join('') + '</table>';
+}
+async function runBehaviorDetect() {
+  const data = await api('/rules/behavioral/run');
+  if (!data) return;
+  document.getElementById('rules-table').innerHTML =
+    '<table><tr><th>类型</th><th>名称</th><th>严重度</th><th>描述</th></tr>' +
+    (data.detections||[]).map(d => `<tr><td>${d.type}</td><td>${d.name}</td><td>${pill(d.severity)}</td><td>${d.description}</td></tr>`).join('') + '</table>';
+}
+async function runYaraScan() {
+  const data = await api('/rules/yara/run');
+  if (!data) return;
+  document.getElementById('rules-table').innerHTML =
+    `<div class="kv"><div><b>${data.total_hits}</b>YARA命中</div></div>` +
+    '<table><tr><th>规则</th><th>类别</th><th>目标</th></tr>' +
+    (data.hits||[]).map(h => `<tr><td>${h.rule_name}</td><td>${h.category}</td><td>${h.matched_target}</td></tr>`).join('') + '</table>';
+}
+async function runIocMatch() {
+  const data = await api('/rules/ioc/match');
+  if (!data) return;
+  document.getElementById('rules-table').innerHTML =
+    `<div class="kv"><div><b>${data.total_matches}</b>IOC命中</div></div>` +
+    '<table><tr><th>类型</th><th>值</th><th>威胁类型</th><th>置信度</th></tr>' +
+    (data.matches||[]).map(m => `<tr><td>${m.type}</td><td>${m.value}</td><td>${m.threat_type}</td><td>${m.confidence}</td></tr>`).join('') + '</table>';
+}
+async function createCustomRule() {
+  const name = document.getElementById('cr-name').value;
+  const sev = document.getElementById('cr-severity').value;
+  let conds = {};
+  try { conds = JSON.parse(document.getElementById('cr-conditions').value); } catch(e) {}
+  const data = await api('/rules/custom', {method:'POST', body: JSON.stringify({name, conditions: conds, threshold: 1, severity: sev})});
+  const el = document.getElementById('cr-result');
+  if (data) { el.textContent = '规则创建成功: ' + data.rule_id; el.className = 'status done'; }
+  else { el.textContent = '创建失败'; el.className = 'status error'; }
+}
+async function loadRuleStats() {
+  const data = await api('/rules/stats');
+  if (!data) return;
+  document.getElementById('rule-stats').innerHTML =
+    `<div class="kv"><div><b>${data.signature_rules_total}</b>签名规则</div><div><b>${data.total_signature_hits}</b>总命中</div><div><b>${data.ioc_matches_total}</b>IOC匹配</div></div>` +
+    (data.top_hit_rules||[]).map(([sid,cnt]) => barRow('SID '+sid, cnt, 100, 'var(--high)')).join('');
+}
+
+// ========== Tab 5: 流量取证 ==========
+async function loadPcaps() {
+  const data = await api('/forensics/pcaps');
+  if (!data) return;
+  document.getElementById('pcap-table').innerHTML =
+    '<table><tr><th>ID</th><th>文件名</th><th>大小</th><th>包数</th><th>时间</th><th>状态</th></tr>' +
+    data.map(p => `<tr><td>${p.pcap_id}</td><td>${p.filename}</td><td>${(p.file_size_bytes/1048576).toFixed(1)}MB</td><td>${p.packet_count}</td><td class="muted">${p.capture_time}</td><td>${pill('low')}</td></tr>`).join('') + '</table>';
+}
+async function searchTraffic() {
+  const q = document.getElementById('search-query').value;
+  const data = await api('/forensics/search?query=' + encodeURIComponent(q));
+  if (!data) return;
+  document.getElementById('search-results').innerHTML =
+    '<table><tr><th>时间</th><th>源</th><th>目标</th><th>协议</th><th>上下文</th></tr>' +
+    (data.results||[]).map(r => `<tr><td class="muted">${r.timestamp}</td><td>${r.src_ip}:${r.src_port}</td><td>${r.dst_ip}:${r.dst_port}</td><td>${r.protocol}</td><td>${r.match_context}</td></tr>`).join('') + '</table>';
+}
+async function loadSessions() {
+  const data = await api('/forensics/sessions');
+  if (!data) return;
+  document.getElementById('session-list').innerHTML =
+    (data.sessions||[]).map(s => `<div style="margin-bottom:4px;cursor:pointer;padding:4px 8px;background:var(--panel2);border-radius:4px" onclick="replaySess('${s.session_id}','${s.protocol}')">
+      <b>${s.session_id}</b> <span class="muted">${s.src} → ${s.dst} (${s.packet_count}包)</span></div>`).join('');
+}
+async function replaySess(sid, proto) {
+  const data = await api('/forensics/replay/' + sid + '?protocol=' + proto);
+  if (!data) return;
+  let html = '';
+  (data.packets||[]).forEach(p => {
+    html += `<div><span class="offset">${p.frame}</span> <span class="muted">[${p.direction}]</span> <span class="ascii">${p.ascii_preview}</span></div>`;
+  });
+  document.getElementById('hex-view').innerHTML = html;
+}
+async function extractFiles() {
+  const data = await api('/forensics/extract-files');
+  if (!data) return;
+  document.getElementById('extracted-files').innerHTML =
+    '<table><tr><th>文件名</th><th>类型</th><th>大小</th><th>来源</th><th>判定</th></tr>' +
+    (data.files||[]).map(f => `<tr><td>${f.filename}</td><td>${f.file_type}</td><td>${(f.size_bytes/1024).toFixed(1)}KB</td><td>${f.extracted_from_protocol}</td><td>${pill(f.threat_verdict==='malicious'?'critical':f.threat_verdict==='suspicious'?'medium':'low')}</td></tr>`).join('') + '</table>';
+}
+async function generateEvidencePack() {
+  const name = document.getElementById('ep-name').value || '未命名证据包';
+  const tpl = document.getElementById('ep-template').value;
+  const analyst = document.getElementById('ep-analyst').value;
+  const notes = document.getElementById('ep-notes').value;
+  const data = await api('/forensics/evidence-pack', {method:'POST', body: JSON.stringify({pack_name: name, template: tpl, analyst, notes})});
+  const el = document.getElementById('ep-result');
+  if (data) {
+    el.textContent = '证据包生成成功: ' + data.pack_id + ' (SHA256: ' + data.sha256.substring(0,16) + '...)';
+    el.className = 'status done';
+    loadEvidencePacks();
+  } else { el.textContent = '生成失败'; el.className = 'status error'; }
+}
+async function loadEvidencePacks() {
+  const data = await api('/forensics/evidence-packs');
+  if (!data) return;
+  document.getElementById('ep-list').innerHTML =
+    '<table><tr><th>ID</th><th>名称</th><th>模板</th><th>分析师</th><th>时间</th></tr>' +
+    data.map(p => `<tr><td>${p.pack_id}</td><td>${p.pack_name}</td><td>${p.template}</td><td>${p.analyst}</td><td class="muted">${p.generated_at}</td></tr>`).join('') + '</table>';
+}
+
+// ========== Tab 6: NDR仪表盘 ==========
+async function loadRealtime() {
+  const data = await api('/dashboard/realtime');
+  if (!data) return;
+  document.getElementById('dash-traffic').textContent = data.traffic_rate_mbps;
+  document.getElementById('dash-conn').textContent = data.active_connections;
+  document.getElementById('dash-alerts').textContent = data.alerts_today;
+  const pd = data.protocol_distribution || {};
+  const maxP = Math.max(...Object.values(pd), 1);
+  document.getElementById('realtime-data').innerHTML =
+    `<div class="kv"><div><b>${data.packets_per_sec}</b>pps</div><div><b>${data.new_connections_per_sec}</b>新连接/s</div></div>` +
+    Object.entries(pd).map(([k,v]) => barRow(k, v, maxP)).join('') +
+    '<h4 style="margin:10px 0 6px;color:var(--accent)">Top说话者</h4>' +
+    (data.top_talkers||[]).map(t => `<div class="chart-row"><span class="label">${t.ip}</span><div class="bar-wrap"><span style="width:${Math.min(100,t.mbps)}%"></span></div><span class="val">${t.mbps}Mbps</span></div>`).join('');
+}
+async function loadDashAlerts() {
+  const data = await api('/dashboard/alerts');
+  if (!data) return;
+  document.getElementById('dash-alert-list').innerHTML =
+    '<table><tr><th>ID</th><th>严重度</th><th>名称</th><th>源</th><th>状态</th></tr>' +
+    (data.alerts||[]).map(a => `<tr><td>${a.alert_id}</td><td>${pill(a.severity)}</td><td>${a.name}</td><td>${a.source_ip}</td><td>${a.status}</td></tr>`).join('') + '</table>';
+}
+async function loadThreatMap() {
+  const data = await api('/dashboard/threat-map');
+  if (!data) return;
+  const svg = document.getElementById('threat-map-svg');
+  let html = '';
+  // simplified world grid
+  (data.attack_sources||[]).forEach(s => {
+    const x = (s.lon + 180) * 800 / 360;
+    const y = (90 - s.lat) * 400 / 180;
+    html += `<circle cx="${x}" cy="${y}" r="${Math.max(4, s.count/5)}" class="threat-dot"/>`;
+    html += `<text x="${x+8}" y="${y+3}" class="node-label">${s.country} (${s.count})</text>`;
+    // line to target
+    const tx = (data.target.lon + 180) * 800 / 360;
+    const ty = (90 - data.target.lat) * 400 / 180;
+    html += `<line x1="${x}" y1="${y}" x2="${tx}" y2="${ty}" class="threat-line"/>`;
+  });
+  // target dot
+  const tx = (data.target.lon + 180) * 800 / 360;
+  const ty = (90 - data.target.lat) * 400 / 180;
+  html += `<circle cx="${tx}" cy="${ty}" r="10" fill="var(--low)" stroke="#fff" stroke-width="2"/>`;
+  html += `<text x="${tx+12}" y="${ty+4}" class="node-label">🎯 ${data.target.city}</text>`;
+  svg.innerHTML = html;
+  document.getElementById('threat-map-legend').innerHTML =
+    (data.threat_types||[]).map(t => `<span class="pill info" style="margin-right:6px">${t.name}: ${t.count}</span>`).join('');
+}
+async function loadHealth() {
+  const data = await api('/dashboard/health');
+  if (!data) return;
+  document.getElementById('health-data').innerHTML =
+    `<div class="kv"><div><b>${data.bandwidth_utilization_pct}%</b>带宽</div><div><b>${data.detection_coverage_pct}%</b>覆盖率</div><div><b>${data.abnormal_connections}</b>异常连接</div></div>` +
+    (data.interfaces||[]).map(i => `<div class="chart-row"><span class="label">${i.name}</span><div class="bar-wrap"><span style="width:${i.utilization_pct}%;background:${i.utilization_pct>80?'var(--crit)':'var(--low)'}"></span></div><span class="val">${i.utilization_pct}%</span></div>`).join('') +
+    '<h4 style="margin:10px 0 6px;color:var(--accent)">数据源状态</h4>' +
+    (data.data_sources||[]).map(d => `<div class="chart-row"><span class="label">${d.name}</span><span class="val">${d.status}</span></div>`).join('');
+}
+async function loadMetrics() {
+  const data = await api('/dashboard/metrics');
+  if (!data) return;
+  const m = data.metrics || {};
+  document.getElementById('metrics-data').innerHTML =
+    Object.entries(m).map(([k,v]) => `<div class="chart-row"><span class="label">${v.name}</span><div class="bar-wrap"><span style="width:${Math.min(100, v.current_value/v.target_value*100)}%"></span></div><span class="val">${v.current_value}${v.unit}</span></div>`).join('') +
+    '<h4 style="margin:10px 0 6px;color:var(--accent)">7日告警趋势</h4>' +
+    (data.alert_trend_7d||[]).map(t => barRow(t.date, t.alert_count, 500, 'var(--high)')).join('');
+}
+
+// Init
+loadInterfaces();
+loadCaptureStats();
+</script>
+</body>
+</html>

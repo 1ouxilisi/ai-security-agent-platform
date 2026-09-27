@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>红蓝对抗真实化控制台 · 方向4</title>
+<style>
+:root{
+  --bg:#0d1017; --panel:#161b24; --panel2:#1f2530; --border:#2a3140;
+  --text:#e6e9f0; --muted:#8b93a5; --crit:#e74c3c; --ok:#2ecc71;
+  --warn:#f1c40f; --high:#e67e22; --blue:#4fc3f7; --purple:#9b59b6;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+header{padding:14px 22px;background:linear-gradient(90deg,#2b1418,#161b24);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:8px}
+header h1{margin:0;font-size:18px}
+.badge{background:var(--crit);color:#fff;padding:2px 10px;border-radius:999px;
+  font-size:12px;font-weight:bold}
+.container{max-width:1440px;margin:0 auto;padding:18px}
+.row{display:flex;gap:14px;flex-wrap:wrap}
+.col{flex:1;min-width:300px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+  padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 12px;font-size:15px;color:var(--crit);
+  border-bottom:1px solid var(--border);padding-bottom:8px}
+input,select,button,textarea{background:var(--panel2);border:1px solid var(--border);
+  color:var(--text);padding:8px 12px;border-radius:6px;font-size:14px;font-family:inherit}
+input[type=text]{flex:1;min-width:160px}
+button{cursor:pointer;background:var(--crit);color:#fff;border:none;font-weight:bold}
+button:hover{opacity:.85}
+button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.stages{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.stage{flex:1;min-width:96px;background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:8px;text-align:center;font-size:12px}
+.stage.red{border-top:3px solid var(--crit)}
+.stage.blue{border-top:3px solid var(--blue)}
+.stage.purple{border-top:3px solid var(--purple)}
+.stage.active{border-color:var(--crit);box-shadow:0 0 12px rgba(231,76,60,.35)}
+.stage.done{border-color:var(--ok)}
+.stage .l{font-weight:bold}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:normal}
+tr:hover td{background:var(--panel2)}
+.sev{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;
+  font-weight:bold;color:#000}
+.sev.critical{background:var(--crit);color:#fff}.sev.high{background:var(--high)}
+.sev.medium{background:var(--warn)}.sev.low{background:var(--blue)}
+code,pre{background:#0a0d12;padding:2px 6px;border-radius:4px;
+  font-family:Consolas,Monaco,monospace;font-size:12px}
+pre{padding:12px;overflow:auto;max-height:360px;white-space:pre-wrap}
+.muted{color:var(--muted)}
+.stat{display:inline-block;margin-right:18px}
+.stat b{font-size:22px;display:block;color:var(--crit)}
+.log{background:#0a0d12;padding:10px;border-radius:6px;max-height:240px;
+  overflow-y:auto;font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap}
+.tab-row{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.tab{padding:6px 14px;border-radius:6px;cursor:pointer;background:var(--panel2);
+  border:1px solid var(--border)}
+.tab.active{background:var(--crit);color:#fff;font-weight:bold}
+.tab-pane{display:none}.tab-pane.active{display:block}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--crit);margin-right:6px}
+.dot.on{background:var(--ok)}
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.bar{height:10px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:6px}
+.bar>div{height:100%;background:linear-gradient(90deg,#e74c3c,#e67e22,#f1c40f)}
+.kv{display:grid;grid-template-columns:160px 1fr;gap:4px 12px;font-size:13px}
+.kv b{color:var(--muted);font-weight:normal}
+.true{color:var(--ok)}.false{color:var(--crit)}
+@media(max-width:760px){.row{flex-direction:column}.kv{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚔️ 红蓝对抗真实化控制台 <span class="badge">方向4 · 真实工具调用 · 6.5→8.5</span></h1>
+  <div><span class="dot" id="dot"></span><span class="muted" id="ws">本地真实引擎</span>
+  <span class="muted" id="clock"></span></div>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>发起一次真实红蓝对抗（真实工具检测 + 真实 subprocess 调用）</h2>
+    <div class="toolbar">
+      <input type="text" id="target" value="192.168.56.101" placeholder="目标 IP / 域名">
+      <button id="btnStart">启动真实对抗</button>
+      <button class="secondary" id="btnTools">刷新工具矩阵</button>
+      <button class="secondary" id="btnOverview">总览</button>
+    </div>
+    <div class="stages" id="stages"></div>
+    <div class="bar"><div id="prog" style="width:0%"></div></div>
+  </div>
+
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <h2>真实工具检测矩阵</h2>
+        <div id="toolsBody" class="muted">点击“刷新工具矩阵”加载真实 shutil.which / 端口探测结果</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <h2>任务概览</h2>
+        <span class="stat"><b id="sTotal">0</b>任务</span>
+        <span class="stat"><b id="sDone">0</b>完成</span>
+        <span class="stat"><b id="sErr">0</b>异常</span>
+        <div id="taskBody" class="muted">暂无任务</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tab-row">
+      <div class="tab active" data-t="red">真实红队攻击链</div>
+      <div class="tab" data-t="blue">真实蓝队检测</div>
+      <div class="tab" data-t="purple">紫队复盘</div>
+      <div class="tab" data-t="nav">ATT&CK 覆盖</div>
+      <div class="tab" data-t="report">真实报告</div>
+      <div class="tab" data-t="log">运行日志</div>
+    </div>
+    <div class="tab-pane active" id="pane-red"><div class="muted">启动任务后展示真实红队八战术结果</div></div>
+    <div class="tab-pane" id="pane-blue"><div class="muted">真实蓝队检测结果</div></div>
+    <div class="tab-pane" id="pane-purple"><div class="muted">紫队复盘（覆盖率/差距/路线图）</div></div>
+    <div class="tab-pane" id="pane-nav"><div class="muted">攻击/检测/差距覆盖图</div></div>
+    <div class="tab-pane" id="pane-report"><div class="muted">真实报告路径</div></div>
+    <div class="tab-pane" id="pane-log"><div class="log" id="logBox"></div></div>
+  </div>
+
+</div>
+
+<script>
+const BASE='/api/v1/red-blue-real';
+let currentTask=null, stagesData=[];
+async function api(path, opt){
+  opt=opt||{}; opt.headers=Object.assign({'Content-Type':'application/json'},opt.headers||{});
+  if(opt.body && typeof opt.body!=='string') opt.body=JSON.stringify(opt.body);
+  try{
+    const r=await fetch(BASE+path, opt);
+    const j=await r.json();
+    return j;
+  }catch(e){return {success:false,error:String(e)};}
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function sevBadge(s){const m={critical:'critical',high:'high',medium:'medium',low:'low'};
+  return `<span class="sev ${m[s]||'low'}">${esc(s)}</span>`;}
+
+async function loadStages(){
+  const r=await api('/dashboard/stages');
+  if(!r.success) return;
+  stagesData=r.data.stages;
+  document.getElementById('stages').innerHTML=stagesData.map(s=>
+    `<div class="stage" data-k="${s.key}"><div class="l">${esc(s.label)}</div><div class="muted">${s.progress}%</div></div>`).join('');
+}
+async function loadOverview(){
+  const r=await api('/dashboard/overview');
+  if(!r.success) return;
+  const d=r.data;
+  document.getElementById('sTotal').textContent=d.task_total;
+  document.getElementById('sDone').textContent=d.task_done;
+  document.getElementById('sErr').textContent=d.task_error;
+  const r2=await api('/dashboard/recent?limit=5');
+  document.getElementById('taskBody').innerHTML=r2.success?
+    `<table><tr><th>任务</th><th>目标</th><th>状态</th><th>进度</th></tr>`+
+    r2.data.tasks.map(t=>`<tr><td>${t.task_id}</td><td>${esc(t.target)}</td>`+
+    `<td>${esc(t.status)}</td><td>${t.progress}%</td></tr>`).join('')+'</table>'
+    :'无任务';
+}
+async function loadTools(){
+  const r=await api('/dashboard/tools');
+  if(!r.success){document.getElementById('toolsBody').textContent=r.error;return;}
+  let html='';
+  for(const[grp,info]of Object.entries(r.data)){
+    html+=`<h3 style="font-size:13px;color:var(--crit);margin:10px 0 6px">${esc(grp)}</h3>`;
+    html+='<table>';
+    for(const[k,v]of Object.entries(info)){
+      let cell;
+      if(typeof v==='boolean') cell=`<span class="${v}">${v?'✅ 已就绪':'⚠️ 未就绪'}</span>`;
+      else if(v&&typeof v==='object'){
+        const av=v.available!==undefined?v.available:(v.reachable||false);
+        cell=`<span class="${av}">${av?'✅ 可用':'❌ 不可用'}</span> <span class=muted>${esc(v.path||v.binary||v.error||'')}</span>`;
+      } else cell=esc(String(v));
+      html+=`<tr><td style="color:var(--muted)">${esc(k)}</td><td>${cell}</td></tr>`;
+    }
+    html+='</table>';
+  }
+  document.getElementById('toolsBody').innerHTML=html;
+}
+
+async function start(){
+  const t=document.getElementById('target').value.trim();
+  if(!t){alert('请输入目标');return;}
+  const btn=document.getElementById('btnStart'); btn.disabled=true; btn.textContent='运行中…';
+  const r=await api('/start',{method:'POST',body:{target:t}});
+  btn.disabled=false; btn.textContent='启动真实对抗';
+  if(!r.success){alert(r.error);return;}
+  currentTask=r.data.task_id;
+  poll();
+}
+async function poll(){
+  if(!currentTask) return;
+  const r=await api('/task/'+currentTask+'/status');
+  if(!r.success) return;
+  const d=r.data;
+  document.getElementById('prog').style.width=d.progress+'%';
+  document.querySelectorAll('#stages .stage').forEach(s=>{
+    s.classList.toggle('active', s.dataset.k===d.stage);
+  });
+  document.getElementById('logBox').textContent=(d.log||[]).join('\n');
+  if(d.status==='running'){setTimeout(poll,1500);}
+  else{loadResults(); loadOverview();}
+}
+async function loadResults(){
+  if(!currentTask) return;
+  const r=await api('/task/'+currentTask+'/results');
+  if(!r.success) return;
+  const d=r.data;
+  // red
+  let rh='<table>';
+  for(const[k,v]of Object.entries(d.red||{})){
+    rh+=`<tr><th colspan=2 style="color:var(--crit)">${esc(k)}</th></tr>`;
+    rh+=`<tr><td colspan=2><pre>${esc(JSON.stringify(v,null,1).slice(0,1800))}</pre></td></tr>`;
+  }
+  rh+='</table>';
+  document.getElementById('pane-red').innerHTML=rh;
+  // blue
+  document.getElementById('pane-blue').innerHTML='<table>'+
+    Object.entries(d.blue||{}).map(([k,v])=>
+    `<tr><th colspan=2 style="color:var(--blue)">${esc(k)}</th></tr>`+
+    `<tr><td colspan=2><pre>${esc(JSON.stringify(v,null,1).slice(0,1500))}</pre></td></tr>`).join('')+'</table>';
+  // purple
+  const p=d.purple||{};
+  document.getElementById('pane-purple').innerHTML=
+    `<p>红队得分 <b style="color:var(--crit)">${p.red_score||0}</b> · `+
+    `蓝队得分 <b style="color:var(--blue)">${p.blue_score||0}</b> · 覆盖率 <b>${p.coverage||0}%</b></p>`+
+    `<h3 class=muted>差距（${(p.gaps||{}).gap_count||0}）</h3><table>`+
+    (((p.gaps||{}).gaps)||[]).map(g=>`<tr><td>${sevBadge(g.severity)}</td>`+
+    `<td>${esc(g.tech)} ${esc(g.name)}</td><td>${esc(g.recommendation)}</td></tr>`).join('')+'</table>'+
+    `<h3 class=muted>改进路线图</h3><table>`+
+    (((p.improvement_plan||{}).plan)||[]).map(i=>`<tr><td>${sevBadge(i.priority==='P0'?'high':i.priority==='P1'?'medium':'low')}</td>`+
+    `<td>${esc(i.action)}</td><td>${esc(i.horizon)}</td></tr>`).join('')+'</table>';
+  // nav
+  const n=d.navigator||{};
+  document.getElementById('pane-nav').innerHTML=
+    `<h3 class=muted>攻击覆盖</h3><table>`+
+    ((n.attack||{}).rows||[]).map(r=>`<tr><td>${esc(r.tactic)}</td><td>${r.covered}/${r.total}</td><td>${r.pct}%</td></tr>`).join('')+'</table>'+
+    `<h3 class=muted>差距覆盖</h3><p>未检测技术 ${(n.gap||{}).gap_count||0} 项</p>`;
+  // report
+  document.getElementById('pane-report').innerHTML=
+    `<p>真实报告已落盘：</p><pre>${esc(d.report_path||'(无)')}</pre>`+
+    `<button class=secondary onclick="viewMd()">查看 Markdown 摘要</button>`;
+  document.getElementById('pane-log').innerHTML='<div class=log id=logBox>'+esc((d.log||[]).join('\n'))+'</div>';
+}
+async function viewMd(){
+  if(!currentTask) return;
+  const r=await api('/report/'+currentTask+'?fmt=md');
+  if(r.success){document.getElementById('pane-report').innerHTML='<pre>'+esc(r.data.markdown)+'</pre>';}
+}
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('pane-'+t.dataset.t).classList.add('active');
+  };
+});
+document.getElementById('btnStart').onclick=start;
+document.getElementById('btnTools').onclick=loadTools;
+document.getElementById('btnOverview').onclick=loadOverview;
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleString();},1000);
+loadStages(); loadOverview(); loadTools();
+</script>
+</body>
+</html>

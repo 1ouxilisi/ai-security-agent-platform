@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOAR Deep 深度安全编排自动化与响应平台</title>
+<style>
+  :root {
+    --bg: #0b0f17; --panel: #131a26; --panel2: #1a2333; --border: #243049;
+    --txt: #d7e0ee; --muted: #7d8aa3; --accent: #1890ff; --ok: #52c41a;
+    --warn: #fa8c16; --bad: #ff4d4f; --purple: #722ed1; --cyan: #13c2c2;
+    --pink: #eb2f96; --green: #a0d911;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--txt);
+         font-family: "Segoe UI", "Microsoft YaHei", sans-serif; font-size: 13px; }
+  header { padding: 14px 22px; background: linear-gradient(90deg,#0f1826,#13223a);
+           border-bottom: 1px solid var(--border); display: flex; align-items: center;
+           justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  header h1 { font-size: 18px; font-weight: 600; }
+  header h1 span { color: var(--cyan); }
+  .badge { background: var(--panel2); border: 1px solid var(--border);
+           padding: 3px 10px; border-radius: 12px; color: var(--muted); font-size: 12px; }
+  nav { display: flex; gap: 4px; padding: 10px 22px; background: var(--panel);
+        border-bottom: 1px solid var(--border); overflow-x: auto; flex-wrap: wrap; }
+  nav button { background: transparent; color: var(--muted); border: 1px solid transparent;
+               padding: 8px 16px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+               font-size: 13px; transition: all .2s; }
+  nav button.active { background: var(--accent); color: #fff; }
+  nav button:hover:not(.active) { background: var(--panel2); color: var(--txt); }
+  main { padding: 18px 22px; max-width: 1600px; margin: 0 auto; }
+  .tab { display: none; } .tab.active { display: block; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr));
+           gap: 12px; margin-bottom: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+          padding: 14px; }
+  .card .label { color: var(--muted); font-size: 12px; }
+  .card .val { font-size: 24px; font-weight: 600; margin-top: 4px; }
+  .card .sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .v-ok { color: var(--ok); } .v-warn { color: var(--warn); } .v-bad { color: var(--bad); }
+  .v-cyan { color: var(--cyan); } .v-purple { color: var(--purple); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 1100px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+  table { width: 100%; border-collapse: collapse; background: var(--panel);
+          border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border);
+           font-size: 12px; }
+  th { background: var(--panel2); color: var(--muted); font-weight: 600; }
+  tr:hover td { background: #172133; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .t-critical { background: rgba(255,77,79,.15); color: var(--bad); }
+  .t-high { background: rgba(250,140,22,.15); color: var(--warn); }
+  .t-medium { background: rgba(24,144,255,.15); color: var(--accent); }
+  .t-low { background: rgba(82,196,26,.15); color: var(--ok); }
+  .panel { background: var(--panel); border: 1px solid var(--border);
+           border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .panel h3 { font-size: 14px; margin-bottom: 10px; color: var(--cyan); }
+  .bar { height: 8px; background: var(--panel2); border-radius: 4px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: linear-gradient(90deg,var(--accent),var(--cyan)); }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
+  button.btn { background: var(--accent); color: #fff; border: none; padding: 7px 14px;
+               border-radius: 5px; cursor: pointer; font-size: 12px; }
+  button.btn.ghost { background: var(--panel2); color: var(--txt); border: 1px solid var(--border); }
+  button.btn.danger { background: var(--bad); }
+  button.btn.ok { background: var(--ok); }
+  button.btn:hover { opacity: .85; }
+  input, select, textarea { background: var(--panel2); color: var(--txt);
+                            border: 1px solid var(--border); padding: 6px 10px;
+                            border-radius: 5px; font-size: 12px; }
+  textarea { width: 100%; min-height: 60px; resize: vertical; }
+  .timeline { position: relative; padding-left: 18px; max-height: 300px; overflow-y: auto; }
+  .timeline::before { content: ""; position: absolute; left: 6px; top: 4px; bottom: 4px;
+                      width: 2px; background: var(--border); }
+  .tl-item { position: relative; padding: 4px 0 10px 8px; font-size: 12px; }
+  .tl-item::before { content: ""; position: absolute; left: -16px; top: 8px;
+                     width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .muted { color: var(--muted); }
+  code { background: var(--panel2); padding: 1px 6px; border-radius: 4px; color: var(--cyan); }
+  pre { background: #0a0e16; padding: 10px; border-radius: 6px; overflow: auto;
+        font-size: 11px; max-height: 240px; }
+  .node-lib { display: grid; grid-template-columns: repeat(auto-fill,minmax(140px,1fr));
+              gap: 8px; }
+  .node-item { background: var(--panel2); border: 1px solid var(--border);
+               border-radius: 6px; padding: 10px; cursor: grab; text-align: center; }
+  .node-item:hover { border-color: var(--accent); }
+  .node-item .icon { font-size: 20px; }
+  .node-item .name { font-size: 12px; margin-top: 4px; }
+  .node-item .desc { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .playflow { min-height: 200px; background: #0a0e16; border: 1px solid var(--border);
+              border-radius: 8px; padding: 14px; }
+  .flow-node { display: inline-block; background: var(--panel2); border: 1px solid var(--accent);
+               border-radius: 6px; padding: 8px 14px; margin: 4px; font-size: 12px; }
+  .modal-bg { display: none; position: fixed; top:0; left:0; right:0; bottom:0;
+              background: rgba(0,0,0,.6); z-index: 100; }
+  .modal-bg.show { display: flex; align-items: center; justify-content: center; }
+  .modal { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+           padding: 20px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; }
+  .modal h3 { margin-bottom: 12px; color: var(--cyan); }
+  .stat-row { display: flex; justify-content: space-between; padding: 4px 0;
+              border-bottom: 1px dashed var(--border); font-size: 12px; }
+  .trend-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px;
+                 padding: 10px 0; }
+  .trend-bar { flex: 1; background: linear-gradient(180deg,var(--accent),var(--cyan));
+               border-radius: 4px 4px 0 0; min-height: 4px; position: relative; }
+  .trend-bar .lbl { position: absolute; bottom: -18px; left: 0; right: 0;
+                    text-align: center; font-size: 10px; color: var(--muted); }
+  .trend-bar .val { position: absolute; top: -16px; left: 0; right: 0;
+                    text-align: center; font-size: 10px; color: var(--txt); }
+  .col-action { white-space: nowrap; }
+  .col-action button { margin-right: 4px; }
+  .toast { position: fixed; top: 20px; right: 20px; background: var(--panel);
+           border: 1px solid var(--ok); border-radius: 8px; padding: 12px 20px;
+           z-index: 200; display: none; }
+  .toast.show { display: block; }
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡 <span>SOAR Deep</span> 深度安全编排自动化与响应平台</h1>
+  <div>
+    <span class="badge">v24.2 · 剧本引擎/6类动作/告警分诊/案例协作/情报联动</span>
+  </div>
+</header>
+<nav>
+  <button class="active" data-tab="overview">📊 总览</button>
+  <button data-tab="playbooks">📋 剧本编排</button>
+  <button data-tab="actions">⚙ 响应动作</button>
+  <button data-tab="alerts">🚨 告警分诊</button>
+  <button data-tab="cases">🧾 案例管理</button>
+  <button data-tab="intel">🔍 威胁情报</button>
+  <button data-tab="settings">⚙ 系统设置</button>
+</nav>
+<main>
+
+<!-- ============ 1. 总览 ============ -->
+<section class="tab active" id="tab-overview">
+  <div class="cards" id="ov-cards"></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>📈 近7天趋势</h3>
+      <div class="trend-chart" id="ov-trend"></div>
+      <div style="margin-top:24px"></div>
+    </div>
+    <div class="panel">
+      <h3>📐 自动化率与成功率</h3>
+      <div id="ov-metrics"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>📊 模块统计</h3>
+    <div id="ov-modules"></div>
+  </div>
+</section>
+
+<!-- ============ 2. 剧本编排 ============ -->
+<section class="tab" id="tab-playbooks">
+  <div class="cards" id="pb-cards"></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>📦 剧本列表</h3>
+      <div class="toolbar">
+        <input id="pb-search" placeholder="搜索剧本..." style="flex:1">
+        <button class="btn" onclick="loadPlaybooks()">🔄 刷新</button>
+        <button class="btn ok" onclick="showCreatePB()">+ 新建剧本</button>
+      </div>
+      <div id="pb-list"></div>
+    </div>
+    <div class="panel">
+      <h3>🧩 节点类型库</h3>
+      <div class="node-lib" id="pb-nodelib"></div>
+      <h3 style="margin-top:14px">🔗 触发器类型</h3>
+      <div id="pb-triggers"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>▶ 执行实例</h3>
+    <div class="toolbar">
+      <button class="btn ghost" onclick="loadInstances()">刷新实例</button>
+    </div>
+    <div id="pb-instances"></div>
+  </div>
+</section>
+
+<!-- ============ 3. 响应动作 ============ -->
+<section class="tab" id="tab-actions">
+  <div class="cards" id="act-cards"></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>⚡ 动作分类</h3>
+      <div id="act-cats"></div>
+      <h3 style="margin-top:14px">📋 动作列表</h3>
+      <div class="filter-bar">
+        <select id="act-cat-filter" onchange="loadActions()">
+          <option value="">全部分类</option>
+        </select>
+        <button class="btn ghost" onclick="loadActions()">刷新</button>
+      </div>
+      <div id="act-list"></div>
+    </div>
+    <div class="panel">
+      <h3>🚀 执行动作（DRY-RUN）</h3>
+      <div class="toolbar">
+        <input id="act-exec-id" placeholder="动作ID (如 network.block_ip)" style="flex:1">
+      </div>
+      <div class="toolbar">
+        <input id="act-exec-param" placeholder='参数JSON (如 {"ip":"1.2.3.4"})' style="flex:2">
+        <button class="btn" onclick="executeAction()">执行</button>
+      </div>
+      <h3 style="margin-top:14px">📜 执行历史</h3>
+      <div id="act-history"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. 告警分诊 ============ -->
+<section class="tab" id="tab-alerts">
+  <div class="cards" id="alt-cards"></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>🚨 告警列表</h3>
+      <div class="filter-bar">
+        <select id="alt-sev-filter">
+          <option value="">全部严重度</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <select id="alt-status-filter">
+          <option value="">全部状态</option>
+          <option value="new">新告警</option>
+          <option value="triaged">已分诊</option>
+          <option value="enriched">已丰富</option>
+        </select>
+        <button class="btn ghost" onclick="loadAlerts()">刷新</button>
+        <button class="btn ok" onclick="ingestDemoAlert()">+ 模拟接入告警</button>
+      </div>
+      <div id="alt-list"></div>
+    </div>
+    <div class="panel">
+      <h3>🔬 告警详情与分诊</h3>
+      <div id="alt-detail">
+        <p class="muted">点击左侧告警查看详情...</p>
+      </div>
+      <h3 style="margin-top:14px">📡 告警源</h3>
+      <div id="alt-sources"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. 案例管理 ============ -->
+<section class="tab" id="tab-cases">
+  <div class="cards" id="case-cards"></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>🧾 案例列表</h3>
+      <div class="toolbar">
+        <input id="case-search" placeholder="搜索案例..." style="flex:1">
+        <button class="btn ghost" onclick="loadCases()">刷新</button>
+        <button class="btn ok" onclick="showCreateCase()">+ 新建案例</button>
+      </div>
+      <div id="case-list"></div>
+    </div>
+    <div class="panel">
+      <h3>📋 案例详情</h3>
+      <div id="case-detail">
+        <p class="muted">点击左侧案例查看详情...</p>
+      </div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>📚 知识库</h3>
+      <div class="toolbar">
+        <input id="kb-search" placeholder="搜索知识..." style="flex:1">
+        <button class="btn ghost" onclick="searchKB()">搜索</button>
+      </div>
+      <div id="kb-list"></div>
+    </div>
+    <div class="panel">
+      <h3>📊 案例分析</h3>
+      <div id="case-analytics"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6. 威胁情报 ============ -->
+<section class="tab" id="tab-intel">
+  <div class="cards" id="intel-cards"></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>🎯 IOC 情报库</h3>
+      <div class="filter-bar">
+        <select id="intel-type-filter">
+          <option value="">全部类型</option>
+          <option value="ip">IP</option>
+          <option value="domain">域名</option>
+          <option value="url">URL</option>
+          <option value="hash_sha256">SHA256</option>
+          <option value="hash_md5">MD5</option>
+        </select>
+        <button class="btn ghost" onclick="loadIntel()">刷新</button>
+      </div>
+      <div id="intel-list"></div>
+    </div>
+    <div class="panel">
+      <h3>🔍 情报查询</h3>
+      <div class="toolbar">
+        <select id="intel-q-type">
+          <option value="ip">IP信誉</option>
+          <option value="domain">域名信誉</option>
+          <option value="url">URL信誉</option>
+          <option value="hash">文件哈希</option>
+        </select>
+        <input id="intel-q-value" placeholder="输入查询值..." style="flex:1">
+        <button class="btn" onclick="queryIntel()">查询</button>
+      </div>
+      <div id="intel-result"></div>
+      <h3 style="margin-top:14px">👥 威胁 Actor</h3>
+      <div id="intel-actors"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>📈 情报质量评估</h3>
+    <div id="intel-quality"></div>
+  </div>
+</section>
+
+<!-- ============ 7. 系统设置 ============ -->
+<section class="tab" id="tab-settings">
+  <div class="grid2">
+    <div class="panel">
+      <h3>🔧 系统设置</h3>
+      <div id="settings-list"></div>
+    </div>
+    <div class="panel">
+      <h3>🔐 变量管理</h3>
+      <div id="var-list"></div>
+      <h3 style="margin-top:14px">🤫 密钥列表</h3>
+      <div id="secret-list"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>📡 情报源配置</h3>
+    <div id="intel-sources-list"></div>
+  </div>
+</section>
+
+</main>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal" id="modal-content"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = '/api/v1/soar-deep';
+let currentCaseId = null;
+
+// ---------- API 工具 ----------
+async function api(path, opts={}) {
+  try {
+    const r = await fetch(BASE + path, {
+      headers: {'Content-Type': 'application/json'},
+      ...opts
+    });
+    const j = await r.json();
+    if (!j.success) { showToast('❌ ' + (j.error || '请求失败')); return null; }
+    return j.data;
+  } catch(e) {
+    showToast('❌ 网络错误: ' + e.message);
+    return null;
+  }
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+function sevTag(sev) {
+  return `<span class="tag t-${sev}">${sev}</span>`;
+}
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ---------- Tab 切换 ----------
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    loadTab(btn.dataset.tab);
+  };
+});
+function loadTab(tab) {
+  if (tab === 'overview') loadOverview();
+  else if (tab === 'playbooks') loadPlaybooks(), loadInstances(), loadNodeLib();
+  else if (tab === 'actions') loadActions(), loadActionHistory(), loadActionCats();
+  else if (tab === 'alerts') loadAlerts(), loadAlertSources();
+  else if (tab === 'cases') loadCases(), loadKB(), loadCaseAnalytics();
+  else if (tab === 'intel') loadIntel(), loadIntelActors(), loadIntelQuality();
+  else if (tab === 'settings') loadSettings(), loadVars(), loadSecrets(), loadIntelSources();
+}
+
+// ---------- 1. 总览 ----------
+async function loadOverview() {
+  const d = await api('/overview'); if (!d) return;
+  document.getElementById('ov-cards').innerHTML = `
+    <div class="card"><div class="label">剧本总数</div><div class="val v-cyan">${d.playbooks.total}</div><div class="sub">已发布 ${d.playbooks.published} · 草稿 ${d.playbooks.draft}</div></div>
+    <div class="card"><div class="label">执行实例</div><div class="val">${d.executions.total}</div><div class="sub">运行中 ${d.executions.running} · 完成 ${d.executions.completed}</div></div>
+    <div class="card"><div class="label">执行成功率</div><div class="val v-ok">${d.executions.success_rate}%</div><div class="sub">失败 ${d.executions.failed}</div></div>
+    <div class="card"><div class="label">已定义动作</div><div class="val v-purple">${d.actions.defined}</div><div class="sub">已执行 ${d.actions.executed}</div></div>
+    <div class="card"><div class="label">告警总量</div><div class="val v-warn">${d.alerts.total}</div><div class="sub">去重 ${d.alerts.deduplicated} · 已分诊 ${d.alerts.triaged}</div></div>
+    <div class="card"><div class="label">案例数</div><div class="val v-bad">${d.cases.total}</div><div class="sub">待处理 ${d.cases.open} · 关闭 ${d.cases.closed}</div></div>
+    <div class="card"><div class="label">自动化率</div><div class="val v-ok">${d.automation_rate}%</div><div class="sub">平均响应 ${d.response_time_avg_min}分钟</div></div>
+    <div class="card"><div class="label">情报IOC</div><div class="val v-cyan">${d.threat_intel.indicators}</div><div class="sub">平均可信度 ${d.threat_intel.avg_confidence}</div></div>
+  `;
+  // 趋势图
+  const trend = d.trend_7d || [];
+  const max = Math.max(...trend.map(t => t.alerts), 1);
+  document.getElementById('ov-trend').innerHTML = trend.map(t =>
+    `<div class="trend-bar" style="height:${(t.alerts/max*100)}%" title="${t.alerts}告警">
+       <span class="val">${t.alerts}</span><span class="lbl">${t.date}</span>
+     </div>`).join('');
+  document.getElementById('ov-metrics').innerHTML = `
+    <div class="stat-row"><span>剧本执行成功率</span><span class="v-ok">${d.executions.success_rate}%</span></div>
+    <div class="stat-row"><span>动作执行成功率</span><span class="v-ok">${d.actions.success_rate}%</span></div>
+    <div class="stat-row"><span>案例解决率</span><span class="v-cyan">${d.cases.resolution_rate}%</span></div>
+    <div class="stat-row"><span>自动化响应率</span><span class="v-ok">${d.automation_rate}%</span></div>
+    <div class="stat-row"><span>平均响应时间</span><span>${d.response_time_avg_min} 分钟</span></div>
+  `;
+  document.getElementById('ov-modules').innerHTML = `
+    <div class="stat-row"><span>剧本管理</span><span>${d.playbooks.published} 已发布 / ${d.playbooks.draft} 草稿</span></div>
+    <div class="stat-row"><span>动作库</span><span>${d.actions.defined} 个动作已定义</span></div>
+    <div class="stat-row"><span>告警处理</span><span>${d.alerts.triaged} 已分诊 / ${d.alerts.enriched} 已丰富</span></div>
+    <div class="stat-row"><span>案例运营</span><span>${d.cases.closed} 已关闭 / ${d.cases.open} 处理中</span></div>
+    <div class="stat-row"><span>威胁情报</span><span>${d.threat_intel.active} 活跃IOC</span></div>
+  `;
+}
+
+// ---------- 2. 剧本编排 ----------
+async function loadPlaybooks() {
+  const d = await api('/playbooks'); if (!d) return;
+  const list = d.playbooks || [];
+  document.getElementById('pb-cards').innerHTML = `
+    <div class="card"><div class="label">剧本总数</div><div class="val v-cyan">${list.length}</div></div>
+    <div class="card"><div class="label">已发布</div><div class="val v-ok">${list.filter(p=>p.status==='published').length}</div></div>
+    <div class="card"><div class="label">草稿</div><div class="val v-warn">${list.filter(p=>p.status==='draft').length}</div></div>
+  `;
+  document.getElementById('pb-list').innerHTML = `<table><tr><th>ID</th><th>名称</th><th>分类</th><th>状态</th><th>节点</th><th>版本</th><th>操作</th></tr>` +
+    list.map(p => `<tr>
+      <td><code>${p.id.substring(0,14)}</code></td>
+      <td>${esc(p.name)}</td>
+      <td>${p.category}</td>
+      <td>${sevTag(p.status==='published'?'low':'medium')} ${p.status}</td>
+      <td>${p.node_count}</td>
+      <td>v${p.version}</td>
+      <td class="col-action">
+        <button class="btn ghost" onclick="viewPlaybook('${p.id}')">详情</button>
+        <button class="btn" onclick="execPlaybook('${p.id}',false)">执行</button>
+        <button class="btn ghost" onclick="execPlaybook('${p.id}',true)">Dry</button>
+      </td></tr>`).join('') + '</table>';
+}
+async function loadNodeLib() {
+  const nt = await api('/meta/node-types'); if (!nt) return;
+  document.getElementById('pb-nodelib').innerHTML = Object.values(nt).map(n =>
+    `<div class="node-item"><div class="icon">${n.icon}</div><div class="name" style="color:${n.color}">${n.name}</div><div class="desc">${n.desc}</div></div>`
+  ).join('');
+  const tt = await api('/meta/trigger-types'); if (!tt) return;
+  document.getElementById('pb-triggers').innerHTML = Object.entries(tt).map(([k,v]) =>
+    `<div class="stat-row"><span><code>${k}</code></span><span>${v}</span></div>`).join('');
+}
+async function loadInstances() {
+  const d = await api('/instances'); if (!d) return;
+  const list = d.instances || [];
+  document.getElementById('pb-instances').innerHTML = list.length ? `<table>
+    <tr><th>实例ID</th><th>剧本</th><th>状态</th><th>进度</th><th>触发方式</th><th>开始时间</th></tr>` +
+    list.map(i => `<tr>
+      <td><code>${i.id.substring(0,14)}</code></td>
+      <td>${esc(i.playbook_name)}</td>
+      <td>${sevTag(i.status==='completed'?'low':i.status==='running'?'medium':'high')} ${i.status}</td>
+      <td><div class="bar" style="width:80px;display:inline-block"><i style="width:${i.progress}%"></i></div> ${i.progress}%</td>
+      <td>${i.triggered_by}</td>
+      <td>${i.started_at}</td>
+    </tr>`).join('') + '</table>' : '<p class="muted">暂无执行实例</p>';
+}
+async function viewPlaybook(id) {
+  const pb = await api('/playbooks/' + id); if (!pb) return;
+  showModal(`<h3>📋 ${esc(pb.name)}</h3>
+    <p class="muted">${esc(pb.description)}</p>
+    <div class="stat-row"><span>ID</span><code>${pb.id}</code></div>
+    <div class="stat-row"><span>状态</span>${pb.status}</div>
+    <div class="stat-row"><span>节点数</span>${pb.node_count}</div>
+    <div class="stat-row"><span>连线数</span>${pb.edge_count}</div>
+    <div class="stat-row"><span>版本</span>v${pb.version}</div>
+    <h4 style="margin:10px 0 6px">节点列表</h4>
+    <div class="playflow">${(pb.nodes||[]).map(n => `<span class="flow-node">${n.icon||''} ${n.name} (${n.type})</span>`).join(' → ')}</div>
+    <h4 style="margin:10px 0 6px">版本历史</h4>
+    ${(pb.versions||[]).map(v => `<div class="stat-row"><span>v${v.version}</span><span>${v.note} by ${v.author} @ ${v.saved_at}</span></div>`).join('') || '<p class="muted">无版本历史</p>'}
+  `);
+}
+async function execPlaybook(id, dry) {
+  const d = await api('/playbooks/' + id + '/execute', {method:'POST', body:JSON.stringify({dry_run:dry, input_vars:{}})});
+  if (d) { showToast('✅ 剧本已执行，实例: ' + d.id); loadInstances(); }
+}
+function showCreatePB() {
+  showModal(`<h3>📋 新建剧本</h3>
+    <div class="toolbar"><input id="npb-name" placeholder="剧本名称" style="flex:1"></div>
+    <div class="toolbar"><input id="npb-cat" placeholder="分类" style="flex:1"></div>
+    <div class="toolbar"><button class="btn" onclick="createPB()">创建</button></div>`);
+}
+async function createPB() {
+  const name = document.getElementById('npb-name').value;
+  const cat = document.getElementById('npb-cat').value || 'general';
+  await api('/playbooks', {method:'POST', body:JSON.stringify({name, category:cat})});
+  closeModal(); loadPlaybooks(); showToast('✅ 剧本已创建');
+}
+
+// ---------- 3. 响应动作 ----------
+async function loadActions() {
+  const cat = document.getElementById('act-cat-filter').value;
+  const d = await api('/actions' + (cat ? '?category=' + cat : '')); if (!d) return;
+  const list = d.actions || [];
+  document.getElementById('act-list').innerHTML = `<table><tr><th>ID</th><th>名称</th><th>分类</th><th>风险</th><th>参数</th></tr>` +
+    list.map(a => `<tr>
+      <td><code>${a.action_id}</code></td>
+      <td>${a.name}</td>
+      <td>${a.category}</td>
+      <td>${sevTag(a.risk_level)}</td>
+      <td>${(a.params||[]).map(p=>p.name).join(', ')}</td>
+    </tr>`).join('') + '</table>';
+}
+async function loadActionCats() {
+  const d = await api('/actions/categories'); if (!d) return;
+  document.getElementById('act-cats').innerHTML = Object.values(d).map(c =>
+    `<div class="stat-row"><span>${c.icon} ${c.name}</span><span class="muted">${c.desc}</span></div>`).join('');
+  // 填充下拉
+  const sel = document.getElementById('act-cat-filter');
+  sel.innerHTML = '<option value="">全部分类</option>' + Object.entries(d).map(([k,v]) =>
+    `<option value="${k}">${v.icon} ${v.name}</option>`).join('');
+  const st = await api('/actions/stats');
+  if (st) document.getElementById('act-cards').innerHTML = `
+    <div class="card"><div class="label">已定义动作</div><div class="val v-purple">${st.total_actions_defined}</div></div>
+    <div class="card"><div class="label">分类数</div><div class="val">${st.total_categories}</div></div>
+    <div class="card"><div class="label">已执行</div><div class="val v-ok">${st.total_executed}</div></div>
+    <div class="card"><div class="label">成功率</div><div class="val v-ok">${st.success_rate}%</div></div>`;
+}
+async function loadActionHistory() {
+  const d = await api('/actions/history?limit=15'); if (!d) return;
+  document.getElementById('act-history').innerHTML = (d.history||[]).length ? `<table>
+    <tr><th>时间</th><th>动作</th><th>状态</th><th>Dry-Run</th></tr>` +
+    d.history.map(h => `<tr>
+      <td>${h.executed_at}</td><td>${h.action_name}</td>
+      <td>${sevTag(h.status==='success'?'low':'high')} ${h.status}</td>
+      <td>${h.dry_run ? '是' : '否'}</td></tr>`).join('') + '</table>'
+    : '<p class="muted">暂无执行历史</p>';
+}
+async function executeAction() {
+  const aid = document.getElementById('act-exec-id').value;
+  const pstr = document.getElementById('act-exec-param').value;
+  let params = {};
+  try { params = pstr ? JSON.parse(pstr) : {}; } catch(e) { showToast('❌ 参数JSON格式错误'); return; }
+  const d = await api('/actions/execute', {method:'POST', body:JSON.stringify({action_id:aid, params, dry_run:true})});
+  if (d) { showToast('✅ ' + d.message); loadActionHistory(); }
+}
+
+// ---------- 4. 告警分诊 ----------
+async function loadAlerts() {
+  const sev = document.getElementById('alt-sev-filter').value;
+  const st = document.getElementById('alt-status-filter').value;
+  let qs = '?limit=50';
+  if (sev) qs += '&severity=' + sev;
+  if (st) qs += '&status=' + st;
+  const d = await api('/alerts' + qs); if (!d) return;
+  const list = d.alerts || [];
+  document.getElementById('alt-cards').innerHTML = `
+    <div class="card"><div class="label">告警总数</div><div class="val v-warn">${list.length}</div></div>
+    <div class="card"><div class="label">Critical</div><div class="val v-bad">${list.filter(a=>a.severity==='critical').length}</div></div>
+    <div class="card"><div class="label">High</div><div class="val" style="color:var(--warn)">${list.filter(a=>a.severity==='high').length}</div></div>
+    <div class="card"><div class="label">待分诊</div><div class="val v-cyan">${list.filter(a=>a.status==='new').length}</div></div>`;
+  document.getElementById('alt-list').innerHTML = list.length ? `<table>
+    <tr><th>ID</th><th>标题</th><th>严重度</th><th>分类</th><th>源IP</th><th>资产</th><th>状态</th><th>风险分</th></tr>` +
+    list.map(a => `<tr style="cursor:pointer" onclick="viewAlert('${a.id}')">
+      <td><code>${a.id.substring(0,12)}</code></td>
+      <td>${esc(a.title)}</td>
+      <td>${sevTag(a.severity)}</td>
+      <td>${a.category}</td>
+      <td><code>${a.src_ip||'-'}</code></td>
+      <td>${a.asset}</td>
+      <td>${a.status}</td>
+      <td>${a.risk_score}</td>
+    </tr>`).join('') + '</table>' : '<p class="muted">暂无告警，点击"模拟接入告警"测试</p>';
+}
+async function viewAlert(id) {
+  const a = await api('/alerts/' + id); if (!a) return;
+  document.getElementById('alt-detail').innerHTML = `
+    <h3>${esc(a.title)}</h3>
+    <div class="stat-row"><span>ID</span><code>${a.id}</code></div>
+    <div class="stat-row"><span>严重度</span>${sevTag(a.severity)}</div>
+    <div class="stat-row"><span>分类</span>${a.category}</div>
+    <div class="stat-row"><span>源IP</span><code>${a.src_ip||'-'}</code></div>
+    <div class="stat-row"><span>目标IP</span><code>${a.dst_ip||'-'}</code></div>
+    <div class="stat-row"><span>资产</span>${a.asset}</div>
+    <div class="stat-row"><span>用户</span>${a.user||'-'}</div>
+    <div class="stat-row"><span>风险分</span>${a.risk_score}</div>
+    <div class="stat-row"><span>优先级</span>${a.priority}</div>
+    <div class="stat-row"><span>状态</span>${a.status}</div>
+    <div class="toolbar" style="margin-top:10px">
+      <button class="btn" onclick="triageAlert('${a.id}')">自动分诊</button>
+      <button class="btn ghost" onclick="enrichAlert('${a.id}')">丰富化</button>
+    </div>`;
+}
+async function triageAlert(id) {
+  await api('/alerts/' + id + '/triage', {method:'POST'});
+  showToast('✅ 分诊完成'); viewAlert(id); loadAlerts();
+}
+async function enrichAlert(id) {
+  await api('/alerts/' + id + '/enrich', {method:'POST'});
+  showToast('✅ 丰富化完成'); viewAlert(id);
+}
+async function ingestDemoAlert() {
+  const samples = [
+    {title:'SSH暴力破解告警', severity:'high', category:'bruteforce', src_ip:'185.220.101.5', dst_ip:'10.0.1.10', asset:'web-server-01', description:'检测到来自185.220.101.5的100+次SSH登录失败'},
+    {title:'可疑文件执行', severity:'critical', category:'malware', src_ip:'', dst_ip:'10.0.0.5', asset:'dc-01', description:'EDR检测到可疑进程cmd.exe从临时目录执行'},
+    {title:'钓鱼邮件点击', severity:'high', category:'phishing', src_ip:'', dst_ip:'', user:'finance-user', asset:'workstation-01', description:'用户点击了疑似钓鱼链接'},
+  ];
+  const s = samples[Math.floor(Math.random()*samples.length)];
+  await api('/alerts/ingest', {method:'POST', body:JSON.stringify(s)});
+  showToast('✅ 告警已接入'); loadAlerts();
+}
+async function loadAlertSources() {
+  const d = await api('/alerts/sources'); if (!d) return;
+  document.getElementById('alt-sources').innerHTML = Object.values(d).map(s =>
+    `<div class="stat-row"><span>${s.name}</span><span class="muted">${s.vendor} · ${s.format}</span></div>`).join('');
+}
+
+// ---------- 5. 案例管理 ----------
+async function loadCases() {
+  const d = await api('/cases'); if (!d) return;
+  const list = d.cases || [];
+  document.getElementById('case-cards').innerHTML = `
+    <div class="card"><div class="label">案例总数</div><div class="val">${list.length}</div></div>
+    <div class="card"><div class="label">处理中</div><div class="val v-warn">${list.filter(c=>!['closed','false_positive'].includes(c.status)).length}</div></div>
+    <div class="card"><div class="label">已关闭</div><div class="val v-ok">${list.filter(c=>c.status==='closed').length}</div></div>
+    <div class="card"><div class="label">P0/P1</div><div class="val v-bad">${list.filter(c=>['P0','P1'].includes(c.priority)).length}</div></div>`;
+  document.getElementById('case-list').innerHTML = list.length ? `<table>
+    <tr><th>ID</th><th>标题</th><th>分类</th><th>优先级</th><th>状态</th><th>负责人</th></tr>` +
+    list.map(c => `<tr style="cursor:pointer" onclick="viewCase('${c.id}')">
+      <td><code>${c.id.substring(0,14)}</code></td>
+      <td>${esc(c.title)}</td>
+      <td>${c.category}</td>
+      <td>${c.priority}</td>
+      <td>${c.status}</td>
+      <td>${c.owner||'-'}</td>
+    </tr>`).join('') + '</table>' : '<p class="muted">暂无案例</p>';
+}
+async function viewCase(id) {
+  currentCaseId = id;
+  const c = await api('/cases/' + id); if (!c) return;
+  document.getElementById('case-detail').innerHTML = `
+    <h3>${esc(c.title)}</h3>
+    <p class="muted">${esc(c.description)}</p>
+    <div class="stat-row"><span>状态</span>${c.status}</div>
+    <div class="stat-row"><span>优先级</span>${c.priority}</div>
+    <div class="stat-row"><span>严重度</span>${sevTag(c.severity)}</div>
+    <div class="stat-row"><span>负责人</span>${c.owner||'-'}</div>
+    <div class="stat-row"><span>成员</span>${c.member_count}</div>
+    <div class="stat-row"><span>任务</span>${c.task_count} (${c.open_tasks} 待办)</div>
+    <div class="stat-row"><span>评论</span>${c.comment_count}</div>
+    <div class="stat-row"><span>SLA到期</span>${c.sla_due||'-'}</div>
+    <h4 style="margin:10px 0 6px">任务列表</h4>
+    ${(c.tasks||[]).map(t=>`<div class="stat-row"><span>${t.title}</span><span>${t.status==='completed'?'✅':'⏳'} ${t.assignee||''}</span></div>`).join('')||'<p class="muted">无任务</p>'}
+    <h4 style="margin:10px 0 6px">IOC 列表</h4>
+    ${(c.related_iocs||[]).map(i=>`<div class="stat-row"><span>${i.type}</span><code>${i.value}</code></div>`).join('')||'<p class="muted">无IOC</p>'}
+    <h4 style="margin:10px 0 6px">时间线</h4>
+    <div class="timeline">${(c.timeline||[]).map(t=>`<div class="tl-item"><strong>${t.time}</strong> [${t.type}] ${t.message}</div>`).join('')}</div>
+    <div class="toolbar" style="margin-top:10px">
+      <input id="cmt-input" placeholder="写评论..." style="flex:1">
+      <button class="btn" onclick="addComment()">评论</button>
+      <select id="cmt-status">
+        <option value="investigating">调查中</option>
+        <option value="contained">已遏制</option>
+        <option value="closed">关闭</option>
+      </select>
+      <button class="btn ghost" onclick="changeCaseStatus()">更新状态</button>
+    </div>`;
+}
+async function addComment() {
+  const body = document.getElementById('cmt-input').value;
+  if (!body || !currentCaseId) return;
+  await api('/cases/' + currentCaseId + '/comments', {method:'POST', body:JSON.stringify({author:'分析师', body})});
+  showToast('✅ 评论已添加'); viewCase(currentCaseId);
+}
+async function changeCaseStatus() {
+  const st = document.getElementById('cmt-status').value;
+  if (!currentCaseId) return;
+  await api('/cases/' + currentCaseId + '/status', {method:'POST', body:JSON.stringify({status:st, operator:'分析师'})});
+  showToast('✅ 状态已更新'); viewCase(currentCaseId); loadCases();
+}
+function showCreateCase() {
+  showModal(`<h3>🧾 新建案例</h3>
+    <div class="toolbar"><input id="ncase-title" placeholder="案例标题" style="flex:1"></div>
+    <div class="toolbar"><input id="ncase-desc" placeholder="描述" style="flex:1"></div>
+    <div class="toolbar"><select id="ncase-sev"><option value="low">低</option><option value="medium" selected>中</option><option value="high">高</option><option value="critical">紧急</option></select>
+    <button class="btn" onclick="createCase()">创建</button></div>`);
+}
+async function createCase() {
+  const title = document.getElementById('ncase-title').value;
+  const desc = document.getElementById('ncase-desc').value;
+  const sev = document.getElementById('ncase-sev').value;
+  await api('/cases', {method:'POST', body:JSON.stringify({title, description:desc, severity:sev})});
+  closeModal(); loadCases(); showToast('✅ 案例已创建');
+}
+async function loadKB() {
+  const d = await api('/knowledge/search'); if (!d) return;
+  document.getElementById('kb-list').innerHTML = (d.results||[]).map(k =>
+    `<div class="panel" style="margin-bottom:8px"><strong>${k.title}</strong>
+     <span class="tag t-medium">${k.category}</span>
+     <p class="muted" style="margin-top:4px">${k.content}</p>
+     <div class="muted" style="font-size:11px">${k.author} · 使用${k.use_count}次</div></div>`).join('');
+}
+async function searchKB() {
+  const kw = document.getElementById('kb-search').value;
+  const d = await api('/knowledge/search?keyword=' + encodeURIComponent(kw)); if (!d) return;
+  document.getElementById('kb-list').innerHTML = (d.results||[]).map(k =>
+    `<div class="panel" style="margin-bottom:8px"><strong>${k.title}</strong>
+     <p class="muted" style="margin-top:4px">${k.content}</p></div>`).join('') || '<p class="muted">无结果</p>';
+}
+async function loadCaseAnalytics() {
+  const d = await api('/analytics'); if (!d) return;
+  document.getElementById('case-analytics').innerHTML = `
+    <div class="stat-row"><span>案例总数</span>${d.total_cases}</div>
+    <div class="stat-row"><span>处理中</span>${d.open_cases}</div>
+    <div class="stat-row"><span>已关闭</span>${d.closed_cases}</div>
+    <div class="stat-row"><span>解决率</span><span class="v-ok">${d.resolution_rate}%</span></div>
+    <div class="stat-row"><span>SLA达标率</span><span class="v-cyan">${d.sla_compliance_rate}%</span></div>
+    <div class="stat-row"><span>平均任务数/案例</span>${d.avg_tasks_per_case}</div>
+    <div class="stat-row"><span>知识库条目</span>${d.knowledge_base_count}</div>`;
+}
+
+// ---------- 6. 威胁情报 ----------
+async function loadIntel() {
+  const type = document.getElementById('intel-type-filter').value;
+  let qs = '?';
+  if (type) qs += 'ioc_type=' + type;
+  const d = await api('/intel/iocs' + qs); if (!d) return;
+  const list = d.iocs || [];
+  document.getElementById('intel-cards').innerHTML = `
+    <div class="card"><div class="label">活跃IOC</div><div class="val v-cyan">${list.length}</div></div>
+    <div class="card"><div class="label">Critical</div><div class="val v-bad">${list.filter(i=>i.severity==='critical').length}</div></div>
+    <div class="card"><div class="label">High</div><div class="val" style="color:var(--warn)">${list.filter(i=>i.severity==='high').length}</div></div>`;
+  document.getElementById('intel-list').innerHTML = list.length ? `<table>
+    <tr><th>类型</th><th>值</th><th>严重度</th><th>可信度</th><th>来源</th><th>Actor</th></tr>` +
+    list.map(i => `<tr>
+      <td>${i.type}</td>
+      <td><code>${i.value.substring(0,40)}${i.value.length>40?'...':''}</code></td>
+      <td>${sevTag(i.severity)}</td>
+      <td>${i.confidence}%</td>
+      <td>${i.source}</td>
+      <td>${i.actor||'-'}</td>
+    </tr>`).join('') + '</table>' : '<p class="muted">暂无IOC</p>';
+}
+async function queryIntel() {
+  const type = document.getElementById('intel-q-type').value;
+  const val = document.getElementById('intel-q-value').value;
+  if (!val) return;
+  let path;
+  if (type === 'ip') path = '/intel/query/ip/' + encodeURIComponent(val);
+  else if (type === 'domain') path = '/intel/query/domain/' + encodeURIComponent(val);
+  else if (type === 'url') path = '/intel/query/url?url=' + encodeURIComponent(val);
+  else path = '/intel/query/hash/' + encodeURIComponent(val);
+  const d = await api(path); if (!d) return;
+  document.getElementById('intel-result').innerHTML = `
+    <div class="stat-row"><span>查询值</span><code>${val}</code></div>
+    <div class="stat-row"><span>信誉</span>${sevTag(d.reputation==='malicious'?'critical':d.reputation==='suspicious'?'high':'low')} ${d.reputation}</div>
+    <div class="stat-row"><span>匹配数</span>${(d.matches||[]).length}</div>
+    ${(d.matches||[]).map(m=>`<div class="stat-row"><span>匹配</span><span>${m.malware_family||m.tags.join(',')||''} (${m.confidence}%)</span></div>`).join('')}`;
+}
+async function loadIntelActors() {
+  const d = await api('/intel/actors'); if (!d) return;
+  document.getElementById('intel-actors').innerHTML = (d.actors||[]).map(a =>
+    `<div class="stat-row"><span>👤 ${a.name}</span><span>IOC: ${a.ioc_count} · ${a.malware_families.join(', ')}</span></div>`).join('') || '<p class="muted">暂无Actor</p>';
+}
+async function loadIntelQuality() {
+  const d = await api('/intel/quality'); if (!d) return;
+  document.getElementById('intel-quality').innerHTML = `
+    <div class="stat-row"><span>总IOC数</span>${d.total_indicators}</div>
+    <div class="stat-row"><span>活跃</span>${d.active}</div>
+    <div class="stat-row"><span>过期</span>${d.expired}</div>
+    <div class="stat-row"><span>平均可信度</span><span class="v-ok">${d.avg_confidence}%</span></div>
+    <div class="stat-row"><span>匹配历史</span>${d.match_history_count}</div>`;
+}
+
+// ---------- 7. 系统设置 ----------
+async function loadSettings() {
+  const d = await api('/settings'); if (!d) return;
+  let html = '';
+  for (const [section, vals] of Object.entries(d)) {
+    html += `<h4 style="margin:8px 0 4px;color:var(--cyan)">${section}</h4>`;
+    for (const [k,v] of Object.entries(vals)) {
+      html += `<div class="stat-row"><span>${k}</span><span>${typeof v==='boolean'?(v?'✅':'❌'):String(v)}</span></div>`;
+    }
+  }
+  document.getElementById('settings-list').innerHTML = html;
+}
+async function loadVars() {
+  const d = await api('/variables'); if (!d) return;
+  let html = '<h4>全局变量</h4>';
+  for (const [k,v] of Object.entries(d.globals||{})) {
+    html += `<div class="stat-row"><span>${k}</span><span>${String(v)}</span></div>`;
+  }
+  html += `<h4 style="margin-top:8px">环境变量</h4>`;
+  for (const [env, vals] of Object.entries(d.envs||{})) {
+    html += `<div class="stat-row"><span>${env}</span><span>${Object.entries(vals).map(([k,v])=>k+'='+v).join(', ')}</span></div>`;
+  }
+  document.getElementById('var-list').innerHTML = html;
+}
+async function loadSecrets() {
+  const d = await api('/secrets'); if (!d) return;
+  document.getElementById('secret-list').innerHTML = (d.secrets||[]).map(s =>
+    `<div class="stat-row"><span>${s.key}</span><code>${s.value_masked}</code></div>`).join('');
+}
+async function loadIntelSources() {
+  const d = await api('/intel/sources'); if (!d) return;
+  document.getElementById('intel-sources-list').innerHTML = Object.entries(d).map(([k,v]) =>
+    `<div class="stat-row"><span>${v.name} (${k})</span><span>${v.type} · 更新:${v.update_freq} · 评分:${v.score} · ${v.enabled?'✅':'❌'}</span></div>`).join('');
+}
+
+// ---------- Modal ----------
+function showModal(html) {
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal-bg').classList.add('show');
+}
+function closeModal() { document.getElementById('modal-bg').classList.remove('show'); }
+document.getElementById('modal-bg').onclick = (e) => { if (e.target.id==='modal-bg') closeModal(); };
+
+// 初始化
+loadOverview();
+</script>
+</body>
+</html>

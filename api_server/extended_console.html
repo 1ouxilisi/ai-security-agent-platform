@@ -1,0 +1,934 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扩展安全控制台 - AI Hacking Agent</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0e17; color: #e0e6ed; min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%); padding: 20px 30px; border-bottom: 2px solid #00d4ff; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 24px; color: #00d4ff; }
+        .header .status { display: flex; gap: 20px; align-items: center; }
+        .status-item { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #00ff88; box-shadow: 0 0 10px #00ff88; }
+        .container { padding: 30px; max-width: 1600px; margin: 0 auto; }
+        .modules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .module-card { background: #151b26; border: 1px solid #2a3441; border-radius: 12px; padding: 25px; cursor: pointer; transition: all 0.3s; }
+        .module-card:hover { border-color: #00d4ff; transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0, 212, 255, 0.15); }
+        .module-card.active { border-color: #00d4ff; background: #1a2332; }
+        .module-icon { font-size: 36px; margin-bottom: 15px; }
+        .module-title { font-size: 20px; font-weight: bold; color: #fff; margin-bottom: 8px; }
+        .module-desc { font-size: 13px; color: #8b949e; line-height: 1.6; margin-bottom: 15px; }
+        .module-features { display: flex; flex-wrap: wrap; gap: 6px; }
+        .feature-tag { background: #21262d; color: #00d4ff; padding: 4px 10px; border-radius: 12px; font-size: 11px; }
+        .workspace { background: #151b26; border: 1px solid #2a3441; border-radius: 12px; padding: 30px; min-height: 500px; }
+        .workspace-title { font-size: 22px; color: #00d4ff; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #2a3441; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #c9d1d9; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 15px; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; color: #e0e6ed; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #00d4ff; }
+        .btn { padding: 12px 30px; background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); color: #000; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-danger { background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); color: #fff; }
+        .btn-success { background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%); color: #000; }
+        .result-area { margin-top: 25px; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 20px; max-height: 500px; overflow-y: auto; }
+        .result-title { font-size: 16px; color: #00d4ff; margin-bottom: 15px; }
+        .result-item { background: #151b26; border-left: 3px solid #00d4ff; padding: 12px 15px; margin-bottom: 10px; border-radius: 4px; }
+        .result-item.critical { border-left-color: #ff4444; }
+        .result-item.high { border-left-color: #ff8800; }
+        .result-item.medium { border-left-color: #ffcc00; }
+        .result-item.low { border-left-color: #00cc66; }
+        .result-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .result-item-title { font-weight: bold; color: #fff; }
+        .severity-badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .severity-critical { background: #ff4444; color: #fff; }
+        .severity-high { background: #ff8800; color: #fff; }
+        .severity-medium { background: #ffcc00; color: #000; }
+        .severity-low { background: #00cc66; color: #000; }
+        .result-item-desc { font-size: 13px; color: #8b949e; line-height: 1.5; }
+        .result-item-recommendation { font-size: 12px; color: #00d4ff; margin-top: 8px; padding-top: 8px; border-top: 1px solid #2a3441; }
+        .stats-bar { display: flex; gap: 20px; margin-bottom: 25px; flex-wrap: wrap; }
+        .stat-card { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 15px 25px; text-align: center; flex: 1; min-width: 120px; }
+        .stat-value { font-size: 28px; font-weight: bold; color: #00d4ff; }
+        .stat-label { font-size: 12px; color: #8b949e; margin-top: 5px; }
+        .loading { display: inline-block; width: 20px; height: 20px; border: 3px solid #30363d; border-top-color: #00d4ff; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .empty-state { text-align: center; padding: 60px 20px; color: #8b949e; }
+        .empty-state-icon { font-size: 64px; margin-bottom: 20px; }
+        .empty-state-text { font-size: 16px; }
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        .nav-tab { padding: 10px 20px; background: #21262d; border: 1px solid #30363d; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.3s; }
+        .nav-tab:hover { border-color: #00d4ff; }
+        .nav-tab.active { background: #00d4ff; color: #000; border-color: #00d4ff; font-weight: bold; }
+        .code-block { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 15px; font-family: 'Consolas', monospace; font-size: 12px; color: #00ff88; overflow-x: auto; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛡️ 扩展安全控制台</h1>
+        <div class="status">
+            <div class="status-item"><div class="status-dot"></div>系统运行中</div>
+            <div class="status-item">7大安全领域已集成</div>
+            <div class="status-item" id="api-status">API: 已连接</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 模块选择 -->
+        <div class="modules-grid" id="modules-grid">
+            <div class="module-card active" data-module="mobile">
+                <div class="module-icon">📱</div>
+                <div class="module-title">移动安全</div>
+                <div class="module-desc">APK静态分析、动态分析、漏洞扫描、Frida Hook集成、iOS安全分析</div>
+                <div class="module-features">
+                    <span class="feature-tag">APK解析</span>
+                    <span class="feature-tag">漏洞扫描</span>
+                    <span class="feature-tag">Frida</span>
+                    <span class="feature-tag">动态分析</span>
+                </div>
+            </div>
+            <div class="module-card" data-module="internal">
+                <div class="module-icon">🏢</div>
+                <div class="module-title">内网渗透</div>
+                <div class="module-desc">内网扫描、SMB枚举、域渗透、横向移动、Kerberoasting、提权检查</div>
+                <div class="module-features">
+                    <span class="feature-tag">内网扫描</span>
+                    <span class="feature-tag">域渗透</span>
+                    <span class="feature-tag">横向移动</span>
+                    <span class="feature-tag">提权</span>
+                </div>
+            </div>
+            <div class="module-card" data-module="cloud">
+                <div class="module-icon">☁️</div>
+                <div class="module-title">云安全</div>
+                <div class="module-desc">AWS/Azure/阿里云配置检查、容器镜像扫描、Kubernetes集群安全评估</div>
+                <div class="module-features">
+                    <span class="feature-tag">AWS</span>
+                    <span class="feature-tag">Azure</span>
+                    <span class="feature-tag">容器</span>
+                    <span class="feature-tag">K8s</span>
+                </div>
+            </div>
+            <div class="module-card" data-module="api">
+                <div class="module-icon">🔌</div>
+                <div class="module-title">API安全</div>
+                <div class="module-desc">OpenAPI解析、认证测试、越权测试、业务逻辑漏洞、参数Fuzz测试</div>
+                <div class="module-features">
+                    <span class="feature-tag">OpenAPI</span>
+                    <span class="feature-tag">越权测试</span>
+                    <span class="feature-tag">Fuzz</span>
+                    <span class="feature-tag">逻辑漏洞</span>
+                </div>
+            </div>
+            <div class="module-card" data-module="client">
+                <div class="module-icon">💻</div>
+                <div class="module-title">客户端安全</div>
+                <div class="module-desc">PE/ELF/Mach-O二进制分析、加壳检测、反调试检测、敏感信息提取</div>
+                <div class="module-features">
+                    <span class="feature-tag">二进制分析</span>
+                    <span class="feature-tag">加壳检测</span>
+                    <span class="feature-tag">反调试</span>
+                    <span class="feature-tag">信息提取</span>
+                </div>
+            </div>
+            <div class="module-card" data-module="code">
+                <div class="module-icon">📝</div>
+                <div class="module-title">代码审计</div>
+                <div class="module-desc">Python/JS/PHP/Java静态分析、依赖漏洞扫描、硬编码敏感信息检测</div>
+                <div class="module-features">
+                    <span class="feature-tag">静态分析</span>
+                    <span class="feature-tag">依赖扫描</span>
+                    <span class="feature-tag">敏感信息</span>
+                    <span class="feature-tag">多语言</span>
+                </div>
+            </div>
+            <div class="module-card" data-module="wireless">
+                <div class="module-icon">📡</div>
+                <div class="module-title">无线网络</div>
+                <div class="module-desc">WiFi扫描、安全评估、弱密码检测、WPS漏洞检测、开放网络识别</div>
+                <div class="module-features">
+                    <span class="feature-tag">WiFi扫描</span>
+                    <span class="feature-tag">安全评估</span>
+                    <span class="feature-tag">弱密码</span>
+                    <span class="feature-tag">WPS</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 工作区 -->
+        <div class="workspace" id="workspace">
+            <div class="workspace-title" id="workspace-title">📱 移动安全分析</div>
+
+            <!-- 移动安全 -->
+            <div id="panel-mobile" class="panel">
+                <div class="nav-tabs">
+                    <div class="nav-tab active" data-tab="apk-analyze">APK静态分析</div>
+                    <div class="nav-tab" data-tab="vuln-scan">漏洞扫描</div>
+                    <div class="nav-tab" data-tab="frida">Frida脚本</div>
+                    <div class="nav-tab" data-tab="devices">设备管理</div>
+                </div>
+
+                <div id="tab-apk-analyze" class="tab-content">
+                    <div class="form-group">
+                        <label>上传APK文件</label>
+                        <input type="file" id="apk-file" accept=".apk">
+                    </div>
+                    <button class="btn" onclick="analyzeAPK()">开始分析</button>
+                    <div class="result-area" id="apk-result" style="display:none;"></div>
+                </div>
+
+                <div id="tab-vuln-scan" class="tab-content" style="display:none;">
+                    <div class="form-group">
+                        <label>APK文件路径</label>
+                        <input type="text" id="apk-path" placeholder="例如: data/mobile/uploads/app.apk">
+                    </div>
+                    <button class="btn" onclick="scanMobileVuln()">开始漏洞扫描</button>
+                    <div class="result-area" id="vuln-result" style="display:none;"></div>
+                </div>
+
+                <div id="tab-frida" class="tab-content" style="display:none;">
+                    <div class="form-group">
+                        <label>类名</label>
+                        <input type="text" id="frida-class" placeholder="例如: com.example.app.LoginActivity">
+                    </div>
+                    <div class="form-group">
+                        <label>方法名</label>
+                        <input type="text" id="frida-method" placeholder="例如: login">
+                    </div>
+                    <div class="form-group">
+                        <label>Hook类型</label>
+                        <select id="frida-type">
+                            <option value="trace">方法追踪</option>
+                            <option value="bypass">绕过检测</option>
+                            <option value="modify">修改返回值</option>
+                            <option value="log">参数日志</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="generateFridaScript()">生成Frida脚本</button>
+                    <div class="result-area" id="frida-result" style="display:none;"></div>
+                </div>
+
+                <div id="tab-devices" class="tab-content" style="display:none;">
+                    <button class="btn" onclick="getMobileDevices()">刷新设备列表</button>
+                    <div class="result-area" id="devices-result" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- 内网渗透 -->
+            <div id="panel-internal" class="panel" style="display:none;">
+                <div class="nav-tabs">
+                    <div class="nav-tab active" data-tab="net-scan">内网扫描</div>
+                    <div class="nav-tab" data-tab="smb">SMB枚举</div>
+                    <div class="nav-tab" data-tab="domain">域信息</div>
+                    <div class="nav-tab" data-tab="privesc">提权检查</div>
+                    <div class="nav-tab" data-tab="kerberoast">Kerberoasting</div>
+                </div>
+                <div id="tab-net-scan" class="tab-content">
+                    <div class="form-group">
+                        <label>目标IP或网段</label>
+                        <input type="text" id="scan-target" placeholder="例如: 192.168.1.0/24 或 192.168.1.100">
+                    </div>
+                    <div class="form-group">
+                        <label>端口范围</label>
+                        <input type="text" id="scan-ports" value="1-1000">
+                    </div>
+                    <button class="btn" onclick="scanInternal()">开始扫描</button>
+                    <div class="result-area" id="internal-result" style="display:none;"></div>
+                </div>
+                <div id="tab-smb" class="tab-content" style="display:none;">
+                    <div class="form-group">
+                        <label>目标IP</label>
+                        <input type="text" id="smb-target" placeholder="例如: 192.168.1.100">
+                    </div>
+                    <button class="btn" onclick="enumerateSMB()">枚举SMB共享</button>
+                    <div class="result-area" id="smb-result" style="display:none;"></div>
+                </div>
+                <div id="tab-domain" class="tab-content" style="display:none;">
+                    <div class="form-group">
+                        <label>域名（可选）</label>
+                        <input type="text" id="domain-name" placeholder="例如: corp.local">
+                    </div>
+                    <button class="btn" onclick="enumerateDomain()">枚举域信息</button>
+                    <div class="result-area" id="domain-result" style="display:none;"></div>
+                </div>
+                <div id="tab-privesc" class="tab-content" style="display:none;">
+                    <button class="btn" onclick="checkPrivesc()">检查本地提权漏洞</button>
+                    <div class="result-area" id="privesc-result" style="display:none;"></div>
+                </div>
+                <div id="tab-kerberoast" class="tab-content" style="display:none;">
+                    <div class="form-group">
+                        <label>域名（可选）</label>
+                        <input type="text" id="kerb-domain" placeholder="例如: corp.local">
+                    </div>
+                    <button class="btn" onclick="kerberoasting()">执行Kerberoasting</button>
+                    <div class="result-area" id="kerb-result" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- 云安全 -->
+            <div id="panel-cloud" class="panel" style="display:none;">
+                <div class="nav-tabs">
+                    <div class="nav-tab active" data-tab="aws">AWS扫描</div>
+                    <div class="nav-tab" data-tab="container">容器扫描</div>
+                    <div class="nav-tab" data-tab="k8s">K8s扫描</div>
+                </div>
+                <div id="tab-aws" class="tab-content">
+                    <div class="form-group">
+                        <label>AWS配置文件</label>
+                        <input type="text" id="aws-profile" value="default">
+                    </div>
+                    <button class="btn" onclick="scanAWS()">扫描AWS配置</button>
+                    <div class="result-area" id="aws-result" style="display:none;"></div>
+                </div>
+                <div id="tab-container" class="tab-content" style="display:none;">
+                    <div class="form-group">
+                        <label>镜像名称</label>
+                        <input type="text" id="container-image" placeholder="例如: nginx:latest">
+                    </div>
+                    <button class="btn" onclick="scanContainer()">扫描容器镜像</button>
+                    <div class="result-area" id="container-result" style="display:none;"></div>
+                </div>
+                <div id="tab-k8s" class="tab-content" style="display:none;">
+                    <div class="form-group">
+                        <label>K8s上下文（可选）</label>
+                        <input type="text" id="k8s-context" placeholder="例如: prod-cluster">
+                    </div>
+                    <button class="btn" onclick="scanK8s()">扫描K8s集群</button>
+                    <div class="result-area" id="k8s-result" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- API安全 -->
+            <div id="panel-api" class="panel" style="display:none;">
+                <div class="nav-tabs">
+                    <div class="nav-tab active" data-tab="openapi">OpenAPI解析</div>
+                    <div class="nav-tab" data-tab="auth-test">认证测试</div>
+                    <div class="nav-tab" data-tab="biz-logic">业务逻辑测试</div>
+                </div>
+                <div id="tab-openapi" class="tab-content">
+                    <div class="form-group">
+                        <label>OpenAPI文档URL</label>
+                        <input type="text" id="openapi-url" placeholder="例如: https://api.example.com/swagger.json">
+                    </div>
+                    <div class="form-group">
+                        <label>或本地文件路径</label>
+                        <input type="text" id="openapi-path" placeholder="例如: data/api/openapi.json">
+                    </div>
+                    <button class="btn" onclick="parseOpenAPI()">解析OpenAPI</button>
+                    <div class="result-area" id="openapi-result" style="display:none;"></div>
+                </div>
+                <div id="tab-auth-test" class="tab-content" style="display:none;">
+                    <div class="form-group">
+                        <label>API基础URL</label>
+                        <input type="text" id="api-base-url" placeholder="例如: https://api.example.com">
+                    </div>
+                    <button class="btn" onclick="testAPIAuth()">测试认证漏洞</button>
+                    <div class="result-area" id="api-auth-result" style="display:none;"></div>
+                </div>
+                <div id="tab-biz-logic" class="tab-content" style="display:none;">
+                    <div class="form-group">
+                        <label>API基础URL</label>
+                        <input type="text" id="api-biz-url" placeholder="例如: https://api.example.com">
+                    </div>
+                    <button class="btn" onclick="testAPIBizLogic()">测试业务逻辑漏洞</button>
+                    <div class="result-area" id="api-biz-result" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- 客户端安全 -->
+            <div id="panel-client" class="panel" style="display:none;">
+                <div class="form-group">
+                    <label>上传二进制文件（EXE/DLL/SO等）</label>
+                    <input type="file" id="binary-file">
+                </div>
+                <button class="btn" onclick="analyzeBinary()">开始分析</button>
+                <div class="result-area" id="client-result" style="display:none;"></div>
+            </div>
+
+            <!-- 代码审计 -->
+            <div id="panel-code" class="panel" style="display:none;">
+                <div class="nav-tabs">
+                    <div class="nav-tab active" data-tab="code-audit">代码审计</div>
+                    <div class="nav-tab" data-tab="dep-scan">依赖扫描</div>
+                </div>
+                <div id="tab-code-audit" class="tab-content">
+                    <div class="form-group">
+                        <label>代码目录路径</label>
+                        <input type="text" id="code-dir" placeholder="例如: E:\projects\myapp">
+                    </div>
+                    <button class="btn" onclick="auditCode()">开始审计</button>
+                    <div class="result-area" id="code-result" style="display:none;"></div>
+                </div>
+                <div id="tab-dep-scan" class="tab-content" style="display:none;">
+                    <div class="form-group">
+                        <label>项目目录路径</label>
+                        <input type="text" id="project-dir" placeholder="例如: E:\projects\myapp">
+                    </div>
+                    <button class="btn" onclick="scanDependencies()">扫描依赖漏洞</button>
+                    <div class="result-area" id="dep-result" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- 无线网络 -->
+            <div id="panel-wireless" class="panel" style="display:none;">
+                <div class="nav-tabs">
+                    <div class="nav-tab active" data-tab="wifi-scan">WiFi扫描</div>
+                    <div class="nav-tab" data-tab="wifi-audit">安全审计</div>
+                </div>
+                <div id="tab-wifi-scan" class="tab-content">
+                    <div class="form-group">
+                        <label>无线网卡接口</label>
+                        <input type="text" id="wifi-interface" value="wlan0">
+                    </div>
+                    <div class="form-group">
+                        <label>扫描时长（秒）</label>
+                        <input type="number" id="wifi-duration" value="10">
+                    </div>
+                    <button class="btn" onclick="scanWiFi()">开始扫描</button>
+                    <div class="result-area" id="wifi-result" style="display:none;"></div>
+                </div>
+                <div id="tab-wifi-audit" class="tab-content" style="display:none;">
+                    <button class="btn" onclick="auditWiFi()">审计所有网络安全</button>
+                    <div class="result-area" id="wifi-audit-result" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000';
+        const API_KEY = localStorage.getItem('api_key') || '';
+
+        // 模块切换
+        document.querySelectorAll('.module-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.module-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                const module = card.dataset.module;
+                document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+                document.getElementById('panel-' + module).style.display = 'block';
+                const titles = {
+                    mobile: '📱 移动安全分析',
+                    internal: '🏢 内网渗透测试',
+                    cloud: '☁️ 云安全扫描',
+                    api: '🔌 API安全测试',
+                    client: '💻 客户端安全分析',
+                    code: '📝 代码审计',
+                    wireless: '📡 无线网络安全'
+                };
+                document.getElementById('workspace-title').textContent = titles[module];
+            });
+        });
+
+        // Tab切换
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const parent = tab.closest('.panel');
+                parent.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                parent.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+                document.getElementById('tab-' + tab.dataset.tab).style.display = 'block';
+            });
+        });
+
+        // API请求封装
+        async function apiRequest(endpoint, method = 'GET', data = null, isForm = false) {
+            const headers = { 'X-API-Key': API_KEY };
+            let body = null;
+            if (data) {
+                if (isForm) {
+                    body = data;
+                } else {
+                    headers['Content-Type'] = 'application/json';
+                    body = JSON.stringify(data);
+                }
+            }
+            const response = await fetch(API_BASE + endpoint, { method, headers, body });
+            return response.json();
+        }
+
+        // 显示结果
+        function showResult(elementId, html) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = html;
+            el.style.display = 'block';
+        }
+
+        // 显示加载
+        function showLoading(elementId, text = '正在处理...') {
+            showResult(elementId, `<div style="text-align:center;padding:40px;"><div class="loading"></div><p style="margin-top:15px;color:#8b949e;">${text}</p></div>`);
+        }
+
+        // 漏洞项HTML
+        function vulnItemHTML(vuln) {
+            const severity = (vuln.severity || '').toLowerCase();
+            return `<div class="result-item ${severity}">
+                <div class="result-item-header">
+                    <span class="result-item-title">${vuln.name || vuln.vulnerability || vuln.issue || '未命名'}</span>
+                    <span class="severity-badge severity-${severity}">${vuln.severity || '未知'}</span>
+                </div>
+                <div class="result-item-desc">${vuln.description || vuln.detail || ''}</div>
+                ${vuln.location ? `<div class="result-item-desc" style="color:#00d4ff;margin-top:5px;">位置: ${vuln.location}</div>` : ''}
+                ${vuln.recommendation ? `<div class="result-item-recommendation">💡 修复建议: ${vuln.recommendation}</div>` : ''}
+            </div>`;
+        }
+
+        // ==================== 移动安全 ====================
+        async function analyzeAPK() {
+            const fileInput = document.getElementById('apk-file');
+            if (!fileInput.files.length) { alert('请选择APK文件'); return; }
+            showLoading('apk-result', '正在分析APK文件...');
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            try {
+                const result = await apiRequest('/api/v1/extended/mobile/analyze', 'POST', formData, true);
+                if (result.success) {
+                    const data = result.data;
+                    let html = `<div class="stats-bar">
+                        <div class="stat-card"><div class="stat-value">${data.file_name || 'N/A'}</div><div class="stat-label">文件名</div></div>
+                        <div class="stat-card"><div class="stat-value">${data.package_name || 'N/A'}</div><div class="stat-label">包名</div></div>
+                        <div class="stat-card"><div class="stat-value">${data.version_name || 'N/A'}</div><div class="stat-label">版本</div></div>
+                        <div class="stat-card"><div class="stat-value">${data.permissions ? data.permissions.length : 0}</div><div class="stat-label">权限数</div></div>
+                    </div>`;
+                    if (data.permissions && data.permissions.length) {
+                        html += '<h4 style="color:#00d4ff;margin:15px 0;">危险权限</h4>';
+                        data.permissions.filter(p => p.dangerous).forEach(p => {
+                            html += `<div class="result-item high"><div class="result-item-title">${p.name}</div><div class="result-item-desc">${p.description || ''}</div></div>`;
+                        });
+                    }
+                    showResult('apk-result', html);
+                } else {
+                    showResult('apk-result', `<div class="result-item critical"><div class="result-item-title">分析失败</div><div class="result-item-desc">${result.detail || result.message || '未知错误'}</div></div>`);
+                }
+            } catch (e) {
+                showResult('apk-result', `<div class="result-item critical"><div class="result-item-title">请求错误</div><div class="result-item-desc">${e.message}</div></div>`);
+            }
+        }
+
+        async function scanMobileVuln() {
+            const apkPath = document.getElementById('apk-path').value;
+            if (!apkPath) { alert('请输入APK路径'); return; }
+            showLoading('vuln-result', '正在扫描漏洞...');
+            try {
+                const result = await apiRequest(`/api/v1/extended/mobile/vulnerabilities?apk_path=${encodeURIComponent(apkPath)}`);
+                if (result.success) {
+                    const data = result.data;
+                    let html = `<div class="stats-bar">
+                        <div class="stat-card"><div class="stat-value">${data.total}</div><div class="stat-label">总漏洞数</div></div>
+                        <div class="stat-card"><div class="stat-value" style="color:#ff4444;">${data.statistics ? data.statistics.Critical || 0 : 0}</div><div class="stat-label">严重</div></div>
+                        <div class="stat-card"><div class="stat-value" style="color:#ff8800;">${data.statistics ? data.statistics.High || 0 : 0}</div><div class="stat-label高危</div></div>
+                        <div class="stat-card"><div class="stat-value" style="color:#ffcc00;">${data.statistics ? data.statistics.Medium || 0 : 0}</div><div class="stat-label">中危</div></div>
+                    </div>`;
+                    data.vulnerabilities.forEach(v => { html += vulnItemHTML(v); });
+                    showResult('vuln-result', html);
+                }
+            } catch (e) {
+                showResult('vuln-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        async function generateFridaScript() {
+            const className = document.getElementById('frida-class').value;
+            const methodName = document.getElementById('frida-method').value;
+            const hookType = document.getElementById('frida-type').value;
+            showLoading('frida-result', '正在生成Frida脚本...');
+            try {
+                const formData = new FormData();
+                formData.append('class_name', className);
+                formData.append('method_name', methodName);
+                formData.append('hook_type', hookType);
+                const result = await apiRequest('/api/v1/extended/mobile/frida/generate', 'POST', formData, true);
+                if (result.success) {
+                    showResult('frida-result', `<h4 style="color:#00d4ff;margin-bottom:15px;">生成的Frida脚本</h4><div class="code-block">${result.data.script}</div>`);
+                }
+            } catch (e) {
+                showResult('frida-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        async function getMobileDevices() {
+            showLoading('devices-result', '正在获取设备列表...');
+            try {
+                const result = await apiRequest('/api/v1/extended/mobile/devices');
+                if (result.success) {
+                    const devices = result.data.devices;
+                    let html = '';
+                    if (devices.length === 0) {
+                        html = '<div class="empty-state"><div class="empty-state-icon">📱</div><div class="empty-state-text">未检测到连接的设备</div></div>';
+                    } else {
+                        devices.forEach(d => {
+                            html += `<div class="result-item"><div class="result-item-title">${d.id || d.serial}</div><div class="result-item-desc">状态: ${d.state || '未知'} | 型号: ${d.model || '未知'}</div></div>`;
+                        });
+                    }
+                    showResult('devices-result', html);
+                }
+            } catch (e) {
+                showResult('devices-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        // ==================== 内网渗透 ====================
+        async function scanInternal() {
+            const target = document.getElementById('scan-target').value;
+            const ports = document.getElementById('scan-ports').value;
+            if (!target) { alert('请输入目标'); return; }
+            showLoading('internal-result', '正在扫描内网...');
+            try {
+                const formData = new FormData();
+                formData.append('target', target);
+                formData.append('ports', ports);
+                const result = await apiRequest('/api/v1/extended/internal/scan', 'POST', formData, true);
+                if (result.success) {
+                    const hosts = result.data.hosts;
+                    let html = `<div class="stats-bar"><div class="stat-card"><div class="stat-value">${result.data.total}</div><div class="stat-label">存活主机</div></div></div>`;
+                    hosts.forEach(h => {
+                        html += `<div class="result-item"><div class="result-item-header"><span class="result-item-title">${h.ip}</span><span class="severity-badge severity-low">${h.os || '未知OS'}</span></div>`;
+                        if (h.open_ports && h.open_ports.length) {
+                            html += '<div class="result-item-desc" style="margin-top:8px;">开放端口: ';
+                            h.open_ports.forEach(p => { html += `<span style="background:#21262d;padding:2px 8px;border-radius:4px;margin:2px;display:inline-block;">${p.port}/${p.service}</span>`; });
+                            html += '</div>';
+                        }
+                        html += '</div>';
+                    });
+                    showResult('internal-result', html);
+                }
+            } catch (e) {
+                showResult('internal-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        async function enumerateSMB() {
+            const target = document.getElementById('smb-target').value;
+            if (!target) { alert('请输入目标IP'); return; }
+            showLoading('smb-result', '正在枚举SMB共享...');
+            try {
+                const formData = new FormData();
+                formData.append('target', target);
+                const result = await apiRequest('/api/v1/extended/internal/smb', 'POST', formData, true);
+                if (result.success) {
+                    const shares = result.data.shares;
+                    let html = '';
+                    if (shares.length === 0) {
+                        html = '<div class="empty-state">未发现SMB共享</div>';
+                    } else {
+                        shares.forEach(s => {
+                            html += `<div class="result-item"><div class="result-item-title">${s.name}</div><div class="result-item-desc">类型: ${s.type} | 备注: ${s.comment || '无'}</div></div>`;
+                        });
+                    }
+                    showResult('smb-result', html);
+                }
+            } catch (e) {
+                showResult('smb-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        async function enumerateDomain() {
+            const domain = document.getElementById('domain-name').value;
+            showLoading('domain-result', '正在枚举域信息...');
+            try {
+                const formData = new FormData();
+                formData.append('domain', domain);
+                const result = await apiRequest('/api/v1/extended/internal/domain', 'POST', formData, true);
+                if (result.success) {
+                    const data = result.data;
+                    let html = `<div class="stats-bar">
+                        <div class="stat-card"><div class="stat-value">${data.domain_name || 'N/A'}</div><div class="stat-label">域名</div></div>
+                        <div class="stat-card"><div class="stat-value">${data.domain_controllers.length}</div><div class="stat-label">域控制器</div></div>
+                        <div class="stat-card"><div class="stat-value">${data.domain_admins.length}</div><div class="stat-label">域管理员</div></div>
+                    </div>`;
+                    if (data.domain_controllers.length) {
+                        html += '<h4 style="color:#00d4ff;margin:15px 0;">域控制器</h4>';
+                        data.domain_controllers.forEach(dc => { html += `<div class="result-item"><div class="result-item-title">${dc}</div></div>`; });
+                    }
+                    if (data.domain_admins.length) {
+                        html += '<h4 style="color:#00d4ff;margin:15px 0;">域管理员</h4>';
+                        data.domain_admins.forEach(da => { html += `<div class="result-item high"><div class="result-item-title">${da}</div></div>`; });
+                    }
+                    showResult('domain-result', html);
+                }
+            } catch (e) {
+                showResult('domain-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        async function checkPrivesc() {
+            showLoading('privesc-result', '正在检查提权漏洞...');
+            try {
+                const result = await apiRequest('/api/v1/extended/internal/privesc', 'POST');
+                if (result.success) {
+                    let html = '';
+                    result.data.vulnerabilities.forEach(v => { html += vulnItemHTML(v); });
+                    showResult('privesc-result', html);
+                }
+            } catch (e) {
+                showResult('privesc-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        async function kerberoasting() {
+            const domain = document.getElementById('kerb-domain').value;
+            showLoading('kerb-result', '正在执行Kerberoasting...');
+            try {
+                const formData = new FormData();
+                formData.append('domain', domain);
+                const result = await apiRequest('/api/v1/extended/internal/kerberoasting', 'POST', formData, true);
+                if (result.success) {
+                    let html = '';
+                    if (result.data.tickets.length === 0) {
+                        html = '<div class="empty-state">未发现可请求的服务票据</div>';
+                    } else {
+                        result.data.tickets.forEach(t => {
+                            html += `<div class="result-item high"><div class="result-item-title">${t.spn}</div><div class="result-item-desc">状态: ${t.status}</div></div>`;
+                        });
+                    }
+                    showResult('kerb-result', html);
+                }
+            } catch (e) {
+                showResult('kerb-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        // ==================== 云安全 ====================
+        async function scanAWS() {
+            const profile = document.getElementById('aws-profile').value;
+            showLoading('aws-result', '正在扫描AWS配置...');
+            try {
+                const formData = new FormData();
+                formData.append('profile', profile);
+                const result = await apiRequest('/api/v1/extended/cloud/scan/aws', 'POST', formData, true);
+                if (result.success) {
+                    let html = `<div class="stats-bar"><div class="stat-card"><div class="stat-value">${result.data.total}</div><div class="stat-label">检查项</div></div></div>`;
+                    result.data.findings.forEach(f => { html += vulnItemHTML(f); });
+                    showResult('aws-result', html);
+                }
+            } catch (e) {
+                showResult('aws-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        async function scanContainer() {
+            const image = document.getElementById('container-image').value;
+            if (!image) { alert('请输入镜像名称'); return; }
+            showLoading('container-result', '正在扫描容器镜像...');
+            try {
+                const formData = new FormData();
+                formData.append('image', image);
+                const result = await apiRequest('/api/v1/extended/cloud/scan/container', 'POST', formData, true);
+                if (result.success) {
+                    let html = '';
+                    result.data.findings.forEach(f => { html += vulnItemHTML(f); });
+                    showResult('container-result', html);
+                }
+            } catch (e) {
+                showResult('container-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        async function scanK8s() {
+            const context = document.getElementById('k8s-context').value;
+            showLoading('k8s-result', '正在扫描K8s集群...');
+            try {
+                const formData = new FormData();
+                formData.append('context', context);
+                const result = await apiRequest('/api/v1/extended/cloud/scan/k8s', 'POST', formData, true);
+                if (result.success) {
+                    let html = '';
+                    result.data.findings.forEach(f => { html += vulnItemHTML(f); });
+                    showResult('k8s-result', html);
+                }
+            } catch (e) {
+                showResult('k8s-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        // ==================== API安全 ====================
+        async function parseOpenAPI() {
+            const url = document.getElementById('openapi-url').value;
+            const path = document.getElementById('openapi-path').value;
+            if (!url && !path) { alert('请输入URL或文件路径'); return; }
+            showLoading('openapi-result', '正在解析OpenAPI...');
+            try {
+                const formData = new FormData();
+                formData.append('spec_url', url);
+                formData.append('spec_path', path);
+                const result = await apiRequest('/api/v1/extended/api-security/parse-openapi', 'POST', formData, true);
+                if (result.success) {
+                    let html = `<div class="stats-bar"><div class="stat-card"><div class="stat-value">${result.data.total}</div><div class="stat-label">API端点</div></div></div>`;
+                    result.data.endpoints.forEach(e => {
+                        html += `<div class="result-item"><div class="result-item-header"><span class="result-item-title">${e.method} ${e.path}</span>${e.auth_required ? '<span class="severity-badge severity-medium">需认证</span>' : '<span class="severity-badge severity-low">公开</span>'}</div><div class="result-item-desc">${e.description || '无描述'}</div></div>`;
+                    });
+                    showResult('openapi-result', html);
+                }
+            } catch (e) {
+                showResult('openapi-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        async function testAPIAuth() {
+            const baseUrl = document.getElementById('api-base-url').value;
+            if (!baseUrl) { alert('请输入API基础URL'); return; }
+            showLoading('api-auth-result', '正在测试认证漏洞...');
+            try {
+                const formData = new FormData();
+                formData.append('base_url', baseUrl);
+                const result = await apiRequest('/api/v1/extended/api-security/test-auth', 'POST', formData, true);
+                if (result.success) {
+                    let html = '';
+                    result.data.vulnerabilities.forEach(v => { html += vulnItemHTML(v); });
+                    showResult('api-auth-result', html);
+                }
+            } catch (e) {
+                showResult('api-auth-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        async function testAPIBizLogic() {
+            const baseUrl = document.getElementById('api-biz-url').value;
+            if (!baseUrl) { alert('请输入API基础URL'); return; }
+            showLoading('api-biz-result', '正在测试业务逻辑漏洞...');
+            try {
+                const formData = new FormData();
+                formData.append('base_url', baseUrl);
+                const result = await apiRequest('/api/v1/extended/api-security/test-business-logic', 'POST', formData, true);
+                if (result.success) {
+                    let html = '';
+                    result.data.vulnerabilities.forEach(v => { html += vulnItemHTML(v); });
+                    showResult('api-biz-result', html);
+                }
+            } catch (e) {
+                showResult('api-biz-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        // ==================== 客户端安全 ====================
+        async function analyzeBinary() {
+            const fileInput = document.getElementById('binary-file');
+            if (!fileInput.files.length) { alert('请选择二进制文件'); return; }
+            showLoading('client-result', '正在分析二进制文件...');
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            try {
+                const result = await apiRequest('/api/v1/extended/client/analyze', 'POST', formData, true);
+                if (result.success) {
+                    const info = result.data.file_info;
+                    const assessment = result.data.security_assessment;
+                    let html = `<div class="stats-bar">
+                        <div class="stat-card"><div class="stat-value">${info.file_name}</div><div class="stat-label">文件名</div></div>
+                        <div class="stat-card"><div class="stat-value">${info.file_type}</div><div class="stat-label">文件类型</div></div>
+                        <div class="stat-card"><div class="stat-value">${info.architecture}</div><div class="stat-label">架构</div></div>
+                        <div class="stat-card"><div class="stat-value" style="color:${assessment.security_score >= 70 ? '#00ff88' : assessment.security_score >= 50 ? '#ffcc00' : '#ff4444'};">${assessment.security_score}</div><div class="stat-label">安全评分</div></div>
+                    </div>`;
+                    html += `<div class="result-item ${assessment.risk_level === '高风险' ? 'critical' : assessment.risk_level === '中风险' ? 'medium' : 'low'}"><div class="result-item-title">风险等级: ${assessment.risk_level}</div></div>`;
+                    if (info.is_packed) {
+                        html += `<div class="result-item low"><div class="result-item-title">✅ 加壳保护</div><div class="result-item-desc">检测到${info.packer_name}加壳</div></div>`;
+                    }
+                    if (info.has_anti_debug) {
+                        html += `<div class="result-item low"><div class="result-item-title">✅ 反调试机制</div></div>`;
+                    }
+                    if (info.has_anti_vm) {
+                        html += `<div class="result-item low"><div class="result-item-title">✅ 反虚拟机机制</div></div>`;
+                    }
+                    html += '<h4 style="color:#00d4ff;margin:15px 0;">安全建议</h4>';
+                    assessment.recommendations.forEach(r => {
+                        html += `<div class="result-item-desc" style="padding:8px 0;">💡 ${r}</div>`;
+                    });
+                    showResult('client-result', html);
+                }
+            } catch (e) {
+                showResult('client-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        // ==================== 代码审计 ====================
+        async function auditCode() {
+            const dir = document.getElementById('code-dir').value;
+            if (!dir) { alert('请输入代码目录'); return; }
+            showLoading('code-result', '正在审计代码...');
+            try {
+                const formData = new FormData();
+                formData.append('directory', dir);
+                const result = await apiRequest('/api/v1/extended/code-audit/audit', 'POST', formData, true);
+                if (result.success) {
+                    const stats = result.data.statistics;
+                    let html = `<div class="stats-bar">
+                        <div class="stat-card"><div class="stat-value">${stats.scanned_files}</div><div class="stat-label">扫描文件</div></div>
+                        <div class="stat-card"><div class="stat-value">${stats.total_issues}</div><div class="stat-label">问题总数</div></div>
+                        <div class="stat-card"><div class="stat-value" style="color:#ff4444;">${stats.by_severity.Critical || 0}</div><div class="stat-label">严重</div></div>
+                        <div class="stat-card"><div class="stat-value" style="color:#ff8800;">${stats.by_severity.High || 0}</div><div class="stat-label">高危</div></div>
+                    </div>`;
+                    result.data.issues.forEach(i => { html += vulnItemHTML(i); });
+                    showResult('code-result', html);
+                }
+            } catch (e) {
+                showResult('code-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        async function scanDependencies() {
+            const dir = document.getElementById('project-dir').value;
+            if (!dir) { alert('请输入项目目录'); return; }
+            showLoading('dep-result', '正在扫描依赖...');
+            try {
+                const formData = new FormData();
+                formData.append('directory', dir);
+                const result = await apiRequest('/api/v1/extended/code-audit/dependencies', 'POST', formData, true);
+                if (result.success) {
+                    let html = '';
+                    result.data.vulnerabilities.forEach(v => {
+                        html += `<div class="result-item"><div class="result-item-title">${v.type} 依赖</div><div class="result-item-desc">总数: ${v.total_dependencies} | 状态: ${v.status}</div></div>`;
+                    });
+                    showResult('dep-result', html);
+                }
+            } catch (e) {
+                showResult('dep-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        // ==================== 无线网络 ====================
+        async function scanWiFi() {
+            const iface = document.getElementById('wifi-interface').value;
+            const duration = document.getElementById('wifi-duration').value;
+            showLoading('wifi-result', '正在扫描WiFi网络...');
+            try {
+                const formData = new FormData();
+                formData.append('interface', iface);
+                formData.append('duration', duration);
+                const result = await apiRequest('/api/v1/extended/wireless/scan', 'POST', formData, true);
+                if (result.success) {
+                    let html = `<div class="stats-bar"><div class="stat-card"><div class="stat-value">${result.data.total}</div><div class="stat-label">发现网络</div></div></div>`;
+                    result.data.networks.forEach(n => {
+                        const enc = (n.encryption || '').toLowerCase();
+                        const isOpen = !n.encryption || enc.includes('open') || enc.includes('none');
+                        html += `<div class="result-item ${isOpen ? 'critical' : 'low'}"><div class="result-item-header"><span class="result-item-title">${n.ssid}</span><span class="severity-badge ${isOpen ? 'severity-critical' : 'severity-low'}">${n.encryption || '开放'}</span></div><div class="result-item-desc">BSSID: ${n.bssid} | 信道: ${n.channel} | 信号: ${n.signal_strength} dBm</div></div>`;
+                    });
+                    showResult('wifi-result', html);
+                }
+            } catch (e) {
+                showResult('wifi-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+
+        async function auditWiFi() {
+            showLoading('wifi-audit-result', '正在审计无线网络安全...');
+            try {
+                const result = await apiRequest('/api/v1/extended/wireless/audit', 'POST');
+                if (result.success) {
+                    const stats = result.data.statistics;
+                    let html = `<div class="stats-bar">
+                        <div class="stat-card"><div class="stat-value">${stats.total_networks}</div><div class="stat-label">网络总数</div></div>
+                        <div class="stat-card"><div class="stat-value" style="color:#ff4444;">${stats.open_networks}</div><div class="stat-label">开放网络</div></div>
+                        <div class="stat-card"><div class="stat-value" style="color:#ff8800;">${stats.wep_networks}</div><div class="stat-label">WEP</div></div>
+                        <div class="stat-card"><div class="stat-value">${stats.total_vulnerabilities}</div><div class="stat-label">漏洞数</div></div>
+                    </div>`;
+                    result.data.vulnerabilities.forEach(v => { html += vulnItemHTML(v); });
+                    showResult('wifi-audit-result', html);
+                }
+            } catch (e) {
+                showResult('wifi-audit-result', `<div class="result-item critical">${e.message}</div>`);
+            }
+        }
+    </script>
+</body>
+</html>

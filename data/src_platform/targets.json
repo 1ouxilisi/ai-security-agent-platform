@@ -1,0 +1,65 @@
+{
+  "target-001": {
+    "target_id": "target-001",
+    "name": "示例公司 - 主程序",
+    "platform": "hackerone",
+    "platform_url": "https://hackerone.com/example",
+    "description": "示例公司的漏洞赏金计划，覆盖所有在线资产",
+    "bounty_range": "$100 - $10000",
+    "currency": "USD",
+    "scope_count": 3,
+    "scope": [
+      {
+        "scope_id": "scope-001",
+        "type": "wildcard",
+        "value": "*.example.com",
+        "status": "in_scope",
+        "eligible_for_bounty": true,
+        "severity_restriction": "",
+        "notes": "",
+        "discovered_assets_count": 0,
+        "last_scanned": null
+      },
+      {
+        "scope_id": "scope-002",
+        "type": "url",
+        "value": "https://api.example.com",
+        "status": "in_scope",
+        "eligible_for_bounty": true,
+        "severity_restriction": "",
+        "notes": "",
+        "discovered_assets_count": 0,
+        "last_scanned": null
+      },
+      {
+        "scope_id": "scope-003",
+        "type": "domain",
+        "value": "admin.example.com",
+        "status": "out_of_scope",
+        "eligible_for_bounty": false,
+        "severity_restriction": "",
+        "notes": "管理后台明确不在范围内",
+        "discovered_assets_count": 0,
+        "last_scanned": null
+      }
+    ],
+    "out_of_scope": [
+      "admin.example.com",
+      "*.staging.example.com",
+      "物理安全测试",
+      "社会工程学攻击"
+    ],
+    "priority": 8,
+    "status": "active",
+    "tags": [
+      "web",
+      "api",
+      "high_bounty"
+    ],
+    "created_at": 1788082150.1653428,
+    "last_updated": 1788082150.1653433,
+    "total_submissions": 0,
+    "total_bounty_earned": 0.0,
+    "notes": ""
+  }
+}

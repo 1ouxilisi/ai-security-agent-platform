@@ -1,0 +1,929 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Hacking Agent - 增强控制台 v9.0</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0e17; color: #e0e6ed; min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d333b; }
+        .header h1 { font-size: 20px; color: #58a6ff; }
+        .header .status { display: flex; gap: 20px; font-size: 13px; }
+        .status-item { display: flex; align-items: center; gap: 6px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #3fb950; }
+        .container { display: flex; min-height: calc(100vh - 60px); }
+        .sidebar { width: 220px; background: #0d1117; border-right: 1px solid #2d333b; padding: 20px 0; }
+        .nav-item { padding: 12px 24px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; font-size: 14px; }
+        .nav-item:hover { background: #161b22; color: #58a6ff; }
+        .nav-item.active { background: #161b22; border-left-color: #58a6ff; color: #58a6ff; }
+        .nav-item .icon { margin-right: 10px; }
+        .main { flex: 1; padding: 24px; overflow-y: auto; }
+        .panel { display: none; }
+        .panel.active { display: block; }
+        .panel-title { font-size: 22px; margin-bottom: 20px; color: #58a6ff; border-bottom: 1px solid #2d333b; padding-bottom: 10px; }
+        .card { background: #161b22; border: 1px solid #2d333b; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .card-title { font-size: 16px; color: #c9d1d9; margin-bottom: 15px; font-weight: 600; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 13px; color: #8b949e; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #e0e6ed; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #58a6ff; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn { padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+        .btn-primary { background: #238636; color: white; }
+        .btn-primary:hover { background: #2ea043; }
+        .btn-secondary { background: #30363d; color: #c9d1d9; }
+        .btn-secondary:hover { background: #484f58; }
+        .btn-danger { background: #da3633; color: white; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .result-box { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin-top: 15px; max-height: 400px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: #161b22; border: 1px solid #2d333b; border-radius: 8px; padding: 18px; text-align: center; }
+        .stat-value { font-size: 28px; font-weight: bold; color: #58a6ff; }
+        .stat-label { font-size: 12px; color: #8b949e; margin-top: 5px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #2d333b; }
+        th { background: #161b22; color: #8b949e; font-weight: 600; }
+        tr:hover { background: #161b22; }
+        .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .badge-critical { background: #da3633; color: white; }
+        .badge-high { background: #f0883e; color: white; }
+        .badge-medium { background: #d29922; color: white; }
+        .badge-low { background: #58a6ff; color: white; }
+        .badge-info { background: #8b949e; color: white; }
+        .badge-online { background: #3fb950; color: white; }
+        .badge-offline { background: #6e7681; color: white; }
+        .badge-busy { background: #d29922; color: white; }
+        .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 1px solid #2d333b; }
+        .tab { padding: 10px 20px; cursor: pointer; border-bottom: 2px solid transparent; font-size: 14px; color: #8b949e; }
+        .tab.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tool-status { display: flex; align-items: center; gap: 8px; padding: 8px 0; }
+        .tool-available { color: #3fb950; }
+        .tool-unavailable { color: #6e7681; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛡️ AI Hacking Agent - 增强控制台 v9.0</h1>
+        <div class="status">
+            <div class="status-item"><span class="status-dot"></span> API服务运行中</div>
+            <div class="status-item" id="currentTime"></div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="sidebar">
+            <div class="nav-item active" onclick="switchPanel('overview')"><span class="icon">📊</span>综合概览</div>
+            <div class="nav-item" onclick="switchPanel('tools')"><span class="icon">🔧</span>真实工具集成</div>
+            <div class="nav-item" onclick="switchPanel('internal')"><span class="icon">🏢</span>内网渗透增强</div>
+            <div class="nav-item" onclick="switchPanel('cloud')"><span class="icon">☁️</span>云安全增强</div>
+            <div class="nav-item" onclick="switchPanel('performance')"><span class="icon">⚡</span>性能监控</div>
+            <div class="nav-item" onclick="switchPanel('users')"><span class="icon">👥</span>多用户管理</div>
+            <div class="nav-item" onclick="switchPanel('distributed')"><span class="icon">🌐</span>分布式扫描</div>
+        </div>
+        <div class="main">
+            <!-- 综合概览 -->
+            <div id="panel-overview" class="panel active">
+                <div class="panel-title">📊 综合概览</div>
+                <div class="stats-grid" id="overviewStats">
+                    <div class="stat-card"><div class="stat-value" id="stat-tools">-</div><div class="stat-label">可用工具</div></div>
+                    <div class="stat-card"><div class="stat-value" id="stat-users">-</div><div class="stat-label">用户总数</div></div>
+                    <div class="stat-card"><div class="stat-value" id="stat-nodes">-</div><div class="stat-label">扫描节点</div></div>
+                    <div class="stat-card"><div class="stat-value" id="stat-tasks">-</div><div class="stat-label">分布式任务</div></div>
+                    <div class="stat-card"><div class="stat-value" id="stat-cache">-</div><div class="stat-label">缓存命中率</div></div>
+                    <div class="stat-card"><div class="stat-value" id="stat-proxies">-</div><div class="stat-label">代理数量</div></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">模块状态</div>
+                    <table>
+                        <thead><tr><th>模块</th><th>状态</th><th>说明</th></tr></thead>
+                        <tbody id="moduleStatusTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 真实工具集成 -->
+            <div id="panel-tools" class="panel">
+                <div class="panel-title">🔧 真实工具集成</div>
+                <div class="card">
+                    <div class="card-title">工具状态</div>
+                    <div id="toolStatusList"></div>
+                </div>
+                <div class="tabs">
+                    <div class="tab active" onclick="switchToolTab('nmap')">Nmap</div>
+                    <div class="tab" onclick="switchToolTab('sqlmap')">SQLMap</div>
+                    <div class="tab" onclick="switchToolTab('nuclei')">Nuclei</div>
+                </div>
+                <div id="tool-nmap" class="tab-content active">
+                    <div class="card">
+                        <div class="card-title">Nmap 端口扫描</div>
+                        <div class="form-row">
+                            <div class="form-group"><label>目标IP/域名</label><input type="text" id="nmapTarget" placeholder="例如: 192.168.1.1"></div>
+                            <div class="form-group"><label>扫描类型</label><select id="nmapType"><option value="quick">快速扫描</option><option value="full">全面扫描</option><option value="os">OS检测</option></select></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>端口范围</label><input type="text" id="nmapPorts" value="1-1000"></div>
+                            <div class="form-group"><label>超时(秒)</label><input type="number" id="nmapTimeout" value="120"></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="runNmap()">开始扫描</button>
+                        <div id="nmapResult" class="result-box" style="display:none;"></div>
+                    </div>
+                </div>
+                <div id="tool-sqlmap" class="tab-content">
+                    <div class="card">
+                        <div class="card-title">SQLMap 注入扫描</div>
+                        <div class="form-group"><label>目标URL</label><input type="text" id="sqlmapUrl" placeholder="例如: http://example.com/page?id=1"></div>
+                        <div class="form-row">
+                            <div class="form-group"><label>POST数据</label><input type="text" id="sqlmapData" placeholder="可选"></div>
+                            <div class="form-group"><label>Cookie</label><input type="text" id="sqlmapCookie" placeholder="可选"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>测试级别 (1-5)</label><input type="number" id="sqlmapLevel" value="3" min="1" max="5"></div>
+                            <div class="form-group"><label>风险等级 (1-3)</label><input type="number" id="sqlmapRisk" value="2" min="1" max="3"></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="runSqlmap()">开始扫描</button>
+                        <div id="sqlmapResult" class="result-box" style="display:none;"></div>
+                    </div>
+                </div>
+                <div id="tool-nuclei" class="tab-content">
+                    <div class="card">
+                        <div class="card-title">Nuclei 漏洞扫描</div>
+                        <div class="form-group"><label>目标URL</label><input type="text" id="nucleiTarget" placeholder="例如: http://example.com"></div>
+                        <div class="form-row">
+                            <div class="form-group"><label>模板路径</label><input type="text" id="nucleiTemplates" placeholder="可选，默认全部"></div>
+                            <div class="form-group"><label>严重程度</label><select id="nucleiSeverity"><option value="">全部</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option><option value="info">Info</option></select></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="runNuclei()">开始扫描</button>
+                        <div id="nucleiResult" class="result-box" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 内网渗透增强 -->
+            <div id="panel-internal" class="panel">
+                <div class="panel-title">🏢 内网渗透增强</div>
+                <div class="tabs">
+                    <div class="tab active" onclick="switchInternalTab('scan')">内网扫描</div>
+                    <div class="tab" onclick="switchInternalTab('smb')">SMB枚举</div>
+                    <div class="tab" onclick="switchInternalTab('netbios')">NetBIOS</div>
+                    <div class="tab" onclick="switchInternalTab('ldap')">LDAP域查询</div>
+                </div>
+                <div id="internal-scan" class="tab-content active">
+                    <div class="card">
+                        <div class="card-title">内网多线程扫描</div>
+                        <div class="form-group"><label>目标 (IP/CIDR/范围)</label><input type="text" id="internalTarget" placeholder="例如: 192.168.1.0/24 或 192.168.1.1-192.168.1.254"></div>
+                        <div class="form-row">
+                            <div class="form-group"><label>并发线程数</label><input type="number" id="internalWorkers" value="10"></div>
+                            <div class="form-group"><label>扫描类型</label><select id="internalScanType"><option value="full">全面扫描</option><option value="ports">仅端口</option><option value="smb">仅SMB</option><option value="netbios">仅NetBIOS</option></select></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="runInternalScan()">开始扫描</button>
+                        <div id="internalScanResult" class="result-box" style="display:none;"></div>
+                    </div>
+                </div>
+                <div id="internal-smb" class="tab-content">
+                    <div class="card">
+                        <div class="card-title">SMB共享枚举</div>
+                        <div class="form-group"><label>目标IP</label><input type="text" id="smbIp" placeholder="例如: 192.168.1.100"></div>
+                        <div class="form-row">
+                            <div class="form-group"><label>用户名 (空会话留空)</label><input type="text" id="smbUser"></div>
+                            <div class="form-group"><label>密码</label><input type="password" id="smbPass"></div>
+                        </div>
+                        <div class="form-group"><label>域</label><input type="text" id="smbDomain" placeholder="可选"></div>
+                        <button class="btn btn-primary" onclick="runSMBEnum()">开始枚举</button>
+                        <div id="smbResult" class="result-box" style="display:none;"></div>
+                    </div>
+                </div>
+                <div id="internal-netbios" class="tab-content">
+                    <div class="card">
+                        <div class="card-title">NetBIOS名称查询</div>
+                        <div class="form-group"><label>目标IP</label><input type="text" id="netbiosIp" placeholder="例如: 192.168.1.100"></div>
+                        <button class="btn btn-primary" onclick="runNetBIOSQuery()">查询</button>
+                        <div id="netbiosResult" class="result-box" style="display:none;"></div>
+                    </div>
+                </div>
+                <div id="internal-ldap" class="tab-content">
+                    <div class="card">
+                        <div class="card-title">LDAP域信息查询</div>
+                        <div class="form-group"><label>域控制器IP</label><input type="text" id="ldapDcIp" placeholder="例如: 192.168.1.10"></div>
+                        <div class="form-row">
+                            <div class="form-group"><label>用户名</label><input type="text" id="ldapUser"></div>
+                            <div class="form-group"><label>密码</label><input type="password" id="ldapPass"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>域名</label><input type="text" id="ldapDomain" placeholder="例如: CORP"></div>
+                            <div class="form-group"><label>查询类型</label><select id="ldapQueryType"><option value="all">全部信息</option><option value="users">用户列表</option><option value="computers">计算机列表</option><option value="groups">组列表</option><option value="spns">SPN列表</option><option value="kerberoast">Kerberoasting</option></select></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="runLDAPQuery()">开始查询</button>
+                        <div id="ldapResult" class="result-box" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 云安全增强 -->
+            <div id="panel-cloud" class="panel">
+                <div class="panel-title">☁️ 云安全增强</div>
+                <div class="tabs">
+                    <div class="tab active" onclick="switchCloudTab('providers')">云服务商</div>
+                    <div class="tab" onclick="switchCloudTab('docker')">Dockerfile</div>
+                    <div class="tab" onclick="switchCloudTab('k8s')">K8s清单</div>
+                </div>
+                <div id="cloud-providers" class="tab-content active">
+                    <div class="card">
+                        <div class="card-title">云安全配置检查</div>
+                        <div class="form-group"><label>云服务商</label><select id="cloudProvider"><option value="all">全部</option><option value="aws">AWS</option><option value="azure">Azure</option><option value="aliyun">阿里云</option></select></div>
+                        <div class="form-row">
+                            <div class="form-group"><label>AWS Access Key</label><input type="text" id="awsAccessKey" placeholder="可选"></div>
+                            <div class="form-group"><label>AWS Secret Key</label><input type="password" id="awsSecretKey" placeholder="可选"></div>
+                        </div>
+                        <div class="form-group"><label>AWS区域</label><input type="text" id="awsRegion" value="us-east-1"></div>
+                        <button class="btn btn-primary" onclick="runCloudScan()">开始检查</button>
+                        <div id="cloudResult" class="result-box" style="display:none;"></div>
+                    </div>
+                </div>
+                <div id="cloud-docker" class="tab-content">
+                    <div class="card">
+                        <div class="card-title">Dockerfile安全检查</div>
+                        <div class="form-group"><label>Dockerfile路径</label><input type="text" id="dockerfilePath" placeholder="例如: /path/to/Dockerfile"></div>
+                        <button class="btn btn-primary" onclick="checkDockerfile()">检查</button>
+                        <div id="dockerResult" class="result-box" style="display:none;"></div>
+                    </div>
+                </div>
+                <div id="cloud-k8s" class="tab-content">
+                    <div class="card">
+                        <div class="card-title">K8s清单安全检查</div>
+                        <div class="form-group"><label>K8s清单路径</label><input type="text" id="k8sPath" placeholder="例如: /path/to/deployment.yaml"></div>
+                        <button class="btn btn-primary" onclick="checkK8s()">检查</button>
+                        <div id="k8sResult" class="result-box" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 性能监控 -->
+            <div id="panel-performance" class="panel">
+                <div class="panel-title">⚡ 性能监控</div>
+                <div class="stats-grid" id="perfStats"></div>
+                <div class="card">
+                    <div class="card-title">缓存管理</div>
+                    <button class="btn btn-danger" onclick="clearCache()">清空全局缓存</button>
+                </div>
+            </div>
+
+            <!-- 多用户管理 -->
+            <div id="panel-users" class="panel">
+                <div class="panel-title">👥 多用户管理</div>
+                <div class="stats-grid" id="userStats"></div>
+                <div class="tabs">
+                    <div class="tab active" onclick="switchUserTab('list')">用户列表</div>
+                    <div class="tab" onclick="switchUserTab('create')">创建用户</div>
+                    <div class="tab" onclick="switchUserTab('roles')">角色权限</div>
+                    <div class="tab" onclick="switchUserTab('apikeys')">API密钥</div>
+                    <div class="tab" onclick="switchUserTab('audit')">审计日志</div>
+                </div>
+                <div id="user-list" class="tab-content active">
+                    <div class="card">
+                        <div class="card-title">用户列表</div>
+                        <button class="btn btn-secondary" onclick="loadUsers()">刷新</button>
+                        <div id="userListTable" style="margin-top:15px;"></div>
+                    </div>
+                </div>
+                <div id="user-create" class="tab-content">
+                    <div class="card">
+                        <div class="card-title">创建新用户</div>
+                        <div class="form-row">
+                            <div class="form-group"><label>用户名</label><input type="text" id="newUsername"></div>
+                            <div class="form-group"><label>邮箱</label><input type="text" id="newEmail"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>密码</label><input type="password" id="newPassword"></div>
+                            <div class="form-group"><label>角色</label><select id="newRole"><option value="user">普通用户</option><option value="security_analyst">安全分析师</option><option value="auditor">审计员</option><option value="admin">管理员</option></select></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="createUser()">创建用户</button>
+                        <div id="createUserResult" class="result-box" style="display:none;"></div>
+                    </div>
+                </div>
+                <div id="user-roles" class="tab-content">
+                    <div class="card">
+                        <div class="card-title">角色与权限</div>
+                        <div id="rolesList"></div>
+                    </div>
+                </div>
+                <div id="user-apikeys" class="tab-content">
+                    <div class="card">
+                        <div class="card-title">创建API密钥</div>
+                        <div class="form-row">
+                            <div class="form-group"><label>用户名</label><input type="text" id="apiKeyUser"></div>
+                            <div class="form-group"><label>密钥名称</label><input type="text" id="apiKeyName"></div>
+                        </div>
+                        <div class="form-group"><label>过期天数</label><input type="number" id="apiKeyExpires" value="365"></div>
+                        <button class="btn btn-primary" onclick="createAPIKey()">创建API密钥</button>
+                        <div id="apiKeyResult" class="result-box" style="display:none;"></div>
+                    </div>
+                </div>
+                <div id="user-audit" class="tab-content">
+                    <div class="card">
+                        <div class="card-title">审计日志</div>
+                        <button class="btn btn-secondary" onclick="loadAuditLogs()">刷新</button>
+                        <div id="auditLogsTable" style="margin-top:15px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 分布式扫描 -->
+            <div id="panel-distributed" class="panel">
+                <div class="panel-title">🌐 分布式扫描</div>
+                <div class="stats-grid" id="distStats"></div>
+                <div class="tabs">
+                    <div class="tab active" onclick="switchDistTab('scan')">提交扫描</div>
+                    <div class="tab" onclick="switchDistTab('tasks')">任务列表</div>
+                    <div class="tab" onclick="switchDistTab('nodes')">节点管理</div>
+                    <div class="tab" onclick="switchDistTab('proxies')">代理池</div>
+                </div>
+                <div id="dist-scan" class="tab-content active">
+                    <div class="card">
+                        <div class="card-title">提交分布式扫描任务</div>
+                        <div class="form-group"><label>目标</label><input type="text" id="distTarget" placeholder="例如: 192.168.1.1"></div>
+                        <div class="form-row">
+                            <div class="form-group"><label>扫描类型</label><select id="distScanType"><option value="port_scan">端口扫描</option><option value="vuln_scan">漏洞扫描</option><option value="web_scan">Web扫描</option><option value="full_scan">全面扫描</option></select></div>
+                            <div class="form-group"><label>优先级 (1-10)</label><input type="number" id="distPriority" value="5" min="1" max="10"></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="submitDistScan()">提交任务</button>
+                        <div id="distScanResult" class="result-box" style="display:none;"></div>
+                    </div>
+                </div>
+                <div id="dist-tasks" class="tab-content">
+                    <div class="card">
+                        <div class="card-title">分布式任务列表</div>
+                        <button class="btn btn-secondary" onclick="loadDistTasks()">刷新</button>
+                        <div id="distTasksTable" style="margin-top:15px;"></div>
+                    </div>
+                </div>
+                <div id="dist-nodes" class="tab-content">
+                    <div class="card">
+                        <div class="card-title">注册扫描节点</div>
+                        <div class="form-row">
+                            <div class="form-group"><label>节点名称</label><input type="text" id="nodeName"></div>
+                            <div class="form-group"><label>节点地址</label><input type="text" id="nodeAddress" placeholder="IP:端口"></div>
+                        </div>
+                        <div class="form-group"><label>支持的扫描类型 (逗号分隔)</label><input type="text" id="nodeCapabilities" value="port_scan,vuln_scan"></div>
+                        <button class="btn btn-primary" onclick="registerNode()">注册节点</button>
+                        <div id="registerNodeResult" class="result-box" style="display:none;"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">节点列表</div>
+                        <button class="btn btn-secondary" onclick="loadNodes()">刷新</button>
+                        <div id="nodesTable" style="margin-top:15px;"></div>
+                    </div>
+                </div>
+                <div id="dist-proxies" class="tab-content">
+                    <div class="card">
+                        <div class="card-title">添加代理</div>
+                        <div class="form-row">
+                            <div class="form-group"><label>代理地址</label><input type="text" id="proxyAddress" placeholder="IP:端口"></div>
+                            <div class="form-group"><label>协议</label><select id="proxyProtocol"><option value="http">HTTP</option><option value="socks4">SOCKS4</option><option value="socks5">SOCKS5</option></select></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>用户名</label><input type="text" id="proxyUser"></div>
+                            <div class="form-group"><label>密码</label><input type="password" id="proxyPass"></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="addProxy()">添加代理</button>
+                        <div id="addProxyResult" class="result-box" style="display:none;"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">代理列表</div>
+                        <button class="btn btn-secondary" onclick="loadProxies()">刷新</button>
+                        <div id="proxiesTable" style="margin-top:15px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1/enhanced';
+        const API_KEY = localStorage.getItem('api_key') || '';
+
+        function apiCall(endpoint, method='GET', data=null) {
+            const options = {
+                method: method,
+                headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY }
+            };
+            if (data) options.body = JSON.stringify(data);
+            return fetch(API_BASE + endpoint, options).then(r => r.json());
+        }
+
+        function switchPanel(name) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('panel-' + name).classList.add('active');
+            event.target.classList.add('active');
+            if (name === 'overview') loadOverview();
+            if (name === 'tools') loadToolStatus();
+            if (name === 'performance') loadPerfStats();
+            if (name === 'users') loadUserStats();
+            if (name === 'distributed') loadDistStats();
+        }
+
+        function switchToolTab(name) {
+            document.querySelectorAll('#panel-tools .tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#panel-tools .tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tool-' + name).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function switchInternalTab(name) {
+            document.querySelectorAll('#panel-internal .tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#panel-internal .tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('internal-' + name).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function switchCloudTab(name) {
+            document.querySelectorAll('#panel-cloud .tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#panel-cloud .tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('cloud-' + name).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function switchUserTab(name) {
+            document.querySelectorAll('#panel-users .tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#panel-users .tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('user-' + name).classList.add('active');
+            event.target.classList.add('active');
+            if (name === 'list') loadUsers();
+            if (name === 'roles') loadRoles();
+            if (name === 'audit') loadAuditLogs();
+        }
+
+        function switchDistTab(name) {
+            document.querySelectorAll('#panel-distributed .tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#panel-distributed .tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('dist-' + name).classList.add('active');
+            event.target.classList.add('active');
+            if (name === 'tasks') loadDistTasks();
+            if (name === 'nodes') loadNodes();
+            if (name === 'proxies') loadProxies();
+        }
+
+        // 综合概览
+        async function loadOverview() {
+            try {
+                const data = await apiCall('/status');
+                document.getElementById('stat-tools').textContent = data.tools.available_tools + '/' + data.tools.total_tools;
+                document.getElementById('stat-users').textContent = data.users.total_users;
+                document.getElementById('stat-nodes').textContent = data.distributed.nodes.total_nodes;
+                document.getElementById('stat-tasks').textContent = data.distributed.tasks.total_tasks;
+                document.getElementById('stat-cache').textContent = data.performance.cache.hit_rate + '%';
+                document.getElementById('stat-proxies').textContent = data.distributed.proxies.total_proxies;
+                
+                const tbody = document.getElementById('moduleStatusTable');
+                tbody.innerHTML = '';
+                for (const [name, status] of Object.entries(data.modules)) {
+                    tbody.innerHTML += `<tr><td>${name}</td><td><span class="badge badge-online">${status}</span></td><td>正常运行</td></tr>`;
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        // 工具状态
+        async function loadToolStatus() {
+            try {
+                const data = await apiCall('/tools/status');
+                const list = document.getElementById('toolStatusList');
+                list.innerHTML = '';
+                data.tools.forEach(tool => {
+                    const cls = tool.available ? 'tool-available' : 'tool-unavailable';
+                    const icon = tool.available ? '✅' : '❌';
+                    list.innerHTML += `<div class="tool-status"><span class="${cls}">${icon} ${tool.name}</span> - ${tool.available ? tool.path : '未安装'}</div>`;
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        // Nmap扫描
+        async function runNmap() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> 扫描中...';
+            try {
+                const data = await apiCall('/tools/nmap/scan', 'POST', {
+                    target: document.getElementById('nmapTarget').value,
+                    scan_type: document.getElementById('nmapType').value,
+                    ports: document.getElementById('nmapPorts').value,
+                    timeout: parseInt(document.getElementById('nmapTimeout').value)
+                });
+                document.getElementById('nmapResult').style.display = 'block';
+                document.getElementById('nmapResult').textContent = JSON.stringify(data, null, 2);
+            } catch(e) {
+                document.getElementById('nmapResult').style.display = 'block';
+                document.getElementById('nmapResult').textContent = '错误: ' + e.message;
+            }
+            btn.disabled = false;
+            btn.textContent = '开始扫描';
+        }
+
+        // SQLMap扫描
+        async function runSqlmap() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> 扫描中...';
+            try {
+                const data = await apiCall('/tools/sqlmap/scan', 'POST', {
+                    url: document.getElementById('sqlmapUrl').value,
+                    data: document.getElementById('sqlmapData').value,
+                    cookie: document.getElementById('sqlmapCookie').value,
+                    level: parseInt(document.getElementById('sqlmapLevel').value),
+                    risk: parseInt(document.getElementById('sqlmapRisk').value)
+                });
+                document.getElementById('sqlmapResult').style.display = 'block';
+                document.getElementById('sqlmapResult').textContent = JSON.stringify(data, null, 2);
+            } catch(e) {
+                document.getElementById('sqlmapResult').style.display = 'block';
+                document.getElementById('sqlmapResult').textContent = '错误: ' + e.message;
+            }
+            btn.disabled = false;
+            btn.textContent = '开始扫描';
+        }
+
+        // Nuclei扫描
+        async function runNuclei() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> 扫描中...';
+            try {
+                const data = await apiCall('/tools/nuclei/scan', 'POST', {
+                    target: document.getElementById('nucleiTarget').value,
+                    templates: document.getElementById('nucleiTemplates').value,
+                    severity: document.getElementById('nucleiSeverity').value
+                });
+                document.getElementById('nucleiResult').style.display = 'block';
+                document.getElementById('nucleiResult').textContent = JSON.stringify(data, null, 2);
+            } catch(e) {
+                document.getElementById('nucleiResult').style.display = 'block';
+                document.getElementById('nucleiResult').textContent = '错误: ' + e.message;
+            }
+            btn.disabled = false;
+            btn.textContent = '开始扫描';
+        }
+
+        // 内网扫描
+        async function runInternalScan() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> 扫描中...';
+            try {
+                const data = await apiCall('/internal/scan', 'POST', {
+                    target: document.getElementById('internalTarget').value,
+                    scan_type: document.getElementById('internalScanType').value,
+                    max_workers: parseInt(document.getElementById('internalWorkers').value)
+                });
+                document.getElementById('internalScanResult').style.display = 'block';
+                document.getElementById('internalScanResult').textContent = JSON.stringify(data, null, 2);
+            } catch(e) {
+                document.getElementById('internalScanResult').style.display = 'block';
+                document.getElementById('internalScanResult').textContent = '错误: ' + e.message;
+            }
+            btn.disabled = false;
+            btn.textContent = '开始扫描';
+        }
+
+        // SMB枚举
+        async function runSMBEnum() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> 枚举中...';
+            try {
+                const data = await apiCall('/internal/smb/enum', 'POST', {
+                    ip: document.getElementById('smbIp').value,
+                    username: document.getElementById('smbUser').value,
+                    password: document.getElementById('smbPass').value,
+                    domain: document.getElementById('smbDomain').value
+                });
+                document.getElementById('smbResult').style.display = 'block';
+                document.getElementById('smbResult').textContent = JSON.stringify(data, null, 2);
+            } catch(e) {
+                document.getElementById('smbResult').style.display = 'block';
+                document.getElementById('smbResult').textContent = '错误: ' + e.message;
+            }
+            btn.disabled = false;
+            btn.textContent = '开始枚举';
+        }
+
+        // NetBIOS查询
+        async function runNetBIOSQuery() {
+            try {
+                const ip = document.getElementById('netbiosIp').value;
+                const data = await apiCall('/internal/netbios/query?ip=' + encodeURIComponent(ip));
+                document.getElementById('netbiosResult').style.display = 'block';
+                document.getElementById('netbiosResult').textContent = JSON.stringify(data, null, 2);
+            } catch(e) {
+                document.getElementById('netbiosResult').style.display = 'block';
+                document.getElementById('netbiosResult').textContent = '错误: ' + e.message;
+            }
+        }
+
+        // LDAP查询
+        async function runLDAPQuery() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> 查询中...';
+            try {
+                const data = await apiCall('/internal/ldap/query', 'POST', {
+                    dc_ip: document.getElementById('ldapDcIp').value,
+                    username: document.getElementById('ldapUser').value,
+                    password: document.getElementById('ldapPass').value,
+                    domain: document.getElementById('ldapDomain').value,
+                    query_type: document.getElementById('ldapQueryType').value
+                });
+                document.getElementById('ldapResult').style.display = 'block';
+                document.getElementById('ldapResult').textContent = JSON.stringify(data, null, 2);
+            } catch(e) {
+                document.getElementById('ldapResult').style.display = 'block';
+                document.getElementById('ldapResult').textContent = '错误: ' + e.message;
+            }
+            btn.disabled = false;
+            btn.textContent = '开始查询';
+        }
+
+        // 云安全扫描
+        async function runCloudScan() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> 检查中...';
+            try {
+                const data = await apiCall('/cloud/scan', 'POST', {
+                    provider: document.getElementById('cloudProvider').value,
+                    aws_access_key: document.getElementById('awsAccessKey').value,
+                    aws_secret_key: document.getElementById('awsSecretKey').value,
+                    aws_region: document.getElementById('awsRegion').value
+                });
+                document.getElementById('cloudResult').style.display = 'block';
+                document.getElementById('cloudResult').textContent = JSON.stringify(data, null, 2);
+            } catch(e) {
+                document.getElementById('cloudResult').style.display = 'block';
+                document.getElementById('cloudResult').textContent = '错误: ' + e.message;
+            }
+            btn.disabled = false;
+            btn.textContent = '开始检查';
+        }
+
+        // Dockerfile检查
+        async function checkDockerfile() {
+            try {
+                const data = await apiCall('/cloud/dockerfile/check', 'POST', {
+                    path: document.getElementById('dockerfilePath').value
+                });
+                document.getElementById('dockerResult').style.display = 'block';
+                document.getElementById('dockerResult').textContent = JSON.stringify(data, null, 2);
+            } catch(e) {
+                document.getElementById('dockerResult').style.display = 'block';
+                document.getElementById('dockerResult').textContent = '错误: ' + e.message;
+            }
+        }
+
+        // K8s检查
+        async function checkK8s() {
+            try {
+                const data = await apiCall('/cloud/k8s/check', 'POST', {
+                    path: document.getElementById('k8sPath').value
+                });
+                document.getElementById('k8sResult').style.display = 'block';
+                document.getElementById('k8sResult').textContent = JSON.stringify(data, null, 2);
+            } catch(e) {
+                document.getElementById('k8sResult').style.display = 'block';
+                document.getElementById('k8sResult').textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 性能监控
+        async function loadPerfStats() {
+            try {
+                const data = await apiCall('/performance/stats');
+                const grid = document.getElementById('perfStats');
+                grid.innerHTML = `
+                    <div class="stat-card"><div class="stat-value">${data.performance_monitor.uptime_seconds}s</div><div class="stat-label">运行时间</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.global_cache.size}</div><div class="stat-label">缓存条目</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.global_cache.hit_rate}%</div><div class="stat-label">缓存命中率</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.global_cache.hits}</div><div class="stat-label">缓存命中</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.global_cache.misses}</div><div class="stat-label">缓存未命中</div></div>
+                `;
+            } catch(e) { console.error(e); }
+        }
+
+        async function clearCache() {
+            try {
+                await apiCall('/performance/cache/clear', 'POST');
+                alert('缓存已清空');
+                loadPerfStats();
+            } catch(e) { alert('清空失败: ' + e.message); }
+        }
+
+        // 用户管理
+        async function loadUserStats() {
+            try {
+                const data = await apiCall('/users/stats');
+                const grid = document.getElementById('userStats');
+                grid.innerHTML = `
+                    <div class="stat-card"><div class="stat-value">${data.total_users}</div><div class="stat-label">用户总数</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.active_users}</div><div class="stat-label">活跃用户</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.active_sessions}</div><div class="stat-label">活跃会话</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.active_api_keys}</div><div class="stat-label">活跃API密钥</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.total_roles}</div><div class="stat-label">角色数量</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.total_audit_logs}</div><div class="stat-label">审计日志</div></div>
+                `;
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadUsers() {
+            try {
+                const data = await apiCall('/users/list');
+                const div = document.getElementById('userListTable');
+                let html = '<table><thead><tr><th>用户名</th><th>邮箱</th><th>角色</th><th>状态</th><th>最后登录</th></tr></thead><tbody>';
+                data.users.forEach(u => {
+                    const status = u.is_active ? '<span class="badge badge-online">活跃</span>' : '<span class="badge badge-offline">禁用</span>';
+                    const lastLogin = u.last_login ? new Date(u.last_login * 1000).toLocaleString() : '从未';
+                    html += `<tr><td>${u.username}</td><td>${u.email || '-'}</td><td>${u.role}</td><td>${status}</td><td>${lastLogin}</td></tr>`;
+                });
+                html += '</tbody></table>';
+                div.innerHTML = html;
+            } catch(e) { console.error(e); }
+        }
+
+        async function createUser() {
+            try {
+                const data = await apiCall('/users/create', 'POST', {
+                    username: document.getElementById('newUsername').value,
+                    password: document.getElementById('newPassword').value,
+                    email: document.getElementById('newEmail').value,
+                    role: document.getElementById('newRole').value
+                });
+                document.getElementById('createUserResult').style.display = 'block';
+                document.getElementById('createUserResult').textContent = JSON.stringify(data, null, 2);
+            } catch(e) {
+                document.getElementById('createUserResult').style.display = 'block';
+                document.getElementById('createUserResult').textContent = '错误: ' + e.message;
+            }
+        }
+
+        async function loadRoles() {
+            try {
+                const data = await apiCall('/users/roles');
+                const div = document.getElementById('rolesList');
+                let html = '';
+                data.roles.forEach(r => {
+                    html += `<div style="margin-bottom:15px;padding:10px;background:#0d1117;border-radius:6px;">
+                        <strong>${r.name}</strong> - ${r.description}<br>
+                        <small style="color:#8b949e;">权限: ${r.permissions.join(', ')}</small>
+                    </div>`;
+                });
+                div.innerHTML = html;
+            } catch(e) { console.error(e); }
+        }
+
+        async function createAPIKey() {
+            try {
+                const data = await apiCall('/users/api-key/create', 'POST', {
+                    username: document.getElementById('apiKeyUser').value,
+                    name: document.getElementById('apiKeyName').value,
+                    expires_days: parseInt(document.getElementById('apiKeyExpires').value)
+                });
+                document.getElementById('apiKeyResult').style.display = 'block';
+                document.getElementById('apiKeyResult').textContent = JSON.stringify(data, null, 2) + '\n\n⚠️ 请妥善保存API密钥，仅显示一次！';
+            } catch(e) {
+                document.getElementById('apiKeyResult').style.display = 'block';
+                document.getElementById('apiKeyResult').textContent = '错误: ' + e.message;
+            }
+        }
+
+        async function loadAuditLogs() {
+            try {
+                const data = await apiCall('/users/audit-logs?limit=50');
+                const div = document.getElementById('auditLogsTable');
+                let html = '<table><thead><tr><th>时间</th><th>用户</th><th>动作</th><th>资源</th><th>IP</th><th>状态</th></tr></thead><tbody>';
+                data.logs.forEach(l => {
+                    const time = new Date(l.timestamp * 1000).toLocaleString();
+                    const success = l.success ? '<span class="badge badge-online">成功</span>' : '<span class="badge badge-high">失败</span>';
+                    html += `<tr><td>${time}</td><td>${l.username}</td><td>${l.action}</td><td>${l.resource}</td><td>${l.ip_address || '-'}</td><td>${success}</td></tr>`;
+                });
+                html += '</tbody></table>';
+                div.innerHTML = html;
+            } catch(e) { console.error(e); }
+        }
+
+        // 分布式扫描
+        async function loadDistStats() {
+            try {
+                const data = await apiCall('/distributed/stats');
+                const grid = document.getElementById('distStats');
+                grid.innerHTML = `
+                    <div class="stat-card"><div class="stat-value">${data.nodes.total_nodes}</div><div class="stat-label">节点总数</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.nodes.online_nodes}</div><div class="stat-label">在线节点</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.tasks.total_tasks}</div><div class="stat-label">任务总数</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.tasks.running}</div><div class="stat-label">运行中</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.tasks.completed}</div><div class="stat-label">已完成</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.proxies.active_proxies}</div><div class="stat-label">活跃代理</div></div>
+                `;
+            } catch(e) { console.error(e); }
+        }
+
+        async function submitDistScan() {
+            try {
+                const data = await apiCall('/distributed/scan', 'POST', {
+                    target: document.getElementById('distTarget').value,
+                    scan_type: document.getElementById('distScanType').value,
+                    priority: parseInt(document.getElementById('distPriority').value)
+                });
+                document.getElementById('distScanResult').style.display = 'block';
+                document.getElementById('distScanResult').textContent = JSON.stringify(data, null, 2);
+            } catch(e) {
+                document.getElementById('distScanResult').style.display = 'block';
+                document.getElementById('distScanResult').textContent = '错误: ' + e.message;
+            }
+        }
+
+        async function loadDistTasks() {
+            try {
+                const data = await apiCall('/distributed/tasks/list?limit=50');
+                const div = document.getElementById('distTasksTable');
+                let html = '<table><thead><tr><th>任务ID</th><th>类型</th><th>目标</th><th>状态</th><th>进度</th><th>创建时间</th></tr></thead><tbody>';
+                data.tasks.forEach(t => {
+                    const statusBadge = {pending:'badge-info', running:'badge-medium', completed:'badge-online', failed:'badge-high'}[t.status] || 'badge-info';
+                    const time = new Date(t.created_at * 1000).toLocaleString();
+                    html += `<tr><td>${t.task_id}</td><td>${t.task_type}</td><td>${t.target}</td><td><span class="badge ${statusBadge}">${t.status}</span></td><td>${t.progress}%</td><td>${time}</td></tr>`;
+                });
+                html += '</tbody></table>';
+                div.innerHTML = html;
+            } catch(e) { console.error(e); }
+        }
+
+        async function registerNode() {
+            try {
+                const data = await apiCall('/distributed/nodes/register', 'POST', {
+                    name: document.getElementById('nodeName').value,
+                    address: document.getElementById('nodeAddress').value,
+                    capabilities: document.getElementById('nodeCapabilities').value.split(',')
+                });
+                document.getElementById('registerNodeResult').style.display = 'block';
+                document.getElementById('registerNodeResult').textContent = JSON.stringify(data, null, 2);
+            } catch(e) {
+                document.getElementById('registerNodeResult').style.display = 'block';
+                document.getElementById('registerNodeResult').textContent = '错误: ' + e.message;
+            }
+        }
+
+        async function loadNodes() {
+            try {
+                const data = await apiCall('/distributed/nodes/list');
+                const div = document.getElementById('nodesTable');
+                let html = '<table><thead><tr><th>节点ID</th><th>名称</th><th>地址</th><th>状态</th><th>当前任务</th><th>CPU</th><th>内存</th></tr></thead><tbody>';
+                data.nodes.forEach(n => {
+                    const statusBadge = {online:'badge-online', idle:'badge-online', busy:'badge-busy', offline:'badge-offline', error:'badge-high'}[n.status] || 'badge-info';
+                    html += `<tr><td>${n.node_id}</td><td>${n.name}</td><td>${n.address}</td><td><span class="badge ${statusBadge}">${n.status}</span></td><td>${n.current_tasks}/${n.max_concurrent_tasks}</td><td>${n.cpu_usage}%</td><td>${n.memory_usage}%</td></tr>`;
+                });
+                html += '</tbody></table>';
+                div.innerHTML = html;
+            } catch(e) { console.error(e); }
+        }
+
+        async function addProxy() {
+            try {
+                const data = await apiCall('/distributed/proxies/add', 'POST', {
+                    address: document.getElementById('proxyAddress').value,
+                    protocol: document.getElementById('proxyProtocol').value,
+                    username: document.getElementById('proxyUser').value,
+                    password: document.getElementById('proxyPass').value
+                });
+                document.getElementById('addProxyResult').style.display = 'block';
+                document.getElementById('addProxyResult').textContent = JSON.stringify(data, null, 2);
+            } catch(e) {
+                document.getElementById('addProxyResult').style.display = 'block';
+                document.getElementById('addProxyResult').textContent = '错误: ' + e.message;
+            }
+        }
+
+        async function loadProxies() {
+            try {
+                const data = await apiCall('/distributed/proxies/list');
+                const div = document.getElementById('proxiesTable');
+                let html = '<table><thead><tr><th>代理ID</th><th>地址</th><th>协议</th><th>状态</th><th>成功率</th><th>延迟</th><th>总请求</th></tr></thead><tbody>';
+                data.proxies.forEach(p => {
+                    const status = p.is_active ? '<span class="badge badge-online">活跃</span>' : '<span class="badge badge-offline">禁用</span>';
+                    html += `<tr><td>${p.proxy_id}</td><td>${p.address}</td><td>${p.protocol}</td><td>${status}</td><td>${p.success_rate.toFixed(1)}%</td><td>${p.latency_ms.toFixed(0)}ms</td><td>${p.total_requests}</td></tr>`;
+                });
+                html += '</tbody></table>';
+                div.innerHTML = html;
+            } catch(e) { console.error(e); }
+        }
+
+        // 时间更新
+        function updateTime() {
+            document.getElementById('currentTime').textContent = new Date().toLocaleString();
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // 初始加载
+        loadOverview();
+    </script>
+</body>
+</html>

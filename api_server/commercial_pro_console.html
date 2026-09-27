@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>商业成熟度大升级 · Commercial Pro</title>
+<style>
+:root{
+  --bg:#0d1117; --card:#161b22; --inset:#010409; --border:#30363d;
+  --fg:#e6edf3; --muted:#8b949e; --faint:#6e7681;
+  --accent:#a371f7; --ok:#3fb950; --warn:#d29922; --bad:#f85149; --info:#39d2c0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);
+  font-family:"Inter","Microsoft YaHei",system-ui,sans-serif;font-size:14px}
+header{padding:18px 26px;background:linear-gradient(90deg,#a371f733,#a371f700);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:20px}
+header .sub{color:var(--muted);font-size:13px}
+header .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+main{padding:22px 26px;max-width:1400px;margin:0 auto}
+.grid{display:grid;gap:16px}
+.g-score{grid-template-columns:repeat(5,1fr)}
+.g-2{grid-template-columns:1fr 1fr}
+.g-3{grid-template-columns:repeat(3,1fr)}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+.panel h2{font-size:15px;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.kpi .v{font-size:30px;font-weight:800}
+.kpi .l{color:var(--muted);font-size:12px;margin-top:4px}
+.kpi.ok{border-color:var(--ok)} .kpi.bad{border-color:var(--bad)}
+.score{padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--card)}
+.score .t{font-weight:700;margin:6px 0 4px}
+.score .d{color:var(--muted);font-size:12px}
+.score .s{float:right;font-size:22px;font-weight:800}
+.score.pass{border-left:4px solid var(--ok)} .score.fail{border-left:4px solid var(--bad)}
+button{background:var(--accent);color:#0d1117;border:none;padding:9px 16px;border-radius:8px;
+  cursor:pointer;font-weight:600;font-size:13px}
+button:hover{filter:brightness(1.1)}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--border)}
+button.ghost:hover{border-color:var(--accent);color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:600}
+.tag{font-size:11px;padding:2px 8px;border-radius:10px}
+.tag.pass{background:#3fb95022;color:var(--ok)}
+.tag.fail{background:#f8514922;color:var(--bad)}
+.tag.warn{background:#d2992222;color:var(--warn)}
+pre{background:var(--inset);border:1px solid var(--border);border-radius:8px;padding:10px;
+  font-size:12px;overflow:auto;max-height:260px}
+input{background:var(--inset);border:1px solid var(--border);color:var(--fg);
+  padding:8px 10px;border-radius:8px;min-width:180px}
+.mono{font-family:Consolas,monospace;color:var(--info)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.tabs button{background:var(--inset);color:var(--muted);border:1px solid var(--border)}
+.tabs button.active{background:var(--accent);color:#0d1117}
+@media(max-width:1100px){.g-score{grid-template-columns:repeat(2,1fr)}.g-2,.g-3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>💼 商业成熟度大升级控制台</h1>
+    <div class="sub">方向4 · 真实License(RSA-PSS) · 客户门户 · 计费 · SLA 99.9%</div>
+  </div>
+  <div class="right">
+    <button class="ghost" onclick="loadAll()">🔄 刷新</button>
+    <span class="tag pass" id="uptimeTag">score --</span>
+  </div>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="active" onclick="tab(this,'tab-overview')">总览打分</button>
+    <button onclick="tab(this,'tab-license')">License系统</button>
+    <button onclick="tab(this,'tab-portal')">客户门户</button>
+    <button onclick="tab(this,'tab-billing')">计费系统</button>
+    <button onclick="tab(this,'tab-sla')">SLA保障</button>
+  </div>
+
+  <!-- 总览 -->
+  <div id="tab-overview">
+    <div class="grid g-score" style="margin-bottom:16px" id="scoreGrid"></div>
+    <div class="grid g-3">
+      <div class="panel"><h2>🆔 机器指纹</h2><pre id="machinePre">加载中…</pre></div>
+      <div class="panel"><h2>🧾 客户门户统计</h2><pre id="portalStats">加载中…</pre></div>
+      <div class="panel"><h2>💳 计费统计</h2><pre id="billingStats">加载中…</pre></div>
+    </div>
+  </div>
+
+  <!-- License -->
+  <div id="tab-license" style="display:none">
+    <div class="grid g-2">
+      <div class="panel">
+        <h2>🔐 签名后端 & 分级</h2>
+        <div class="row"><button onclick="loadLicense()">刷新</button></div>
+        <pre id="licInfo">加载中…</pre>
+      </div>
+      <div class="panel">
+        <h2>📜 已签发 License</h2>
+        <table><thead><tr><th>Key</th><th>客户</th><th>分级</th><th>席位</th><th>到期</th></tr></thead>
+        <tbody id="licTbody"><tr><td colspan="5">加载中…</td></tr></tbody></table>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h2>🎫 签发 / 激活 / 校验</h2>
+      <div class="row">
+        <input id="f-customer" placeholder="客户名" value="测试客户">
+        <select id="f-tier" style="background:var(--inset);color:var(--fg);padding:8px;border:1px solid var(--border);border-radius:8px">
+          <option value="free">free 免费</option><option value="pro" selected>pro 专业</option>
+          <option value="enterprise">enterprise 企业</option></select>
+        <input id="f-days" type="number" value="365" style="min-width:90px">
+        <button onclick="issueLicense()">签发</button>
+        <button class="ghost" onclick="remind()">过期提醒</button>
+      </div>
+      <pre id="licOut">操作结果显示在这里…</pre>
+    </div>
+  </div>
+
+  <!-- 客户门户 -->
+  <div id="tab-portal" style="display:none">
+    <div class="grid g-2">
+      <div class="panel">
+        <h2>👤 注册 / 登录</h2>
+        <div class="row"><input id="p-email" placeholder="邮箱" value="demo@hacking.ai"></div>
+        <div class="row"><input id="p-pwd" type="password" placeholder="密码" value="demo123"></div>
+        <div class="row">
+          <button onclick="portalReg()">注册</button>
+          <button onclick="portalLogin()">登录</button>
+          <button class="ghost" onclick="portalMe()">我的资料</button>
+        </div>
+        <pre id="portalOut">token 保存在浏览器，后续接口自动携带…</pre>
+      </div>
+      <div class="panel">
+        <h2>📁 我的项目</h2>
+        <div class="row">
+          <input id="proj-name" placeholder="项目名" value="新目标扫描">
+          <input id="proj-target" placeholder="目标URL" value="https://target.example.com">
+          <button onclick="createProject()">新建项目</button>
+          <button class="ghost" onclick="listProjects()">刷新</button>
+        </div>
+        <pre id="projOut">登录后查看自己的项目（数据隔离）…</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 计费 -->
+  <div id="tab-billing" style="display:none">
+    <div class="panel" style="margin-bottom:16px"><h2>🏷️ 价目表</h2><pre id="pricePre">加载中…</pre></div>
+    <div class="grid g-2">
+      <div class="panel">
+        <h2>💰 订阅 / 按次计费</h2>
+        <div class="row">
+          <input id="b-cid" placeholder="客户ID" value="C">
+          <select id="b-plan" style="background:var(--inset);color:var(--fg);padding:8px;border:1px solid var(--border);border-radius:8px">
+            <option value="pro">pro</option><option value="enterprise">enterprise</option></select>
+          <select id="b-period" style="background:var(--inset);color:var(--fg);padding:8px;border:1px solid var(--border);border-radius:8px">
+            <option value="monthly">monthly</option><option value="yearly">yearly</option></select>
+          <button onclick="subscribe()">订阅</button>
+          <button class="ghost" onclick="recordScan()">记一次扫描</button>
+        </div>
+        <pre id="billingOut">订阅会生成账单，支付接口为 Stripe/支付宝 预留…</pre>
+      </div>
+      <div class="panel">
+        <h2>📄 账单列表</h2>
+        <table><thead><tr><th>单号</th><th>标题</th><th>金额</th><th>状态</th></tr></thead>
+        <tbody id="invTbody"><tr><td colspan="4">加载中…</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLA -->
+  <div id="tab-sla" style="display:none">
+    <div class="grid g-3" style="margin-bottom:16px">
+      <div class="kpi"><div class="v mono" id="slaAvail">--</div><div class="l">可用性(%) 目标99.9</div></div>
+      <div class="kpi"><div class="v mono" id="slaStatus">--</div><div class="l">当前状态</div></div>
+      <div class="kpi"><div class="v mono" id="slaRecover">--</div><div class="l">自动恢复次数</div></div>
+    </div>
+    <div class="grid g-2">
+      <div class="panel">
+        <h2>🚨 故障事件</h2>
+        <div class="row"><button onclick="injectFault()">注入故障</button>
+          <button class="ghost" onclick="autoRecover()">自动恢复</button>
+          <button class="ghost" onclick="makeBackup()">手动备份</button></div>
+        <pre id="incidentOut">状态页 / 事件…</pre>
+      </div>
+      <div class="panel">
+        <h2>📦 备份列表</h2>
+        <table><thead><tr><th>ID</th><th>标签</th><th>时间</th><th>大小KB</th></tr></thead>
+        <tbody id="bkTbody"><tr><td colspan="4">加载中…</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const BASE='/api/v1/commercial-pro';
+let token=localStorage.getItem('cp_token')||'';
+async function api(path, opts={}){
+  const h={'Content-Type':'application/json'};
+  if(token)h['Authorization']='Bearer '+token;
+  const r=await fetch(BASE+path,{method:opts.method||'GET',headers:h,
+    body:opts.body?JSON.stringify(opts.body):undefined});
+  return r.json();
+}
+function esc(o){return typeof o==='string'?o:JSON.stringify(o,null,2);}
+function tab(btn,name){
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['tab-overview','tab-license','tab-portal','tab-billing','tab-sla']
+    .forEach(t=>document.getElementById(t).style.display=t===name?'block':'none');
+}
+async function loadAll(){
+  const sc=await api('/scorecard');
+  const g=document.getElementById('scoreGrid');g.innerHTML='';
+  const cards=sc.data;
+  for(const k in cards){
+    const c=cards[k];
+    if(!c.label)continue;
+    g.innerHTML+=`<div class="score ${c.ok?'pass':'fail'}">
+      <div class="s">${c.score}</div><div class="t">${c.label}</div>
+      <div class="d">${c.detail||''}</div></div>`;
+  }
+  const ov=await api('/overview');
+  document.getElementById('machinePre').textContent=esc(ov.data.machine);
+  document.getElementById('portalStats').textContent=esc(ov.data.portal);
+  document.getElementById('billingStats').textContent=esc(ov.data.billing);
+  document.getElementById('uptimeTag').textContent='总分 '+sc.data.total.score;
+  loadLicense();loadBilling();loadSLA();
+}
+async function loadLicense(){
+  const ki=await api('/license/key-info');
+  const tl=await api('/license/tiers');
+  document.getElementById('licInfo').textContent=
+    '签名后端:\n'+esc(ki.data)+'\n\n分级能力:\n'+esc(tl.data);
+  const list=await api('/license/list');
+  const tb=document.getElementById('licTbody');tb.innerHTML='';
+  list.data.items.forEach(i=>{
+    tb.innerHTML+=`<tr><td class="mono">${i.license_key.slice(0,12)}…</td>
+      <td>${i.customer}</td><td>${i.tier}</td><td>${i.seats}</td>
+      <td>${i.expires_at}</td></tr>`;
+  });
+}
+async function issueLicense(){
+  const body={customer:document.getElementById('f-customer').value,
+    tier:document.getElementById('f-tier').value,
+    duration_days:parseInt(document.getElementById('f-days').value)||365,seats:5};
+  const r=await api('/license/issue',{method:'POST',body});
+  document.getElementById('licOut').textContent=esc(r);
+  loadLicense();
+}
+async function remind(){
+  const r=await api('/license/remind');
+  document.getElementById('licOut').textContent=esc(r);
+}
+async function portalReg(){
+  const body={email:document.getElementById('p-email').value,
+    password:document.getElementById('p-pwd').value};
+  const r=await api('/portal/register',{method:'POST',body});
+  document.getElementById('portalOut').textContent=esc(r);
+}
+async function portalLogin(){
+  const body={email:document.getElementById('p-email').value,
+    password:document.getElementById('p-pwd').value};
+  const r=await api('/portal/login',{method:'POST',body});
+  if(r.success){token=r.data.token;localStorage.setItem('cp_token',token);}
+  document.getElementById('portalOut').textContent=esc(r);
+}
+async function portalMe(){
+  const r=await api('/portal/me');
+  document.getElementById('portalOut').textContent=esc(r);
+}
+async function createProject(){
+  const body={name:document.getElementById('proj-name').value,
+    target:document.getElementById('proj-target').value,kind:'web'};
+  const r=await api('/portal/projects',{method:'POST',body});
+  document.getElementById('projOut').textContent=esc(r);listProjects();
+}
+async function listProjects(){
+  const r=await api('/portal/projects');
+  document.getElementById('projOut').textContent=esc(r);
+}
+async function loadBilling(){
+  const pr=await api('/billing/pricing');
+  document.getElementById('pricePre').textContent=esc(pr.data);
+  const inv=await api('/billing/invoices');
+  const tb=document.getElementById('invTbody');tb.innerHTML='';
+  inv.data.items.forEach(i=>{
+    tb.innerHTML+=`<tr><td class="mono">${i.invoice_id.slice(0,14)}</td>
+      <td>${i.title}</td><td>¥${i.amount_cny}</td>
+      <td><span class="tag ${i.status==='paid'?'pass':'warn'}">${i.status}</span></td></tr>`;
+  });
+}
+async function subscribe(){
+  const body={customer_id:document.getElementById('b-cid').value,
+    plan:document.getElementById('b-plan').value,
+    period:document.getElementById('b-period').value};
+  const r=await api('/billing/subscribe',{method:'POST',body});
+  document.getElementById('billingOut').textContent=esc(r);loadBilling();
+}
+async function recordScan(){
+  const body={customer_id:document.getElementById('b-cid').value,count:1};
+  const r=await api('/billing/scan',{method:'POST',body});
+  document.getElementById('billingOut').textContent=esc(r);
+}
+async function loadSLA(){
+  const sp=await api('/sla/status-page');
+  document.getElementById('slaAvail').textContent=sp.data.availability_30d;
+  document.getElementById('slaStatus').textContent=sp.data.status;
+  document.getElementById('slaRecover').textContent=sp.data.auto_recoveries;
+  const inc=await api('/sla/incidents');
+  document.getElementById('incidentOut').textContent=
+    '状态页:\n'+esc(sp.data)+'\n\n事件:\n'+esc(inc.data.items);
+  const bk=await api('/sla/backups');
+  const tb=document.getElementById('bkTbody');tb.innerHTML='';
+  bk.data.items.forEach(b=>{
+    tb.innerHTML+=`<tr><td class="mono">${b.backup_id}</td><td>${b.label}</td>
+      <td>${b.created_at}</td><td>${b.size_kb}</td></tr>`;
+  });
+}
+async function injectFault(){
+  await api('/sla/probe',{method:'POST',body:{ok:false,latency_ms:9001}});
+  await loadSLA();
+}
+async function autoRecover(){
+  const r=await api('/sla/auto-recover',{method:'POST'});
+  document.getElementById('incidentOut').textContent=esc(r);loadSLA();
+}
+async function makeBackup(){
+  await api('/sla/backup',{method:'POST',body:{label:'手动备份-控制台'}});
+  loadSLA();
+}
+loadAll();
+</script>
+</body>
+</html>

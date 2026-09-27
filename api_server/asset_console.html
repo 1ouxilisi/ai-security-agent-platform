@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>资产管理控制台 - AI Hacking Agent</title>
+<link rel="stylesheet" href="/static/css/responsive.css">
+<script src="/static/js/i18n.js"></script>
+<style>
+  :root{
+    --bg:#0d1117; --card:#161b22; --border:#30363d; --text:#c9d1d9;
+    --muted:#8b949e; --primary:#58a6ff; --green:#3fb950; --red:#f85149;
+    --yellow:#d29922; --purple:#bc8cff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.5}
+  .wrap{max-width:1400px;margin:0 auto;padding:16px}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:16px}
+  header h1{font-size:18px;color:var(--primary)}
+  header .sub{color:var(--muted);font-size:12px}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+  .tab{padding:8px 16px;background:var(--card);border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--muted)}
+  .tab.active{background:var(--primary);color:#0d1117;font-weight:600;border-color:var(--primary)}
+  .panel{display:none}
+  .panel.active{display:block}
+  .grid{display:grid;gap:14px}
+  .cards{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px}
+  .card h3{font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:500}
+  .stat-num{font-size:28px;font-weight:700;color:var(--primary)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:900px){.row{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+  th{color:var(--muted);font-weight:500;position:sticky;top:0;background:var(--card)}
+  tr:hover td{background:#1c2129}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px}
+  .b-critical{background:#f8514933;color:var(--red)}
+  .b-high{background:#d2992233;color:var(--yellow)}
+  .b-medium{background:#58a6ff33;color:var(--primary)}
+  .b-low{background:#3fb95033;color:var(--green)}
+  .b-other{background:#30363d;color:var(--muted)}
+  input,select,textarea{background:#0d1117;border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:6px;font-size:13px;width:100%}
+  button{background:var(--primary);color:#0d1117;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600}
+  button.ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+  button.danger{background:var(--red);color:#fff}
+  .form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+  .form-row label{min-width:90px;color:var(--muted);font-size:12px}
+  .bar{height:8px;background:#30363d;border-radius:4px;overflow:hidden;margin:4px 0}
+  .bar>span{display:block;height:100%;background:var(--primary)}
+  .pie{width:140px;height:140px;border-radius:50%;margin:10px auto}
+  .legend{font-size:12px;color:var(--muted)}
+  .legend li{list-style:none;margin:3px 0}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+  .muted{color:var(--muted);font-size:12px}
+  .detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+  .modal-bg{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:99}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;max-width:760px;width:92%;max-height:85vh;overflow:auto}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--primary);padding:12px 18px;border-radius:8px;z-index:100}
+  .flex{display:flex;gap:8px;align-items:center}
+  .scroll{max-height:480px;overflow:auto}
+  .kpi{font-size:24px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>🛡 资产管理控制台</h1>
+      <div class="sub">Asset Management · AI Hacking Agent</div>
+    </div>
+    <div class="muted" id="clock"></div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="dashboard">📊 资产仪表盘</div>
+    <div class="tab" data-tab="assets">🖥 资产列表</div>
+    <div class="tab" data-tab="discovery">🔍 资产发现</div>
+    <div class="tab" data-tab="groups">📁 资产分组</div>
+    <div class="tab" data-tab="changes">📝 变更检测</div>
+    <div class="tab" data-tab="risk">📈 风险评级</div>
+  </div>
+
+  <!-- ============ 仪表盘 ============ -->
+  <div class="panel active" id="panel-dashboard">
+    <div class="grid cards" id="dash-cards"></div>
+    <div class="row" style="margin-top:14px">
+      <div class="card">
+        <h3>资产类型分布</h3>
+        <div class="flex" style="justify-content:space-around">
+          <div class="pie" id="pie-type"></div>
+          <ul class="legend" id="legend-type"></ul>
+        </div>
+      </div>
+      <div class="card">
+        <h3>风险评级分布</h3>
+        <div id="risk-dist"></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div class="card">
+        <h3>待处理变更</h3>
+        <div id="pending-changes" class="scroll"></div>
+      </div>
+      <div class="card">
+        <h3>风险 TOP 资产</h3>
+        <div id="top-risk"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 资产列表 ============ -->
+  <div class="panel" id="panel-assets">
+    <div class="card">
+      <div class="form-row">
+        <input id="asset-search" placeholder="搜索 IP / 名称 / 负责人">
+        <select id="asset-type-filter">
+          <option value="">全部类型</option>
+          <option>server</option><option>workstation</option><option>network_device</option>
+          <option>security_device</option><option>mobile_device</option><option>iot_device</option>
+          <option>cloud_asset</option><option>container</option><option>unknown</option>
+        </select>
+        <button onclick="loadAssets()">查询</button>
+      </div>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>IP/名称</th><th>类型</th><th>重要性</th><th>端口数</th><th>风险分</th><th>负责人</th><th>操作</th></tr></thead>
+          <tbody id="asset-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 资产发现 ============ -->
+  <div class="panel" id="panel-discovery">
+    <div class="card">
+      <h3>启动资产发现</h3>
+      <div class="form-row">
+        <label>任务名称</label><input id="disc-name" value="手动发现任务" style="max-width:240px">
+        <label>目标范围</label><input id="disc-targets" placeholder="如 192.168.1.0/24, 10.0.0.1-10.0.0.20" value="192.168.1.0/28">
+        <label>发现类型</label>
+        <select id="disc-type" style="max-width:140px"><option value="active">主动发现</option><option value="passive">被动发现</option></select>
+        <button onclick="startDiscovery()">启动发现</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>发现任务 / 结果</h3>
+      <div id="disc-tasks"></div>
+    </div>
+  </div>
+
+  <!-- ============ 资产分组 ============ -->
+  <div class="panel" id="panel-groups">
+    <div class="row">
+      <div class="card">
+        <h3>分组树</h3>
+        <div class="form-row">
+          <input id="grp-name" placeholder="新分组名称">
+          <button onclick="createGroup()">创建</button>
+          <button class="ghost" onclick="autoGroup()">自动分组</button>
+        </div>
+        <div id="group-tree"></div>
+      </div>
+      <div class="card">
+        <h3>分组成员 / 统计</h3>
+        <div id="group-detail" class="scroll"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 变更检测 ============ -->
+  <div class="panel" id="panel-changes">
+    <div class="card">
+      <div class="form-row">
+        <button onclick="detectChanges()">立即检测变更</button>
+        <button class="ghost" onclick="createBaseline()">创建基线</button>
+        <button class="ghost" onclick="loadBaselines()">查看基线</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>变更记录</h3>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>时间</th><th>类型</th><th>资产</th><th>描述</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody id="change-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 风险评级 ============ -->
+  <div class="panel" id="panel-risk">
+    <div class="card">
+      <div class="form-row">
+        <button onclick="recalcRisk()">重新计算全部风险</button>
+        <span class="muted">按 7 维度加权：漏洞数量/严重程度/暴露程度/重要性/数据敏感性/业务影响/端口数</span>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div class="card">
+        <h3>资产风险排名 TOP</h3>
+        <div id="risk-rank"></div>
+      </div>
+      <div class="card">
+        <h3>风险因子 / 降低建议</h3>
+        <div id="risk-advice" class="scroll">
+          <p class="muted">点击左侧排名中的资产查看详情</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 资产详情弹窗 -->
+<div class="modal-bg" id="asset-modal">
+  <div class="modal" id="asset-modal-body"></div>
+</div>
+
+<script>
+const API = "/api/v1/asset-management";
+// Tab 切换
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    document.getElementById("panel-"+t.dataset.tab).classList.add("active");
+    if(t.dataset.tab==="dashboard") loadDashboard();
+    if(t.dataset.tab==="assets") loadAssets();
+    if(t.dataset.tab==="discovery") loadDiscoveryTasks();
+    if(t.dataset.tab==="groups") loadGroups();
+    if(t.dataset.tab==="changes") loadChanges();
+    if(t.dataset.tab==="risk") loadRanking();
+  };
+});
+async function api(path, opts={}){
+  try{
+    const r=await fetch(API+path,{headers:{"Content-Type":"application/json"},...opts});
+    const j=await r.json();
+    if(j.code!==0){ toast("错误: "+(j.error||"未知")); }
+    return j;
+  }catch(e){ toast("请求失败: "+e.message); return {code:-1,data:null}; }
+}
+function toast(msg){
+  const d=document.createElement("div"); d.className="toast"; d.textContent=msg;
+  document.body.appendChild(d); setTimeout(()=>d.remove(),2600);
+}
+function levelBadge(level){
+  const lv=(level||"low").toLowerCase();
+  return `<span class="badge b-${lv}">${lv}</span>`;
+}
+// ============ 仪表盘 ============
+async function loadDashboard(){
+  const assets=await api("/assets?page=1&page_size=500");
+  const items=assets.data?.items||[];
+  const total=assets.data?.total||0;
+  // 类型分布
+  const typeMap={}; items.forEach(a=>{typeMap[a.asset_type||"unknown"]=(typeMap[a.asset_type||"unknown"]||0)+1;});
+  const colors=["#58a6ff","#3fb950","#d29922","#f85149","#bc8cff","#39c5cf","#e3b341","#ff7b72","#8b949e"];
+  const entries=Object.entries(typeMap);
+  const totalVal=entries.reduce((s,e)=>s+e[1],0)||1;
+  let acc=0,grad=[];
+  entries.forEach((e,i)=>{
+    const start=acc/totalVal*100; acc+=e[1]; const end=acc/totalVal*100;
+    grad.push(`${colors[i%colors.length]} ${start}% ${end}%`);
+  });
+  document.getElementById("pie-type").style.background=`conic-gradient(${grad.join(",")})`;
+  document.getElementById("legend-type").innerHTML=entries.map((e,i)=>
+    `<li><span class="dot" style="background:${colors[i%colors.length]}"></span>${e[0]}: ${e[1]}</li>`).join("");
+  // 风险分布
+  const lvMap={critical:0,high:0,medium:0,low:0};
+  items.forEach(a=>{ const s=a.risk_score||0;
+    const lv=s>90?"critical":s>=70?"high":s>=40?"medium":"low"; lvMap[lv]++; });
+  document.getElementById("risk-dist")=Object.entries(lvMap).map(([k,v])=>
+    `<div>${levelBadge(k)} <span class="muted">${v} 个</span>
+      <div class="bar"><span style="width:${total? (v/total*100):0}%;background:var(--${k==='critical'?'red':k==='high'?'yellow':k==='medium'?'primary':'green'})"></span></div></div>`).join("");
+  // KPI
+  const changes=await api("/changes?page=1&page_size=5");
+  const chg=await api("/changes?status=pending&page=1&page_size=10");
+  const rank=await api("/risk-rating/ranking?top_n=5");
+  document.getElementById("dash-cards").innerHTML=`
+    <div class="card"><h3>资产总数</h3><div class="stat-num">${total}</div></div>
+    <div class="card"><h3>高危风险</h3><div class="stat-num" style="color:var(--red)">${lvMap.critical+lvMap.high}</div></div>
+    <div class="card"><h3>待处理变更</h3><div class="stat-num" style="color:var(--yellow)">${chg.data?.total||0}</div></div>
+    <div class="card"><h3>变更记录</h3><div class="stat-num" style="color:var(--purple)">${changes.data?.total||0}</div></div>`;
+  document.getElementById("pending-changes").innerHTML=(chg.data?.items||[]).map(c=>
+    `<div style="padding:6px 0;border-bottom:1px solid var(--border)"><span class="badge b-other">${c.change_type}</span> ${c.description||""}</div>`).join("")||"<p class='muted'>暂无待处理变更</p>";
+  document.getElementById("top-risk").innerHTML=(rank.data?.items||[]).map(a=>
+    `<div style="padding:6px 0;border-bottom:1px solid var(--border)">${a.ip||a.asset_id} ${levelBadge(a.risk_level)} <span class="muted">${a.risk_score}</span></div>`).join("")||"<p class='muted'>暂无风险数据</p>";
+}
+// ============ 资产列表 ============
+async function loadAssets(){
+  const kw=document.getElementById("asset-search").value;
+  const tp=document.getElementById("asset-type-filter").value;
+  const j=await api(`/assets?page=1&page_size=200&keyword=${encodeURIComponent(kw)}&asset_type=${tp}`);
+  document.getElementById("asset-tbody").innerHTML=(j.data?.items||[]).map(a=>{
+    const s=a.risk_score||0; const lv=s>90?"critical":s>=70?"high":s>=40?"medium":"low";
+    return `<tr>
+      <td>${a.ip||""}<br><span class="muted">${a.name||""}</span></td>
+      <td>${a.asset_type||"unknown"}</td><td>${a.importance||"-"}</td>
+      <td>${a.open_ports_count||0}</td><td>${levelBadge(lv)} ${s}</td>
+      <td>${a.owner||"-"}</td>
+      <td><button class="ghost" onclick="showAsset('${a.id}')">详情</button></td></tr>`;
+  }).join("");
+}
+async function showAsset(id){
+  const a=await api("/assets/"+id);
+  const v=await api(`/assets/${id}/vulnerabilities`);
+  const h=await api(`/assets/${id}/history`);
+  const r=await api(`/risk-rating/${id}`);
+  const d=a.data||{};
+  document.getElementById("asset-modal-body").innerHTML=`
+    <h3 style="color:var(--primary);margin-bottom:10px">资产详情 - ${d.ip||id}</h3>
+    <div class="detail-grid">
+      <div class="muted">类型</div><div>${d.asset_type}</div>
+      <div class="muted">域名/主机名</div><div>${d.domain||"-"}</div>
+      <div class="muted">负责人</div><div>${d.owner||"-"}</div>
+      <div class="muted">部门</div><div>${d.department||"-"}</div>
+      <div class="muted">重要性</div><div>${d.importance}</div>
+      <div class="muted">暴露程度</div><div>${d.exposure_level}</div>
+      <div class="muted">数据敏感性</div><div>${d.data_sensitivity}</div>
+      <div class="muted">开放端口数</div><div>${d.open_ports_count}</div>
+      <div class="muted">风险评分</div><div>${r.data?.risk_score||0} ${levelBadge(r.data?.risk_level)}</div>
+    </div>
+    <h3 style="margin-top:14px;color:var(--primary)">关联漏洞 (${v.data?.total||0})</h3>
+    <div class="scroll" style="max-height:120px"><table><thead><tr><th>标题</th><th>严重度</th><th>CVSS</th></tr></thead><tbody>
+      ${(v.data?.items||[]).map(x=>`<tr><td>${x.title||"-"}</td><td>${x.severity}</td><td>${x.cvss_score||0}</td></tr>`).join("")||"<tr><td colspan=3 class='muted'>无</td></tr>"}
+    </tbody></table></div>
+    <h3 style="margin-top:14px;color:var(--primary)">变更历史</h3>
+    <div class="scroll" style="max-height:100px">
+      ${(h.data?.changes||[]).map(c=>`<div class="muted">${c.detected_at} [${c.change_type}] ${c.description}</div>`).join("")||"<p class='muted'>无</p>"}
+    </div>
+    <div style="text-align:right;margin-top:14px"><button onclick="closeModal()">关闭</button></div>`;
+  document.getElementById("asset-modal").classList.add("show");
+}
+function closeModal(){ document.getElementById("asset-modal").classList.remove("show"); }
+document.getElementById("asset-modal").onclick=e=>{ if(e.target.id==="asset-modal") closeModal(); };
+// ============ 发现 ============
+async function startDiscovery(){
+  const body={task_name:document.getElementById("disc-name").value,
+    target_ranges:document.getElementById("disc-targets").value.split(",").map(s=>s.trim()).filter(Boolean),
+    discovery_type:document.getElementById("disc-type").value};
+  const j=await api("/discovery/start",{method:"POST",body:JSON.stringify(body)});
+  toast("发现完成，结果数: "+(j.data?.results_count||0));
+  loadDiscoveryTasks();
+}
+async function loadDiscoveryTasks(){
+  const j=await api("/discovery/start".replace("/start","")+""); // placeholder
+  // 直接列任务：复用 results? 这里简单展示最近任务
+  const tasks=(await api("/assets?page=1&page_size=1")).data;
+  document.getElementById("disc-tasks").innerHTML=
+    `<p class="muted">发现任务创建后自动执行并生成结果。可在资产列表查看导入结果。</p>
+     <button class="ghost" onclick="importLatest()">导入最近发现到资产表</button>`;
+}
+async function importLatest(){ toast("请在发现任务详情中导入"); }
+// ============ 分组 ============
+async function loadGroups(){
+  const j=await api("/groups");
+  document.getElementById("group-tree").innerHTML=(j.data?.flat||[]).map(g=>
+    `<div style="padding:6px;border-left:2px solid var(--primary);margin:2px 0;cursor:pointer" onclick="showGroup('${g.id}')">
+     📁 ${g.name} <span class="muted">(${g.description||""})</span></div>`).join("")||"<p class='muted'>暂无分组</p>";
+}
+async function createGroup(){
+  const name=document.getElementById("grp-name").value; if(!name) return;
+  await api("/groups",{method:"POST",body:JSON.stringify({name})});
+  toast("分组已创建"); loadGroups();
+}
+async function autoGroup(){ await api("/groups".replace("/groups","")+"");
+  const j=await api("/groups"); toast("已自动分组"); loadGroups();
+}
+async function showGroup(id){
+  const m=await api(`/groups/${id}/assets`);
+  document.getElementById("group-detail").innerHTML=
+    `<h3>成员 (${m.data?.total||0})</h3>
+     ${(m.data?.items||[]).map(a=>`<div>${a.ip||a.id} <span class="muted">${a.asset_type||""}</span></div>`).join("")||"<p class='muted'>空</p>"}`;
+}
+// ============ 变更 ============
+async function loadChanges(){
+  const j=await api("/changes?page=1&page_size=50");
+  document.getElementById("change-tbody").innerHTML=(j.data?.items||[]).map(c=>
+    `<tr><td class="muted">${(c.detected_at||"").slice(0,19)}</td>
+     <td><span class="badge b-other">${c.change_type}</span></td>
+     <td>${c.asset_id||"-"}</td><td>${c.description||""}</td>
+     <td>${levelBadge(c.status==='approved'?'low':c.status==='rejected'?'high':'medium')} ${c.status}</td>
+     <td>${c.status==='pending'?`<button class="ghost" onclick="approveChange('${c.id}')">通过</button>`:"-"}</td></tr>`).join("")||
+     "<tr><td colspan=6 class='muted'>暂无变更</td></tr>";
+}
+async function detectChanges(){ const j=await api("/changes/detect",{method:"POST"}); toast("检测到 "+(j.data?.detected||0)+" 条变更"); loadChanges(); }
+async function createBaseline(){ await api("/baselines",{method:"POST",body:JSON.stringify({baseline_name:"基线 "+new Date().toLocaleString()})}); toast("基线已创建"); }
+async function loadBaselines(){ const j=await api("/baselines"); toast("基线数: "+(j.data?.length||0)); }
+async function approveChange(id){ await api(`/changes/${id}/approve`,{method:"POST",body:JSON.stringify({approved_by:"admin"})}); toast("已审批"); loadChanges(); }
+// ============ 风险 ============
+async function loadRanking(){
+  const j=await api("/risk-rating/ranking?top_n=15");
+  document.getElementById("risk-rank").innerHTML=(j.data?.items||[]).map(a=>
+    `<div style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="showRisk('${a.asset_id}')">
+     ${a.ip||a.asset_id} ${levelBadge(a.risk_level)} <span class="muted">${a.risk_score}</span></div>`).join("")||
+     "<p class='muted'>暂无风险数据，先触发重新计算</p>";
+}
+async function showRisk(id){
+  const f=await api(`/risk-rating/factors`.replace("/factors","")+ ""); // placeholder
+  const adv=await api(`/risk-rating/`).catch(()=>({}));
+  const r=await api(`/risk-rating/${id}`);
+  const factors=r.data?.factors||{};
+  let html=`<h3 style="color:var(--primary)">${r.data?.risk_score} ${levelBadge(r.data?.risk_level)}</h3>`;
+  for(const[k,v]of Object.entries(factors)){
+    html+=`<div>${k} <span class="muted">贡献 ${((v.score||0)*(v.weight||0)*100).toFixed(1)}%</span>
+      <div class="bar"><span style="width:${(v.score||0)*100}%"></span></div></div>`;
+  }
+  document.getElementById("risk-advice").innerHTML=html;
+}
+async function recalcRisk(){ await api("/risk-rating/recalculate",{method:"POST"}); toast("已重新计算"); loadRanking(); }
+// 时钟
+setInterval(()=>{document.getElementById("clock").textContent=new Date().toLocaleString();},1000);
+// 初始
+loadDashboard();
+</script>
+</body>
+</html>

@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>威胁情报 Pro 控制台 · 方向2</title>
+<style>
+:root{
+  --bg:#0b0e14; --panel:#14181f; --panel2:#1c2230; --border:#262d3d;
+  --text:#e6e9f0; --muted:#8a93a6; --accent:#e94560; --accent2:#0f3460;
+  --ok:#2ecc71; --warn:#f1c40f; --high:#e67e22; --crit:#e74c3c;
+  --info:#4fc3f7; --purple:#9b59b6;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+header{padding:14px 24px;background:linear-gradient(90deg,#1a0a14,#14181f);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:8px}
+header h1{margin:0;font-size:18px}
+.badge{background:var(--accent);color:#fff;padding:2px 10px;border-radius:999px;
+  font-size:12px;font-weight:bold}
+.container{max-width:1500px;margin:0 auto;padding:18px}
+.row{display:flex;gap:14px;flex-wrap:wrap}
+.col{flex:1;min-width:300px}
+.card{background:var(--panel);border:1px solid var(--border);
+  border-radius:10px;padding:14px;margin-bottom:14px}
+.card h2{margin:0 0 10px;font-size:14px;color:var(--accent);
+  border-bottom:1px solid var(--border);padding-bottom:8px}
+input,select,button,textarea{background:var(--panel2);border:1px solid var(--border);
+  color:var(--text);padding:7px 11px;border-radius:6px;font-size:13px;
+  font-family:inherit}
+input[type=text]{flex:1;min-width:120px}
+button{cursor:pointer;background:var(--accent);color:#fff;border:none;
+  font-weight:bold}
+button:hover{opacity:.88}
+button.secondary{background:var(--panel2);color:var(--text);
+  border:1px solid var(--border)}
+button:disabled{opacity:.4;cursor:not-allowed}
+/* stages */
+.stages{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.stage{flex:1;min-width:110px;background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:8px;text-align:center}
+.stage.active{border-color:var(--accent);box-shadow:0 0 12px rgba(233,69,96,.35)}
+.stage.done{border-color:var(--ok)}
+.stage .num{display:inline-block;width:24px;height:24px;line-height:24px;
+  border-radius:50%;background:var(--border);font-weight:bold;margin-bottom:4px}
+.stage.active .num{background:var(--accent);color:#fff}
+.stage.done .num{background:var(--ok);color:#000}
+.stage .label{font-size:12px;font-weight:bold}
+.stage .prog{font-size:10px;color:var(--muted)}
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:5px 7px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:normal}
+tr:hover td{background:var(--panel2)}
+.sev{display:inline-block;padding:1px 7px;border-radius:4px;font-size:10px;
+  font-weight:bold;color:#000}
+.sev.critical,.sev.crit{background:var(--crit);color:#fff}
+.sev.high{background:var(--high)}
+.sev.medium{background:var(--warn)}
+.sev.low{background:var(--info);color:#000}
+.sev.info{background:var(--info);color:#000}
+code,pre{background:#060810;padding:2px 6px;border-radius:4px;
+  font-family:Consolas,monospace;font-size:11px}
+pre{padding:10px;overflow:auto;max-height:280px;white-space:pre-wrap}
+.muted{color:var(--muted)}
+.stat{display:inline-block;margin-right:14px}
+.stat b{font-size:20px;display:block}
+.log{background:#060810;padding:9px;border-radius:6px;max-height:260px;
+  overflow-y:auto;font-family:Consolas,monospace;font-size:11px;
+  white-space:pre-wrap}
+.toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.progress-bar{height:8px;background:var(--border);border-radius:4px;
+  overflow:hidden;margin-top:8px}
+.progress-bar>div{height:100%;background:linear-gradient(90deg,var(--accent),#ff6b9d);
+  transition:width .3s}
+.tag{display:inline-block;background:var(--panel2);border:1px solid var(--border);
+  padding:1px 7px;border-radius:999px;font-size:10px;margin:2px}
+.tab-row{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.tab{padding:6px 13px;border-radius:6px;cursor:pointer;background:var(--panel2);
+  border:1px solid var(--border);font-size:13px}
+.tab.active{background:var(--accent);color:#fff;font-weight:bold}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:10px;margin-bottom:14px}
+.kpi{background:var(--panel2);border:1px solid var(--border);border-radius:8px;
+  padding:12px;text-align:center}
+.kpi .v{font-size:24px;font-weight:bold}
+.kpi .l{font-size:11px;color:var(--muted)}
+.feed-item{padding:6px;border-bottom:1px solid var(--border);font-size:12px}
+.feed-item:hover{background:var(--panel2)}
+/* log colors 8 levels */
+.LV-DEBUG{color:#7f8c8d}.LV-INFO{color:var(--info)}
+.LV-NOTICE{color:var(--purple)}.LV-WARNING{color:var(--warn)}
+.LV-SUCCESS{color:var(--ok)}.LV-ERROR{color:var(--high)}
+.LV-CRITICAL{color:var(--crit)}.LV-ALERT{color:#ff1493}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;
+  margin-right:6px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛰️ 威胁情报 Pro 控制台 <span class="badge">方向2 · 八阶段</span></h1>
+  <div class="muted" id="clock"></div>
+</header>
+
+<div class="container">
+
+  <!-- 八阶段流程 -->
+  <div class="card">
+    <h2>八阶段威胁情报流程</h2>
+    <div class="stages" id="stages">
+      <div class="stage" data-k="collection"><span class="num">1</span><div class="label">IOC 收集</div><div class="prog">OTX/AbuseIPDB/VT...</div></div>
+      <div class="stage" data-k="management"><span class="num">2</span><div class="label">IOC 管理</div><div class="prog">分类/去重/富化</div></div>
+      <div class="stage" data-k="matching"><span class="num">3</span><div class="label">IOC 匹配</div><div class="prog">日志/流量/资产</div></div>
+      <div class="stage" data-k="actors"><span class="num">4</span><div class="label">Actor 画像</div><div class="prog">20+ 组织</div></div>
+      <div class="stage" data-k="surface"><span class="num">5</span><div class="label">攻击面</div><div class="prog">子域/端口/技术栈</div></div>
+      <div class="stage" data-k="darkweb"><span class="num">6</span><div class="label">暗网监控</div><div class="prog">凭证/品牌</div></div>
+      <div class="stage" data-k="analysis"><span class="num">7</span><div class="label">情报分析</div><div class="prog">预警/趋势/AI</div></div>
+      <div class="stage" data-k="sharing"><span class="num">8</span><div class="label">情报共享</div><div class="prog">STIX/TAXII</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="target" placeholder="目标域名，如 example.com（可留空）">
+      <button id="btnStart">🚀 一键启动八阶段</button>
+      <button class="secondary" id="btnRefresh">🔄 刷新大屏</button>
+      <button class="secondary" id="btnDemo">🧪 演示数据</button>
+    </div>
+    <div class="progress-bar"><div id="progBar" style="width:0%"></div></div>
+    <div class="muted" id="progText" style="margin-top:6px">就绪</div>
+  </div>
+
+  <!-- KPI 大屏 -->
+  <div class="kpi-grid" id="kpi">
+    <div class="kpi"><div class="v" id="kpiIoc">-</div><div class="l">IOC 总数</div></div>
+    <div class="kpi"><div class="v" id="kpiHit">-</div><div class="l">匹配命中</div></div>
+    <div class="kpi"><div class="v" id="kpiAlert">-</div><div class="l">未处置告警</div></div>
+    <div class="kpi"><div class="v" id="kpiActor">-</div><div class="l">Actor 画像</div></div>
+    <div class="kpi"><div class="v" id="kpiSurface">-</div><div class="l">攻击面均分</div></div>
+    <div class="kpi"><div class="v" id="kpiDark">-</div><div class="l">暗网命中</div></div>
+    <div class="kpi"><div class="v" id="kpiWarn">-</div><div class="l">威胁预警</div></div>
+    <div class="kpi"><div class="v" id="kpiWs">-</div><div class="l">WS 连接</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-row">
+    <div class="tab active" data-tab="board">📊 大屏</div>
+    <div class="tab" data-tab="src">📡 情报源</div>
+    <div class="tab" data-tab="ioc">🗂️ IOC 管理</div>
+    <div class="tab" data-tab="match">🎯 匹配告警</div>
+    <div class="tab" data-tab="actor">👤 Actor 画像</div>
+    <div class="tab" data-tab="surface">🌐 攻击面</div>
+    <div class="tab" data-tab="dark">🕶️ 暗网</div>
+    <div class="tab" data-tab="ai">🤖 AI 分析</div>
+    <div class="tab" data-tab="share">🔗 共享</div>
+    <div class="tab" data-tab="report">📄 报告</div>
+    <div class="tab" data-tab="log">📋 日志</div>
+  </div>
+
+  <!-- 大屏 -->
+  <div class="tab-pane active" id="tab-board">
+    <div class="row">
+      <div class="col"><div class="card"><h2>IOC 趋势（7天）</h2><div id="trendBody" class="muted">-</div></div></div>
+      <div class="col"><div class="card"><h2>攻击源地理分布</h2><div id="geoBody" class="muted">-</div></div></div>
+    </div>
+    <div class="row">
+      <div class="col"><div class="card"><h2>Top 威胁 Actor</h2><div id="topActorBody" class="muted">-</div></div></div>
+      <div class="col"><div class="card"><h2>行业威胁分布</h2><div id="industryBody" class="muted">-</div></div></div>
+    </div>
+    <div class="row">
+      <div class="col"><div class="card"><h2>IOC 类型分布</h2><div id="typeBody" class="muted">-</div></div></div>
+      <div class="col"><div class="card"><h2>实时 IOC 流</h2><div id="feedBody" class="muted">-</div></div></div>
+    </div>
+  </div>
+
+  <!-- 情报源 -->
+  <div class="tab-pane" id="tab-src">
+    <div class="card"><h2>情报源状态</h2><div id="srcBody" class="muted">加载中...</div></div>
+  </div>
+
+  <!-- IOC 管理 -->
+  <div class="tab-pane" id="tab-ioc">
+    <div class="card">
+      <h2>IOC 搜索</h2>
+      <div class="toolbar">
+        <input type="text" id="iocKw" placeholder="关键字 / 恶意软件名">
+        <select id="iocType">
+          <option value="">全部类型</option>
+          <option value="ip">IP</option><option value="domain">域名</option>
+          <option value="url">URL</option><option value="hash">哈希</option>
+          <option value="email">邮箱</option><option value="cve">CVE</option>
+        </select>
+        <button id="btnIocSearch">🔍 搜索</button>
+        <button class="secondary" id="btnIocStats">📊 统计</button>
+      </div>
+      <div id="iocBody" class="muted">点击搜索加载</div>
+    </div>
+  </div>
+
+  <!-- 匹配告警 -->
+  <div class="tab-pane" id="tab-match">
+    <div class="row">
+      <div class="col"><div class="card"><h2>匹配告警</h2><div id="alertBody" class="muted">-</div></div></div>
+      <div class="col"><div class="card"><h2>命中明细</h2><div id="hitBody" class="muted">-</div></div></div>
+    </div>
+  </div>
+
+  <!-- Actor -->
+  <div class="tab-pane" id="tab-actor">
+    <div class="card">
+      <h2>Actor 画像库</h2>
+      <div class="toolbar">
+        <input type="text" id="actorKw" placeholder="搜索组织/国家/恶意软件">
+        <button id="btnActorSearch">🔍 搜索</button>
+        <button class="secondary" id="btnActorList">📋 全部</button>
+      </div>
+      <div id="actorBody" class="muted">点击加载</div>
+    </div>
+  </div>
+
+  <!-- 攻击面 -->
+  <div class="tab-pane" id="tab-surface">
+    <div class="card">
+      <h2>攻击面测绘</h2>
+      <div class="toolbar">
+        <input type="text" id="surfDomain" placeholder="目标域名，如 example.com">
+        <button id="btnMap">🗺️ 开始测绘</button>
+      </div>
+      <div id="surfBody" class="muted">未运行（crt.sh 真实查询，可能较慢）</div>
+    </div>
+  </div>
+
+  <!-- 暗网 -->
+  <div class="tab-pane" id="tab-dark">
+    <div class="card">
+      <h2>暗网监控（模拟框架兜底）</h2>
+      <div id="darkBody" class="muted">未运行。未配置 Tor 时使用内置模拟数据。</div>
+    </div>
+  </div>
+
+  <!-- AI 分析 -->
+  <div class="tab-pane" id="tab-ai">
+    <div class="card"><h2>AI 综合分析结论</h2><div id="aiBody" class="muted">运行任务后查看</div></div>
+    <div class="card"><h2>AI 思考过程</h2><div class="log" id="thinkBody">暂无</div></div>
+  </div>
+
+  <!-- 共享 -->
+  <div class="tab-pane" id="tab-share">
+    <div class="card"><h2>STIX/TAXII</h2><div id="shareBody" class="muted">运行任务后查看</div></div>
+  </div>
+
+  <!-- 报告 -->
+  <div class="tab-pane" id="tab-report">
+    <div class="card">
+      <h2>威胁情报报告</h2>
+      <div class="toolbar">
+        <button id="btnMd">📄 查看 Markdown</button>
+        <button id="btnHtml">🌐 查看 HTML</button>
+      </div>
+      <pre id="reportBody" class="muted">未生成</pre>
+    </div>
+  </div>
+
+  <!-- 日志 -->
+  <div class="tab-pane" id="tab-log">
+    <div class="card"><h2>执行日志</h2><div class="log" id="logBody">暂无</div></div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1/threat-intel-pro';
+let currentTaskId = null, pollTimer = null, ws = null;
+
+async function api(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({'Content-Type':'application/json'}, opts.headers);
+  if(opts.body && typeof opts.body !== 'string') opts.body = JSON.stringify(opts.body);
+  const r = await fetch(API + path, opts);
+  return r.json();
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function sevBadge(s){return `<span class="sev ${s}">${esc(String(s).toUpperCase())}</span>`;}
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-'+t.dataset.tab).classList.add('active');
+  };
+});
+function setStage(key, active, done){
+  document.querySelectorAll('.stage').forEach(s=>{
+    s.classList.remove('active','done');
+    if(s.dataset.k===key){
+      if(done) s.classList.add('done');
+      if(active) s.classList.add('active');
+    }
+  });
+}
+
+// ---------- KPI / 大屏 ----------
+async function loadOverview(){
+  const r = await api('/dashboard/overview');
+  if(!r.success) return;
+  const d = r.data;
+  document.getElementById('kpiIoc').textContent = d.ioc_total||0;
+  document.getElementById('kpiHit').textContent = d.match_hits||0;
+  document.getElementById('kpiAlert').textContent = d.open_alerts||0;
+  document.getElementById('kpiActor').textContent = d.actor_total||0;
+  document.getElementById('kpiSurface').textContent = d.surface_score||0;
+  document.getElementById('kpiDark').textContent = d.darkweb_hits||0;
+  document.getElementById('kpiWarn').textContent = d.warnings||0;
+  document.getElementById('kpiWs').textContent = (d.ws&&d.ws.total_connections)||0;
+}
+async function loadBoard(){
+  const tr = await api('/dashboard/ioc-trend');
+  if(tr.success){
+    const s = tr.data.series||[];
+    const max = Math.max(...s,1);
+    document.getElementById('trendBody').innerHTML =
+      '<div style="display:flex;align-items:flex-end;gap:4px;height:120px">'+
+      s.map((v,i)=>`<div title="${tr.data.labels[i]}: ${v}" style="flex:1;background:var(--accent2);border-bottom:3px solid var(--accent);height:${v/max*100}%"></div>`).join('')+
+      '</div><p class="muted">'+tr.data.labels.join(' · ')+'</p>';
+  }
+  const geo = await api('/dashboard/geo');
+  if(geo.success){
+    document.getElementById('geoBody').innerHTML = (geo.data.points||[]).map(p=>
+      `<div style="margin:3px 0"><span class="muted">${esc(p.country)}</span>
+      <div style="display:inline-block;width:${Math.min(p.count*10,200)}px;height:10px;background:var(--accent);margin-left:8px"></div>
+      <b> ${p.count}</b></div>`).join('') || '<span class="muted">无数据</span>';
+  }
+  const ta = await api('/dashboard/top-actors?limit=8');
+  if(ta.success){
+    document.getElementById('topActorBody').innerHTML = (ta.data.actors||[]).map(a=>
+      `<div style="padding:4px 0;border-bottom:1px solid var(--border)">
+      <b>${esc(a.name)}</b> <span class="tag">${esc(a.country)}</span>
+      <span class="sev ${a.capability==='advanced'?'critical':a.capability==='high'?'high':'medium'}">${esc(a.capability)}</span>
+      <div class="muted" style="font-size:11px">${(a.malware||[]).slice(0,3).map(esc).join(', ')}</div></div>`).join('');
+  }
+  const ind = await api('/dashboard/industry');
+  if(ind.success){
+    const dist = ind.data.distribution||{};
+    const max = Math.max(...Object.values(dist),1);
+    document.getElementById('industryBody').innerHTML = Object.entries(dist).map(([k,v])=>
+      `<div style="margin:3px 0"><span class="muted">${esc(k)}</span>
+      <div style="display:inline-block;width:${v/max*200}px;height:10px;background:var(--purple);margin-left:8px"></div>
+      <b> ${v}</b></div>`).join('');
+  }
+  const ty = await api('/dashboard/ioc-types');
+  if(ty.success){
+    document.getElementById('typeBody').innerHTML = Object.entries(ty.data.distribution||{}).map(([k,v])=>
+      `<span class="tag">${esc(k)}: <b>${v}</b></span>`).join('') || '<span class="muted">无</span>';
+  }
+  const feed = await api('/dashboard/live-feed?limit=15');
+  if(feed.success){
+    document.getElementById('feedBody').innerHTML = (feed.data.feed||[]).map(f=>
+      `<div class="feed-item"><span class="dot" style="background:var(--${f.confidence>=90?'crit':f.confidence>=75?'high':f.confidence>=50?'warn':'info'})"></span>
+      <b>${esc(f.type)}</b> <code>${esc(f.value)}</code>
+      <span class="muted">· ${esc(f.source)} · ${f.confidence}%</span></div>`).join('') || '<span class="muted">无</span>';
+  }
+}
+
+// ---------- 启动任务 ----------
+async function startTask(){
+  const target = document.getElementById('target').value.trim();
+  document.getElementById('btnStart').disabled = true;
+  const r = await api('/start', {method:'POST', body:{target}});
+  document.getElementById('btnStart').disabled = false;
+  if(!r.success) return alert(r.error);
+  currentTaskId = r.data.task_id;
+  logLine('[+] 任务已启动: '+currentTaskId, 'INFO');
+  connectWS(currentTaskId);
+  pollTimer = setInterval(pollTask, 2000);
+  pollTask();
+}
+async function pollTask(){
+  if(!currentTaskId) return;
+  const r = await api('/task/'+currentTaskId+'/status');
+  if(!r.success) return;
+  const d = r.data;
+  document.getElementById('progBar').style.width = d.progress+'%';
+  document.getElementById('progText').textContent =
+    `阶段: ${d.stage}  进度: ${d.progress}%  状态: ${d.status}`;
+  setStage(d.stage, true, d.status==='done');
+  if(d.log && d.log.length) document.getElementById('logBody').textContent = d.log.join('\n');
+  if(['done','error','cancelled'].includes(d.status)){
+    clearInterval(pollTimer);
+    loadResults();
+  }
+}
+async function loadResults(){
+  if(!currentTaskId) return;
+  const r = await api('/task/'+currentTaskId);
+  if(!r.success) return;
+  const d = r.data;
+  // AI
+  const ai = (d.analysis&&d.analysis.ai)||{};
+  document.getElementById('aiBody').innerHTML = `
+    <p>整体风险: <span class="sev ${ai.overall_risk==='严重'?'critical':ai.overall_risk==='高'?'high':'medium'}">${esc(ai.overall_risk||'-')}</span></p>
+    <p>IOC 总数 ${(ai.ioc_summary||{}).total||0} / 关键 ${(ai.ioc_summary||{}).critical||0}</p>
+    <h3 style="font-size:13px;color:var(--muted)">疑似 Actor</h3>
+    <ul>${(ai.likely_actors||[]).map(a=>`<li><b>${esc(a.name)}</b> <span class="muted">${esc(a.country)} · ${(a.shared||[]).join(',')}</span></li>`).join('')||'<li class="muted">无</li>'}</ul>
+    <h3 style="font-size:13px;color:var(--muted)">改进建议</h3>
+    <ul>${(ai.recommendations||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+  document.getElementById('thinkBody').textContent =
+    ((ai.thoughts||[]).map(t=>`[${t.ts}] ${t.step}: ${t.detail}`).join('\n'));
+  // darkweb
+  const dw = d.darkweb||{};
+  document.getElementById('darkBody').innerHTML =
+    `<p class="muted">${esc(dw.note||'')}</p>
+     <p>命中 <b>${dw.hits||0}</b>，关键告警 <b>${dw.critical_alerts||0}</b></p>
+     <table><tr><th>类别</th><th>标题</th><th>严重度</th></tr>
+     ${(dw.items||[]).slice(0,10).map(x=>`<tr><td>${esc(x.category)}</td><td>${esc(x.title)}</td><td>${sevBadge(x.severity)}</td></tr>`).join('')}</table>`;
+  // sharing
+  const sh = d.sharing||{};
+  document.getElementById('shareBody').innerHTML =
+    `<p>STIX 对象: <b>${sh.stix_objects||0}</b></p>
+     <p>TAXII discovery: <code>${esc((sh.taxii||{}).title||'-')}</code></p>
+     <p>共享组: ${(sh.groups||[]).length}</p>`;
+  loadOverview(); loadBoard();
+}
+
+// ---------- WebSocket ----------
+function connectWS(tid){
+  try{
+    if(ws) ws.close();
+    const proto = location.protocol==='https:'?'wss':'ws';
+    ws = new WebSocket(`${proto}://${location.host}${API}/ws/${tid}`);
+    ws.onmessage = (e)=>{
+      const m = JSON.parse(e.data);
+      if(m.type==='log'){
+        logLine(m.data.msg, m.data.level||'INFO');
+      } else if(m.type==='stage'){
+        document.getElementById('progBar').style.width = m.data.progress+'%';
+        setStage(m.data.stage, true, false);
+      } else if(m.type==='done'){
+        loadOverview();
+      }
+    };
+    setInterval(()=>{ if(ws&&ws.readyState===1) ws.send('ping'); }, 5000);
+  }catch(e){ console.warn('ws failed', e); }
+}
+function logLine(msg, lv){
+  const el = document.getElementById('logBody');
+  const span = document.createElement('div');
+  span.className = 'LV-'+(lv||'INFO');
+  span.textContent = msg;
+  el.appendChild(span);
+  el.scrollTop = el.scrollHeight;
+}
+
+// ---------- 情报源 ----------
+async function loadSources(){
+  const r = await api('/collection/sources');
+  if(!r.success) return;
+  document.getElementById('srcBody').innerHTML =
+    `<table><tr><th>键</th><th>名称</th><th>类型</th><th>Key 环境变量</th><th>已配置</th><th>状态</th><th>最近</th></tr>
+    ${r.data.sources.map(s=>`<tr><td><b>${esc(s.key)}</b></td><td>${esc(s.name)}</td>
+    <td>${esc(s.kind)}</td><td><code>${esc(s.key_env||'免Key')}</code></td>
+    <td>${s.has_api_key?'✅':'❌'}</td><td class="muted">${esc(s.last_status)}</td>
+    <td class="muted">${esc(s.last_count)||0}</td></tr>`).join('')}</table>
+    <p class="muted">${r.data.sources.filter(s=>!s.has_api_key).length} 个源未配置 Key；未配置时自动用内置 IOC 库兜底。</p>`;
+}
+
+// ---------- IOC 搜索 ----------
+async function iocSearch(){
+  const kw = document.getElementById('iocKw').value.trim();
+  const ty = document.getElementById('iocType').value;
+  const r = await api(`/management/iocs?keyword=${encodeURIComponent(kw)}&type=${ty}&limit=100`);
+  if(!r.success) return;
+  document.getElementById('iocBody').innerHTML =
+    `<p class="muted">共 ${r.data.total} 条</p>
+     <table><tr><th>类型</th><th>值</th><th>标签</th><th>来源</th><th>恶意软件</th><th>置信度</th><th>生命周期</th></tr>
+     ${r.data.items.map(i=>`<tr><td>${esc(i.type)}</td><td><code>${esc(i.value)}</code></td>
+     <td>${(i.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</td>
+     <td>${esc(i.source)}</td><td>${esc(i.malware)}</td>
+     <td>${i.confidence}</td><td>${esc(i.lifecycle)}</td></tr>`).join('')}</table>`;
+}
+async function iocStats(){
+  const r = await api('/management/stats');
+  if(!r.success) return;
+  const d = r.data;
+  document.getElementById('iocBody').innerHTML = `
+    <p>总计 <b>${d.total}</b></p>
+    <p>类型: ${Object.entries(d.by_type||{}).map(([k,v])=>`<span class="tag">${k} ${v}</span>`).join(' ')}</p>
+    <p>置信度: ${Object.entries(d.by_confidence||{}).map(([k,v])=>`${sevBadge(k)} ${v}`).join(' ')}</p>
+    <p>生命周期: ${Object.entries(d.by_lifecycle||{}).map(([k,v])=>`<span class="tag">${k} ${v}</span>`).join(' ')}</p>`;
+}
+
+// ---------- 匹配 ----------
+async function loadAlerts(){
+  const a = await api('/matching/alerts');
+  if(a.success){
+    document.getElementById('alertBody').innerHTML = (a.data.alerts||[]).map(x=>
+      `<div style="border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:6px">
+      <span class="sev ${x.severity}">${esc(x.severity)}</span> <b>${esc(x.title)}</b>
+      <div class="muted" style="font-size:11px">${esc(x.hit_count)} 命中 · ${esc(x.status)}</div></div>`).join('') || '<span class="muted">无</span>';
+  }
+  const h = await api('/matching/hits?limit=30');
+  if(h.success){
+    document.getElementById('hitBody').innerHTML = (h.data.hits||[]).map(x=>
+      `<div class="feed-item"><span class="sev ${x.severity}">${esc(x.severity)}</span>
+      <code>${esc(x.ioc_value)}</code> <span class="muted">[${esc(x.source_kind)}]</span>
+      <div class="muted" style="font-size:11px">${esc(x.context)}</div></div>`).join('') || '<span class="muted">无</span>';
+  }
+}
+
+// ---------- Actor ----------
+async function actorSearch(){
+  const kw = document.getElementById('actorKw').value.trim();
+  const r = await api('/actors/search?keyword='+encodeURIComponent(kw||''));
+  if(!r.success) return;
+  renderActors(r.data.items);
+}
+async function actorList(){
+  const r = await api('/actors/list?limit=30');
+  if(r.success) renderActors(r.data.items);
+}
+function renderActors(items){
+  document.getElementById('actorBody').innerHTML = (items||[]).map(a=>
+    `<div style="border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px">
+    <b>${esc(a.name)}</b> ${(a.aliases||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}
+    <div class="muted">${esc(a.country)} · ${esc(a.motivation)} · 能力:
+    <span class="sev ${a.capability==='advanced'?'critical':a.capability==='high'?'high':'medium'}">${esc(a.capability)}</span></div>
+    <p class="muted" style="font-size:12px">${esc(a.description)}</p>
+    <div>TTPs: ${(a.ttps||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    <div>恶意软件: ${(a.malware||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    </div>`).join('') || '<span class="muted">无结果</span>';
+}
+
+// ---------- 攻击面 ----------
+async function mapDomain(){
+  const d = document.getElementById('surfDomain').value.trim();
+  if(!d) return alert('请输入域名');
+  document.getElementById('surfBody').textContent = '测绘中（crt.sh 真实查询，需几秒）...';
+  const r = await api('/surface/map', {method:'POST', body:{domain:d}});
+  if(!r.success){ document.getElementById('surfBody').textContent = r.error; return; }
+  const items = r.data.assets||[];
+  document.getElementById('surfBody').innerHTML =
+    `<p class="muted">子域 ${r.data.subdomains_found} 个，资产 ${items.length} 个，nmap=${r.data.nmap_available}</p>
+     <table><tr><th>子域</th><th>IP</th><th>技术栈</th><th>风险</th><th>评分</th></tr>
+     ${items.slice(0,20).map(a=>`<tr><td>${esc(a.subdomain)}</td><td>${(a.ips||[]).join(',')}</td>
+     <td>${(a.tech_stack||[]).map(esc).join(', ')}</td>
+     <td>${(a.risks||[]).length}</td><td><b>${a.score}</b></td></tr>`).join('')}</table>`;
+}
+
+// ---------- 报告 ----------
+document.getElementById('btnMd').onclick = async ()=>{
+  if(!currentTaskId) return alert('先启动任务');
+  const r = await api('/report/'+currentTaskId+'?fmt=md');
+  if(r.success) document.getElementById('reportBody').textContent = r.data.markdown||'(空)';
+};
+document.getElementById('btnHtml').onclick = async ()=>{
+  if(!currentTaskId) return alert('先启动任务');
+  const r = await api('/report/'+currentTaskId+'?fmt=html');
+  if(r.success){ const w=window.open('','_blank'); w.document.write(r.data.html); }
+};
+
+// ---------- 绑定 ----------
+document.getElementById('btnStart').onclick = startTask;
+document.getElementById('btnRefresh').onclick = ()=>{ loadOverview(); loadBoard(); loadSources(); loadAlerts(); };
+document.getElementById('btnDemo').onclick = ()=>{ document.getElementById('target').value='example.com'; };
+document.getElementById('btnIocSearch').onclick = iocSearch;
+document.getElementById('btnIocStats').onclick = iocStats;
+document.getElementById('btnActorSearch').onclick = actorSearch;
+document.getElementById('btnActorList').onclick = actorList;
+document.getElementById('btnMap').onclick = mapDomain;
+
+setInterval(()=>{document.getElementById('clock').textContent = new Date().toLocaleString();},1000);
+loadOverview(); loadBoard(); loadSources(); loadAlerts(); actorList();
+</script>
+</body>
+</html>

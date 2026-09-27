@@ -1,0 +1,11 @@
+{
+  "649ae01627177dc64c52ade168f1f5c6a98157983d982722719f99934ecbf0b4": {
+    "session_id": "649ae01627177dc64c52ade168f1f5c6a98157983d982722719f99934ecbf0b4",
+    "username": "e2e_analyst",
+    "created_at": 1789196692.1667466,
+    "expires_at": 1789283092.1667206,
+    "ip_address": "127.0.0.1",
+    "user_agent": "test",
+    "is_active": true
+  }
+}

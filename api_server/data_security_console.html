@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据安全与隐私保护控制台 · Round 13</title>
+<style>
+  :root {
+    --bg: #0b0f17; --panel: #131a26; --panel2: #1a2333; --border: #233049;
+    --text: #d6deee; --muted: #7a8aa8; --accent: #39c5bb; --accent2: #ff6b6b;
+    --crit: #ff4d4f; --high: #fa8c16; --med: #fadb14; --low: #52c41a; --info: #1890ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; font-size: 14px; }
+  header { background: linear-gradient(90deg,#0d1522,#16223a); padding: 14px 22px;
+    border-bottom: 1px solid var(--border); display:flex; align-items:center; gap:14px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 18px; color: var(--accent); }
+  header .tag { background: var(--panel2); padding: 3px 10px; border-radius: 10px; font-size: 12px; color: var(--muted); }
+  nav { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px 22px; background: #0e1522; border-bottom: 1px solid var(--border); }
+  nav button { background: transparent; color: var(--muted); border: 1px solid var(--border);
+    padding: 7px 14px; cursor: pointer; border-radius: 6px; font-size: 13px; }
+  nav button.active { background: var(--accent); color: #001; border-color: var(--accent); font-weight: 600; }
+  nav button:hover { color: var(--text); }
+  main { padding: 18px 22px; max-width: 1400px; margin: 0 auto; }
+  .tab { display: none; } .tab.active { display: block; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .card h3 { margin: 0 0 10px; font-size: 14px; color: var(--accent); }
+  label { display:block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+  input, textarea, select { width: 100%; background: #0c1320; color: var(--text);
+    border: 1px solid var(--border); border-radius: 5px; padding: 7px 9px; font-size: 13px; }
+  textarea { min-height: 90px; font-family: Consolas, monospace; }
+  button.action { background: var(--accent); color: #001; border: none; padding: 9px 18px;
+    border-radius: 5px; cursor: pointer; font-weight: 600; margin-top: 10px; }
+  button.action:hover { opacity: .9; }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .status { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .status.running { color: var(--med); } .status.done { color: var(--low); } .status.error { color: var(--crit); }
+  pre { background: #0a101c; border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px; overflow: auto; max-height: 420px; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { border-bottom: 1px solid var(--border); padding: 6px 8px; text-align: left; }
+  th { color: var(--accent); background: #0e1626; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .pill.critical { background: rgba(255,77,79,.18); color: var(--crit); }
+  .pill.high { background: rgba(250,140,22,.18); color: var(--high); }
+  .pill.medium { background: rgba(250,219,20,.18); color: var(--med); }
+  .pill.low { background: rgba(82,196,26,.18); color: var(--low); }
+  .pill.info { background: rgba(24,144,255,.18); color: var(--info); }
+  .pill.top_secret { background: rgba(255,77,79,.25); color: var(--crit); }
+  .pill.confidential { background: rgba(250,140,22,.18); color: var(--high); }
+  .pill.internal { background: rgba(24,144,255,.18); color: var(--info); }
+  .pill.public { background: rgba(82,196,26,.18); color: var(--low); }
+  .kv { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+  .kv div b { color: var(--accent); font-size: 18px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .bar { height: 8px; background: var(--panel2); border-radius: 4px; overflow: hidden; margin: 4px 0; }
+  .bar > span { display: block; height: 100%; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡️ 数据安全与隐私保护控制台</h1>
+  <span class="tag">Round 13 · data-security</span>
+  <span class="muted" style="margin-left:auto">仅用于授权数据安全治理 · 检测/评估视角</span>
+</header>
+
+<nav id="nav">
+  <button data-tab="classification" class="active">🏷️ 数据分类分级</button>
+  <button data-tab="dlp">📨 DLP 防护</button>
+  <button data-tab="privacy">🔒 隐私合规</button>
+  <button data-tab="encryption">🔑 加密密钥</button>
+  <button data-tab="access">👤 访问控制</button>
+  <button data-tab="assessment">🚀 综合评估</button>
+</nav>
+
+<main>
+<!-- ============ 数据分类分级 ============ -->
+<section class="tab active" id="tab-classification">
+  <div class="grid">
+    <div class="card">
+      <h3>扫描文本中的敏感数据</h3>
+      <label>粘贴待扫描内容（含身份证/手机/邮箱/卡号等）</label>
+      <textarea id="cls-content" placeholder="客户张三 手机13812345678 身份证110101199001011234 邮箱a@b.com 银行卡6222021234567890123"></textarea>
+      <label>来源/位置</label>
+      <input id="cls-source" placeholder="db/table_customer">
+      <label>所有者</label>
+      <input id="cls-owner" placeholder="数据平台">
+      <button class="action" onclick="runClassify()">开始分类分级</button>
+      <div class="status" id="cls-status"></div>
+    </div>
+    <div class="card">
+      <h3>识别结果概览</h3>
+      <div class="kv" id="cls-summary"></div>
+      <div id="cls-hits"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>敏感数据类型库</h3>
+    <div class="row" style="margin-bottom:8px">
+      <select id="cls-cat" style="width:auto" onchange="loadTypes()"><option value="">全部分类</option>
+        <option>PII</option><option>PCI</option><option>PHI</option>
+        <option>财务</option><option>商业机密</option><option>通用凭证</option>
+        <option>基础设施</option></select>
+      <button class="action ghost" onclick="loadTypes()">加载类型库</button>
+      <button class="action ghost" onclick="loadAssets()">加载资产清单</button>
+    </div>
+    <div id="cls-types"></div>
+  </div>
+  <div class="card">
+    <h3>分类分级报告</h3>
+    <pre id="cls-report">（运行扫描后查看）</pre>
+  </div>
+</section>
+
+<!-- ============ DLP ============ -->
+<section class="tab" id="tab-dlp">
+  <div class="grid">
+    <div class="card">
+      <h3>DLP 策略模拟</h3>
+      <label>模拟外发内容</label>
+      <textarea id="dlp-content" placeholder="身份证110101199001011234 手机13812345678 银行卡6222021234567890123"></textarea>
+      <label>通道</label>
+      <select id="dlp-channel"><option>email</option><option>usb</option><option>web_upload</option>
+        <option>cloud</option><option>ftp</option><option>im</option><option>print</option><option>api</option></select>
+      <label>上下文（JSON，可选）</label>
+      <textarea id="dlp-context" placeholder='{"external_recipient":true,"after_hours":true,"new_device":true}'></textarea>
+      <button class="action" onclick="runDLP()">运行策略模拟</button>
+      <div class="status" id="dlp-status"></div>
+    </div>
+    <div class="card">
+      <h3>检测结果</h3>
+      <div class="kv" id="dlp-summary"></div>
+      <div id="dlp-hits"></div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>DLP 策略库</h3>
+      <div id="dlp-policies"></div>
+    </div>
+    <div class="card">
+      <h3>DLP 风险事件</h3>
+      <div id="dlp-events"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>DLP 报告</h3>
+    <pre id="dlp-report">（运行模拟后查看）</pre>
+  </div>
+</section>
+
+<!-- ============ 隐私合规 ============ -->
+<section class="tab" id="tab-privacy">
+  <div class="grid">
+    <div class="card">
+      <h3>运行隐私合规评估</h3>
+      <label>信号（JSON，可选；留空使用默认演示信号）</label>
+      <textarea id="pv-signals" placeholder='{"legal_basis":"部分满足","consent":"部分满足","dpia":"不满足"}'></textarea>
+      <button class="action" onclick="runPrivacy()">开始评估</button>
+      <div class="status" id="pv-status"></div>
+    </div>
+    <div class="card">
+      <h3>合规得分</h3>
+      <div class="kv" id="pv-summary"></div>
+      <div id="pv-scores"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>优先整改项</h3>
+    <div id="pv-gaps"></div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>合规框架</h3>
+      <div id="pv-frameworks"></div>
+    </div>
+    <div class="card">
+      <h3>DPIA 隐私影响评估</h3>
+      <label>评估范围</label>
+      <input id="dpia-scope" placeholder="如：用户画像个性化推荐">
+      <button class="action ghost" onclick="runDPIA()">生成 DPIA</button>
+      <div id="dpia-result"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>合规报告</h3>
+    <pre id="pv-report">（运行评估后查看）</pre>
+  </div>
+</section>
+
+<!-- ============ 加密密钥 ============ -->
+<section class="tab" id="tab-encryption">
+  <div class="grid">
+    <div class="card">
+      <h3>加密配置检查</h3>
+      <label>代码/配置片段（粘贴以检测弱算法）</label>
+      <textarea id="enc-code" placeholder='crypto.createHmac("md5", key); DES.encrypt(); TLSv1.0; RC4; SHA1'></textarea>
+      <label>算法 / 密钥位数</label>
+      <div class="row">
+        <select id="enc-algo" style="width:auto"><option>AES</option><option>RSA</option>
+          <option>DES</option><option>3DES</option><option>MD5</option></select>
+        <input id="enc-bits" type="number" value="256" style="width:100px">
+      </div>
+      <button class="action" onclick="runEnc()">运行检查</button>
+      <div class="status" id="enc-status"></div>
+    </div>
+    <div class="card">
+      <h3>检查结果</h3>
+      <div class="kv" id="enc-summary"></div>
+      <div id="enc-weak"></div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>加密算法库</h3>
+      <div id="enc-algos"></div>
+    </div>
+    <div class="card">
+      <h3>证书检查</h3>
+      <div id="enc-certs"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>加固建议</h3>
+    <pre id="enc-report">（运行检查后查看）</pre>
+  </div>
+</section>
+
+<!-- ============ 访问控制 ============ -->
+<section class="tab" id="tab-access">
+  <div class="grid">
+    <div class="card">
+      <h3>访问审计（使用默认演示日志）</h3>
+      <button class="action" onclick="runAccess()">运行访问审计</button>
+      <div class="status" id="ac-status"></div>
+      <div class="kv" id="ac-summary"></div>
+    </div>
+    <div class="card">
+      <h3>异常访问检测</h3>
+      <div id="ac-anomalies"></div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>权限矩阵</h3>
+      <div id="ac-matrix"></div>
+    </div>
+    <div class="card">
+      <h3>特权账户风险</h3>
+      <div id="ac-priv"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>访问控制报告</h3>
+    <pre id="ac-report">（运行审计后查看）</pre>
+  </div>
+</section>
+
+<!-- ============ 综合评估 ============ -->
+<section class="tab" id="tab-assessment">
+  <div class="card">
+    <h3>数据安全综合评估（一键全流程）</h3>
+    <p class="muted">数据资产发现 → 分类分级 → 加密检测 → 访问控制 → DLP → 隐私合规 → 聚合评级 → 报告</p>
+    <button class="action" onclick="runAssessment()">运行综合评估</button>
+    <div class="status" id="as-status"></div>
+  </div>
+  <div class="card">
+    <h3>总览</h3>
+    <div class="kv" id="as-summary"></div>
+    <div id="as-steps"></div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>风险分布</h3>
+      <div id="as-riskdist"></div>
+    </div>
+    <div class="card">
+      <h3>修复优先级 Top</h3>
+      <div id="as-priority"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>综合报告</h3>
+    <pre id="as-report"></pre>
+  </div>
+  <div class="card">
+    <h3>评估历史</h3>
+    <div id="as-history"></div>
+  </div>
+</section>
+</main>
+
+<script>
+const BASE = "/api/v1/data-security";
+const $ = id => document.getElementById(id);
+document.querySelectorAll("#nav button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#nav button").forEach(x => x.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  $("tab-" + b.dataset.tab).classList.add("active");
+}));
+async function api(path, opts={}) {
+  const r = await fetch(BASE + path, {
+    method: opts.method || "POST",
+    headers: {"Content-Type": "application/json"},
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  return r.json();
+}
+function setStatus(id, msg, cls="") { const el=$(id); el.textContent=msg; el.className="status "+cls; }
+function pill(sev){ const s=(sev||"info").toLowerCase(); return `<span class="pill ${s}">${s}</span>`; }
+function esc(s){ return String(s==null?"":s).replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+function tbl(headers, rows){
+  if(!rows||!rows.length) return '<span class="muted">无数据</span>';
+  return "<table><tr>"+headers.map(h=>"<th>"+h+"</th>").join("")+"</tr>" +
+    rows.map(r=>"<tr>"+r.map(c=>"<td>"+c+"</td>").join("")+"</tr>").join("")+"</table>";
+}
+
+// ---------- 数据分类分级 ----------
+async function runClassify(){
+  setStatus("cls-status","扫描中...","running");
+  try{
+    const r = await api("/classification/scan", { body:{
+      content: $("cls-content").value.trim(),
+      source: $("cls-source").value.trim()||"inline",
+      owner: $("cls-owner").value.trim()||"unknown"
+    }});
+    if(!r.success){ setStatus("cls-status","失败: "+r.error,"error"); return; }
+    const res = r.data.result;
+    setStatus("cls-status","完成：整体分级 "+res.overall_level_name,"done");
+    $("cls-summary").innerHTML = `
+      <div><b>${esc(res.overall_level_name)}</b><br><span class="muted">整体分级</span></div>
+      <div><b>${res.assets_scanned||1}</b><br><span class="muted">资产</span></div>
+      <div><b>${res.total_sensitive_hits||0}</b><br><span class="muted">敏感命中</span></div>`;
+    const hits = res.inline_hit_detail?.hits||[];
+    $("cls-hits").innerHTML = tbl(["类型","类别","风险","数量"],
+      hits.map(h=>[esc(h.type_name), esc(h.category), pill(h.risk), h.count]));
+    const rr = await api("/classification/"+r.data.task_id+"/report", {method:"GET"});
+    if(rr.success) $("cls-report").textContent = rr.data.report_markdown;
+  }catch(e){ setStatus("cls-status","异常: "+e,"error"); }
+}
+async function loadTypes(){
+  try{
+    const r = await api("/classification/types"+($("cls-cat").value?("?category="+encodeURIComponent($("cls-cat").value)):""), {method:"GET"});
+    if(!r.success) return;
+    const d = r.data;
+    let rows = d.items.slice(0,60).map(t=>[esc(t.id), esc(t.name), esc(t.category), pill(t.risk)]);
+    $("cls-types").innerHTML = `<div class="muted">共 ${d.total_types} 种敏感数据类型</div>` + tbl(["ID","名称","分类","风险"], rows);
+  }catch(e){}
+}
+async function loadAssets(){
+  try{
+    const r = await api("/classification/assets", {method:"GET"});
+    if(!r.success) return;
+    $("cls-types").innerHTML = tbl(["资产ID","位置","所有者","分级","类型数"],
+      r.data.assets.map(a=>[esc(a.asset_id), esc(a.location), esc(a.owner), pill(a.level), (a.sensitive_types||[]).length]));
+  }catch(e){}
+}
+
+// ---------- DLP ----------
+async function runDLP(){
+  setStatus("dlp-status","模拟中...","running");
+  let ctx={}; try{ ctx = $("dlp-context").value.trim()?JSON.parse($("dlp-context").value):{}; }catch(e){}
+  try{
+    const r = await api("/dlp/scan", { body:{ content:$("dlp-content").value.trim(), channel:$("dlp-channel").value, context:ctx }});
+    if(!r.success){ setStatus("dlp-status","失败: "+r.error,"error"); return; }
+    const sim = r.data.result.simulation;
+    setStatus("dlp-status","完成：是否阻断="+(sim.would_block?"是":"否"),"done");
+    $("dlp-summary").innerHTML = `
+      <div><b>${esc(sim.content.max_risk)}</b><br><span class="muted">最高风险</span></div>
+      <div><b>${sim.content.total_findings||0}</b><br><span class="muted">检测项</span></div>
+      <div><b>${sim.matched_policies?.length||0}</b><br><span class="muted">命中策略</span></div>
+      <div><b>${sim.would_block?"阻断":"放行"}</b><br><span class="muted">动作</span></div>`;
+    $("dlp-hits").innerHTML = tbl(["检测","类别","风险","数量"],
+      (sim.content.detected||[]).map(d=>[esc(d.label),esc(d.category),pill(d.risk),d.count]));
+    const rr = await api("/dlp/"+r.data.task_id+"/report", {method:"GET"});
+    if(rr.success) $("dlp-report").textContent = rr.data.report_markdown;
+  }catch(e){ setStatus("dlp-status","异常: "+e,"error"); }
+}
+async function loadDLPMeta(){
+  try{
+    const p = await api("/dlp/policies", {method:"GET"});
+    if(p.success) $("dlp-policies").innerHTML = tbl(["策略","严重","通道"],
+      (p.data.policies||[]).map(x=>[esc(x.name), pill(x.severity), esc((x.channels||[]).join(","))]));
+    const e = await api("/dlp/events", {method:"GET"});
+    if(e.success) $("dlp-events").innerHTML = tbl(["事件","通道","级别","阻断"],
+      (e.data.events||[]).map(x=>[esc(x.type), esc(x.channel), pill(x.severity), x.block_suggestion?"是":"否"]));
+  }catch(e){}
+}
+
+// ---------- 隐私合规 ----------
+async function runPrivacy(){
+  setStatus("pv-status","评估中...","running");
+  let sig={}; try{ sig = $("pv-signals").value.trim()?JSON.parse($("pv-signals").value):{}; }catch(e){}
+  try{
+    const r = await api("/privacy/assess", { body:{ framework:"ALL", signals:sig }});
+    if(!r.success){ setStatus("pv-status","失败: "+r.error,"error"); return; }
+    const res = r.data.result;
+    setStatus("pv-status","完成：综合 "+res.overall_score+" ("+res.grade+")","done");
+    $("pv-summary").innerHTML = `<div><b>${res.overall_score}</b><br><span class="muted">综合分</span></div>
+      <div><b>${esc(res.grade)}</b><br><span class="muted">等级</span></div>
+      <div><b>${res.gap_count}</b><br><span class="muted">差距项</span></div>`;
+    $("pv-scores").innerHTML = tbl(["框架","得分"], Object.entries(res.scores||{}).map(([k,v])=>[esc(k), v]));
+    $("pv-gaps").innerHTML = tbl(["框架","条款","问题"],
+      (res.priority_gaps||[]).map(g=>[esc(g.framework+" "+g.ref), esc(g.name), esc(g.gap)]));
+    const rr = await api("/privacy/"+r.data.task_id+"/report", {method:"GET"});
+    if(rr.success) $("pv-report").textContent = rr.data.report_markdown;
+  }catch(e){ setStatus("pv-status","异常: "+e,"error"); }
+}
+async function loadPVFrameworks(){
+  try{
+    const r = await api("/privacy/frameworks", {method:"GET"});
+    if(r.success) $("pv-frameworks").innerHTML = tbl(["框架","地区","核心权利"],
+      Object.entries(r.data.frameworks||{}).map(([k,v])=>[esc(k), esc(v.region), esc((v.key_rights||[]).join("/"))]));
+  }catch(e){}
+}
+async function runDPIA(){
+  try{
+    const r = await api("/privacy/dpia?scope="+encodeURIComponent($("dpia-scope").value), {method:"GET"});
+    if(!r.success) return;
+    $("dpia-result").innerHTML = `<div class="kv"><div><b>${esc(r.data.risk_level)}</b><br><span class="muted">残余风险</span></div></div>`
+      + tbl(["风险","可能性","影响","处置"], r.data.risks.map(x=>[esc(x.risk),x.likelihood,x.impact,esc(x.treatment)]));
+  }catch(e){}
+}
+
+// ---------- 加密密钥 ----------
+async function runEnc(){
+  setStatus("enc-status","检查中...","running");
+  try{
+    const r = await api("/encryption/check", { body:{
+      code_sample: $("enc-code").value, algorithm: $("enc-algo").value,
+      declared_bits: parseInt($("enc-bits").value)||256
+    }});
+    if(!r.success){ setStatus("enc-status","失败: "+r.error,"error"); return; }
+    const res = r.data.result;
+    setStatus("enc-status","完成：得分 "+res.overall_score+" ("+res.grade+")","done");
+    $("enc-summary").innerHTML = `<div><b>${res.overall_score}</b><br><span class="muted">得分</span></div>
+      <div><b>${res.grade}</b><br><span class="muted">等级</span></div>
+      <div><b>${res.algorithms.weak_count}</b><br><span class="muted">弱算法</span></div>`;
+    $("enc-weak").innerHTML = tbl(["弱算法","建议"],
+      (res.algorithms.weak_algorithms||[]).map(w=>[esc(w.algorithm), esc(w.recommended)]));
+    $("enc-report").textContent = res.hardening.map((h,i)=>(i+1)+". "+h).join("\n");
+  }catch(e){ setStatus("enc-status","异常: "+e,"error"); }
+}
+async function loadEncMeta(){
+  try{
+    const a = await api("/encryption/algorithms", {method:"GET"});
+    if(a.success) $("enc-algos").innerHTML = tbl(["算法","类型","推荐"],
+      Object.values(a.data.algorithms||{}).slice(0,30).map(x=>[esc(Object.keys(a.data.algorithms).find(k=>a.data.algorithms[k]===x)||""), esc(x.type), esc(x.recommended)]));
+    const c = await api("/encryption/certificates", {method:"GET"});
+    if(c.success) $("enc-certs").innerHTML = tbl(["主题","有效期","问题"],
+      (c.data.certificates||[]).map(x=>[esc(x.subject), esc(x.not_after), esc((x.issues||[]).join("; "))]));
+  }catch(e){}
+}
+
+// ---------- 访问控制 ----------
+async function runAccess(){
+  setStatus("ac-status","审计中...","running");
+  try{
+    const r = await api("/access/audit", { body:{} });
+    if(!r.success){ setStatus("ac-status","失败: "+r.error,"error"); return; }
+    const res = r.data.result;
+    setStatus("ac-status","完成：得分 "+res.overall_score,"done");
+    $("ac-summary").innerHTML = `<div><b>${res.overall_score}</b><br><span class="muted">得分</span></div>
+      <div><b>${res.grade}</b><br><span class="muted">等级</span></div>
+      <div><b>${res.anomalies.length}</b><br><span class="muted">异常</span></div>`;
+    $("ac-anomalies").innerHTML = tbl(["用户","操作","原因","级别"],
+      res.anomalies.map(x=>[esc(x.user), esc(x.action), esc(x.reasons.join(",")), pill(x.severity)]));
+    $("ac-priv").innerHTML = tbl(["账户","类型","风险标记"],
+      res.privileged_accounts.accounts.map(x=>[esc(x.name), esc(x.type), esc(x.flags.join(","))]));
+    const rr = await api("/access/"+r.data.task_id+"/report", {method:"GET"});
+    if(rr.success) $("ac-report").textContent = rr.data.report_markdown;
+  }catch(e){ setStatus("ac-status","异常: "+e,"error"); }
+}
+async function loadAccessMeta(){
+  try{
+    const m = await api("/access/matrix", {method:"GET"});
+    if(m.success) $("ac-matrix").innerHTML = tbl(["用户","角色","权限范围"],
+      m.data.matrix.map(x=>[esc(x.name), esc(x.role), esc((x.permissions||[]).join("/"))]));
+  }catch(e){}
+}
+
+// ---------- 综合评估 ----------
+async function runAssessment(){
+  setStatus("as-status","综合评估运行中...","running");
+  try{
+    const r = await api("/assessment/run", { body:{} });
+    if(!r.success){ setStatus("as-status","失败: "+r.error,"error"); return; }
+    const res = r.data.result;
+    const rating = res.rating||{};
+    setStatus("as-status","完成："+rating.risk_level+" ("+rating.risk_score+"分)","done");
+    $("as-summary").innerHTML = `
+      <div><b>${esc(rating.risk_level)}</b><br><span class="muted">风险等级</span></div>
+      <div><b>${rating.risk_score}</b><br><span class="muted">风险评分</span></div>
+      <div><b>${res.aggregate.total_findings}</b><br><span class="muted">总发现</span></div>
+      <div><b>${res.classification.assets_scanned}</b><br><span class="muted">资产</span></div>`;
+    $("as-steps").innerHTML = tbl(["步骤","状态","说明"],
+      (res.workflow_steps||[]).map(s=>[esc(s.step), pill(s.status==="ok"?"low":"critical"), esc(s.message)]));
+    const bs = res.aggregate.by_severity||{};
+    $("as-riskdist").innerHTML = tbl(["级别","数量"],
+      Object.entries(bs).map(([k,v])=>[pill(k), v]));
+    $("as-priority").innerHTML = tbl(["优先级","模块","问题"],
+      (rating.top_priorities||[]).map(p=>[pill(p.severity), esc(p.module), esc(p.title+" — "+p.action)]));
+    $("as-report").textContent = res.conclusion||"";
+  }catch(e){ setStatus("as-status","异常: "+e,"error"); }
+}
+async function loadHistory(){
+  try{
+    const r = await api("/assessment/history", {method:"GET"});
+    if(r.success) $("as-history").innerHTML = tbl(["Scan ID","完成时间","风险","发现数"],
+      (r.data.history||[]).map(x=>[esc(x.scan_id), esc(x.finished_at), esc(x.risk_level), x.total_findings]));
+  }catch(e){}
+}
+
+// 初始化
+loadTypes(); loadDLPMeta(); loadPVFrameworks(); loadEncMeta(); loadAccessMeta(); loadHistory();
+</script>
+</body>
+</html>

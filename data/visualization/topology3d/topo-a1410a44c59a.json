@@ -1,0 +1,487 @@
+{
+  "id": "topo-a1410a44c59a",
+  "layout": "force",
+  "nodes": [
+    {
+      "id": "node-000",
+      "name": "iot-000",
+      "type": "iot",
+      "ip": "10.0.3.123",
+      "os": "Windows Server",
+      "status": "offline",
+      "risk_score": 54.2,
+      "position": {
+        "x": -3.73,
+        "y": -16.8,
+        "z": 18.61
+      },
+      "size": 1.3929015633775044,
+      "color": "#ffd93b",
+      "shape": "octahedron"
+    },
+    {
+      "id": "node-001",
+      "name": "application-001",
+      "type": "application",
+      "ip": "10.0.4.83",
+      "os": "Kali",
+      "status": "online",
+      "risk_score": 13.5,
+      "position": {
+        "x": 11.5,
+        "y": 12.73,
+        "z": -16.7
+      },
+      "size": 0.8943900789765453,
+      "color": "#ff9f2e",
+      "shape": "plane"
+    },
+    {
+      "id": "node-002",
+      "name": "terminal-002",
+      "type": "terminal",
+      "ip": "10.0.3.216",
+      "os": "Windows Server",
+      "status": "offline",
+      "risk_score": 69.0,
+      "position": {
+        "x": -15.28,
+        "y": -17.42,
+        "z": -21.29
+      },
+      "size": 1.0597472070337337,
+      "color": "#7bd88f",
+      "shape": "cube"
+    },
+    {
+      "id": "node-003",
+      "name": "iot-003",
+      "type": "iot",
+      "ip": "10.0.2.190",
+      "os": "Windows Server",
+      "status": "online",
+      "risk_score": 14.6,
+      "position": {
+        "x": 6.46,
+        "y": 18.87,
+        "z": 1.25
+      },
+      "size": 1.1377491905022175,
+      "color": "#ffd93b",
+      "shape": "octahedron"
+    },
+    {
+      "id": "node-004",
+      "name": "server-004",
+      "type": "server",
+      "ip": "10.0.2.96",
+      "os": "CentOS7",
+      "status": "online",
+      "risk_score": 45.9,
+      "position": {
+        "x": 4.39,
+        "y": -5.22,
+        "z": -7.74
+      },
+      "size": 0.7804576349414146,
+      "color": "#3b9dff",
+      "shape": "sphere"
+    },
+    {
+      "id": "node-005",
+      "name": "terminal-005",
+      "type": "terminal",
+      "ip": "10.0.4.55",
+      "os": "Ubuntu22",
+      "status": "offline",
+      "risk_score": 53.3,
+      "position": {
+        "x": -9.06,
+        "y": -0.32,
+        "z": -13.06
+      },
+      "size": 1.185064864849036,
+      "color": "#7bd88f",
+      "shape": "cube"
+    },
+    {
+      "id": "node-006",
+      "name": "application-006",
+      "type": "application",
+      "ip": "10.0.0.132",
+      "os": "Windows Server",
+      "status": "online",
+      "risk_score": 48.8,
+      "position": {
+        "x": 0.76,
+        "y": 14.14,
+        "z": 18.28
+      },
+      "size": 0.8482426749070335,
+      "color": "#ff9f2e",
+      "shape": "plane"
+    },
+    {
+      "id": "node-007",
+      "name": "application-007",
+      "type": "application",
+      "ip": "10.0.1.129",
+      "os": "CentOS7",
+      "status": "online",
+      "risk_score": 16.9,
+      "position": {
+        "x": 9.73,
+        "y": -2.89,
+        "z": 8.0
+      },
+      "size": 1.092603448685411,
+      "color": "#ff9f2e",
+      "shape": "plane"
+    },
+    {
+      "id": "node-008",
+      "name": "network-008",
+      "type": "network",
+      "ip": "10.0.5.222",
+      "os": "Kali",
+      "status": "warning",
+      "risk_score": 40.6,
+      "position": {
+        "x": -7.94,
+        "y": 0.52,
+        "z": 3.92
+      },
+      "size": 1.351096751838014,
+      "color": "#00e5ff",
+      "shape": "box"
+    },
+    {
+      "id": "node-009",
+      "name": "terminal-009",
+      "type": "terminal",
+      "ip": "10.0.1.60",
+      "os": "CentOS7",
+      "status": "online",
+      "risk_score": 61.3,
+      "position": {
+        "x": -4.47,
+        "y": -21.34,
+        "z": 0.18
+      },
+      "size": 1.365420974274166,
+      "color": "#7bd88f",
+      "shape": "cube"
+    },
+    {
+      "id": "node-010",
+      "name": "server-010",
+      "type": "server",
+      "ip": "10.0.2.59",
+      "os": "CentOS7",
+      "status": "offline",
+      "risk_score": 42.3,
+      "position": {
+        "x": 17.34,
+        "y": -8.35,
+        "z": -3.88
+      },
+      "size": 1.060263166497692,
+      "color": "#3b9dff",
+      "shape": "sphere"
+    },
+    {
+      "id": "node-011",
+      "name": "network-011",
+      "type": "network",
+      "ip": "10.0.3.191",
+      "os": "Kali",
+      "status": "online",
+      "risk_score": 49.9,
+      "position": {
+        "x": -6.13,
+        "y": 18.39,
+        "z": -14.6
+      },
+      "size": 1.1992398129660167,
+      "color": "#00e5ff",
+      "shape": "box"
+    }
+  ],
+  "links": [
+    {
+      "source": "node-000",
+      "target": "node-010",
+      "bandwidth": 100,
+      "traffic": 62.8,
+      "risk": 48.2,
+      "protocol": "TCP",
+      "color": "#ff9f2e",
+      "thickness": 1.884,
+      "animated": false
+    },
+    {
+      "source": "node-001",
+      "target": "node-011",
+      "bandwidth": 1000,
+      "traffic": 327.5,
+      "risk": 31.7,
+      "protocol": "TCP",
+      "color": "#3b9dff",
+      "thickness": 0.9825,
+      "animated": false
+    },
+    {
+      "source": "node-001",
+      "target": "node-007",
+      "bandwidth": 10000,
+      "traffic": 8897.5,
+      "risk": 15.2,
+      "protocol": "HTTPS",
+      "color": "#3b9dff",
+      "thickness": 2.66925,
+      "animated": false
+    },
+    {
+      "source": "node-001",
+      "target": "node-008",
+      "bandwidth": 100,
+      "traffic": 93.2,
+      "risk": 27.1,
+      "protocol": "SSH",
+      "color": "#3b9dff",
+      "thickness": 2.7960000000000003,
+      "animated": false
+    },
+    {
+      "source": "node-002",
+      "target": "node-004",
+      "bandwidth": 10,
+      "traffic": 5.9,
+      "risk": 57.5,
+      "protocol": "HTTPS",
+      "color": "#ff9f2e",
+      "thickness": 1.7700000000000002,
+      "animated": false
+    },
+    {
+      "source": "node-003",
+      "target": "node-008",
+      "bandwidth": 1000,
+      "traffic": 336.2,
+      "risk": 27.6,
+      "protocol": "HTTPS",
+      "color": "#3b9dff",
+      "thickness": 1.0086,
+      "animated": false
+    },
+    {
+      "source": "node-004",
+      "target": "node-003",
+      "bandwidth": 10000,
+      "traffic": 2301.6,
+      "risk": 30.2,
+      "protocol": "HTTP",
+      "color": "#3b9dff",
+      "thickness": 0.69048,
+      "animated": false
+    },
+    {
+      "source": "node-004",
+      "target": "node-009",
+      "bandwidth": 10,
+      "traffic": 4.7,
+      "risk": 53.6,
+      "protocol": "SSH",
+      "color": "#ff9f2e",
+      "thickness": 1.4100000000000001,
+      "animated": false
+    },
+    {
+      "source": "node-005",
+      "target": "node-009",
+      "bandwidth": 1000,
+      "traffic": 239.6,
+      "risk": 57.3,
+      "protocol": "UDP",
+      "color": "#ff9f2e",
+      "thickness": 0.7188,
+      "animated": false
+    },
+    {
+      "source": "node-005",
+      "target": "node-007",
+      "bandwidth": 10,
+      "traffic": 3.9,
+      "risk": 35.1,
+      "protocol": "UDP",
+      "color": "#3b9dff",
+      "thickness": 1.17,
+      "animated": false
+    },
+    {
+      "source": "node-005",
+      "target": "node-011",
+      "bandwidth": 1000,
+      "traffic": 819.6,
+      "risk": 51.6,
+      "protocol": "TCP",
+      "color": "#ff9f2e",
+      "thickness": 2.4588,
+      "animated": false
+    },
+    {
+      "source": "node-006",
+      "target": "node-003",
+      "bandwidth": 10000,
+      "traffic": 9092.1,
+      "risk": 31.7,
+      "protocol": "HTTPS",
+      "color": "#3b9dff",
+      "thickness": 2.7276300000000004,
+      "animated": false
+    },
+    {
+      "source": "node-006",
+      "target": "node-004",
+      "bandwidth": 100,
+      "traffic": 58.1,
+      "risk": 47.3,
+      "protocol": "TCP",
+      "color": "#ff9f2e",
+      "thickness": 1.7429999999999999,
+      "animated": false
+    },
+    {
+      "source": "node-007",
+      "target": "node-004",
+      "bandwidth": 1000,
+      "traffic": 563.7,
+      "risk": 31.4,
+      "protocol": "HTTPS",
+      "color": "#3b9dff",
+      "thickness": 1.6911000000000003,
+      "animated": false
+    },
+    {
+      "source": "node-008",
+      "target": "node-000",
+      "bandwidth": 10000,
+      "traffic": 4747.8,
+      "risk": 47.4,
+      "protocol": "SSH",
+      "color": "#ff9f2e",
+      "thickness": 1.4243400000000002,
+      "animated": false
+    },
+    {
+      "source": "node-008",
+      "target": "node-004",
+      "bandwidth": 10000,
+      "traffic": 3904.0,
+      "risk": 43.2,
+      "protocol": "TCP",
+      "color": "#ff9f2e",
+      "thickness": 1.1712,
+      "animated": false
+    },
+    {
+      "source": "node-009",
+      "target": "node-000",
+      "bandwidth": 10000,
+      "traffic": 1287.9,
+      "risk": 57.8,
+      "protocol": "TCP",
+      "color": "#ff9f2e",
+      "thickness": 0.5,
+      "animated": false
+    },
+    {
+      "source": "node-009",
+      "target": "node-008",
+      "bandwidth": 1000,
+      "traffic": 672.8,
+      "risk": 51.0,
+      "protocol": "TCP",
+      "color": "#ff9f2e",
+      "thickness": 2.0183999999999997,
+      "animated": false
+    },
+    {
+      "source": "node-010",
+      "target": "node-004",
+      "bandwidth": 10,
+      "traffic": 7.5,
+      "risk": 44.1,
+      "protocol": "HTTPS",
+      "color": "#ff9f2e",
+      "thickness": 2.25,
+      "animated": false
+    },
+    {
+      "source": "node-010",
+      "target": "node-005",
+      "bandwidth": 10,
+      "traffic": 5.7,
+      "risk": 47.8,
+      "protocol": "TCP",
+      "color": "#ff9f2e",
+      "thickness": 1.7100000000000002,
+      "animated": false
+    },
+    {
+      "source": "node-010",
+      "target": "node-011",
+      "bandwidth": 10,
+      "traffic": 6.1,
+      "risk": 46.1,
+      "protocol": "UDP",
+      "color": "#ff9f2e",
+      "thickness": 1.83,
+      "animated": false
+    },
+    {
+      "source": "node-011",
+      "target": "node-003",
+      "bandwidth": 10,
+      "traffic": 3.6,
+      "risk": 32.2,
+      "protocol": "HTTPS",
+      "color": "#3b9dff",
+      "thickness": 1.08,
+      "animated": false
+    }
+  ],
+  "lod": {
+    "level": "high",
+    "clusters": {}
+  },
+  "clusters": {
+    "10.0.3": [
+      "node-000",
+      "node-002",
+      "node-011"
+    ],
+    "10.0.4": [
+      "node-001",
+      "node-005"
+    ],
+    "10.0.2": [
+      "node-003",
+      "node-004",
+      "node-010"
+    ],
+    "10.0.0": [
+      "node-006"
+    ],
+    "10.0.1": [
+      "node-007",
+      "node-009"
+    ],
+    "10.0.5": [
+      "node-008"
+    ]
+  },
+  "options": {
+    "node_count": 12
+  }
+}

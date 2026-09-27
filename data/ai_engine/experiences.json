@@ -1,0 +1,30 @@
+[
+  {
+    "experience_id": "eccaa3f6-defd-4b65-a5c1-438f5b3e7150",
+    "learning_type": "experience",
+    "scenario": "test",
+    "action": "test_action",
+    "outcome": "success",
+    "success": true,
+    "reward": 0.8,
+    "context": {},
+    "learned_pattern": "test_test_action",
+    "confidence": 0.8,
+    "created_at": 1788168299.412198,
+    "usage_count": 0
+  },
+  {
+    "experience_id": "6add012a-edfb-4bf5-b023-1c41d2e68635",
+    "learning_type": "experience",
+    "scenario": "test",
+    "action": "test_action",
+    "outcome": "success",
+    "success": true,
+    "reward": 0.8,
+    "context": {},
+    "learned_pattern": "test_test_action",
+    "confidence": 0.8,
+    "created_at": 1788168315.9424393,
+    "usage_count": 0
+  }
+]

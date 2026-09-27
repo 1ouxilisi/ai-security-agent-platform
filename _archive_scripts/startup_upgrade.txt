@@ -1,0 +1,237 @@
+
+╔══════════════════════════════════════════════════════════════╗
+║           AI Hacking Agent - v6.0 (全面升级版)               ║
+║   MCP + 多智能体 + 插件系统 + CVE知识库 + Web UI             ║
+╚══════════════════════════════════════════════════════════════╝
+    
+🌐 FastAPI REST API 服务
+📍 监听地址: http://127.0.0.1:8000
+📚 API文档: http://127.0.0.1:8000/docs
+🔴 ReDoc文档: http://127.0.0.1:8000/redoc
+
+API端点:
+  GET  /health                    - 健康检查
+  GET  /api/v1/tools              - 列出工具
+  POST /api/v1/tools/call         - 调用工具
+  POST /api/v1/tasks              - 创建任务
+  GET  /api/v1/tasks              - 列出任务
+  GET  /api/v1/tasks/{id}         - 任务详情
+  POST /api/v1/agents/react       - ReAct推理
+  POST /api/v1/knowledge/rag      - RAG检索
+  GET  /api/v1/system/stats       - 系统统计
+  WS   /ws/tasks/{id}             - 实时进度
+
+按 Ctrl+C 停止服务
+------------------------------------------------------------
+[Enterprise] 企业级功能已加载：数据库持久化+持续监控+用户认证
+第35轮 误报率优化Pro路由已注册
+第35轮 LLM极致路由已注册
+第35轮 商业极致路由已注册
+第35轮 性能极致Pro路由已注册
+第35轮 前端页面已注册: /fp-optimizer-pro /llm-ultra /commercial-ultra /performance-ultra-pro
+方向4 Web渗透Pro路由已注册 (45端点: 五阶段/CVE库/DVWA)
+方向4 控制台页面已注册: /web-pentest-pro
+方向3 极简模式路由已注册 (21端点)
+方向3 控制台页面已注册: /simple-console
+方向5 本地靶场路由已注册 (26端点)
+方向5 控制台页面已注册: /target-lab
+方向3 云安全Pro路由已注册 (含 WebSocket /ws)
+方向3 控制台页面已注册: /cloud-security-pro
+方向1 内网渗透Pro路由已注册 (52端点: 五阶段/AI/报告/WS)
+方向1 控制台页面已注册: /internal-pentest-pro
+方向2 移动安全Pro路由已注册 (40+端点: 五阶段/25规则/Frida/WebSocket)
+方向2 控制台页面已注册: /mobile-pentest-pro
+方向1 红蓝对抗Pro路由已注册 (69端点: 6红+3蓝+紫/AI/报告/WS)
+方向1 控制台页面已注册: /red-blue-pro
+方向3 DevSecOps Pro 路由已注册 (47端点: 八阶段/AI/WebSocket/报告)
+方向3 控制台页面已注册: /devsecops-pro
+方向1 SOC Pro 路由已注入（七阶段 / 58 检测规则 / AI / WebSocket / 大屏 / 报告）
+方向1 控制台页面已注册: /soc-pro
+方向2 威胁情报Pro路由已注册 (八阶段/IOC/Actor/攻击面/暗网/STIX/WebSocket)
+方向2 控制台页面已注册: /threat-intel-pro
+方向2 取证Pro路由已注册（八阶段 / 94端点 / AI / WebSocket / 大屏 / 报告）
+方向2 控制台页面已注册: /forensics-pro
+方向3 工控IoT Pro 路由已注入（八阶段 / 85端点 / AI / WebSocket / 大屏 / 报告）
+方向3 控制台页面已注册: /iot-ot-pro
+方向2 SRC Pro 路由已注入（八阶段 / 80+端点 / AI / WebSocket / 大屏 / 报告）
+方向2 控制台页面已注册: /src-platform-pro
+方向3 安全培训 Pro 路由已注入（八阶段 / AI / WebSocket / 大屏 / 报告）
+方向3 控制台页面已注册: /security-training-pro
+方向1 CTF Pro 路由已注入（八阶段 / 8大题型 / Docker部署 / AI / WebSocket / CTF大屏 / 报告）
+方向1 CTF 控制台页面已注册: /ctf-pro
+统一 SOC Center 路由已注册：/api/v1/soc-center（54 REST + 统一 WebSocket）
+统一 SOC Center 页面已注册：/soc-center
+领域联动工作流 路由已注册：/api/v1/workflow-linkage（35 REST）
+领域联动工作流 页面已注册：/workflow-linkage
+
+-----
+
+WeasyPrint could not import some external libraries. Please carefully follow the installation steps before reporting an issue:
+https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation
+https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#troubleshooting 
+
+-----
+
+方向3 PDF报告路由已注册：/api/v1/pdf-report（40+端点）
+方向3 报告中心页面已注册：/report-center
+方向5 验证中心路由已注册：/api/v1/validation（40+端点）
+方向5 验证中心页面已注册：/validation-center
+方向2 移动安全真实化路由已注册 (50+端点: 真实反编译/androguard/Frida/脱壳)
+方向2 真实化控制台页面已注册: /mobile-pentest-real
+方向1 内网渗透真实化: 兼容旧前缀 /api/v1/internal-real 已挂载
+方向3 云安全真实版路由已注册: /api/v1/cloud-security-real (60+ REST)
+方向3 云安全真实版页面已注册: /cloud-security-real
+方向4 红蓝对抗真实化路由已注册 (118端点: 红8战术+蓝5能力+紫+C2工具+导航+报告+WS)
+方向4 控制台页面已注册: /red-blue-real
+INFO:     127.0.0.1:59977 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59978 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:18707 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:18708 - "GET /api/v1/vuln-scan/templates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:18709 - "GET /api/v1/ranges HTTP/1.1" 200 OK
+INFO:     127.0.0.1:18712 - "GET /api/v1/ranges/juice-shop/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:18713 - "GET /api/v1/ranges/juice-shop/vulnerabilities HTTP/1.1" 200 OK
+INFO:     127.0.0.1:18715 - "POST /api/v1/deep-recon/tech-stack HTTP/1.1" 200 OK
+INFO:     127.0.0.1:18717 - "POST /api/v1/deep-recon/directory HTTP/1.1" 200 OK
+INFO:     127.0.0.1:18815 - "POST /api/v1/deep-recon/api-endpoints HTTP/1.1" 200 OK
+INFO:     127.0.0.1:18898 - "POST /api/v1/vuln-scan/scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:18928 - "POST /api/v1/asm/full-assessment HTTP/1.1" 200 OK
+INFO:     127.0.0.1:27550 - "GET / HTTP/1.0" 200 OK
+INFO:     127.0.0.1:27615 - "GET /nice%20ports%2C/Trinity.txt.bak HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:27642 - "OPTIONS / HTTP/1.0" 405 Method Not Allowed
+INFO:     127.0.0.1:35630 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35632 - "GET /nmaplowercheck1789950631 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35633 - "GET http%3A//www.google.com HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:35640 - "OPTIONS / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35655 - "HEAD http%3A//www.google.com HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:35656 - "QJMI / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35654 - "GET /HNAP1 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35658 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35665 - "POST /sdk HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35667 - "PROPFIND / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35672 - "PROPFIND / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35682 - "GET /evox/about HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35685 - "CONNECT www.google.com%3A80 HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:35688 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35698 - "GET /.git/HEAD HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35711 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35721 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35731 - "OPTIONS / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35767 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35783 - "OPTIONS / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35789 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35797 - "PROPFIND / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35798 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35801 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35809 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35815 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35818 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35821 - "OPTIONS / HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:35822 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35823 - "OPTIONS / HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:35824 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35869 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45429 - "GET / HTTP/1.0" 200 OK
+INFO:     127.0.0.1:45502 - "GET /nice%20ports%2C/Trinity.txt.bak HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:45533 - "OPTIONS / HTTP/1.0" 405 Method Not Allowed
+INFO:     127.0.0.1:45770 - "OPTIONS / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45759 - "GET http%3A//www.google.com HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:45768 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45788 - "HEAD http%3A//www.google.com HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:45796 - "NLJV / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45807 - "CONNECT www.google.com%3A80 HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:45811 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45813 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45814 - "GET /nmaplowercheck1789951305 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45822 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45823 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45833 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45838 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45834 - "GET /HNAP1 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45843 - "GET /.git/HEAD HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45855 - "OPTIONS / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45860 - "PROPFIND / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45870 - "POST /sdk HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45902 - "PROPFIND / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45918 - "OPTIONS / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45920 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45933 - "PROPFIND / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45934 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45950 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45958 - "GET /evox/about HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45966 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45974 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45979 - "OPTIONS / HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:45983 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45987 - "OPTIONS / HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:45992 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46014 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:15830 - "GET / HTTP/1.0" 200 OK
+INFO:     127.0.0.1:58074 - "GET /nice%20ports%2C/Trinity.txt.bak HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:58080 - "OPTIONS / HTTP/1.0" 405 Method Not Allowed
+INFO:     127.0.0.1:45401 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45413 - "GET /nmaplowercheck1789952157 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45430 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45435 - "GET /evox/about HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45436 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45465 - "GET /HNAP1 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45489 - "OPTIONS / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45488 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45493 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45513 - "LLQG / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45515 - "PROPFIND / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45522 - "GET /.git/HEAD HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45524 - "GET http%3A//www.google.com HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:45541 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45550 - "HEAD http%3A//www.google.com HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:45554 - "OPTIONS / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45562 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45573 - "CONNECT www.google.com%3A80 HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:45588 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45591 - "OPTIONS / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45592 - "PROPFIND / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45602 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45604 - "POST /sdk HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45620 - "PROPFIND / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45627 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45634 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45637 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44921 - "OPTIONS / HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:44924 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44925 - "OPTIONS / HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:44928 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65516 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34602 - "GET / HTTP/1.0" 200 OK
+INFO:     127.0.0.1:34709 - "GET /nice%20ports%2C/Trinity.txt.bak HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:28915 - "OPTIONS / HTTP/1.0" 405 Method Not Allowed
+INFO:     127.0.0.1:45136 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45159 - "OPTIONS / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45161 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45187 - "PROPFIND / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45175 - "GET http%3A//www.google.com HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:45221 - "WCPB / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45248 - "HEAD http%3A//www.google.com HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:45256 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45260 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45263 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45266 - "POST /sdk HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45276 - "CONNECT www.google.com%3A80 HTTP/1.0" 404 Not Found
+INFO:     127.0.0.1:45270 - "GET /nmaplowercheck1789952702 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45294 - "PROPFIND / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45297 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45303 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45308 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45313 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45314 - "GET /evox/about HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45321 - "OPTIONS / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45320 - "GET /HNAP1 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45326 - "OPTIONS / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45341 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45343 - "GET /.git/HEAD HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45347 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45350 - "PROPFIND / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45361 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45365 - "OPTIONS / HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:45369 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45373 - "OPTIONS / HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:45375 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46163 - "GET / HTTP/1.1" 200 OK

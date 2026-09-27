@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="page.workflow.title">AI Hacking Agent - 工作流控制台 v7</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0d1117; color: #c9d1d9; font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-size: 14px; min-width: 1024px;
+}
+header {
+  background: #161b22; border-bottom: 1px solid #30363d; padding: 12px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+header h1 { color: #58a6ff; font-size: 18px; font-weight: 600; }
+header .sub { color: #8b949e; font-size: 12px; }
+.tabs { display: flex; background: #161b22; border-bottom: 1px solid #30363d; padding: 0 24px; }
+.tab-btn {
+  background: none; border: none; color: #8b949e; padding: 12px 18px; cursor: pointer;
+  font-size: 14px; border-bottom: 2px solid transparent;
+}
+.tab-btn.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+.tab-btn:hover { color: #c9d1d9; }
+.tab-pane { display: none; padding: 20px 24px; }
+.tab-pane.active { display: block; }
+.card {
+  background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 16px; margin-bottom: 16px;
+}
+.card h3 { color: #e6edf3; font-size: 15px; margin-bottom: 12px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.tpl-card {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 14px;
+  cursor: pointer; transition: border-color .15s;
+}
+.tpl-card:hover { border-color: #58a6ff; }
+.tpl-card .name { color: #58a6ff; font-weight: 600; margin-bottom: 6px; }
+.tpl-card .desc { color: #8b949e; font-size: 12px; line-height: 1.5; margin-bottom: 8px; }
+.tpl-card .meta { color: #8b949e; font-size: 11px; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 6px; }
+.badge-running { background: #1f6feb33; color: #58a6ff; }
+.badge-completed { background: #3fb95033; color: #3fb950; }
+.badge-failed { background: #f8514933; color: #f85149; }
+.badge-pending { background: #8b949e33; color: #8b949e; }
+.badge-paused { background: #d2992233; color: #d29922; }
+.badge-skipped { background: #8b949e33; color: #8b949e; }
+.badge-cancelled { background: #f8514933; color: #f85149; }
+button {
+  background: #21262d; color: #c9d1d9; border: 1px solid #30363d; border-radius: 4px;
+  padding: 6px 14px; cursor: pointer; font-size: 13px;
+}
+button:hover { background: #30363d; border-color: #58a6ff; }
+button.primary { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+button.danger { background: #da3633; border-color: #da3633; color: #fff; }
+button.sm { padding: 3px 10px; font-size: 12px; }
+input, select, textarea {
+  background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; border-radius: 4px;
+  padding: 6px 10px; font-size: 13px; width: 100%;
+}
+textarea { font-family: Consolas, monospace; min-height: 120px; }
+label { display: block; color: #8b949e; font-size: 12px; margin: 8px 0 4px; }
+.row { display: flex; gap: 12px; }
+.row > div { flex: 1; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #30363d; }
+th { color: #8b949e; font-weight: 500; font-size: 12px; }
+tr:hover td { background: #161b22; }
+.progress-wrap { background: #21262d; border-radius: 4px; height: 18px; overflow: hidden; }
+.progress-bar { height: 100%; background: linear-gradient(90deg, #1f6feb, #58a6ff); transition: width .3s; }
+.step-item { padding: 8px 10px; border-bottom: 1px solid #21262d; display: flex; align-items: center; gap: 10px; }
+.step-item .icon { width: 18px; text-align: center; }
+.step-item .name { flex: 1; }
+.step-item .dur { color: #8b949e; font-size: 12px; }
+.log-area {
+  background: #010409; border: 1px solid #30363d; border-radius: 4px; padding: 10px;
+  font-family: Consolas, monospace; font-size: 12px; height: 260px; overflow-y: auto;
+}
+.log-area .info { color: #c9d1d9; }
+.log-area .warning { color: #d29922; }
+.log-area .error { color: #f85149; }
+.gauge {
+  width: 140px; height: 140px; border-radius: 50%; margin: 0 auto;
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+}
+.gauge .score { font-size: 36px; font-weight: 700; }
+.gauge .level { font-size: 13px; }
+.vuln-critical { color: #f85149; }
+.vuln-high { color: #ff7b72; }
+.vuln-medium { color: #d29922; }
+.vuln-low { color: #58a6ff; }
+.vuln-info { color: #8b949e; }
+.muted { color: #8b949e; font-size: 12px; }
+.popup-mask {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 100;
+  align-items: center; justify-content: center;
+}
+.popup-mask.show { display: flex; }
+.popup { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 24px; width: 420px; }
+.popup h3 { margin-bottom: 16px; color: #e6edf3; }
+.two-col { display: grid; grid-template-columns: 320px 1fr; gap: 16px; }
+.instance-list-item { padding: 10px; border-bottom: 1px solid #21262d; cursor: pointer; }
+.instance-list-item:hover { background: #161b22; }
+.instance-list-item.selected { border-left: 3px solid #58a6ff; background: #161b22; }
+.json-view { font-family: Consolas, monospace; font-size: 12px; white-space: pre-wrap;
+  background: #010409; padding: 8px; border-radius: 4px; max-height: 300px; overflow: auto; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+@media (max-width: 1024px) {
+  body { min-width: 0; }
+  .two-col, .row { grid-template-columns: 1fr; display: block; }
+  .row > div { margin-bottom: 10px; }
+}
+</style>
+<link rel="stylesheet" href="/static/css/responsive.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1 data-i18n="page.workflow.title">AI Hacking Agent · 工作流控制台 v7</h1>
+    <div class="sub">DAG 步骤级执行引擎 · 8 类安全评估模板 · 仅用于授权测试</div>
+  </div>
+  <div class="muted" id="clock"></div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="tpl">模板中心</button>
+  <button class="tab-btn" data-tab="monitor">执行监控</button>
+  <button class="tab-btn" data-tab="result">结果查看</button>
+  <button class="tab-btn" data-tab="history">执行历史</button>
+  <button class="tab-btn" data-tab="builder">自定义构建</button>
+  <button class="tab-btn" data-tab="schedule">定时任务</button>
+</div>
+
+<!-- ============ Tab1 模板中心 ============ -->
+<div class="tab-pane active" id="tab-tpl">
+  <div class="card"><h3>预定义工作流模板（点击卡片展开步骤DAG）</h3><div class="grid" id="tplGrid"></div></div>
+</div>
+
+<!-- ============ Tab2 执行监控 ============ -->
+<div class="tab-pane" id="tab-monitor">
+  <div class="two-col">
+    <div class="card">
+      <div class="flex-between"><h3>工作流实例</h3><button class="sm" onclick="loadInstances()">刷新</button></div>
+      <div id="instanceList"></div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="flex-between">
+          <h3 id="monTitle">未选择实例</h3>
+          <div>
+            <button class="sm" onclick="pauseCurrent()">暂停</button>
+            <button class="sm" onclick="resumeCurrent()">继续</button>
+            <button class="sm danger" onclick="cancelCurrent()">取消</button>
+          </div>
+        </div>
+        <div class="progress-wrap" style="margin:10px 0;"><div class="progress-bar" id="monBar" style="width:0%"></div></div>
+        <div class="muted" id="monProgress"></div>
+        <div id="stepList" style="margin-top:10px;"></div>
+      </div>
+      <div class="card">
+        <h3>实时日志</h3>
+        <div class="log-area" id="logArea"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Tab3 结果查看 ============ -->
+<div class="tab-pane" id="tab-result">
+  <div class="card">
+    <h3>聚合结果</h3>
+    <div id="resultArea"><span class="muted">请先在"执行监控"中选择已完成的实例，或点击下方刷新。</span></div>
+  </div>
+</div>
+
+<!-- ============ Tab4 执行历史 ============ -->
+<div class="tab-pane" id="tab-history">
+  <div class="card">
+    <div class="flex-between">
+      <h3>执行历史</h3>
+      <div>
+        <select id="histStatus" onchange="loadHistory()" style="width:auto;display:inline-block;">
+          <option value="">全部状态</option>
+          <option value="running">运行中</option>
+          <option value="completed">已完成</option>
+          <option value="failed">失败</option>
+        </select>
+        <button class="sm" onclick="loadHistory()">刷新</button>
+      </div>
+    </div>
+    <table id="histTable">
+      <thead><tr><th>时间</th><th>模板</th><th>目标</th><th>状态</th><th>结果摘要</th><th>操作</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============ Tab5 自定义构建 ============ -->
+<div class="tab-pane" id="tab-builder">
+  <div class="card">
+    <h3>工作流信息</h3>
+    <div class="row">
+      <div><label>名称</label><input id="wfName" placeholder="我的工作流"></div>
+      <div><label>描述</label><input id="wfDesc" placeholder="工作流描述"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="flex-between"><h3>步骤列表</h3><button class="sm primary" onclick="addStepRow()">+ 添加步骤</button></div>
+    <div id="stepRows"></div>
+    <div style="margin-top:12px;">
+      <button class="primary" onclick="validateWf()">验证DAG</button>
+      <button onclick="saveWf()">保存自定义工作流</button>
+      <span id="validateResult" class="muted" style="margin-left:12px;"></span>
+    </div>
+  </div>
+  <div class="card">
+    <h3>已保存的自定义工作流</h3>
+    <table id="customTable">
+      <thead><tr><th>名称</th><th>描述</th><th>步骤数</th><th>操作</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============ Tab6 定时任务 ============ -->
+<div class="tab-pane" id="tab-schedule">
+  <div class="card">
+    <h3>创建定时任务</h3>
+    <div class="row">
+      <div><label>模板</label><select id="schTpl"></select></div>
+      <div><label>目标</label><input id="schTarget" placeholder="example.com"></div>
+      <div><label>类型</label>
+        <select id="schType" onchange="toggleSchFields()">
+          <option value="interval">间隔</option><option value="cron">cron</option>
+        </select>
+      </div>
+      <div id="intervalWrap"><label>间隔(分钟)</label><input id="schInterval" type="number" value="60"></div>
+      <div id="cronWrap" style="display:none;"><label>cron表达式</label><input id="schCron" placeholder="分 时 日 月 周"></div>
+    </div>
+    <button class="primary" style="margin-top:10px;" onclick="createSchedule()">创建</button>
+  </div>
+  <div class="card">
+    <h3>定时任务列表</h3>
+    <table id="schTable">
+      <thead><tr><th>模板</th><th>目标</th><th>类型</th><th>cron/间隔</th><th>状态</th><th>上次执行</th><th>操作</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 执行弹窗 -->
+<div class="popup-mask" id="execMask">
+  <div class="popup">
+    <h3 id="execTitle">执行工作流</h3>
+    <label>目标 (域名/IP/URL)</label>
+    <input id="execTarget" placeholder="example.com">
+    <label>运行参数(JSON,可选)</label>
+    <textarea id="execParams" placeholder='{}' style="min-height:60px;"></textarea>
+    <div style="margin-top:16px; text-align:right;">
+      <button onclick="closeExec()">取消</button>
+      <button class="primary" onclick="confirmExec()">启动</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1/workflows';
+let curInstanceId = null;
+let pollTimer = null;
+let curExecTplId = null;
+
+// ============ 通用 ============
+async function jget(url) { const r = await fetch(url); return r.json(); }
+async function jpost(url, body) {
+  const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body||{})});
+  return {status: r.status, data: await r.json().catch(()=>({}))};
+}
+async function jdel(url) { const r = await fetch(url, {method:'DELETE'}); return r.json(); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function badge(st) { return `<span class="badge badge-${esc(st)}">${esc(st)}</span>`; }
+
+// tabs
+document.querySelectorAll('.tab-btn').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('tab-'+b.dataset.tab).classList.add('active');
+    if(b.dataset.tab==='monitor') loadInstances();
+    if(b.dataset.tab==='history') loadHistory();
+    if(b.dataset.tab==='schedule') loadSchedules();
+    if(b.dataset.tab==='builder') loadCustom();
+  };
+});
+
+// ============ Tab1 模板 ============
+async function loadTemplates(){
+  const data = await jget(API+'/templates_v7_list').catch(()=>({templates:[]}));
+  // 新模板端点
+  const r = await fetch(API+'/custom').catch(()=>null); // placeholder
+  const tpls = await jget(API+'/templates_all').catch(()=>null) || data;
+}
+async function loadTplCards(){
+  // 使用 /templates/{id} 逐个拉取不便，先尝试新模板列表端点（若已挂载）
+  let arr = [];
+  try {
+    const d = await jget(API+'/dag_templates');
+    if(d && d.templates) arr = d.templates;
+  } catch(e){}
+  const grid = document.getElementById('tplGrid');
+  if(!arr.length){
+    // 回退：内置 8 个模板 ID
+    const ids = ['pentest_full','web_security','mobile_security','internal_assessment','domain_audit','ai_agent_security','blockchain_security','compliance_audit'];
+    arr = ids.map(id=>({id, name:id, description:'点击加载详情', steps_count:'-', estimated_minutes:'-'}));
+  }
+  grid.innerHTML = arr.map(t=>`
+    <div class="tpl-card" onclick="loadTplDetail('${t.id}', this)">
+      <div class="name">${esc(t.name||t.id)}</div>
+      <div class="desc">${esc(t.description||'')}</div>
+      <div class="meta">步骤 ${t.steps_count||'-'} 步 · 约 ${t.estimated_minutes||'-'} 分钟</div>
+    </div>`).join('');
+}
+async function loadTplDetail(id, el){
+  let tpl = null;
+  try { tpl = await jget(API+'/templates/'+id); } catch(e){}
+  let detailHtml = '';
+  if(tpl && tpl.steps){
+    detailHtml = '<div style="margin-top:10px;font-size:12px;">' +
+      tpl.steps.map(s=>`<div>· <b>${esc(s.name)}</b> <span class="muted">[${esc((s.depends_on||[]).join(', ')||'无依赖')}]</span></div>`).join('') +
+      '</div>';
+  }
+  const old = el.querySelector('.detail');
+  if(old) old.remove();
+  const div = document.createElement('div');
+  div.className='detail'; div.style.cssText='margin-top:10px;border-top:1px solid #30363d;padding-top:8px;';
+  div.innerHTML = detailHtml + `<button class="sm primary" style="margin-top:8px" onclick="event.stopPropagation();openExec('${id}')">执行</button>`;
+  el.appendChild(div);
+}
+function openExec(tplId){ curExecTplId = tplId; document.getElementById('execTitle').textContent = '执行: '+tplId; document.getElementById('execMask').classList.add('show'); }
+function closeExec(){ document.getElementById('execMask').classList.remove('show'); curExecTplId=null; }
+async function confirmExec(){
+  const target = document.getElementById('execTarget').value.trim();
+  if(!target){ alert('目标不能为空'); return; }
+  let params = {};
+  try { params = JSON.parse(document.getElementById('execParams').value||'{}'); } catch(e){ alert('参数JSON格式错误'); return; }
+  const r = await jpost(API+'/execute', {template_id: curExecTplId, target, params});
+  if(r.status<300 && r.data.instance_id){
+    alert('已启动: '+r.data.instance_id);
+    closeExec();
+    document.querySelector('[data-tab=monitor]').click();
+  } else { alert('启动失败: '+(r.data.detail||JSON.stringify(r.data))); }
+}
+
+// ============ Tab2 监控 ============
+async function loadInstances(){
+  // DAG 实例列表：新端点未提供独立列表，使用 dag_engine 内建 list_instances
+  let items = [];
+  try {
+    const d = await jget(API+'/dag_instances');
+    if(d && d.instances) items = d.instances;
+  } catch(e){}
+  const box = document.getElementById('instanceList');
+  if(!items.length){ box.innerHTML='<div class="muted">暂无运行实例，请到"模板中心"执行工作流。</div>'; return; }
+  box.innerHTML = items.sort((a,b)=> (b.created_at||'').localeCompare(a.created_at||'')).map(it=>`
+    <div class="instance-list-item ${it.instance_id===curInstanceId?'selected':''}" onclick="selectInstance('${it.instance_id}')">
+      <div class="flex-between"><b>${esc(it.name)}</b>${badge(it.status)}</div>
+      <div class="muted">${esc(it.target)} · ${(it.progress&&it.progress.percent)||0}%</div>
+    </div>`).join('');
+}
+async function selectInstance(id){
+  curInstanceId = id;
+  loadInstances();
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(refreshMonitor, 2000);
+  refreshMonitor();
+}
+async function refreshMonitor(){
+  if(!curInstanceId) return;
+  let inst = null;
+  try { inst = await jget(API+'/'+curInstanceId+'/steps'); } catch(e){ return; }
+  if(!inst) return;
+  document.getElementById('monTitle').textContent = '监控: '+curInstanceId;
+  const p = inst.progress||{};
+  document.getElementById('monBar').style.width = (p.percent||0)+'%';
+  document.getElementById('monProgress').textContent =
+    `进度 ${p.percent||0}% · 完成 ${p.completed_steps||0}/${p.total_steps||0} · 耗时 ${p.elapsed_seconds||0}s · ETA ${p.eta_seconds||'-'}s`;
+  const iconMap = {completed:'✓', failed:'✗', running:'●', pending:'○', skipped:'–', cancelled:'✕'};
+  document.getElementById('stepList').innerHTML = (inst.steps||[]).map(s=>`
+    <div class="step-item">
+      <span class="icon">${iconMap[s.status]||'○'}</span>
+      <span class="name">${esc(s.name)} <span class="muted">(${esc(s.step_id)})</span></span>
+      <span class="dur">${s.duration_ms? (s.duration_ms/1000).toFixed(1)+'s':''}</span>
+      ${badge(s.status)}
+    </div>`).join('');
+  // 日志
+  const d = await jget(API+'/'+curInstanceId).catch(()=>null);
+  const logs = (d && d.recent_logs) || [];
+  const la = document.getElementById('logArea');
+  la.innerHTML = logs.map(l=>`<div class="${l.level}">[${(l.timestamp||'').substr(11,8)}] [${esc(l.level)}] ${esc(l.message)}</div>`).join('');
+  la.scrollTop = la.scrollHeight;
+  // 结果自动填充
+  if(inst.status==='completed'||inst.status==='failed'){
+    loadResult(curInstanceId);
+  }
+}
+async function pauseCurrent(){ if(curInstanceId) await jpost(API+'/'+curInstanceId+'/pause',{}); }
+async function resumeCurrent(){ if(curInstanceId) await jpost(API+'/'+curInstanceId+'/resume',{}); }
+async function cancelCurrent(){ if(curInstanceId && confirm('确认取消？')) await jpost(API+'/'+curInstanceId+'/cancel',{}); }
+
+// ============ Tab3 结果 ============
+async function loadResult(id){
+  let r = null;
+  try { r = await jget(API+'/'+id+'/result'); } catch(e){ return; }
+  const box = document.getElementById('resultArea');
+  if(!r){ box.innerHTML='<span class="muted">无结果</span>'; return; }
+  const sev = r.severity_count||{};
+  const score = r.risk_score||0;
+  const level = r.risk_level||'info';
+  const color = {critical:'#f85149',high:'#ff7b72',medium:'#d29922',low:'#58a6ff',info:'#3fb950'}[level]||'#3fb950';
+  const vuls = r.vulnerabilities||[];
+  box.innerHTML = `
+    <div class="row">
+      <div style="flex:0 0 200px;">
+        <div class="gauge" style="background: conic-gradient(${color} ${score*3.6}deg, #21262d 0);">
+          <div class="score" style="color:${color}">${score}</div>
+          <div class="level" style="color:${color}">${esc(level)}</div>
+        </div>
+      </div>
+      <div>
+        <h4>执行摘要</h4>
+        <table>
+          <tr><td>目标</td><td>${esc(r.target)}</td></tr>
+          <tr><td>状态</td><td>${badge(r.status)}</td></tr>
+          <tr><td>步骤</td><td>${(r.summary||{}).completed||0}/${(r.summary||{}).total_steps||0} 完成</td></tr>
+          <tr><td>漏洞数</td><td>${vuls.length}</td></tr>
+          <tr><td>严重</td><td><span class="vuln-critical">${sev.critical||0}</span> /
+            <span class="vuln-high">${sev.high||0}</span> /
+            <span class="vuln-medium">${sev.medium||0}</span> /
+            <span class="vuln-low">${sev.low||0}</span></td></tr>
+        </table>
+      </div>
+    </div>
+    <h4 style="margin-top:16px;">漏洞列表 (${vuls.length})</h4>
+    <table><thead><tr><th>严重程度</th><th>名称</th><th>位置</th><th>来源步骤</th></tr></thead>
+    <tbody>${vuls.map(v=>`<tr>
+      <td class="vuln-${esc((v.severity||'info').toLowerCase())}">${esc(v.severity||'info')}</td>
+      <td>${esc(v.name||v.title||'-')}</td>
+      <td>${esc(v.location||v.url||v.target||'-')}</td>
+      <td>${esc(v._step_name||v._step||'')}</td>
+    </tr>`).join('')||'<tr><td colspan=4 class="muted">无漏洞</td></tr>'}</tbody></table>
+    <h4 style="margin-top:16px;">各步骤结果</h4>
+    <div class="json-view">${esc(JSON.stringify(r.step_results||{}, null, 2))}</div>`;
+}
+
+// ============ Tab4 历史 ============
+async function loadHistory(){
+  const st = document.getElementById('histStatus').value;
+  const q = st? ('?status='+st):'';
+  let d = await jget(API+'/history'+q).catch(()=>({items:[]}));
+  const tb = document.querySelector('#histTable tbody');
+  tb.innerHTML = (d.items||[]).map(h=>`<tr>
+    <td>${esc((h.start_time||'').substr(0,19))}</td>
+    <td>${esc(h.template)}</td>
+    <td>${esc(h.target)}</td>
+    <td>${badge(h.status)}</td>
+    <td>${esc(h.result_summary||'')}</td>
+    <td><button class="sm" onclick="viewHist('${h.execution_id}')">查看</button>
+        <button class="sm" onclick="rerunHist('${h.execution_id}')">重跑</button></td>
+  </tr>`).join('');
+}
+function viewHist(id){ loadResult(id); document.querySelector('[data-tab=result]').click(); }
+async function rerunHist(id){ await jpost(API+'/history/'+id+'/rerun',{}).catch(()=>{}); alert('已重跑'); }
+
+// ============ Tab5 构建器 ============
+function addStepRow(preset){
+  preset = preset||{};
+  const div = document.createElement('div');
+  div.style.cssText='border:1px solid #30363d;padding:10px;margin:8px 0;border-radius:4px;';
+  div.innerHTML = `
+    <div class="row">
+      <div><label>步骤ID</label><input class="f-sid" value="${esc(preset.step_id||'')}"></div>
+      <div><label>名称</label><input class="f-name" value="${esc(preset.name||'')}"></div>
+      <div><label>动作类型</label><select class="f-type">
+        <option value="tool_call" ${preset.action_type==='tool_call'?'selected':''}>tool_call</option>
+        <option value="api_call" ${preset.action_type==='api_call'?'selected':''}>api_call</option>
+        <option value="script" ${preset.action_type==='script'?'selected':''}>script</option>
+        <option value="condition" ${preset.action_type==='condition'?'selected':''}>condition</option>
+      </select></div>
+      <div><label>失败策略</label><select class="f-onfail">
+        <option value="continue" ${(preset.on_failure||'continue')==='continue'?'selected':''}>continue</option>
+        <option value="stop" ${preset.on_failure==='stop'?'selected':''}>stop</option>
+        <option value="retry" ${preset.on_failure==='retry'?'selected':''}>retry</option>
+      </select></div>
+      <div><label>重试次数</label><input class="f-retry" type="number" value="${preset.retry_count||0}"></div>
+    </div>
+    <div class="row">
+      <div><label>参数(JSON)</label><textarea class="f-params">{${esc(preset.tool?('\n  "tool": "'+preset.tool+'"'):'')}}</textarea></div>
+      <div><label>依赖步骤(逗号分隔)</label><input class="f-dep" value="${esc((preset.depends_on||[]).join(', '))}"></div>
+      <div><label>条件表达式(可选)</label><input class="f-cond" value="${esc(preset.condition||'')}"></div>
+    </div>
+    <button class="sm danger" onclick="this.parentElement.remove()">删除此步骤</button>`;
+  document.getElementById('stepRows').appendChild(div);
+}
+function collectWf(){
+  const steps = [];
+  document.querySelectorAll('#stepRows > div').forEach(row=>{
+    const sid = row.querySelector('.f-sid').value.trim();
+    if(!sid) return;
+    let params = {};
+    try { params = JSON.parse(row.querySelector('.f-params').value||'{}'); } catch(e){}
+    steps.push({
+      step_id: sid,
+      name: row.querySelector('.f-name').value||sid,
+      action_type: row.querySelector('.f-type').value,
+      action_params: params,
+      depends_on: row.querySelector('.f-dep').value.split(',').map(s=>s.trim()).filter(Boolean),
+      condition: row.querySelector('.f-cond').value||null,
+      on_failure: row.querySelector('.f-onfail').value,
+      retry_count: parseInt(row.querySelector('.f-retry').value||'0'),
+    });
+  });
+  return {name: document.getElementById('wfName').value,
+          description: document.getElementById('wfDesc').value, steps};
+}
+async function validateWf(){
+  const wf = collectWf();
+  // 调用后端校验
+  const r = await jpost(API+'/custom/validate', {workflow_def: wf}).catch(()=>null);
+  const el = document.getElementById('validateResult');
+  if(r && r.data){
+    el.innerHTML = (r.data.valid? '<span style="color:#3fb950">✓ 校验通过</span>'
+      : '<span style="color:#f85149">✗ '+esc(r.data.errors.join('; '))+'</span>');
+  } else {
+    el.textContent = '校验端点未就绪，使用本地结果';
+  }
+}
+async function saveWf(){
+  const wf = collectWf();
+  const r = await jpost(API+'/custom', {name: wf.name, description: wf.description, workflow_def: wf});
+  if(r.status<300){ alert('已保存'); loadCustom(); }
+  else { alert('保存失败: '+(r.data.detail||JSON.stringify(r.data))); }
+}
+async function loadCustom(){
+  const d = await jget(API+'/custom').catch(()=>({workflows:[]}));
+  document.querySelector('#customTable tbody').innerHTML = (d.workflows||[]).map(w=>`
+    <tr><td>${esc(w.name)}</td><td>${esc(w.description)}</td><td>${w.steps_count}</td>
+    <td><button class="sm danger" onclick="delCustom('${esc(w.name)}')">删除</button></td></tr>`).join('');
+}
+async function delCustom(name){ if(confirm('删除 '+name+'?')){ await jdel(API+'/custom/'+encodeURIComponent(name)); loadCustom(); } }
+
+// ============ Tab6 定时 ============
+function toggleSchFields(){
+  const t = document.getElementById('schType').value;
+  document.getElementById('intervalWrap').style.display = t==='interval'?'block':'none';
+  document.getElementById('cronWrap').style.display = t==='cron'?'block':'none';
+}
+async function loadSchOptions(){
+  // 模板下拉：尝试拉取
+  let ids = ['pentest_full','web_security','mobile_security','internal_assessment','domain_audit','ai_agent_security','blockchain_security','compliance_audit'];
+  document.getElementById('schTpl').innerHTML = ids.map(i=>`<option>${i}</option>`).join('');
+}
+async function createSchedule(){
+  const body = {
+    template_id: document.getElementById('schTpl').value,
+    target: document.getElementById('schTarget').value.trim(),
+    schedule_type: document.getElementById('schType').value,
+    interval_minutes: parseInt(document.getElementById('schInterval').value||'60'),
+    cron_expr: document.getElementById('schCron').value||null,
+  };
+  if(!body.target){ alert('目标不能为空'); return; }
+  const r = await jpost(API+'/schedule', body);
+  if(r.status<300){ alert('已创建'); loadSchedules(); }
+  else { alert('失败: '+(r.data.detail||JSON.stringify(r.data))); }
+}
+async function loadSchedules(){
+  const d = await jget(API+'/schedule').catch(()=>({items:[]}));
+  document.querySelector('#schTable tbody').innerHTML = (d.items||[]).map(s=>`
+    <tr>
+      <td>${esc(s.workflow_template_id)}</td>
+      <td>${esc(s.target)}</td>
+      <td>${esc(s.schedule_type)}</td>
+      <td>${esc(s.schedule_type==='cron'? (s.cron_expr||'') : (s.interval_minutes+'分钟'))}</td>
+      <td>${s.enabled?'<span style="color:#3fb950">启用</span>':'<span style="color:#f85149">禁用</span>'}</td>
+      <td class="muted">${esc((s.last_run||'-').substr(0,19))}</td>
+      <td>
+        <button class="sm" onclick="toggleSch('${s.schedule_id}', ${!s.enabled})">${s.enabled?'禁用':'启用'}</button>
+        <button class="sm danger" onclick="delSch('${s.schedule_id}')">删除</button>
+      </td>
+    </tr>`).join('');
+}
+async function toggleSch(id, en){
+  await jpost(API+'/schedule/'+id+(en?'/enable':'/disable'),{});
+  loadSchedules();
+}
+async function delSch(id){ if(confirm('删除该定时任务?')){ await jdel(API+'/schedule/'+id); loadSchedules(); } }
+
+// 初始化
+loadTplCards();
+loadSchOptions();
+setInterval(()=>{ document.getElementById('clock').textContent = new Date().toLocaleString(); }, 1000);
+</script>
+<script src="/static/js/i18n.js"></script>
+<script src="/static/js/mobile-nav.js"></script>
+
+<!-- Round8: mobile + i18n boot -->
+<div id="lang-switcher" style="position:fixed;top:10px;right:10px;z-index:1300;display:flex;gap:6px;">
+  <button type="button" data-lang="zh-CN" class="lang-btn" style="min-height:44px;padding:8px 14px;background:#161b22;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;cursor:pointer;font-size:13px;">中文</button>
+  <button type="button" data-lang="en-US" class="lang-btn" style="min-height:44px;padding:8px 14px;background:#161b22;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;cursor:pointer;font-size:13px;">EN</button>
+</div>
+<script>
+(function(){
+  function bindLangSwitch(){
+    var btns = document.querySelectorAll('#lang-switcher .lang-btn');
+    btns.forEach(function(b){
+      b.addEventListener('click', function(){
+        var lang = b.getAttribute('data-lang');
+        if (window.i18n) window.i18n.setLanguage(lang);
+      });
+    });
+    function highlight(){
+      var cur = (window.i18n && window.i18n.getLanguage()) || 'zh-CN';
+      btns.forEach(function(b){
+        var active = b.getAttribute('data-lang') === cur;
+        b.style.borderColor = active ? '#58a6ff' : '#30363d';
+        b.style.color = active ? '#58a6ff' : '#c9d1d9';
+      });
+    }
+    window.addEventListener('i18n:change', highlight);
+    // initial highlight once i18n boots
+    var tries = 0;
+    var t = setInterval(function(){ if (window.i18n) { highlight(); clearInterval(t); } else if (++tries > 50) clearInterval(t); }, 100);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindLangSwitch);
+  else bindLangSwitch();
+})();
+</script>
+
+</body>
+</html>

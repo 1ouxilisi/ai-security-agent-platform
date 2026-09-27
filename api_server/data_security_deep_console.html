@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据安全与隐私保护深度平台 · 控制台</title>
+<style>
+:root{
+  --bg:#0d1117; --bg2:#161b22; --bg3:#1f2630; --border:#2d333b;
+  --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950;
+  --red:#f85149; --orange:#d29922; --purple:#bc8cff; --cyan:#39d2c0;
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:230px;background:var(--bg2);border-right:1px solid var(--border);padding:18px 0;position:fixed;top:0;bottom:0;left:0;overflow-y:auto;z-index:100}
+.sidebar .brand{padding:0 20px 16px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.sidebar .brand h1{font-size:16px;color:var(--accent)}
+.sidebar .brand small{color:var(--muted);font-size:11px}
+.nav-btn{display:block;width:100%;text-align:left;padding:10px 20px;background:none;border:none;color:var(--text);cursor:pointer;font-size:13.5px;border-left:3px solid transparent;transition:all .15s}
+.nav-btn:hover{background:var(--bg3)}
+.nav-btn.active{background:var(--bg3);border-left-color:var(--accent);color:var(--accent)}
+.nav-group{padding:8px 20px 4px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.main{flex:1;margin-left:230px;padding:22px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.topbar h2{font-size:20px}
+.badge{background:var(--bg3);border:1px solid var(--border);padding:3px 10px;border-radius:20px;font-size:12px;color:var(--muted)}
+.page{display:none}.page.active{display:block;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:18px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.card h3{font-size:13px;color:var(--muted);font-weight:normal;margin-bottom:6px}
+.card .num{font-size:26px;font-weight:bold;color:var(--accent)}
+.card.green .num{color:var(--green)}.card.red .num{color:var(--red)}
+.card.orange .num{color:var(--orange)}.card.purple .num{color:var(--purple)}
+.card.cyan .num{color:var(--cyan)}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.panel h3{margin-bottom:12px;font-size:15px;color:var(--accent)}
+label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;font-size:13px;font-family:inherit}
+textarea{min-height:80px;resize:vertical}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+button.btn{background:var(--accent);color:#fff;border:none;padding:9px 18px;border-radius:6px;cursor:pointer;font-size:13px;margin-top:12px;transition:opacity .15s}
+button.btn:hover{opacity:.88}
+button.btn.ghost{background:var(--bg3);color:var(--text)}
+button.btn.danger{background:var(--red)}
+button.btn.sm{padding:5px 12px;font-size:12px;margin-top:0}
+pre.out{background:#0a0d12;border:1px solid var(--border);border-radius:6px;padding:12px;overflow:auto;max-height:340px;font-size:12px;color:#a5d6ff;margin-top:10px;white-space:pre-wrap;word-break:break-all}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+th,td{border:1px solid var(--border);padding:7px 10px;text-align:left}
+th{background:var(--bg3);color:var(--muted);font-weight:normal}
+tr:hover td{background:var(--bg3)}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;margin-right:4px}
+.tag.crit{background:#3d1418;color:#f85149}.tag.high{background:#3d2414;color:#d29922}
+.tag.med{background:#3d3a14;color:#e3b341}.tag.low{background:#143d24;color:#3fb950}
+.tag.info{background:#14243d;color:#58a6ff}.tag.ok{background:#143d24;color:#3fb950}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--accent);padding:10px 16px;border-radius:8px;display:none;z-index:99}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--muted);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.progress{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-top:6px}
+.progress .bar{height:100%;background:var(--green);border-radius:4px;transition:width .3s}
+.tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.tab-btn{background:none;border:none;color:var(--muted);padding:8px 14px;cursor:pointer;font-size:13px;border-bottom:2px solid transparent}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.sub-page{display:none}.sub-page.active{display:block}
+@media(max-width:768px){
+  .sidebar{width:60px}.sidebar .brand h1,.sidebar .brand small,.nav-btn span.lbl,.nav-group{display:none}
+  .main{margin-left:60px;padding:14px}
+  .grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand"><h1>数据安全深度平台</h1><small>Round24 · 方向3</small></div>
+    <div class="nav-group">总览</div>
+    <button class="nav-btn active" data-page="overview">📊 <span class="lbl">安全总览</span></button>
+    <div class="nav-group">分类分级</div>
+    <button class="nav-btn" data-page="discover">🔍 <span class="lbl">资产发现</span></button>
+    <button class="nav-btn" data-page="classify">🏷️ <span class="lbl">分类分级</span></button>
+    <button class="nav-btn" data-page="scan">🛡️ <span class="lbl">敏感数据扫描</span></button>
+    <button class="nav-btn" data-page="map">🗺️ <span class="lbl">数据地图</span></button>
+    <button class="nav-btn" data-page="catalog">📋 <span class="lbl">资产目录</span></button>
+    <div class="nav-group">防护</div>
+    <button class="nav-btn" data-page="dlp">🚫 <span class="lbl">DLP防泄漏</span></button>
+    <button class="nav-btn" data-page="crypto">🔐 <span class="lbl">加密与脱敏</span></button>
+    <button class="nav-btn" data-page="watermark">💧 <span class="lbl">数据水印</span></button>
+    <div class="nav-group">访问审计</div>
+    <button class="nav-btn" data-page="access">🔑 <span class="lbl">访问控制</span></button>
+    <button class="nav-btn" data-page="audit">📜 <span class="lbl">审计日志</span></button>
+    <button class="nav-btn" data-page="anomaly">⚠️ <span class="lbl">异常检测</span></button>
+    <div class="nav-group">合规</div>
+    <button class="nav-btn" data-page="frameworks">📚 <span class="lbl">合规框架</span></button>
+    <button class="nav-btn" data-page="dsr">👤 <span class="lbl">数据主体权利</span></button>
+    <button class="nav-btn" data-page="consent">✅ <span class="lbl">同意管理</span></button>
+    <button class="nav-btn" data-page="policy">📝 <span class="lbl">隐私政策</span></button>
+    <div class="nav-group">系统</div>
+    <button class="nav-btn" data-page="settings">⚙️ <span class="lbl">系统设置</span></button>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <h2 id="page-title">数据安全与隐私保护深度平台</h2>
+      <span class="badge" id="status-badge">加载中…</span>
+    </div>
+
+    <!-- ============ 总览 ============ -->
+    <section class="page active" id="page-overview">
+      <div class="grid">
+        <div class="card"><h3>数据资产总数</h3><div class="num" id="ov-assets">-</div></div>
+        <div class="card green"><h3>分类分级覆盖率</h3><div class="num" id="ov-coverage">-</div></div>
+        <div class="card orange"><h3>敏感数据量(GB)</h3><div class="num" id="ov-sensitive">-</div></div>
+        <div class="card red"><h3>风险事件</h3><div class="num" id="ov-events">-</div></div>
+        <div class="card purple"><h3>合规评分</h3><div class="num" id="ov-compliance">-</div></div>
+        <div class="card cyan"><h3>DLP策略</h3><div class="num" id="ov-dlp">-</div></div>
+        <div class="card green"><h3>加密覆盖率</h3><div class="num" id="ov-encryption">-</div></div>
+        <div class="card red"><h3>未处理告警</h3><div class="num" id="ov-alerts">-</div></div>
+      </div>
+      <div class="panel">
+        <h3>安全趋势（近14天）</h3>
+        <pre class="out" id="ov-trend">点击"刷新总览"加载…</pre>
+      </div>
+      <div class="panel">
+        <h3>引擎健康状态</h3>
+        <div id="ov-health">-</div>
+      </div>
+      <button class="btn" onclick="loadOverview()">刷新总览</button>
+    </section>
+
+    <!-- ============ 资产发现 ============ -->
+    <section class="page" id="page-discover">
+      <div class="panel">
+        <h3>自动发现数据资产</h3>
+        <label>数据源类型（多选，逗号分隔）</label>
+        <input id="disc-types" value="database,file_storage,object_storage,api,log,message_queue">
+        <label>扫描深度</label>
+        <select id="disc-depth">
+          <option value="quick">快速扫描</option>
+          <option value="full" selected>完整扫描</option>
+          <option value="deep">深度扫描</option>
+        </select>
+        <button class="btn" onclick="runDiscover()">开始扫描</button>
+        <pre class="out" id="disc-result"></pre>
+      </div>
+    </section>
+
+    <!-- ============ 分类分级 ============ -->
+    <section class="page" id="page-classify">
+      <div class="row">
+        <div class="panel">
+          <h3>资产分类</h3>
+          <label>资产ID</label>
+          <input id="cls-aid" placeholder="asset-xxxx">
+          <label>样本内容（用于识别）</label>
+          <textarea id="cls-text" placeholder="粘贴包含敏感信息的文本样本..."></textarea>
+          <button class="btn" onclick="runClassify()">分类</button>
+          <pre class="out" id="cls-result"></pre>
+        </div>
+        <div class="panel">
+          <h3>自动分级</h3>
+          <label>资产ID</label>
+          <input id="grade-aid" placeholder="asset-xxxx">
+          <button class="btn" onclick="runAutoGrade()">自动定级</button>
+          <pre class="out" id="grade-result"></pre>
+          <h3 style="margin-top:16px">分级标准</h3>
+          <div id="grade-standards">-</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 敏感数据扫描 ============ -->
+    <section class="page" id="page-scan">
+      <div class="panel">
+        <h3>敏感数据文本扫描</h3>
+        <p style="color:var(--muted);font-size:12px;margin-bottom:8px">输入文本，自动识别身份证、手机号、银行卡、邮箱等敏感信息</p>
+        <textarea id="scan-text" style="min-height:120px" placeholder="粘贴待扫描文本，例如：张三的身份证号是110101199001011234，手机号13812345678，邮箱zhangsan@example.com"></textarea>
+        <button class="btn" onclick="runScan()">开始扫描</button>
+        <pre class="out" id="scan-result"></pre>
+      </div>
+    </section>
+
+    <!-- ============ 数据地图 ============ -->
+    <section class="page" id="page-map">
+      <div class="row">
+        <div class="panel">
+          <h3>数据资产分布</h3>
+          <pre class="out" id="map-dist">-</pre>
+        </div>
+        <div class="panel">
+          <h3>数据流向</h3>
+          <pre class="out" id="map-flow">-</pre>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>数据血缘（前15节点）</h3>
+        <pre class="out" id="map-lineage">-</pre>
+      </div>
+      <button class="btn" onclick="loadMap()">加载数据地图</button>
+    </section>
+
+    <!-- ============ 资产目录 ============ -->
+    <section class="page" id="page-catalog">
+      <div class="panel">
+        <h3>资产搜索</h3>
+        <div class="row">
+          <div><label>关键词</label><input id="cat-kw" placeholder="资产名/路径"></div>
+          <div><label>业务域</label>
+            <select id="cat-domain">
+              <option value="">全部</option>
+              <option value="customer">客户域</option>
+              <option value="finance">财务域</option>
+              <option value="hr">人力域</option>
+              <option value="operation">运营域</option>
+            </select>
+          </div>
+          <div><label>分级</label>
+            <select id="cat-grade">
+              <option value="">全部</option>
+              <option value="public">公开</option>
+              <option value="internal">内部</option>
+              <option value="confidential">机密</option>
+              <option value="top_secret">绝密</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn" onclick="loadCatalog()">搜索资产</button>
+        <div id="cat-table"></div>
+      </div>
+    </section>
+
+    <!-- ============ DLP ============ -->
+    <section class="page" id="page-dlp">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="dlp-monitor">传输监控</button>
+        <button class="tab-btn" data-tab="dlp-policies">策略管理</button>
+        <button class="tab-btn" data-tab="dlp-events">事件管理</button>
+      </div>
+      <div class="sub-page active" id="tab-dlp-monitor">
+        <div class="panel">
+          <h3>数据传输监控</h3>
+          <div class="row">
+            <div><label>通道</label>
+              <select id="dlp-channel">
+                <option value="email">邮件</option>
+                <option value="im">即时消息</option>
+                <option value="network">网络流量</option>
+                <option value="file_transfer">文件传输</option>
+                <option value="cloud_upload">云上传</option>
+              </select>
+            </div>
+            <div><label>用户</label><input id="dlp-user" placeholder="操作人"></div>
+            <div><label>目的地</label><input id="dlp-dest" placeholder="recipient@example.com"></div>
+          </div>
+          <label>传输内容</label>
+          <textarea id="dlp-content" placeholder="模拟传输内容，含敏感数据将被检测..."></textarea>
+          <button class="btn" onclick="runDlpMonitor()">监控传输</button>
+          <pre class="out" id="dlp-monitor-result"></pre>
+        </div>
+      </div>
+      <div class="sub-page" id="tab-dlp-policies">
+        <div class="panel">
+          <h3>DLP策略列表</h3>
+          <div id="dlp-policy-list"></div>
+        </div>
+      </div>
+      <div class="sub-page" id="tab-dlp-events">
+        <div class="panel">
+          <h3>泄漏事件</h3>
+          <div id="dlp-event-list"></div>
+          <h3 style="margin-top:14px">事件统计</h3>
+          <pre class="out" id="dlp-event-stats"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 加密与脱敏 ============ -->
+    <section class="page" id="page-crypto">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="crypto-enc">加密</button>
+        <button class="tab-btn" data-tab="crypto-mask">脱敏</button>
+        <button class="tab-btn" data-tab="crypto-keys">密钥管理</button>
+        <button class="tab-btn" data-tab="crypto-pc">隐私计算</button>
+      </div>
+      <div class="sub-page active" id="tab-crypto-enc">
+        <div class="panel">
+          <h3>数据加密</h3>
+          <label>明文</label>
+          <textarea id="enc-plain" placeholder="待加密文本"></textarea>
+          <label>算法</label>
+          <select id="enc-alg">
+            <option value="aes-256-gcm">AES-256-GCM</option>
+            <option value="aes-256-cbc">AES-256-CBC</option>
+            <option value="sm4">SM4国密</option>
+          </select>
+          <button class="btn" onclick="runEncrypt()">加密</button>
+          <pre class="out" id="enc-result"></pre>
+        </div>
+      </div>
+      <div class="sub-page" id="tab-crypto-mask">
+        <div class="panel">
+          <h3>数据脱敏</h3>
+          <label>待脱敏数据</label>
+          <input id="mask-data" placeholder="例如：13812345678">
+          <label>脱敏方式</label>
+          <select id="mask-method">
+            <option value="mask">掩码脱敏</option>
+            <option value="hash">哈希脱敏</option>
+            <option value="range">范围脱敏</option>
+            <option value="replace">替换脱敏</option>
+            <option value="null_out">置空</option>
+          </select>
+          <button class="btn" onclick="runMask()">脱敏</button>
+          <pre class="out" id="mask-result"></pre>
+        </div>
+      </div>
+      <div class="sub-page" id="tab-crypto-keys">
+        <div class="panel">
+          <h3>密钥列表</h3>
+          <div id="key-list"></div>
+          <button class="btn sm" onclick="runGenKey()">生成新密钥</button>
+        </div>
+      </div>
+      <div class="sub-page" id="tab-crypto-pc">
+        <div class="panel">
+          <h3>隐私计算</h3>
+          <label>技术</label>
+          <select id="pc-tech">
+            <option value="federated_learning">联邦学习</option>
+            <option value="mpc">安全多方计算</option>
+            <option value="homomorphic_encryption">同态加密</option>
+            <option value="differential_privacy">差分隐私</option>
+            <option value="tee">可信执行环境</option>
+            <option value="zkp">零知识证明</option>
+          </select>
+          <label>数据量</label>
+          <input id="pc-size" type="number" value="10000">
+          <button class="btn" onclick="runPrivacyCompute()">执行隐私计算</button>
+          <pre class="out" id="pc-result"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 水印 ============ -->
+    <section class="page" id="page-watermark">
+      <div class="row">
+        <div class="panel">
+          <h3>添加数据水印</h3>
+          <label>内容</label>
+          <textarea id="wm-content" placeholder="待添加水印的内容..."></textarea>
+          <label>水印类型</label>
+          <select id="wm-type">
+            <option value="visible">可见水印</option>
+            <option value="invisible" selected>不可见水印</option>
+            <option value="fingerprint">指纹水印</option>
+          </select>
+          <label>用户ID</label>
+          <input id="wm-user" value="demo-user">
+          <button class="btn" onclick="runAddWatermark()">添加水印</button>
+          <pre class="out" id="wm-result"></pre>
+        </div>
+        <div class="panel">
+          <h3>水印检测</h3>
+          <label>待检测内容</label>
+          <textarea id="wm-detect" placeholder="粘贴待检测内容..."></textarea>
+          <button class="btn" onclick="runDetectWatermark()">检测水印</button>
+          <pre class="out" id="wm-detect-result"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 访问控制 ============ -->
+    <section class="page" id="page-access">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="access-check">权限检查</button>
+        <button class="tab-btn" data-tab="access-req">访问申请</button>
+        <button class="tab-btn" data-tab="access-grants">临时授权</button>
+      </div>
+      <div class="sub-page active" id="tab-access-check">
+        <div class="panel">
+          <h3>检查访问权限</h3>
+          <div class="row">
+            <div><label>用户ID</label><input id="acc-uid" value="u001"></div>
+            <div><label>资源</label><input id="acc-res" value="customer:read"></div>
+            <div><label>操作</label>
+              <select id="acc-action">
+                <option value="read">读</option>
+                <option value="write">写</option>
+                <option value="export">导出</option>
+                <option value="delete">删除</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn" onclick="runAccessCheck()">检查权限</button>
+          <pre class="out" id="acc-result"></pre>
+        </div>
+      </div>
+      <div class="sub-page" id="tab-access-req">
+        <div class="panel">
+          <h3>申请敏感数据访问</h3>
+          <div class="row">
+            <div><label>用户ID</label><input id="req-uid" value="u001"></div>
+            <div><label>资源</label><input id="req-res" placeholder="例如：customer:id_card"></div>
+            <div><label>时长(小时)</label><input id="req-dur" type="number" value="4"></div>
+          </div>
+          <label>申请理由</label>
+          <input id="req-reason" placeholder="业务需要...">
+          <button class="btn" onclick="runAccessRequest()">提交申请</button>
+          <pre class="out" id="req-result"></pre>
+        </div>
+        <div class="panel">
+          <h3>待审批申请</h3>
+          <div id="req-list"></div>
+        </div>
+      </div>
+      <div class="sub-page" id="tab-access-grants">
+        <div class="panel">
+          <h3>临时授权列表</h3>
+          <div id="grant-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 审计日志 ============ -->
+    <section class="page" id="page-audit">
+      <div class="panel">
+        <h3>访问审计日志</h3>
+        <div class="row">
+          <div><label>用户ID</label><input id="aud-uid" placeholder="过滤用户"></div>
+          <div><label>操作类型</label>
+            <select id="aud-action">
+              <option value="">全部</option>
+              <option value="read">读</option>
+              <option value="write">写</option>
+              <option value="export">导出</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn" onclick="loadAuditLogs()">查询日志</button>
+        <div id="audit-table"></div>
+      </div>
+    </section>
+
+    <!-- ============ 异常检测 ============ -->
+    <section class="page" id="page-anomaly">
+      <div class="panel">
+        <h3>异常访问检测</h3>
+        <label>检测时间窗口(小时)</label>
+        <input id="anomaly-hours" type="number" value="24">
+        <button class="btn" onclick="runAnomalyDetect()">运行检测</button>
+        <pre class="out" id="anomaly-result"></pre>
+      </div>
+      <div class="panel">
+        <h3>防滥用检查</h3>
+        <div class="row">
+          <div><label>用户</label><input id="abuse-uid" value="u001"></div>
+          <div><label>操作</label>
+            <select id="abuse-op">
+              <option value="export">批量导出</option>
+              <option value="print">打印</option>
+              <option value="screenshot">截屏</option>
+              <option value="download">下载</option>
+            </select>
+          </div>
+          <div><label>数据量</label><input id="abuse-vol" type="number" value="5000"></div>
+        </div>
+        <button class="btn" onclick="runAbuseCheck()">检查</button>
+        <pre class="out" id="abuse-result"></pre>
+      </div>
+    </section>
+
+    <!-- ============ 合规框架 ============ -->
+    <section class="page" id="page-frameworks">
+      <div class="panel">
+        <h3>合规框架（8大）</h3>
+        <div id="fw-grid"></div>
+      </div>
+      <div class="panel">
+        <h3>DPIA影响评估</h3>
+        <label>处理活动名称</label>
+        <input id="dpia-name" placeholder="例如：用户画像营销">
+        <label>是否涉及高风险数据</label>
+        <select id="dpia-risk">
+          <option value="false">否</option>
+          <option value="true">是</option>
+        </select>
+        <button class="btn" onclick="runDpia()">发起DPIA</button>
+        <pre class="out" id="dpia-result"></pre>
+      </div>
+    </section>
+
+    <!-- ============ DSR ============ -->
+    <section class="page" id="page-dsr">
+      <div class="panel">
+        <h3>提交数据主体权利请求</h3>
+        <div class="row">
+          <div><label>权利类型</label>
+            <select id="dsr-right">
+              <option value="right_of_access">访问权</option>
+              <option value="right_to_rectification">更正权</option>
+              <option value="right_to_erasure">删除权</option>
+              <option value="right_to_be_informed">知情权</option>
+              <option value="right_to_data_portability">可携带权</option>
+              <option value="right_to_object">反对权</option>
+            </select>
+          </div>
+          <div><label>主体姓名</label><input id="dsr-name" placeholder="姓名"></div>
+          <div><label>联系方式</label><input id="dsr-contact" placeholder="邮箱/手机"></div>
+        </div>
+        <label>详细说明</label>
+        <textarea id="dsr-details" placeholder="具体请求内容..."></textarea>
+        <button class="btn" onclick="submitDsr()">提交请求</button>
+        <pre class="out" id="dsr-result"></pre>
+      </div>
+      <div class="panel">
+        <h3>DSR请求列表</h3>
+        <div id="dsr-list"></div>
+      </div>
+    </section>
+
+    <!-- ============ 同意管理 ============ -->
+    <section class="page" id="page-consent">
+      <div class="row">
+        <div class="panel">
+          <h3>记录同意</h3>
+          <div class="row">
+            <div><label>主体ID</label><input id="con-sid" value="user123"></div>
+            <div><label>用途</label><input id="con-purpose" placeholder="营销推送"></div>
+            <div><label>渠道</label>
+              <select id="con-channel">
+                <option value="web_form">网页表单</option>
+                <option value="mobile_app">App弹窗</option>
+                <option value="email_consent">邮件</option>
+                <option value="sms_consent">短信</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn" onclick="recordConsent()">记录同意</button>
+          <pre class="out" id="con-result"></pre>
+        </div>
+        <div class="panel">
+          <h3>同意审计</h3>
+          <button class="btn" onclick="loadConsentAudit()">查看审计</button>
+          <pre class="out" id="con-audit"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 隐私政策 ============ -->
+    <section class="page" id="page-policy">
+      <div class="panel">
+        <h3>生成隐私政策</h3>
+        <div class="row">
+          <div><label>公司名称</label><input id="pp-company" value="示例科技有限公司"></div>
+        </div>
+        <label>服务列表（逗号分隔）</label>
+        <input id="pp-services" value="账号注册,在线支付,消息推送">
+        <label>适用框架（逗号分隔）</label>
+        <input id="pp-fw" value="pipl,gdpr">
+        <button class="btn" onclick="genPolicy()">生成政策草稿</button>
+        <pre class="out" id="pp-result"></pre>
+      </div>
+    </section>
+
+    <!-- ============ 系统设置 ============ -->
+    <section class="page" id="page-settings">
+      <div class="panel">
+        <h3>系统设置</h3>
+        <div id="settings-list"></div>
+      </div>
+      <div class="panel">
+        <h3>告警列表</h3>
+        <div id="alert-list"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = '/api/v1/data-security-deep';
+
+// 导航
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const page = document.getElementById('page-' + btn.dataset.page);
+    if (page) page.classList.add('active');
+    document.getElementById('page-title').textContent = btn.textContent.trim();
+  });
+});
+
+// Tab切换
+document.querySelectorAll('.tabs').forEach(tabs => {
+  tabs.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const parent = tabs.parentElement;
+      parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      parent.querySelectorAll('.sub-page').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+});
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
+
+async function api(path, opts = {}) {
+  try {
+    const r = await fetch(BASE + path, {
+      headers: {'Content-Type': 'application/json'}, ...opts
+    });
+    return await r.json();
+  } catch(e) {
+    return {success: false, error: e.message};
+  }
+}
+
+function show(id, data) {
+  document.getElementById(id).textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+}
+
+// ===== 总览 =====
+async function loadOverview() {
+  document.getElementById('status-badge').innerHTML = '<span class="spinner"></span> 加载中...';
+  const r = await api('/overview');
+  if (!r.success) { show('ov-trend', r.error); return; }
+  const d = r.data;
+  document.getElementById('ov-assets').textContent = d.total_assets || '-';
+  document.getElementById('ov-coverage').textContent = (d.classification_coverage || 0) + '%';
+  document.getElementById('ov-sensitive').textContent = d.sensitive_data_volume || '-';
+  document.getElementById('ov-events').textContent = d.risk_events || '-';
+  document.getElementById('ov-compliance').textContent = d.compliance_score || '-';
+  document.getElementById('ov-dlp').textContent = d.dlp_policies || '-';
+  document.getElementById('ov-encryption').textContent = (d.encryption_rate || 0) + '%';
+  document.getElementById('ov-alerts').textContent = d.open_alerts || '-';
+  const t = await api('/trend?days=14');
+  show('ov-trend', t.data || t.error);
+  const h = await api('/stats');
+  document.getElementById('ov-health').innerHTML = '<pre class="out">' + JSON.stringify(h.data || h.error, null, 2) + '</pre>';
+  document.getElementById('status-badge').textContent = '● 在线';
+  document.getElementById('status-badge').style.color = 'var(--green)';
+}
+
+// ===== 资产发现 =====
+async function runDiscover() {
+  const types = document.getElementById('disc-types').value.split(',').map(s => s.trim()).filter(Boolean);
+  const depth = document.getElementById('disc-depth').value;
+  show('disc-result', '扫描中...');
+  const r = await api('/classification/discover', {method:'POST', body: JSON.stringify({source_types: types, scan_depth: depth})});
+  show('disc-result', r);
+  if (r.success) toast('发现 ' + r.data.new_assets_found + ' 个新资产');
+}
+
+// ===== 分类分级 =====
+async function runClassify() {
+  const aid = document.getElementById('cls-aid').value;
+  const txt = document.getElementById('cls-text').value;
+  const r = await api(`/classification/asset/${aid}/classify`, {method:'POST', body: JSON.stringify({asset_id: aid, text_sample: txt})});
+  show('cls-result', r);
+}
+async function runAutoGrade() {
+  const aid = document.getElementById('grade-aid').value;
+  const r = await api(`/classification/asset/${aid}/auto-grade`, {method:'POST'});
+  show('grade-result', r);
+}
+
+// ===== 敏感扫描 =====
+async function runScan() {
+  const txt = document.getElementById('scan-text').value;
+  if (!txt.trim()) { toast('请输入文本'); return; }
+  show('scan-result', '扫描中...');
+  const r = await api('/classification/scan-text', {method:'POST', body: JSON.stringify({text: txt})});
+  show('scan-result', r);
+}
+
+// ===== 数据地图 =====
+async function loadMap() {
+  const m = await api('/classification/data-map');
+  show('map-dist', m.data || m.error);
+  const f = await api('/classification/data-flow');
+  show('map-flow', f.data || f.error);
+  const l = await api('/classification/data-lineage');
+  show('map-lineage', l.data || l.error);
+}
+
+// ===== 资产目录 =====
+async function loadCatalog() {
+  const kw = document.getElementById('cat-kw').value;
+  const dom = document.getElementById('cat-domain').value;
+  const gr = document.getElementById('cat-grade').value;
+  const params = new URLSearchParams();
+  if (kw) params.set('keyword', kw);
+  if (dom) params.set('domain', dom);
+  if (gr) params.set('grade', gr);
+  const r = await api('/assets?' + params);
+  if (!r.success) { show('cat-table', r.error); return; }
+  const items = r.data.items || [];
+  let html = '<table><tr><th>ID</th><th>名称</th><th>类型</th><th>业务域</th><th>分级</th><th>所有者</th></tr>';
+  items.forEach(a => {
+    html += `<tr><td>${a.asset_id}</td><td>${a.name}</td><td>${a.source_type}</td><td>${a.domain}</td><td>${a.grade}</td><td>${a.owner}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('cat-table').innerHTML = html;
+}
+
+// ===== DLP =====
+async function runDlpMonitor() {
+  const channel = document.getElementById('dlp-channel').value;
+  const user = document.getElementById('dlp-user').value;
+  const dest = document.getElementById('dlp-dest').value;
+  const content = document.getElementById('dlp-content').value;
+  const r = await api('/dlp/monitor-transfer', {method:'POST', body: JSON.stringify({channel, user, destination: dest, content})});
+  show('dlp-monitor-result', r);
+}
+async function loadDlpPolicies() {
+  const r = await api('/dlp/policies');
+  if (!r.success) return;
+  const pls = r.data.policies || [];
+  let html = '<table><tr><th>ID</th><th>名称</th><th>触发</th><th>动作</th><th>状态</th></tr>';
+  pls.forEach(p => {
+    html += `<tr><td>${p.policy_id}</td><td>${p.name}</td><td>${p.trigger}</td><td>${p.action}</td><td>${p.enabled ? '<span class="tag ok">启用</span>' : '<span class="tag med">停用</span>'}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('dlp-policy-list').innerHTML = html;
+}
+async function loadDlpEvents() {
+  const r = await api('/dlp/events');
+  if (!r.success) return;
+  const evs = r.data || [];
+  let html = '<table><tr><th>ID</th><th>通道</th><th>用户</th><th>动作</th><th>级别</th><th>状态</th></tr>';
+  evs.forEach(e => {
+    html += `<tr><td>${e.event_id}</td><td>${e.channel}</td><td>${e.user||'-'}</td><td>${e.action||'-'}</td><td><span class="tag ${e.severity==='high'?'high':e.severity==='critical'?'crit':'med'}">${e.severity}</span></td><td>${e.status}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('dlp-event-list').innerHTML = html;
+  const s = await api('/dlp/statistics');
+  show('dlp-event-stats', s.data || s.error);
+}
+
+// ===== 加密脱敏 =====
+async function runEncrypt() {
+  const pt = document.getElementById('enc-plain').value;
+  const alg = document.getElementById('enc-alg').value;
+  const r = await api('/crypto/encrypt', {method:'POST', body: JSON.stringify({plaintext: pt, algorithm: alg})});
+  show('enc-result', r);
+}
+async function runMask() {
+  const data = document.getElementById('mask-data').value;
+  const method = document.getElementById('mask-method').value;
+  const r = await api('/crypto/mask', {method:'POST', body: JSON.stringify({data, method})});
+  show('mask-result', r);
+}
+async function runGenKey() {
+  const r = await api('/crypto/keys', {method:'POST', body: JSON.stringify({algorithm: 'AES-256', owner: 'admin'})});
+  toast(r.data && r.data.generated ? '密钥已生成' : r.error);
+  loadKeys();
+}
+async function loadKeys() {
+  const r = await api('/crypto/keys');
+  if (!r.success) return;
+  const ks = r.data || [];
+  let html = '<table><tr><th>ID</th><th>算法</th><th>版本</th><th>状态</th><th>创建时间</th></tr>';
+  ks.forEach(k => {
+    html += `<tr><td>${k.key_id}</td><td>${k.algorithm}</td><td>v${k.version}</td><td>${k.status}</td><td>${k.created_at}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('key-list').innerHTML = html;
+}
+async function runPrivacyCompute() {
+  const tech = document.getElementById('pc-tech').value;
+  const size = parseInt(document.getElementById('pc-size').value) || 10000;
+  const r = await api('/privacy-compute/run', {method:'POST', body: JSON.stringify({tech, data_size: size})});
+  show('pc-result', r);
+}
+
+// ===== 水印 =====
+async function runAddWatermark() {
+  const content = document.getElementById('wm-content').value;
+  const wmType = document.getElementById('wm-type').value;
+  const uid = document.getElementById('wm-user').value;
+  const r = await api('/watermark/add', {method:'POST', body: JSON.stringify({content, wm_type: wmType, user_id: uid})});
+  show('wm-result', r);
+}
+async function runDetectWatermark() {
+  const content = document.getElementById('wm-detect').value;
+  const r = await api('/watermark/detect?content=' + encodeURIComponent(content));
+  show('wm-detect-result', r);
+}
+
+// ===== 访问控制 =====
+async function runAccessCheck() {
+  const uid = document.getElementById('acc-uid').value;
+  const res = document.getElementById('acc-res').value;
+  const act = document.getElementById('acc-action').value;
+  const r = await api('/access/check', {method:'POST', body: JSON.stringify({user_id: uid, resource: res, action: act})});
+  show('acc-result', r);
+}
+async function runAccessRequest() {
+  const uid = document.getElementById('req-uid').value;
+  const res = document.getElementById('req-res').value;
+  const dur = parseInt(document.getElementById('req-dur').value) || 4;
+  const reason = document.getElementById('req-reason').value;
+  const r = await api('/access/requests', {method:'POST', body: JSON.stringify({user_id: uid, resource: res, duration_hours: dur, reason})});
+  show('req-result', r);
+  loadAccessRequests();
+}
+async function loadAccessRequests() {
+  const r = await api('/access/requests');
+  if (!r.success) return;
+  const items = r.data || [];
+  let html = '<table><tr><th>ID</th><th>用户</th><th>资源</th><th>时长</th><th>状态</th></tr>';
+  items.forEach(it => {
+    html += `<tr><td>${it.request_id}</td><td>${it.user_id}</td><td>${it.resource}</td><td>${it.duration_hours}h</td><td>${it.status}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('req-list').innerHTML = html;
+}
+async function loadGrants() {
+  const r = await api('/access/grants');
+  if (!r.success) return;
+  const items = r.data || [];
+  let html = '<table><tr><th>ID</th><th>用户</th><th>资源</th><th>剩余(小时)</th><th>过期</th></tr>';
+  items.forEach(g => {
+    html += `<tr><td>${g.grant_id}</td><td>${g.user_id}</td><td>${g.resource}</td><td>${g.remaining_hours}</td><td>${g.expired ? '是' : '否'}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('grant-list').innerHTML = html;
+}
+
+// ===== 审计 =====
+async function loadAuditLogs() {
+  const uid = document.getElementById('aud-uid').value;
+  const act = document.getElementById('aud-action').value;
+  const params = new URLSearchParams();
+  if (uid) params.set('user_id', uid);
+  if (act) params.set('action', act);
+  const r = await api('/audit/logs?' + params);
+  if (!r.success) return;
+  const items = (r.data && r.data.items) || [];
+  let html = '<table><tr><th>时间</th><th>用户</th><th>资源</th><th>操作</th><th>允许</th></tr>';
+  items.forEach(l => {
+    html += `<tr><td>${l.timestamp}</td><td>${l.user_name}</td><td>${l.resource}</td><td>${l.action}</td><td>${l.allowed ? '<span class="tag ok">是</span>' : '<span class="tag crit">否</span>'}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('audit-table').innerHTML = html;
+}
+
+// ===== 异常检测 =====
+async function runAnomalyDetect() {
+  const h = parseInt(document.getElementById('anomaly-hours').value) || 24;
+  const r = await api('/audit/anomalies?hours=' + h);
+  show('anomaly-result', r);
+}
+async function runAbuseCheck() {
+  const uid = document.getElementById('abuse-uid').value;
+  const op = document.getElementById('abuse-op').value;
+  const vol = parseInt(document.getElementById('abuse-vol').value) || 0;
+  const r = await api('/audit/check-abuse', {method:'POST', body: JSON.stringify({user_id: uid, operation: op, data_volume: vol})});
+  show('abuse-result', r);
+}
+
+// ===== 合规框架 =====
+async function loadFrameworks() {
+  const r = await api('/compliance/frameworks');
+  if (!r.success) return;
+  const fws = r.data || {};
+  let html = '<div class="grid">';
+  Object.entries(fws).forEach(([k, v]) => {
+    html += `<div class="card"><h3>${v.name}</h3><p style="font-size:12px;color:var(--muted)">地区: ${v.region} · 生效: ${v.effective}</p><p style="font-size:12px">要点: ${(v.key_requirements||[]).join('、')}</p><p style="font-size:12px;color:var(--orange)">罚则: ${v.penalty_max}</p></div>`;
+  });
+  html += '</div>';
+  document.getElementById('fw-grid').innerHTML = html;
+}
+async function runDpia() {
+  const name = document.getElementById('dpia-name').value;
+  const risk = document.getElementById('dpia-risk').value === 'true';
+  const r = await api('/compliance/dpia', {method:'POST', body: JSON.stringify({processing_name: name, high_risk_data: risk})});
+  show('dpia-result', r);
+}
+
+// ===== DSR =====
+async function submitDsr() {
+  const right = document.getElementById('dsr-right').value;
+  const name = document.getElementById('dsr-name').value;
+  const contact = document.getElementById('dsr-contact').value;
+  const details = document.getElementById('dsr-details').value;
+  const r = await api('/compliance/dsr', {method:'POST', body: JSON.stringify({right_type: right, subject_name: name, subject_contact: contact, details})});
+  show('dsr-result', r);
+  loadDsrList();
+}
+async function loadDsrList() {
+  const r = await api('/compliance/dsr');
+  if (!r.success) return;
+  const items = r.data || [];
+  let html = '<table><tr><th>ID</th><th>权利</th><th>姓名</th><th>状态</th></tr>';
+  items.forEach(it => {
+    html += `<tr><td>${it.request_id}</td><td>${it.right_name}</td><td>${it.subject_name}</td><td>${it.status}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('dsr-list').innerHTML = html;
+}
+
+// ===== 同意 =====
+async function recordConsent() {
+  const sid = document.getElementById('con-sid').value;
+  const purpose = document.getElementById('con-purpose').value;
+  const channel = document.getElementById('con-channel').value;
+  const r = await api('/compliance/consent', {method:'POST', body: JSON.stringify({subject_id: sid, purpose, channel})});
+  show('con-result', r);
+}
+async function loadConsentAudit() {
+  const r = await api('/compliance/consent/audit');
+  show('con-audit', r.data || r.error);
+}
+
+// ===== 隐私政策 =====
+async function genPolicy() {
+  const company = document.getElementById('pp-company').value;
+  const services = document.getElementById('pp-services').value.split(',').map(s => s.trim());
+  const fw = document.getElementById('pp-fw').value.split(',').map(s => s.trim());
+  const r = await api('/compliance/policy/generate', {method:'POST', body: JSON.stringify({company_name: company, services, frameworks: fw})});
+  show('pp-result', r);
+}
+
+// ===== 设置 & 告警 =====
+async function loadSettings() {
+  const r = await api('/settings');
+  if (!r.success) return;
+  const s = r.data.settings || {};
+  let html = '<table><tr><th>设置项</th><th>当前值</th></tr>';
+  Object.entries(s).forEach(([k, v]) => {
+    html += `<tr><td>${k}</td><td>${JSON.stringify(v)}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('settings-list').innerHTML = html;
+  const a = await api('/alerts');
+  if (a.success) {
+    let h = '<table><tr><th>级别</th><th>标题</th><th>来源</th><th>状态</th></tr>';
+    (a.data || []).forEach(al => {
+      h += `<tr><td><span class="tag ${al.level}">${al.level}</span></td><td>${al.title}</td><td>${al.source}</td><td>${al.status}</td></tr>`;
+    });
+    h += '</table>';
+    document.getElementById('alert-list').innerHTML = h;
+  }
+}
+
+// 页面切换时按需加载
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const p = btn.dataset.page;
+    if (p === 'dlp') { loadDlpPolicies(); loadDlpEvents(); }
+    if (p === 'crypto') loadKeys();
+    if (p === 'access') { loadAccessRequests(); loadGrants(); }
+    if (p === 'frameworks') loadFrameworks();
+    if (p === 'dsr') loadDsrList();
+    if (p === 'settings') loadSettings();
+  });
+});
+
+// 启动
+loadOverview();
+</script>
+</body>
+</html>

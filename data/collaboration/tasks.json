@@ -1,0 +1,192 @@
+{
+  "task-20260912162145-e4f19c": {
+    "task_id": "task-20260912162145-e4f19c",
+    "title": "测试任务",
+    "description": "验证SQL注入",
+    "assignee": "bob",
+    "assigner": "admin",
+    "status": "completed",
+    "priority": "high",
+    "due_date": null,
+    "tags": [
+      "sec"
+    ],
+    "related_assessment_id": null,
+    "created_at": "2026-09-12T16:21:45.574975",
+    "updated_at": "2026-09-12T16:21:45.777973",
+    "completed_at": "2026-09-12T16:21:45.777947",
+    "comments": [
+      {
+        "comment_id": "cmt-20260912162145-325f98",
+        "task_id": "task-20260912162145-e4f19c",
+        "user": "carol",
+        "content": "看看 @bob 和 @dave 这边",
+        "created_at": "2026-09-12T16:21:45.771396",
+        "mentions": [
+          "bob",
+          "dave"
+        ]
+      }
+    ],
+    "attachments": [],
+    "activity_log": [
+      {
+        "action": "create",
+        "operator": "system",
+        "detail": "创建任务: 测试任务",
+        "timestamp": "2026-09-12T16:21:45.574992"
+      },
+      {
+        "action": "assign",
+        "operator": "admin",
+        "detail": "分配给 bob(原负责人: alice)",
+        "timestamp": "2026-09-12T16:21:45.578709"
+      },
+      {
+        "action": "comment",
+        "operator": "carol",
+        "detail": "看看 @bob 和 @dave 这边",
+        "timestamp": "2026-09-12T16:21:45.771404"
+      },
+      {
+        "action": "update_status",
+        "operator": "system",
+        "detail": "status: pending -> completed",
+        "timestamp": "2026-09-12T16:21:45.777965"
+      }
+    ]
+  },
+  "task-20260912162208-e3ae75": {
+    "task_id": "task-20260912162208-e3ae75",
+    "title": "API测试",
+    "description": "d",
+    "assignee": "frank",
+    "assigner": "api",
+    "status": "in_progress",
+    "priority": "high",
+    "due_date": null,
+    "tags": [],
+    "related_assessment_id": null,
+    "created_at": "2026-09-12T16:22:08.235611",
+    "updated_at": "2026-09-12T16:22:08.265495",
+    "completed_at": null,
+    "comments": [
+      {
+        "comment_id": "cmt-20260912162208-b25cc5",
+        "task_id": "task-20260912162208-e3ae75",
+        "user": "grace",
+        "content": "hi @frank",
+        "created_at": "2026-09-12T16:22:08.265487",
+        "mentions": [
+          "frank"
+        ]
+      }
+    ],
+    "attachments": [],
+    "activity_log": [
+      {
+        "action": "create",
+        "operator": "system",
+        "detail": "创建任务: API测试",
+        "timestamp": "2026-09-12T16:22:08.235624"
+      },
+      {
+        "action": "update_priority",
+        "operator": "system",
+        "detail": "priority: medium -> high",
+        "timestamp": "2026-09-12T16:22:08.246133"
+      },
+      {
+        "action": "update_status",
+        "operator": "system",
+        "detail": "status: pending -> in_progress",
+        "timestamp": "2026-09-12T16:22:08.246156"
+      },
+      {
+        "action": "assign",
+        "operator": "api",
+        "detail": "分配给 frank(原负责人: eve)",
+        "timestamp": "2026-09-12T16:22:08.254421"
+      },
+      {
+        "action": "comment",
+        "operator": "grace",
+        "detail": "hi @frank",
+        "timestamp": "2026-09-12T16:22:08.265494"
+      }
+    ]
+  },
+  "task-20260912162257-d2a736": {
+    "task_id": "task-20260912162257-d2a736",
+    "title": "联动测试",
+    "description": "",
+    "assignee": "judy",
+    "assigner": "admin",
+    "status": "pending",
+    "priority": "high",
+    "due_date": null,
+    "tags": [],
+    "related_assessment_id": null,
+    "created_at": "2026-09-12T16:22:57.998895",
+    "updated_at": "2026-09-12T16:22:58.018812",
+    "completed_at": null,
+    "comments": [
+      {
+        "comment_id": "cmt-20260912162258-ddf307",
+        "task_id": "task-20260912162257-d2a736",
+        "user": "mallory",
+        "content": "@judy 看这个",
+        "created_at": "2026-09-12T16:22:58.018802",
+        "mentions": [
+          "judy"
+        ]
+      }
+    ],
+    "attachments": [],
+    "activity_log": [
+      {
+        "action": "create",
+        "operator": "system",
+        "detail": "创建任务: 联动测试",
+        "timestamp": "2026-09-12T16:22:57.998909"
+      },
+      {
+        "action": "assign",
+        "operator": "admin",
+        "detail": "分配给 judy(原负责人: ivan)",
+        "timestamp": "2026-09-12T16:22:58.007888"
+      },
+      {
+        "action": "comment",
+        "operator": "mallory",
+        "detail": "@judy 看这个",
+        "timestamp": "2026-09-12T16:22:58.018810"
+      }
+    ]
+  },
+  "task-20260912164355-c6e555": {
+    "task_id": "task-20260912164355-c6e555",
+    "title": "端到端验证任务",
+    "description": "升级验证",
+    "assignee": "admin",
+    "assigner": null,
+    "status": "pending",
+    "priority": "high",
+    "due_date": null,
+    "tags": [],
+    "related_assessment_id": null,
+    "created_at": "2026-09-12T16:43:55.644750",
+    "updated_at": "2026-09-12T16:43:55.645058",
+    "completed_at": null,
+    "comments": [],
+    "attachments": [],
+    "activity_log": [
+      {
+        "action": "create",
+        "operator": "system",
+        "detail": "创建任务: 端到端验证任务",
+        "timestamp": "2026-09-12T16:43:55.644969"
+      }
+    ]
+  }
+}

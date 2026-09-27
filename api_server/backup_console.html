@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据备份恢复控制台</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: #0d1117; color: #c9d1d9;
+    min-height: 100vh; padding: 16px;
+  }
+  h1 { color: #58a6ff; font-size: 20px; margin-bottom: 12px; }
+  h2 { color: #79c0ff; font-size: 16px; margin: 12px 0 8px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid #30363d; }
+  .tab {
+    padding: 8px 16px; cursor: pointer; background: #161b22; color: #8b949e;
+    border: 1px solid #30363d; border-bottom: none; border-radius: 6px 6px 0 0;
+  }
+  .tab.active { background: #1f6feb; color: #fff; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px; border-bottom: 1px solid #30363d; text-align: left; }
+  th { color: #58a6ff; background: #1c2128; }
+  tr:hover { background: #1c2128; }
+  button {
+    background: #238636; color: #fff; border: none; padding: 6px 12px;
+    border-radius: 4px; cursor: pointer; margin: 2px; font-size: 13px;
+  }
+  button:hover { background: #2ea043; }
+  button.danger { background: #da3633; }
+  button.danger:hover { background: #f85149; }
+  button.secondary { background: #30363d; }
+  button.secondary:hover { background: #484f58; }
+  input, select, textarea {
+    background: #0d1117; color: #c9d1d9; border: 1px solid #30363d;
+    padding: 6px; border-radius: 4px; font-size: 13px; margin: 2px;
+  }
+  input[type=text], input[type=number], select { width: 180px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .badge { padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+  .badge.ok { background: #1f6feb33; color: #58a6ff; }
+  .badge.err { background: #da363333; color: #f85149; }
+  .badge.warn { background: #d2992233; color: #d29922; }
+  #toast {
+    position: fixed; top: 20px; right: 20px; background: #1f6feb;
+    color: #fff; padding: 10px 16px; border-radius: 6px; display: none;
+    z-index: 999;
+  }
+  pre { background: #0d1117; padding: 10px; border-radius: 4px; overflow: auto; max-height: 300px; font-size: 12px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 10px; }
+  .stat { background: #1c2128; padding: 12px; border-radius: 6px; }
+  .stat .num { font-size: 22px; color: #58a6ff; font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>数据备份恢复控制台（v10）</h1>
+<div id="toast"></div>
+
+<div class="tabs">
+  <div class="tab active" data-p="backups">备份管理</div>
+  <div class="tab" data-p="schedules">备份计划</div>
+  <div class="tab" data-p="restore">恢复管理</div>
+  <div class="tab" data-p="migration">迁移管理</div>
+  <div class="tab" data-p="export">导出管理</div>
+  <div class="tab" data-p="storage">存储配置</div>
+</div>
+
+<!-- 备份管理 -->
+<div class="panel active" id="p-backups">
+  <div class="card">
+    <h2>统计</h2>
+    <div class="stat-grid" id="backup-stats"></div>
+  </div>
+  <div class="card">
+    <h2>创建备份</h2>
+    <div class="row">
+      <label>类型:</label>
+      <select id="bk-type">
+        <option value="full">完整备份</option>
+        <option value="incremental">增量备份</option>
+        <option value="differential">差异备份</option>
+      </select>
+      <label>压缩:<input type="checkbox" id="bk-compress" checked></label>
+      <label>加密:<input type="checkbox" id="bk-encrypt"></label>
+      <input type="text" id="bk-password" placeholder="加密密码" style="width:120px">
+      <label>含配置:<input type="checkbox" id="bk-cfg" checked></label>
+      <label>含日志:<input type="checkbox" id="bk-log"></label>
+      <input type="text" id="bk-desc" placeholder="备份描述" style="width:200px">
+      <button onclick="createBackup()">创建备份</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>备份列表</h2>
+    <table id="bk-table">
+      <thead><tr><th>名称</th><th>类型</th><th>大小</th><th>表数</th><th>记录数</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 备份计划 -->
+<div class="panel" id="p-schedules">
+  <div class="card">
+    <h2>创建计划</h2>
+    <div class="row">
+      <input type="text" id="sch-name" placeholder="计划名称">
+      <select id="sch-type">
+        <option value="daily">每天</option>
+        <option value="weekly">每周</option>
+        <option value="monthly">每月</option>
+      </select>
+      <input type="text" id="sch-time" value="02:00" style="width:80px" placeholder="HH:MM">
+      <select id="sch-btype">
+        <option value="full">完整</option>
+        <option value="incremental">增量</option>
+        <option value="differential">差异</option>
+      </select>
+      <input type="number" id="sch-retention" value="30" style="width:80px" placeholder="保留天数">
+      <button onclick="createSchedule()">创建</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>计划列表</h2>
+    <table id="sch-table">
+      <thead><tr><th>名称</th><th>周期</th><th>时间</th><th>类型</th><th>保留天数</th><th>上次执行</th><th>操作</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 恢复管理 -->
+<div class="panel" id="p-restore">
+  <div class="card">
+    <h2>选择备份 ID</h2>
+    <div class="row">
+      <input type="text" id="rs-bkid" placeholder="备份 ID" style="width:280px">
+      <input type="text" id="rs-pwd" placeholder="密码(如加密)" style="width:140px">
+      <button onclick="previewRestore()">预览</button>
+      <button class="danger" onclick="executeRestore()">执行恢复</button>
+    </div>
+    <pre id="rs-preview">（预览结果显示在此）</pre>
+  </div>
+  <div class="card">
+    <h2>恢复任务</h2>
+    <div class="row">
+      <input type="text" id="rs-task" placeholder="任务 ID" style="width:240px">
+      <button class="secondary" onclick="restoreStatus()">状态</button>
+      <button class="secondary" onclick="restoreReport()">报告</button>
+      <button class="danger" onclick="rollbackRestore()">回滚</button>
+    </div>
+    <pre id="rs-result">（结果显示在此）</pre>
+  </div>
+</div>
+
+<!-- 迁移管理 -->
+<div class="panel" id="p-migration">
+  <div class="card">
+    <h2>新建迁移</h2>
+    <div class="row">
+      <select id="mg-type">
+        <option value="version_upgrade">版本升级</option>
+        <option value="sqlite_to_mysql">SQLite->MySQL</option>
+        <option value="sqlite_to_postgresql">SQLite->PostgreSQL</option>
+        <option value="tenant_migration">租户数据迁移</option>
+      </select>
+      <input type="text" id="mg-target" placeholder="目标路径(可选)" style="width:240px">
+      <button onclick="previewMigration()">预览</button>
+      <button class="danger" onclick="executeMigration()">执行</button>
+    </div>
+    <pre id="mg-result">（迁移结果显示在此）</pre>
+  </div>
+  <div class="card">
+    <h2>迁移任务查询</h2>
+    <div class="row">
+      <input type="text" id="mg-task" placeholder="任务 ID" style="width:240px">
+      <button class="secondary" onclick="migrationStatus()">状态</button>
+      <button class="secondary" onclick="migrationReport()">报告</button>
+    </div>
+  </div>
+</div>
+
+<!-- 导出管理 -->
+<div class="panel" id="p-export">
+  <div class="card">
+    <h2>导出统计</h2>
+    <div class="stat-grid" id="exp-stats"></div>
+  </div>
+  <div class="card">
+    <h2>创建导出</h2>
+    <div class="row">
+      <select id="exp-format">
+        <option value="json">JSON</option>
+        <option value="csv">CSV</option>
+        <option value="xml">XML</option>
+        <option value="sql">SQL</option>
+        <option value="html">HTML</option>
+      </select>
+      <input type="text" id="exp-tables" placeholder="表名(逗号分隔,空=全部)" style="width:220px">
+      <label>压缩:<input type="checkbox" id="exp-compress"></label>
+      <label>加密:<input type="checkbox" id="exp-encrypt"></label>
+      <input type="text" id="exp-pwd" placeholder="密码" style="width:100px">
+      <button onclick="createExport()">创建导出</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>导出列表</h2>
+    <table id="exp-table">
+      <thead><tr><th>ID</th><th>格式</th><th>大小</th><th>记录数</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 存储配置 -->
+<div class="panel" id="p-storage">
+  <div class="card">
+    <h2>存储配置</h2>
+    <p>本地存储路径: <code>data/backups/</code></p>
+    <p>远程存储(FTP/SFTP/S3/OSS): 接口预留</p>
+    <h2>保留策略</h2>
+    <div class="row">
+      <input type="number" id="keep-days" value="30" style="width:80px" placeholder="保留天数">
+      <input type="number" id="keep-count" value="10" style="width:80px" placeholder="保留数量">
+      <button class="danger" onclick="cleanup()">立即清理过期备份</button>
+    </div>
+    <pre id="storage-info"></pre>
+  </div>
+</div>
+
+<script>
+const BASE = '/api/v1/backup';
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
+async function api(path, method='GET', body) {
+  const opt = { method, headers: {'Content-Type':'application/json'} };
+  if (body) opt.body = JSON.stringify(body);
+  try {
+    const r = await fetch(BASE + path, opt);
+    return await r.json();
+  } catch (e) {
+    return { success: false, error: String(e) };
+  }
+}
+// Tabs
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('p-' + t.dataset.p).classList.add('active');
+    if (t.dataset.p === 'backups') loadBackups();
+    if (t.dataset.p === 'schedules') loadSchedules();
+    if (t.dataset.p === 'export') loadExports();
+  };
+});
+
+// 备份
+async function loadBackups() {
+  const [list, stats] = await Promise.all([api('/list'), api('/stats')]);
+  const tbody = document.querySelector('#bk-table tbody');
+  tbody.innerHTML = '';
+  (list.data?.items || []).forEach(b => {
+    const tr = document.createElement('tr');
+    const sz = (b.file_size/1024).toFixed(1) + 'KB';
+    const cls = b.status === 'success' ? 'ok' : 'err';
+    tr.innerHTML = `<td>${b.name}</td><td>${b.backup_type}</td><td>${sz}</td>` +
+      `<td>${b.tables_count}</td><td>${b.records_count}</td>` +
+      `<td><span class="badge ${cls}">${b.status}</span></td>` +
+      `<td>${b.created_at}</td>` +
+      `<td>
+        <button class="secondary" onclick="verifyBk('${b.id}')">验证</button>
+        <button class="secondary" onclick="dlBk('${b.id}')">下载</button>
+        <button class="danger" onclick="delBk('${b.id}')">删除</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  const sg = document.getElementById('backup-stats');
+  if (stats.data) {
+    sg.innerHTML = `
+      <div class="stat"><div>总备份数</div><div class="num">${stats.data.total_backups}</div></div>
+      <div class="stat"><div>总大小</div><div class="num">${(stats.data.total_size_bytes/1024/1024).toFixed(2)}MB</div></div>
+      <div class="stat"><div>计划数</div><div class="num">${stats.data.total_schedules}</div></div>
+      <div class="stat"><div>完整备份</div><div class="num">${stats.data.by_type?.full||0}</div></div>`;
+  }
+}
+async function createBackup() {
+  const body = {
+    backup_type: document.getElementById('bk-type').value,
+    compress: document.getElementById('bk-compress').checked,
+    encrypt: document.getElementById('bk-encrypt').checked,
+    password: document.getElementById('bk-password').value || null,
+    include_configs: document.getElementById('bk-cfg').checked,
+    include_logs: document.getElementById('bk-log').checked,
+    description: document.getElementById('bk-desc').value || '',
+  };
+  const r = await api('/create', 'POST', body);
+  toast(r.success ? '备份创建成功' : ('失败: ' + r.error));
+  loadBackups();
+}
+async function verifyBk(id) {
+  const r = await api('/' + id + '/verify', 'POST');
+  toast(r.success ? '校验通过' : '校验失败: ' + r.error);
+}
+async function delBk(id) {
+  if (!confirm('确认删除该备份?')) return;
+  const r = await api('/' + id, 'DELETE');
+  toast(r.success ? '已删除' : r.error);
+  loadBackups();
+}
+function dlBk(id) { window.open(BASE + '/' + id + '/download'); }
+
+// 计划
+async function loadSchedules() {
+  const r = await api('/schedule');
+  const tbody = document.querySelector('#sch-table tbody');
+  tbody.innerHTML = '';
+  (r.data?.items || []).forEach(s => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${s.name}</td><td>${s.schedule_type}</td><td>${s.time}</td>` +
+      `<td>${s.backup_type}</td><td>${s.retention_days}</td><td>${s.last_run_at||'-'}</td>` +
+      `<td>
+        <button onclick="execSch('${s.id}')">立即执行</button>
+        <button class="danger" onclick="delSch('${s.id}')">删除</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+async function createSchedule() {
+  const body = {
+    name: document.getElementById('sch-name').value,
+    schedule_type: document.getElementById('sch-type').value,
+    time: document.getElementById('sch-time').value,
+    backup_type: document.getElementById('sch-btype').value,
+    retention_days: parseInt(document.getElementById('sch-retention').value || '30'),
+  };
+  if (!body.name) { toast('请输入计划名称'); return; }
+  const r = await api('/schedule', 'POST', body);
+  toast(r.success ? '计划已创建' : r.error);
+  loadSchedules();
+}
+async function execSch(id) {
+  const r = await api('/schedule/' + id + '/execute', 'POST');
+  toast(r.success ? '已执行' : r.error);
+}
+async function delSch(id) {
+  if (!confirm('确认删除该计划?')) return;
+  await api('/schedule/' + id, 'DELETE');
+  loadSchedules();
+}
+
+// 恢复
+async function previewRestore() {
+  const id = document.getElementById('rs-bkid').value;
+  const r = await api('/restore/' + id + '/preview', 'POST', {});
+  document.getElementById('rs-preview').textContent = JSON.stringify(r, null, 2);
+}
+async function executeRestore() {
+  const id = document.getElementById('rs-bkid').value;
+  const pwd = document.getElementById('rs-pwd').value;
+  if (!confirm('恢复将先自动备份当前数据,确认继续?')) return;
+  const r = await api('/restore/' + id + '/execute', 'POST', { password: pwd || null });
+  document.getElementById('rs-result').textContent = JSON.stringify(r, null, 2);
+  toast(r.success ? '恢复完成' : ('失败: ' + r.error));
+}
+async function restoreStatus() {
+  const id = document.getElementById('rs-task').value;
+  const r = await api('/restore/' + id + '/status');
+  document.getElementById('rs-result').textContent = JSON.stringify(r, null, 2);
+}
+async function restoreReport() {
+  const id = document.getElementById('rs-task').value;
+  const r = await api('/restore/' + id + '/report');
+  document.getElementById('rs-result').textContent = JSON.stringify(r, null, 2);
+}
+async function rollbackRestore() {
+  const id = document.getElementById('rs-task').value;
+  const r = await api('/restore/' + id + '/rollback', 'POST');
+  toast(r.success ? '已回滚' : r.error);
+}
+
+// 迁移
+async function previewMigration() {
+  const body = {
+    migration_type: document.getElementById('mg-type').value,
+    target: document.getElementById('mg-target').value || null,
+  };
+  const r = await api('/migration/preview', 'POST', body);
+  document.getElementById('mg-result').textContent = JSON.stringify(r, null, 2);
+}
+async function executeMigration() {
+  if (!confirm('迁移前将自动备份,确认执行?')) return;
+  const body = {
+    migration_type: document.getElementById('mg-type').value,
+    target: document.getElementById('mg-target').value || null,
+  };
+  const r = await api('/migration/execute', 'POST', body);
+  document.getElementById('mg-result').textContent = JSON.stringify(r, null, 2);
+}
+async function migrationStatus() {
+  const id = document.getElementById('mg-task').value;
+  const r = await api('/migration/' + id + '/status');
+  document.getElementById('mg-result').textContent = JSON.stringify(r, null, 2);
+}
+async function migrationReport() {
+  const id = document.getElementById('mg-task').value;
+  const r = await api('/migration/' + id + '/report');
+  document.getElementById('mg-result').textContent = JSON.stringify(r, null, 2);
+}
+
+// 导出
+async function loadExports() {
+  const [list, stats] = await Promise.all([api('/export/list'), api('/export/stats')]);
+  const tbody = document.querySelector('#exp-table tbody');
+  tbody.innerHTML = '';
+  (list.data?.items || []).forEach(e => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${e.id.slice(0,8)}</td><td>${e.export_format}</td>` +
+      `<td>${(e.file_size/1024).toFixed(1)}KB</td><td>${e.record_count}</td>` +
+      `<td><span class="badge ${e.status==='success'?'ok':'err'}">${e.status}</span></td>` +
+      `<td>${e.created_at}</td>` +
+      `<td><button class="secondary" onclick="window.open('${BASE}/export/${e.id}/download')">下载</button></td>`;
+    tbody.appendChild(tr);
+  });
+  const sg = document.getElementById('exp-stats');
+  if (stats.data) {
+    sg.innerHTML = `
+      <div class="stat"><div>总导出</div><div class="num">${stats.data.total_exports}</div></div>
+      <div class="stat"><div>总大小</div><div class="num">${(stats.data.total_size_bytes/1024).toFixed(1)}KB</div></div>`;
+  }
+}
+async function createExport() {
+  const tables = document.getElementById('exp-tables').value;
+  const body = {
+    format: document.getElementById('exp-format').value,
+    tables: tables ? tables.split(',').map(s => s.trim()).filter(Boolean) : null,
+    compress: document.getElementById('exp-compress').checked,
+    encrypt: document.getElementById('exp-encrypt').checked,
+    password: document.getElementById('exp-pwd').value || null,
+  };
+  const r = await api('/export/create', 'POST', body);
+  toast(r.success ? '导出成功' : ('失败: ' + r.error));
+  loadExports();
+}
+
+// 存储
+async function cleanup() {
+  const days = parseInt(document.getElementById('keep-days').value || '30');
+  const cnt = parseInt(document.getElementById('keep-count').value || '0') || null;
+  const r = await api('/cleanup?retention_days=' + days +
+    (cnt ? '&retention_count=' + cnt : ''), 'POST');
+  document.getElementById('storage-info').textContent =
+    '清理完成,移除: ' + JSON.stringify(r.data || r.error);
+}
+
+// 初始化
+loadBackups();
+</script>
+</body>
+</html>

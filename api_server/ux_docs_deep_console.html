@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UX Docs Deep · 文档与用户体验优化控制台</title>
+<style>
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --border: #30363d;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --accent: #58a6ff;
+  --success: #3fb950;
+  --warning: #d29922;
+  --danger: #f85149;
+  --radius: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent);
+}
+header .meta { font-size: 12px; color: var(--text-secondary); }
+.tabs {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  overflow-x: auto;
+  padding: 0 12px;
+}
+.tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 14px 18px;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.tab-btn:hover { color: var(--text-primary); }
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+main { padding: 20px; max-width: 1400px; margin: 0 auto; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.card h3 {
+  font-size: 15px;
+  margin-bottom: 12px;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.stat {
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.stat .label { font-size: 12px; color: var(--text-secondary); }
+.stat .value { font-size: 24px; font-weight: 600; color: var(--text-primary); margin-top: 4px; }
+.stat .value.accent { color: var(--accent); }
+.stat .value.success { color: var(--success); }
+.stat .value.warning { color: var(--warning); }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th, td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+th { color: var(--text-secondary); font-weight: 500; background: var(--bg-tertiary); }
+tr:hover td { background: rgba(88, 166, 255, 0.05); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.badge.published, .badge.success { background: rgba(63, 185, 80, 0.15); color: var(--success); }
+.badge.draft, .badge.open { background: rgba(210, 153, 34, 0.15); color: var(--warning); }
+.badge.archived, .badge.closed { background: rgba(139, 148, 158, 0.15); color: var(--text-secondary); }
+.badge.deprecated { background: rgba(248, 81, 73, 0.15); color: var(--danger); }
+.badge.info { background: rgba(88, 166, 255, 0.15); color: var(--accent); }
+.btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: opacity 0.2s;
+}
+.btn:hover { opacity: 0.85; }
+.btn.secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); }
+.btn.danger { background: var(--danger); }
+.form-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+input, select, textarea {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  flex: 1;
+  min-width: 120px;
+}
+textarea { min-height: 60px; resize: vertical; }
+.muted { color: var(--text-secondary); font-size: 12px; }
+.empty { text-align: center; padding: 40px; color: var(--text-secondary); }
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--accent);
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  display: none;
+  z-index: 9999;
+}
+.toast.show { display: block; }
+pre {
+  background: var(--bg-primary);
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 12px;
+  border: 1px solid var(--border);
+}
+@media (max-width: 768px) {
+  header { padding: 12px; }
+  main { padding: 12px; }
+  .grid { grid-template-columns: 1fr 1fr; }
+  table { font-size: 12px; }
+  th, td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>📚 UX Docs Deep · 文档与用户体验优化控制台</h1>
+    <div class="meta">第28轮升级方向4 · v28.4.0 · 全内存模拟</div>
+  </div>
+  <div class="meta" id="clock">--:--:--</div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab-btn active" data-tab="overview">📊 文档总览</button>
+  <button class="tab-btn" data-tab="manual">📖 用户手册</button>
+  <button class="tab-btn" data-tab="deployment">🚀 部署文档</button>
+  <button class="tab-btn" data-tab="api">🔌 API文档</button>
+  <button class="tab-btn" data-tab="ux">🎨 前端优化</button>
+  <button class="tab-btn" data-tab="onboarding">🎓 新手引导</button>
+  <button class="tab-btn" data-tab="docs">🗂 文档管理</button>
+  <button class="tab-btn" data-tab="settings">⚙️ 系统设置</button>
+</nav>
+
+<main>
+  <!-- 1. 总览 -->
+  <section id="tab-overview" class="tab-pane active">
+    <div class="grid" id="overview-stats"></div>
+    <div class="card">
+      <h3>7天趋势概览</h3>
+      <div id="overview-trend"><div class="empty">加载中...</div></div>
+    </div>
+  </section>
+
+  <!-- 2. 用户手册 -->
+  <section id="tab-manual" class="tab-pane">
+    <div class="card">
+      <h3>手册分册</h3>
+      <div id="manual-sections"><div class="empty">加载中...</div></div>
+    </div>
+    <div class="card">
+      <h3>文章列表</h3>
+      <div class="form-row">
+        <input id="manual-keyword" placeholder="搜索文章标题/内容">
+        <button class="btn" onclick="loadManualArticles()">搜索</button>
+      </div>
+      <div id="manual-articles"></div>
+    </div>
+  </section>
+
+  <!-- 3. 部署文档 -->
+  <section id="tab-deployment" class="tab-pane">
+    <div class="grid" id="deploy-stats"></div>
+    <div class="card">
+      <h3>部署平台支持</h3>
+      <div id="deploy-platforms"></div>
+    </div>
+    <div class="card">
+      <h3>部署文档列表</h3>
+      <div id="deploy-docs"></div>
+    </div>
+    <div class="card">
+      <h3>部署历史</h3>
+      <div id="deploy-records"></div>
+    </div>
+  </section>
+
+  <!-- 4. API 文档 -->
+  <section id="tab-api" class="tab-pane">
+    <div class="grid" id="api-stats"></div>
+    <div class="card">
+      <h3>API 概览</h3>
+      <div id="api-overview"></div>
+    </div>
+    <div class="card">
+      <h3>接口列表</h3>
+      <div id="api-endpoints"></div>
+    </div>
+    <div class="card">
+      <h3>变更日志</h3>
+      <div id="api-changes"></div>
+    </div>
+  </section>
+
+  <!-- 5. 前端 UX -->
+  <section id="tab-ux" class="tab-pane">
+    <div class="grid" id="ux-stats"></div>
+    <div class="card">
+      <h3>UX 改进项</h3>
+      <div id="ux-improvements"></div>
+    </div>
+    <div class="card">
+      <h3>性能快照</h3>
+      <div id="ux-perf"></div>
+    </div>
+    <div class="card">
+      <h3>无障碍规则</h3>
+      <div id="ux-a11y"></div>
+    </div>
+  </section>
+
+  <!-- 6. 新手引导 -->
+  <section id="tab-onboarding" class="tab-pane">
+    <div class="grid" id="onb-stats"></div>
+    <div class="card">
+      <h3>引导流程</h3>
+      <div id="onb-flows"></div>
+    </div>
+    <div class="card">
+      <h3>教程库</h3>
+      <div id="onb-tutorials"></div>
+    </div>
+    <div class="card">
+      <h3>视频教程</h3>
+      <div id="onb-videos"></div>
+    </div>
+    <div class="card">
+      <h3>学习路径</h3>
+      <div id="onb-paths"></div>
+    </div>
+  </section>
+
+  <!-- 7. 文档管理 -->
+  <section id="tab-docs" class="tab-pane">
+    <div class="grid" id="dm-stats"></div>
+    <div class="card">
+      <h3>文档列表</h3>
+      <div class="form-row">
+        <input id="dm-keyword" placeholder="搜索文档">
+        <button class="btn" onclick="loadDocsList()">搜索</button>
+      </div>
+      <div id="dm-list"></div>
+    </div>
+    <div class="card">
+      <h3>文档分析</h3>
+      <div id="dm-analytics"></div>
+    </div>
+  </section>
+
+  <!-- 8. 系统设置 -->
+  <section id="tab-settings" class="tab-pane">
+    <div class="card">
+      <h3>当前设置</h3>
+      <div id="settings-view"></div>
+    </div>
+    <div class="card">
+      <h3>模块清单</h3>
+      <div id="settings-modules"></div>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "/api/v1/ux-docs-deep";
+
+// ---------- 工具 ----------
+async function fetchJSON(url, opts = {}) {
+  try {
+    const r = await fetch(API + url, {
+      headers: { "Content-Type": "application/json" },
+      ...opts,
+    });
+    const j = await r.json();
+    if (!j.success) throw new Error(j.error || "请求失败");
+    return j.data;
+  } catch (e) {
+    showToast("❌ " + e.message);
+    console.error(url, e);
+    return null;
+  }
+}
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+function esc(s) {
+  if (s === null || s === undefined) return "";
+  return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+}
+function stat(label, value, cls = "") {
+  return `<div class="stat"><div class="label">${label}</div><div class="value ${cls}">${value}</div></div>`;
+}
+function table(headers, rows) {
+  return `<table><thead><tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr></thead>
+    <tbody>${rows.map(r => "<tr>" + r.map(c => `<td>${c}</td>`).join("") + "</tr>").join("")}</tbody></table>`;
+}
+function badge(status) {
+  const map = { published: "success", draft: "open", archived: "closed",
+    open: "open", done: "success", deprecated: "deprecated",
+    success: "success" };
+  return `<span class="badge ${map[status] || "info"}">${esc(status)}</span>`;
+}
+
+// ---------- Tab 切换 ----------
+document.getElementById("tabs").addEventListener("click", e => {
+  const btn = e.target.closest(".tab-btn");
+  if (!btn) return;
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+  loadTab(btn.dataset.tab);
+});
+
+function loadTab(tab) {
+  const loaders = {
+    overview: loadOverview,
+    manual: loadManual,
+    deployment: loadDeployment,
+    api: loadApi,
+    ux: loadUX,
+    onboarding: loadOnboarding,
+    docs: loadDocs,
+    settings: loadSettings,
+  };
+  if (loaders[tab]) loaders[tab]();
+}
+
+// ---------- 1. 总览 ----------
+async function loadOverview() {
+  const d = await fetchJSON("/overview");
+  if (!d) return;
+  document.getElementById("overview-stats").innerHTML =
+    stat("手册文章", d.manual.total_articles, "accent") +
+    stat("部署文档", d.deployment.total_docs, "accent") +
+    stat("API端点", d.api.total_endpoints, "success") +
+    stat("UX改进项", d.frontend_ux.total_improvements, "warning") +
+    stat("教程", d.onboarding.tutorials, "accent") +
+    stat("视频", d.onboarding.videos, "accent") +
+    stat("文档总数", d.docs_management.total_docs, "success");
+  const trend = d.trend_7d || [];
+  document.getElementById("overview-trend").innerHTML = table(
+    ["日期", "文档浏览", "API调用", "教程完成", "反馈"],
+    trend.map(t => [t.date, t.doc_views, t.api_calls, t.tutorial_completions, t.feedback_items])
+  );
+}
+
+// ---------- 2. 用户手册 ----------
+async function loadManual() {
+  const secs = await fetchJSON("/manual/sections");
+  if (secs) {
+    document.getElementById("manual-sections").innerHTML = table(
+      ["分册", "文章数", "章节数"],
+      secs.map(s => [s.name, s.article_count, s.chapters.length])
+    );
+  }
+  await loadManualArticles();
+}
+async function loadManualArticles() {
+  const kw = document.getElementById("manual-keyword").value;
+  const arts = await fetchJSON("/manual/articles" + (kw ? "?keyword=" + encodeURIComponent(kw) : ""));
+  if (!arts) return;
+  document.getElementById("manual-articles").innerHTML = table(
+    ["ID", "分册", "章节", "标题", "状态", "浏览", "点赞"],
+    arts.map(a => [a.id.slice(0, 12), a.section, a.chapter, esc(a.title),
+      badge(a.status), a.views, a.likes])
+  );
+}
+
+// ---------- 3. 部署 ----------
+async function loadDeployment() {
+  const stats = await fetchJSON("/deployment/stats");
+  if (stats) {
+    document.getElementById("deploy-stats").innerHTML =
+      stat("文档总数", stats.total_docs, "accent") +
+      stat("部署记录", stats.deploy_records, "info") +
+      stat("成功部署", stats.success_deploys, "success");
+  }
+  const plats = await fetchJSON("/deployment/platforms");
+  if (plats) {
+    document.getElementById("deploy-platforms").innerHTML = table(
+      ["平台", "要求", "包格式", "难度"],
+      Object.values(plats).map(p => [p.name, p.min_os || p.vendors || "-", p.package || "-", p.difficulty || "-"])
+    );
+  }
+  const docs = await fetchJSON("/deployment/docs");
+  if (docs) {
+    document.getElementById("deploy-docs").innerHTML = table(
+      ["ID", "分类", "标题", "平台", "负责人"],
+      docs.map(d => [d.id.slice(0, 12), d.category, esc(d.title), d.platform, d.owner])
+    );
+  }
+  const recs = await fetchJSON("/deployment/records");
+  document.getElementById("deploy-records").innerHTML = recs
+    ? table(["时间", "环境", "平台", "版本", "操作人", "结果"],
+        recs.map(r => [r.time, r.env, r.platform, r.version, r.operator, badge(r.result)]))
+    : "<div class='empty'>暂无记录</div>";
+}
+
+// ---------- 4. API ----------
+async function loadApi() {
+  const stats = await fetchJSON("/api/stats");
+  if (stats) {
+    document.getElementById("api-stats").innerHTML =
+      stat("端点总数", stats.total_endpoints, "accent") +
+      stat("已废弃", stats.deprecated, "warning") +
+      stat("活跃Token", stats.tokens_active, "success") +
+      stat("变更记录", stats.changes, "info");
+  }
+  const ov = await fetchJSON("/api/overview");
+  if (ov) {
+    document.getElementById("api-overview").innerHTML = table(
+      ["项", "值"],
+      [["标题", ov.title], ["版本", ov.version], ["Base URL", ov.base_url],
+       ["限流", ov.rate_limit], ["Content-Type", ov.content_type]]
+    );
+  }
+  const eps = await fetchJSON("/api/endpoints?include_deprecated=true");
+  if (eps) {
+    document.getElementById("api-endpoints").innerHTML = table(
+      ["方法", "路径", "摘要", "分类", "已废弃"],
+      eps.map(e => [badge(e.method), e.path, esc(e.summary), e.category, e.deprecated ? "是" : "否"])
+    );
+  }
+  const chs = await fetchJSON("/api/changes");
+  if (chs) {
+    document.getElementById("api-changes").innerHTML = table(
+      ["版本", "类型", "端点", "说明", "日期"],
+      chs.map(c => [c.version, badge(c.change_type), c.endpoint, esc(c.description), c.date])
+    );
+  }
+}
+
+// ---------- 5. UX ----------
+async function loadUX() {
+  const stats = await fetchJSON("/ux/stats");
+  if (stats) {
+    document.getElementById("ux-stats").innerHTML =
+      stat("改进项", stats.total_improvements, "accent") +
+      stat("已完成", stats.done, "success") +
+      stat("进行中", stats.open, "warning") +
+      stat("语言数", stats.languages, "info");
+  }
+  const imps = await fetchJSON("/ux/improvements");
+  if (imps) {
+    document.getElementById("ux-improvements").innerHTML = table(
+      ["区域", "标题", "优先级", "状态", "负责人"],
+      imps.map(i => [i.area, esc(i.title), i.priority, badge(i.status), i.owner])
+    );
+  }
+  const perf = await fetchJSON("/ux/perf");
+  document.getElementById("ux-perf").innerHTML = perf
+    ? table(["页面", "时间", "FCP(ms)", "LCP(ms)", "CLS", "JS(KB)"],
+        perf.map(p => [p.page, p.timestamp, p.fcp_ms, p.lcp_ms, p.cls, p.js_kb]))
+    : "<div class='empty'>暂无</div>";
+  const a11y = await fetchJSON("/ux/a11y-rules");
+  if (a11y) {
+    document.getElementById("ux-a11y").innerHTML = table(
+      ["ID", "规则", "标准", "等级"],
+      a11y.map(r => [r.id, r.name, r.standard, r.level])
+    );
+  }
+}
+
+// ---------- 6. 新手引导 ----------
+async function loadOnboarding() {
+  const stats = await fetchJSON("/onboarding/stats");
+  if (stats) {
+    document.getElementById("onb-stats").innerHTML =
+      stat("教程", stats.tutorials, "accent") +
+      stat("视频", stats.videos, "accent") +
+      stat("实验环境", stats.labs, "info") +
+      stat("学习路径", stats.paths, "success") +
+      stat("开放工单", stats.open_tickets, "warning");
+  }
+  const flows = await fetchJSON("/onboarding/flows");
+  if (flows) {
+    document.getElementById("onb-flows").innerHTML = table(
+      ["流程", "步骤数", "步骤"],
+      Object.values(flows).map(f => [f.name, f.steps.length,
+        f.steps.map(s => s.title).join(" → ")])
+    );
+  }
+  const tus = await fetchJSON("/onboarding/tutorials");
+  if (tus) {
+    document.getElementById("onb-tutorials").innerHTML = table(
+      ["标题", "分类", "难度", "时长(分)", "完成率"],
+      tus.map(t => [esc(t.title), t.category, t.difficulty, t.estimated_min, t.completion_rate + "%"])
+    );
+  }
+  const vids = await fetchJSON("/onboarding/videos");
+  if (vids) {
+    document.getElementById("onb-videos").innerHTML = table(
+      ["标题", "分类", "时长", "播放", "作者"],
+      vids.map(v => [esc(v.title), v.category, v.duration, v.views, v.author])
+    );
+  }
+  const paths = await fetchJSON("/onboarding/paths");
+  if (paths) {
+    document.getElementById("onb-paths").innerHTML = table(
+      ["路径", "目标", "模块数", "时长(小时)"],
+      Object.values(paths).map(p => [p.name, p.target, p.modules.length, p.hours])
+    );
+  }
+}
+
+// ---------- 7. 文档管理 ----------
+async function loadDocs() {
+  await loadDocsList();
+  const a = await fetchJSON("/docs/analytics");
+  if (a) {
+    document.getElementById("dm-stats").innerHTML =
+      stat("文档总数", a.total_docs, "accent") +
+      stat("已发布", a.published, "success") +
+      stat("草稿", a.draft, "warning") +
+      stat("总阅读", a.total_reads, "info") +
+      stat("总点赞", a.total_likes, "success");
+    document.getElementById("dm-analytics").innerHTML = table(
+      ["指标", "值"],
+      [["热门文档", a.hot_docs.map(d => d.title + "(" + d.reads + ")").join(", ")],
+       ["最近搜索", (a.recent_searches || []).join(", ") || "-"],
+       ["分类", Object.entries(a.by_category).map(([k,v]) => k + ":" + v).join(", ")]]
+    );
+  }
+}
+async function loadDocsList() {
+  const kw = document.getElementById("dm-keyword").value;
+  const list = await fetchJSON("/docs/list" + (kw ? "?keyword=" + encodeURIComponent(kw) : ""));
+  if (!list) return;
+  document.getElementById("dm-list").innerHTML = table(
+    ["ID", "标题", "分类", "作者", "状态", "版本", "阅读"],
+    list.map(d => [d.id.slice(0, 12), esc(d.title), d.category, d.author,
+      badge(d.status), d.current_version, d.reads])
+  );
+}
+
+// ---------- 8. 设置 ----------
+async function loadSettings() {
+  const s = await fetchJSON("/settings");
+  if (!s) return;
+  document.getElementById("settings-view").innerHTML =
+    "<pre>" + esc(JSON.stringify(s.settings, null, 2)) + "</pre>";
+  document.getElementById("settings-modules").innerHTML = table(
+    ["模块", "说明"],
+    (s.modules || []).map(m => [m, "已加载"])
+  );
+}
+
+// ---------- 时钟 ----------
+function tick() {
+  document.getElementById("clock").textContent =
+    new Date().toLocaleString("zh-CN");
+}
+setInterval(tick, 1000);
+tick();
+
+// 初始化加载总览
+loadOverview();
+</script>
+</body>
+</html>

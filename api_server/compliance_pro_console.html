@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>合规审计 Pro · 七阶段闭环</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#121821; --panel2:#18212d; --border:#243040;
+  --fg:#e6edf3; --muted:#8b98a8; --accent:#4fc3f7; --ok:#2ecc71;
+  --warn:#f1c40f; --high:#ff7043; --crit:#ff1744; --ai:#ce93d8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  font-size:13px;line-height:1.5;}
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 18px;background:linear-gradient(90deg,#10161d,#16202c);
+  border-bottom:1px solid var(--border);}
+header h1{font-size:16px;margin:0;color:var(--accent)}
+header .sub{color:var(--muted);font-size:12px;margin-left:10px}
+button{background:#1c2733;color:var(--fg);border:1px solid var(--border);
+  padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px}
+button:hover{background:#243240}
+button.primary{background:#1565c0;border-color:#1976d2}
+button.danger{background:#b71c1c;border-color:#c62828}
+.tabbar{display:flex;gap:2px;padding:8px 18px;background:#0e141b;
+  border-bottom:1px solid var(--border);overflow-x:auto}
+.tabbar .tab{padding:6px 14px;cursor:pointer;border-radius:4px;
+  color:var(--muted);white-space:nowrap}
+.tabbar .tab.active{background:#1c2733;color:var(--accent)}
+main{padding:14px 18px}
+.panel{background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;padding:12px;margin-bottom:12px}
+.panel h3{margin:0 0 8px;font-size:13px;color:var(--accent)}
+.grid{display:grid;gap:12px}
+.grid.c2{grid-template-columns:1fr 1fr}
+.grid.c3{grid-template-columns:1fr 1fr 1fr}
+.grid.c4{grid-template-columns:repeat(4,1fr)}
+.grid.c6{grid-template-columns:repeat(6,1fr)}
+@media(max-width:1100px){.grid.c3,.grid.c4,.grid.c6{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.grid.c2,.grid.c3,.grid.c4,.grid.c6{grid-template-columns:1fr}}
+.kpi{background:var(--panel2);border:1px solid var(--border);
+  border-radius:6px;padding:10px 12px}
+.kpi .v{font-size:22px;font-weight:600}
+.kpi .l{color:var(--muted);font-size:11px}
+.kpi.crit .v{color:var(--crit)} .kpi.high .v{color:var(--high)}
+.kpi.ok .v{color:var(--ok)} .kpi.ai .v{color:var(--ai)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:5px 8px;border-bottom:1px solid var(--border);
+  text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+.badge{display:inline-block;padding:1px 7px;border-radius:10px;
+  font-size:11px}
+.badge.critical{background:#5b1320;color:#ff8a80}
+.badge.high{background:#4e2a1a;color:#ffab91}
+.badge.medium{background:#4a3d16;color:#ffd54f}
+.badge.low{background:#1f3a4a;color:#81d4fa}
+.badge.pass{background:#134a2a;color:#69f0ae}
+.badge.fail{background:#5b1320;color:#ff8a80}
+.badge.partial{background:#4a3d16;color:#ffd54f}
+.bar{height:8px;background:#1c2733;border-radius:4px;overflow:hidden}
+.bar > i{display:block;height:100%;background:var(--accent)}
+.stage{display:flex;align-items:center;gap:8px;padding:6px 0;
+  border-bottom:1px dashed var(--border)}
+.stage .dot{width:10px;height:10px;border-radius:50%;
+  background:#2a3441;flex:none}
+.stage.done .dot{background:var(--ok)}
+.stage.active .dot{background:var(--accent);
+  box-shadow:0 0 8px var(--accent)}
+.log{background:#0a0e13;border:1px solid var(--border);
+  border-radius:4px;padding:8px;height:280px;overflow:auto;
+  font-family:Consolas,monospace;font-size:11px;white-space:pre-wrap}
+.log .l{color:#4fc3f7}.log .ok{color:#2ecc71}
+.log .warn{color:#f1c40f}.log .err{color:#ff5252}
+.log .ai{color:#ce93d8}.log .think{color:#b39ddb}
+.thought{background:#1a1425;border-left:3px solid var(--ai);
+  padding:6px 10px;margin:4px 0;border-radius:3px;color:var(--ai);
+  font-style:italic;font-size:12px}
+.feeditem{padding:6px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;gap:8px}
+.muted{color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input,select,textarea{background:#0e141b;color:var(--fg);
+  border:1px solid var(--border);padding:5px 8px;border-radius:4px;
+  font-size:12px}
+canvas{background:#0a0e13;border-radius:4px}
+.hidden{display:none}
+footer{padding:8px 18px;color:var(--muted);font-size:11px;
+  border-top:1px solid var(--border)}
+.fwbar{display:flex;align-items:center;gap:6px;margin:4px 0}
+.fwbar .track{flex:1;background:#1c2733;height:10px;border-radius:5px;overflow:hidden}
+.fwbar .track > i{display:block;height:100%;background:linear-gradient(90deg,#1565c0,#4fc3f7)}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🛡 合规审计 Pro <span class="sub">七阶段闭环 · 等保/ISO/PCI/SOC2</span></h1></div>
+  <div class="row">
+    <button class="primary" onclick="startRun()">▶ 启动七阶段审计</button>
+    <button onclick="refreshAll()">🔄 刷新大屏</button>
+    <span id="taskBadge" class="muted">未启动任务</span>
+  </div>
+</header>
+
+<div class="tabbar">
+  <div class="tab active" data-tab="screen">📊 合规大屏</div>
+  <div class="tab" data-tab="flow">🔄 七阶段流程</div>
+  <div class="tab" data-tab="asset">🗂 资产盘点</div>
+  <div class="tab" data-tab="base">✅ 基线检查</div>
+  <div class="tab" data-tab="comply">📋 合规评估</div>
+  <div class="tab" data-tab="gap">🕳 差距分析</div>
+  <div class="tab" data-tab="rm">🛠 整改跟踪</div>
+  <div class="tab" data-tab="retest">🔁 复测验证</div>
+  <div class="tab" data-tab="report">📄 报告</div>
+</div>
+
+<main>
+<!-- ====================== 合规大屏 ====================== -->
+<section id="tab-screen">
+  <div class="grid c6">
+    <div class="kpi"><div class="l">总资产</div><div class="v" id="kpiAssets">-</div></div>
+    <div class="kpi"><div class="l">已检查</div><div class="v" id="kpiChecked">-</div></div>
+    <div class="kpi ok"><div class="l">合规率</div><div class="v" id="kpiRate">-</div></div>
+    <div class="kpi crit"><div class="l">差距数</div><div class="v" id="kpiGaps">-</div></div>
+    <div class="kpi high"><div class="l">整改中</div><div class="v" id="kpiDoing">-</div></div>
+    <div class="kpi ok"><div class="l">已完成</div><div class="v" id="kpiDone">-</div></div>
+  </div>
+  <div class="grid c2" style="margin-top:12px">
+    <div class="panel">
+      <h3>合规率趋势（30天）</h3>
+      <canvas id="trendCanvas" width="520" height="200"></canvas>
+    </div>
+    <div class="panel">
+      <h3>各框架合规对比</h3>
+      <div id="fwCompare"></div>
+    </div>
+  </div>
+  <div class="grid c2">
+    <div class="panel">
+      <h3>差距分布（按严重度）</h3>
+      <div id="gapDist"></div>
+    </div>
+    <div class="panel">
+      <h3>Top 差距项</h3>
+      <div id="topGaps" style="max-height:240px;overflow:auto"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== 七阶段流程 ====================== -->
+<section id="tab-flow" class="hidden">
+  <div class="panel">
+    <h3>整体进度</h3>
+    <div class="bar" style="margin:6px 0"><i id="overallBar" style="width:0%"></i></div>
+    <div class="row muted"><span id="overallText">等待启动</span></div>
+  </div>
+  <div class="grid c2">
+    <div class="panel"><h3>七阶段状态</h3><div id="stageList"></div></div>
+    <div class="panel"><h3>思考过程</h3><div id="thoughtBox" style="max-height:320px;overflow:auto"></div></div>
+  </div>
+  <div class="panel"><h3>实时日志流</h3>
+    <div class="log" id="logBox"></div>
+  </div>
+</section>
+
+<!-- ====================== 资产盘点 ====================== -->
+<section id="tab-asset" class="hidden">
+  <div class="panel">
+    <h3>资产清单</h3>
+    <div class="row" style="margin-bottom:8px">
+      <button class="primary" onclick="discoverAssets()">🔍 自动发现</button>
+      <button onclick="loadAssets()">刷新</button>
+      <span class="muted" id="assetCount"></span>
+    </div>
+    <table><thead><tr><th>名称</th><th>IP</th><th>类型</th><th>OS</th>
+      <th>负责人</th><th>业务线</th><th>重要性</th><th>价值分</th></tr></thead>
+      <tbody id="assetBody"></tbody></table>
+  </div>
+</section>
+
+<!-- ====================== 基线检查 ====================== -->
+<section id="tab-base" class="hidden">
+  <div class="grid c2">
+    <div class="panel"><h3>基线检查统计</h3><div id="baseStats"></div></div>
+    <div class="panel"><h3>规则库</h3>
+      <div class="row" style="margin-bottom:8px">
+        <select id="baseCat"><option value="">全部分类</option></select>
+        <button onclick="loadBaseRules()">查询</button>
+      </div>
+      <div id="baseRules" style="max-height:360px;overflow:auto"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== 合规评估 ====================== -->
+<section id="tab-comply" class="hidden">
+  <div class="panel">
+    <h3>框架得分</h3>
+    <button class="primary" onclick="runAssess()">▶ 自动合规评估</button>
+    <div id="fwScore" style="margin-top:8px"></div>
+  </div>
+  <div class="panel"><h3>合规控制项</h3>
+    <table><thead><tr><th>编号</th><th>框架</th><th>域</th><th>标题</th>
+      <th>严重度</th><th>状态</th></tr></thead>
+      <tbody id="complyBody"></tbody></table>
+  </div>
+</section>
+
+<!-- ====================== 差距分析 ====================== -->
+<section id="tab-gap" class="hidden">
+  <div class="panel">
+    <h3>差距分析</h3>
+    <button class="primary" onclick="runGap()">▶ 自动识别差距</button>
+    <span class="muted" id="gapSummary" style="margin-left:10px"></span>
+  </div>
+  <table><thead><tr><th>差距</th><th>严重度</th><th>框架</th>
+    <th>风险分</th><th>状态</th><th>影响</th></tr></thead>
+    <tbody id="gapBody"></tbody></table>
+</section>
+
+<!-- ====================== 整改跟踪 ====================== -->
+<section id="tab-rm" class="hidden">
+  <div class="panel"><h3>整改任务 / SLA</h3><div id="rmSla"></div></div>
+  <table><thead><tr><th>任务</th><th>责任人</th><th>严重度</th>
+    <th>状态</th><th>剩余天数</th><th>操作</th></tr></thead>
+    <tbody id="rmBody"></tbody></table>
+</section>
+
+<!-- ====================== 复测验证 ====================== -->
+<section id="tab-retest" class="hidden">
+  <div class="panel"><h3>复测统计</h3><div id="retestStats"></div></div>
+  <table><thead><tr><th>复测ID</th><th>差距</th><th>结果</th>
+    <th>时间</th><th>说明</th></tr></thead>
+    <tbody id="retestBody"></tbody></table>
+</section>
+
+<!-- ====================== 报告 ====================== -->
+<section id="tab-report" class="hidden">
+  <div class="panel">
+    <h3>生成合规审计报告</h3>
+    <button class="primary" onclick="genReport()">生成 MD+HTML 报告</button>
+    <div id="reportOut" style="margin-top:10px;white-space:pre-wrap"
+         class="muted"></div>
+  </div>
+</section>
+</main>
+
+<footer>合规审计 Pro · 方向1 合规审计做深 · 内存字典存储 · 真实工具未安装时明确提示不 mock</footer>
+
+<script>
+const API='/api/v1/compliance-pro';
+let ws=null, curTask='';
+
+async function api(p,opt){
+  const r=await fetch(API+p,Object.assign({headers:{'Content-Type':'application/json'}},opt||{}));
+  return r.json();
+}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function sevBadge(s){return `<span class="badge ${s}">${s}</span>`;}
+function stBadge(s){const m={pass:'通过',fail:'未通过',partial:'部分',not_applicable:'不适用',open:'未闭环',verified:'已验证',in_remediation:'整改中'};
+  return `<span class="badge ${s}">${m[s]||s}</span>`;}
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));
+    document.getElementById('tab-'+t.dataset.tab).classList.remove('hidden');
+  };
+});
+
+// ---------- 大屏 ----------
+async function refreshAll(){
+  const d=await api('/dashboard/full'); if(!d.success)return;
+  const o=d.data.overview;
+  document.getElementById('kpiAssets').textContent=o.assets_total;
+  document.getElementById('kpiChecked').textContent=o.assets_checked;
+  document.getElementById('kpiRate').textContent=o.compliance_rate+'%';
+  document.getElementById('kpiGaps').textContent=o.gaps_total;
+  document.getElementById('kpiDoing').textContent=o.remediation_in_progress;
+  document.getElementById('kpiDone').textContent=o.remediation_completed;
+  drawTrend(d.data.trend_30d.series);
+  document.getElementById('fwCompare').innerHTML=(d.data.frameworks||[]).map(f=>
+    `<div class="fwbar"><span style="width:130px" class="muted">${esc(f.name)}</span>
+     <div class="track"><i style="width:${f.score}%"></i></div>
+     <span style="width:42px">${f.score}%</span></div>`).join('');
+  const gd=d.data.gap_distribution.by_severity;
+  document.getElementById('gapDist').innerHTML=Object.keys(gd||{}).map(k=>
+    `<div class="feeditem">${sevBadge(k)}<span class="muted">${gd[k]}</span></div>`).join('')||
+    '<span class="muted">暂无差距</span>';
+  document.getElementById('topGaps').innerHTML=(d.data.top_gaps||[]).map(g=>
+    `<div class="feeditem">${sevBadge(g.severity)}
+     <span style="flex:1">${esc(g.title)}</span>
+     <span class="muted">${g.risk_score}</span></div>`).join('')||
+    '<span class="muted">暂无差距，点击"启动七阶段审计"</span>';
+}
+function drawTrend(series){
+  const c=document.getElementById('trendCanvas'),x=c.getContext('2d');
+  const W=c.width,H=c.height;x.clearRect(0,0,W,H);
+  if(!series||!series.length)return;
+  const max=Math.max(...series.map(p=>p.value),1),min=Math.min(...series.map(p=>p.value),100);
+  series.forEach((p,i)=>{
+    const x0=i/(series.length-1)*W;
+    const y0=H-((p.value-min)/Math.max(1,(max-min))*(H-20)-10);
+    x.fillStyle='#4fc3f7';x.beginPath();x.arc(x0,y0,2.5,0,7);x.fill();
+  });
+  x.strokeStyle='#1565c0';x.beginPath();
+  series.forEach((p,i)=>{
+    const x0=i/(series.length-1)*W;
+    const y0=H-((p.value-min)/Math.max(1,(max-min))*(H-20)-10);
+    i?x.lineTo(x0,y0):x.moveTo(x0,y0);
+  });
+  x.stroke();
+}
+
+// ---------- 七阶段 ----------
+function renderStages(list){
+  document.getElementById('stageList').innerHTML=(list||[]).map(s=>
+    `<div class="stage" data-key="${s.key}"><span class="dot"></span>
+     <span style="flex:1">${esc(s.label)}</span>
+     <span class="muted">${s.progress}%</span></div>`).join('');
+}
+async function loadStages(){const d=await api('/stages');if(d.success)renderStages(d.data.stages);}
+function markStage(key,state){
+  document.querySelectorAll('#stageList .stage').forEach(n=>{
+    n.classList.remove('active','done');
+    if(n.dataset.key===key)n.classList.add(state);
+  });
+}
+function appendLog(ev){
+  const box=document.getElementById('logBox');
+  const div=document.createElement('div');
+  div.className=(ev.level||'INFO').toLowerCase();
+  div.textContent=`[${ev.timestamp||''}] ${ev.level||''} ${ev.message||''}`;
+  box.appendChild(div);box.scrollTop=box.scrollHeight;
+}
+function appendThought(t){
+  const box=document.getElementById('thoughtBox');
+  const div=document.createElement('div');
+  div.className='thought';div.textContent='💭 '+t;
+  box.appendChild(div);box.scrollTop=box.scrollHeight;
+}
+async function startRun(){
+  const r=await api('/start',{method:'POST',body:JSON.stringify({name:'合规审计全流程'})});
+  if(!r.success){alert(r.error);return;}
+  curTask=r.data.task_id;
+  document.getElementById('taskBadge').textContent='任务: '+curTask;
+  document.getElementById('logBox').innerHTML='';
+  document.getElementById('thoughtBox').innerHTML='';
+  connectWS(curTask);
+}
+function connectWS(tid){
+  if(ws)try{ws.close();}catch(e){}
+  const proto=location.protocol==='https:'?'wss':'ws';
+  ws=new WebSocket(`${proto}://${location.host}${API}/ws/${tid}`);
+  ws.onmessage=e=>{
+    const ev=JSON.parse(e.data);
+    if(ev.type==='progress'){
+      document.getElementById('overallBar').style.width=ev.overall+'%';
+      document.getElementById('overallText').textContent=
+        `${ev.stage_label} · 整体 ${ev.overall}%`;
+      markStage(ev.stage,ev.overall>=100?'done':'active');
+    }else if(ev.type==='log'){appendLog(ev);}
+    else if(ev.type==='thought'){appendThought(ev.thought);}
+    else if(ev.type==='gap'||ev.type==='comply'){refreshAll();}
+    else if(ev.type==='result'){refreshAll();loadGap();loadRm();}
+  };
+}
+
+// ---------- 资产 ----------
+async function loadAssets(){
+  const d=await api('/assets');
+  document.getElementById('assetCount').textContent='共 '+(d.data.assets||[]).length+' 个';
+  document.getElementById('assetBody').innerHTML=(d.data.assets||[]).map(a=>
+    `<tr><td>${esc(a.name)}</td><td>${esc(a.ip)}</td><td>${esc(a.asset_type)}</td>
+     <td>${esc(a.os)} ${esc(a.os_version)}</td><td>${esc(a.owner)}</td>
+     <td>${esc(a.business_line)}</td>${sevBadge(a.criticality)}
+     <td>${a.value_score}</td></tr>`).join('');
+}
+async function discoverAssets(){
+  const d=await api('/assets/discover',{method:'POST',body:JSON.stringify({cidr:'10.10.1.0/24'})});
+  alert('发现结果: '+JSON.stringify(d.data));loadAssets();
+}
+
+// ---------- 基线 ----------
+async function loadBaseRules(){
+  const cat=document.getElementById('baseCat').value;
+  const d=await api('/baseline/rules'+(cat?('?category='+encodeURIComponent(cat)):''));
+  document.getElementById('baseRules').innerHTML=(d.data.rules||[]).map(r=>
+    `<div class="feeditem">${sevBadge(r.severity)}
+     <span style="flex:1">[${r.id}] ${esc(r.title)}</span>
+     <span class="muted">${esc(r.category)}</span></div>`).join('');
+}
+async function loadBaseStats(){
+  const d=await api('/baseline/stats');if(!d.success)return;
+  const s=d.data;
+  document.getElementById('baseStats').innerHTML=
+    `<div class="kpi"><div class="l">规则总数</div><div class="v">${s.total_rules}</div></div>
+     <div class="kpi ok" style="margin-top:8px"><div class="l">通过率</div><div class="v">${s.pass_rate}%</div></div>
+     <div class="kpi crit" style="margin-top:8px"><div class="l">未通过</div><div class="v">${s.failed}</div></div>`;
+  const cats=new Set((d.data.rules||[]).map(r=>r.category));
+}
+async function initBase(){
+  const d=await api('/baseline/rules');
+  const cats=[...new Set((d.data.rules||[]).map(r=>r.category))];
+  const sel=document.getElementById('baseCat');
+  sel.innerHTML='<option value="">全部分类</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join('');
+  loadBaseRules();loadBaseStats();
+}
+
+// ---------- 合规 ----------
+async function runAssess(){
+  await api('/compliance/assess',{method:'POST'});
+  loadComply();
+}
+async function loadComply(){
+  const d=await api('/compliance/score');
+  document.getElementById('fwScore').innerHTML=Object.values(d.data.frameworks||{}).map(f=>
+    `<div class="fwbar"><span style="width:150px" class="muted">${esc(f.name)}</span>
+     <div class="track"><i style="width:${f.score}%"></i></div>
+     <span style="width:42px">${f.score}%</span>
+     <span class="muted"> pass ${f.pass}/fail ${f.fail}</span></div>`).join('');
+  const di=await api('/compliance/items');
+  document.getElementById('complyBody').innerHTML=(di.data.items||[]).slice(0,80).map(it=>
+    `<tr><td>${esc(it.item_id.slice(-6))}</td><td>${esc(it.framework)}</td>
+     <td>${esc(it.domain).slice(0,18)}</td><td>${esc(it.title)}</td>
+     <td>${sevBadge(it.severity)}</td>${stBadge(it.status)}</tr>`).join('');
+}
+
+// ---------- 差距 ----------
+async function runGap(){await api('/gap/analyze',{method:'POST'});loadGap();refreshAll();}
+async function loadGap(){
+  const d=await api('/gap/list');
+  document.getElementById('gapSummary').textContent='共 '+(d.data.gaps||[]).length+' 项';
+  document.getElementById('gapBody').innerHTML=(d.data.gaps||[]).map(g=>
+    `<tr><td style="max-width:260px">${esc(g.title)}</td>
+     <td>${sevBadge(g.severity)}</td><td>${esc(g.framework)}</td>
+     <td>${g.risk_score}</td>${stBadge(g.status)}
+     <td style="max-width:200px" class="muted">${esc(g.impact).slice(0,40)}</td></tr>`).join('');
+}
+
+// ---------- 整改 ----------
+async function loadRm(){
+  const s=await api('/remediation/sla');
+  document.getElementById('rmSla').innerHTML=
+    `<div class="grid c4">
+     <div class="kpi"><div class="l">未开始</div><div class="v">${s.data.not_started}</div></div>
+     <div class="kpi high"><div class="l">进行中</div><div class="v">${s.data.in_progress}</div></div>
+     <div class="kpi ok"><div class="l">已完成</div><div class="v">${s.data.completed}</div></div>
+     <div class="kpi crit"><div class="l">已延期</div><div class="v">${s.data.overdue}</div></div>
+     </div>`;
+  const d=await api('/remediation/tasks');
+  document.getElementById('rmBody').innerHTML=(d.data.tasks||[]).map(t=>
+    `<tr><td style="max-width:220px">${esc(t.title)}</td><td>${esc(t.assignee)}</td>
+     <td>${sevBadge(t.severity)}</td><td>${esc(t.status)}</td>
+     <td>${t.days_left==null?'-':t.days_left+'天'}</td>
+     <td>${t.status!=='completed'?`<button onclick="apprRm('${t.task_id}')">审批完成</button>`:''}</td></tr>`).join('');
+}
+async function apprRm(id){await api('/remediation/tasks/'+id+'/approve',{method:'POST'});loadRm();}
+
+// ---------- 复测 ----------
+async function loadRetest(){
+  const s=await api('/retest/stats');
+  document.getElementById('retestStats').innerHTML=
+    `<div class="kpi ok"><div class="l">复测通过率</div><div class="v">${s.data.pass_rate}%</div></div>
+     <div class="muted" style="margin-top:6px">通过 ${s.data.pass} / 未过 ${s.data.fail} / 部分 ${s.data.partial}</div>`;
+  const d=await api('/retest/records');
+  document.getElementById('retestBody').innerHTML=(d.data.records||[]).map(r=>
+    `<tr><td>${esc(r.retest_id.slice(-8))}</td><td>${esc(r.gap_id.slice(-8))}</td>
+     <td>${stBadge(r.result)}</td><td>${esc(r.retested_at)}</td>
+     <td class="muted">${esc(r.notes)}</td></tr>`).join('');
+}
+
+// ---------- 报告 ----------
+async function genReport(){
+  const d=await api('/report/generate',{method:'POST',body:JSON.stringify({fmt:'both'})});
+  document.getElementById('reportOut').textContent='报告已生成:\n'+
+    'MD: '+d.data.md_path+'\nHTML: '+d.data.html_path;
+}
+
+// ---------- init ----------
+loadStages();refreshAll();loadAssets();initBase();loadComply();loadGap();loadRm();loadRetest();
+</script>
+</body>
+</html>

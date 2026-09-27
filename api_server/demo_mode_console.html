@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一键 Demo 模式控制台 · AI Hacking Agent</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d;
+    --text: #c9d1d9; --muted: #8b949e; --accent: #58a6ff;
+    --green: #3fb950; --red: #f85149; --orange: #d29922;
+    --purple: #bc8cff;
+  }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+    font-size: 14px; line-height: 1.5; padding: 0;
+  }
+  header {
+    background: #161b22; border-bottom: 1px solid var(--border);
+    padding: 14px 22px; display: flex; align-items: center;
+    justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  }
+  header h1 { color: var(--accent); font-size: 20px; }
+  header .sub { color: var(--muted); font-size: 12px; }
+  .layout { display: flex; min-height: calc(100vh - 60px); }
+  nav {
+    width: 220px; background: #161b22; border-right: 1px solid var(--border);
+    padding: 12px 0; flex-shrink: 0;
+  }
+  nav .tab {
+    display: block; padding: 10px 20px; color: var(--muted);
+    cursor: pointer; border-left: 3px solid transparent;
+    font-size: 13px;
+  }
+  nav .tab:hover { background: #1c2128; color: var(--text); }
+  nav .tab.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: #1c2128;
+  }
+  main { flex: 1; padding: 20px; overflow-x: auto; }
+  h2 {
+    color: var(--accent); margin-bottom: 12px;
+    border-left: 4px solid var(--accent); padding-left: 10px;
+  }
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px; margin-bottom: 20px;
+  }
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px;
+  }
+  .card h3 { color: #e6edf3; font-size: 15px; margin-bottom: 6px; }
+  .card .meta { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+  .stat { background: var(--panel); padding: 14px 18px; border-radius: 8px;
+    border: 1px solid var(--border); }
+  .stat .num { font-size: 26px; color: var(--accent); font-weight: bold; }
+  .stat .lbl { color: var(--muted); font-size: 12px; }
+  .stat.green .num { color: var(--green); }
+  .stat.orange .num { color: var(--orange); }
+  .stat.red .num { color: var(--red); }
+  .stat.purple .num { color: var(--purple); }
+  button {
+    background: #238636; color: #fff; border: 0; border-radius: 6px;
+    padding: 7px 14px; cursor: pointer; margin: 3px 4px 3px 0; font-size: 12px;
+  }
+  button:hover { filter: brightness(1.15); }
+  button.primary { background: #1f6feb; }
+  button.danger { background: #da3633; }
+  button.ghost { background: #30363d; color: var(--text); }
+  button.warn { background: #9e6a03; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  input, select, textarea {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 9px; width: 100%;
+    margin: 4px 0 8px; font-family: inherit; font-size: 13px;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+  th, td { border: 1px solid var(--border); padding: 7px 9px; text-align: left;
+    font-size: 12px; }
+  th { background: #1c2128; color: #79c0ff; }
+  tr:nth-child(even) { background: var(--panel); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 11px; }
+  .badge.ok { background: #1f6feb33; color: var(--accent); }
+  .badge.on { background: #23863633; color: var(--green); }
+  .badge.off { background: #6e768133; color: var(--muted); }
+  .badge.warn { background: #9e6a0333; color: var(--orange); }
+  .badge.err { background: #da363333; color: var(--red); }
+  .bar { height: 10px; background: var(--border); border-radius: 5px;
+    overflow: hidden; margin: 4px 0; }
+  .bar > span { display: block; height: 100%;
+    background: linear-gradient(90deg,#1f6feb,#3fb950); }
+  .toast {
+    position: fixed; right: 20px; bottom: 20px; background: #1f6feb; color: #fff;
+    padding: 12px 18px; border-radius: 6px; opacity: 0; transition: opacity .3s;
+    max-width: 360px; z-index: 999;
+  }
+  .toast.show { opacity: 1; }
+  .toast.err { background: #da3633; }
+  .toast.ok { background: #238636; }
+  .hidden { display: none; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .row > * { flex: 1; min-width: 130px; }
+  .section { display: none; }
+  .section.active { display: block; }
+  pre.log {
+    background: #010409; border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px; font-size: 11px; max-height: 260px; overflow-y: auto;
+    color: #7ee787; white-space: pre-wrap; word-break: break-all;
+  }
+  .step-track { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+  .step-dot {
+    width: 28px; height: 28px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 11px;
+    background: var(--border); color: var(--muted);
+  }
+  .step-dot.done { background: var(--green); color: #fff; }
+  .step-dot.cur { background: var(--accent); color: #fff; }
+  @media (max-width: 760px) {
+    .layout { flex-direction: column; }
+    nav { width: 100%; display: flex; overflow-x: auto; }
+    nav .tab { border-left: 0; border-bottom: 3px solid transparent;
+      white-space: nowrap; }
+    nav .tab.active { border-left: 0; border-bottom-color: var(--accent); }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🚀 一键 Demo 模式控制台</h1>
+    <div class="sub">AI Hacking Agent · Round22-Dir1 · 深色主题 · 真实交互</div>
+  </div>
+  <div class="row" style="min-width:200px">
+    <button class="ghost" onclick="loadAll()">🔄 刷新</button>
+    <button class="danger" onclick="doReset()">⚠️ 重置数据</button>
+  </div>
+</header>
+
+<div class="layout">
+<nav>
+  <div class="tab active" data-tab="overview">📊 总览</div>
+  <div class="tab" data-tab="scenarios">🎯 场景库</div>
+  <div class="tab" data-tab="dataset">📦 数据集</div>
+  <div class="tab" data-tab="engine">▶️ 演示引擎</div>
+  <div class="tab" data-tab="quick">⚡ 3分钟体验</div>
+  <div class="tab" data-tab="guide">📖 引导</div>
+  <div class="tab" data-tab="brand">🎨 品牌</div>
+  <div class="tab" data-tab="settings">⚙️ 设置</div>
+</nav>
+
+<main>
+<!-- ===================== 总览 ===================== -->
+<section id="sec-overview" class="section active">
+  <h2>Demo 总览</h2>
+  <div class="grid" id="ovStats"></div>
+  <h2>热门场景 Top5</h2>
+  <div id="ovHot"></div>
+  <h2>近 5 日访问趋势</h2>
+  <div id="ovTrend"></div>
+</section>
+
+<!-- ===================== 场景库 ===================== -->
+<section id="sec-scenarios" class="section">
+  <h2>Demo 场景库（8 大安全方向）</h2>
+  <div class="row">
+    <input id="scSearch" placeholder="按名称/描述搜索..." oninput="loadScenarios()">
+    <select id="scCat" onchange="loadScenarios()">
+      <option value="">全部分类</option>
+      <option>渗透测试</option><option>移动安全</option><option>区块链</option>
+      <option>AI安全</option><option>云安全</option><option>红蓝对抗</option>
+      <option>护网</option><option>SRC挖洞</option>
+    </select>
+  </div>
+  <div class="grid" id="scGrid" style="margin-top:12px"></div>
+</section>
+
+<!-- ===================== 数据集 ===================== -->
+<section id="sec-dataset" class="section">
+  <h2>Demo 数据生成</h2>
+  <div class="card">
+    <div class="row">
+      <select id="dsScenario"></select>
+      <input id="dsSeed" placeholder="随机种子（可空）" value="">
+    </div>
+    <div class="row">
+      <input id="dsAssets" type="number" value="15" placeholder="资产数">
+      <input id="dsVulns" type="number" value="8" placeholder="漏洞数">
+      <input id="dsAlerts" type="number" value="25" placeholder="告警数">
+    </div>
+    <button class="primary" onclick="generateDataset()">⚡ 一键生成真实感数据集</button>
+  </div>
+  <h2>已生成数据集</h2>
+  <table id="dsTable">
+    <thead><tr><th>ID</th><th>场景</th><th>资产</th><th>漏洞</th><th>告警</th><th>事件</th><th>生成时间</th><th>操作</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <div id="dsDetail" class="hidden">
+    <h2>数据集详情</h2>
+    <div id="dsDetailBody"></div>
+  </div>
+</section>
+
+<!-- ===================== 演示引擎 ===================== -->
+<section id="sec-engine" class="section">
+  <h2>演示脚本与执行</h2>
+  <div class="row">
+    <button class="primary" onclick="createDefaultScript()">➕ 创建默认脚本</button>
+    <button class="ghost" onclick="loadScripts()">🔄 刷新脚本</button>
+  </div>
+  <table id="scrTable">
+    <thead><tr><th>脚本ID</th><th>名称</th><th>步骤数</th><th>版本</th><th>操作</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>演示执行控制</h2>
+  <div class="card">
+    <div class="row">
+      <select id="exeScript"></select>
+      <select id="exeMode">
+        <option value="auto">自动</option>
+        <option value="manual">手动</option>
+        <option value="semi">半自动</option>
+      </select>
+    </div>
+    <button class="primary" onclick="startExec()">▶️ 开始演示</button>
+  </div>
+  <div id="exePanel" class="hidden">
+    <div class="step-track" id="exeSteps"></div>
+    <div class="row">
+      <button onclick="ctrlExec('pause')">⏸ 暂停</button>
+      <button onclick="ctrlExec('resume')">▶️ 继续</button>
+      <button onclick="ctrlExec('next')">⏭ 下一步</button>
+      <button onclick="ctrlExec('skip')">⏭ 跳过</button>
+      <button onclick="ctrlExec('replay')">🔁 重播</button>
+      <button onclick="ctrlExec('fast_forward')">⏩ 快进</button>
+      <button onclick="ctrlExec('slow_motion')">⏪ 慢放</button>
+      <button class="danger" onclick="ctrlExec('stop')">⏹ 停止</button>
+    </div>
+    <h3 style="margin-top:14px;color:#79c0ff">执行日志</h3>
+    <pre class="log" id="exeLog"></pre>
+  </div>
+</section>
+
+<!-- ===================== 快速体验 ===================== -->
+<section id="sec-quick" class="section">
+  <h2>3 分钟快速体验</h2>
+  <div class="grid" id="qeGrid"></div>
+  <h2>体验会话</h2>
+  <table id="qeTable">
+    <thead><tr><th>会话ID</th><th>场景</th><th>步骤</th><th>状态</th><th>开始时间</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <h2>转化漏斗</h2>
+  <div id="qeFunnel"></div>
+</section>
+
+<!-- ===================== 引导 ===================== -->
+<section id="sec-guide" class="section">
+  <h2>交互式引导列表</h2>
+  <div class="grid" id="guideGrid"></div>
+  <h2>引导效果分析</h2>
+  <div id="guideEffect"></div>
+  <h2>帮助中心搜索</h2>
+  <div class="row">
+    <input id="helpKw" placeholder="输入关键词搜索文档..." onkeydown="if(event.key==='Enter')searchHelp()">
+    <button class="primary" onclick="searchHelp()">搜索</button>
+  </div>
+  <div id="helpResult"></div>
+</section>
+
+<!-- ===================== 品牌 ===================== -->
+<section id="sec-brand" class="section">
+  <h2>品牌定制</h2>
+  <div class="card">
+    <div class="row">
+      <input id="brName" placeholder="品牌名称">
+      <input id="brColor" placeholder="主色 #58a6ff">
+      <input id="brContact" placeholder="联系邮箱">
+    </div>
+    <div class="row">
+      <input id="brWatermark" placeholder="水印文本">
+      <input id="brCopyright" placeholder="版权信息">
+    </div>
+    <button class="primary" onclick="saveBrand()">💾 保存品牌配置</button>
+  </div>
+  <h2>分享链接</h2>
+  <div class="row">
+    <input id="shTitle" placeholder="分享标题">
+    <button class="primary" onclick="createShare()">🔗 创建分享</button>
+  </div>
+  <table id="shTable">
+    <thead><tr><th>分享码</th><th>标题</th><th>权限</th><th>访问数</th><th>链接</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <h2>嵌入代码</h2>
+  <div class="row">
+    <select id="embPlatform">
+      <option value="iframe">iframe</option>
+      <option value="api">API</option>
+      <option value="wordpress">WordPress 短代码</option>
+      <option value="shopify">Shopify</option>
+      <option value="chrome">Chrome 扩展</option>
+    </select>
+    <button class="primary" onclick="createEmbed()">🧩 生成嵌入代码</button>
+  </div>
+  <div id="embResult" style="margin-top:10px"></div>
+</section>
+
+<!-- ===================== 设置 ===================== -->
+<section id="sec-settings" class="section">
+  <h2>系统设置</h2>
+  <div class="card" id="setCard"></div>
+  <h2>审计日志</h2>
+  <table id="auditTable">
+    <thead><tr><th>时间</th><th>操作</th><th>详情</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</section>
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/v1/demo-mode';
+let currentExecId = null;
+let pollTimer = null;
+
+// ---------- 工具 ----------
+function toast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+async function api(path, method='GET', body=null) {
+  const opt = { method, headers: {'Content-Type':'application/json'} };
+  if (body) opt.body = JSON.stringify(body);
+  try {
+    const r = await fetch(API + path, opt);
+    const j = await r.json();
+    if (!j.success) { toast('错误: ' + j.error, 'err'); return null; }
+    return j.data;
+  } catch(e) { toast('网络错误: ' + e.message, 'err'); return null; }
+}
+function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function pct(x) { return (x||0) + '%'; }
+
+// ---------- Tabs ----------
+document.querySelectorAll('nav .tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('nav .tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('sec-' + t.dataset.tab).classList.add('active');
+    loadTab(t.dataset.tab);
+  };
+});
+function loadTab(name) {
+  if (name==='overview') loadOverview();
+  else if (name==='scenarios') loadScenarios();
+  else if (name==='dataset') loadDataset();
+  else if (name==='engine') loadEngine();
+  else if (name==='quick') loadQuick();
+  else if (name==='guide') loadGuide();
+  else if (name==='brand') loadBrand();
+  else if (name==='settings') loadSettings();
+}
+
+// ---------- 总览 ----------
+async function loadOverview() {
+  const ov = await api('/overview');
+  if (!ov) return;
+  document.getElementById('ovStats').innerHTML = `
+    <div class="stat"><div class="num">${ov.scenario_count}</div><div class="lbl">场景总数</div></div>
+    <div class="stat green"><div class="num">${ov.usage_count}</div><div class="lbl">使用次数</div></div>
+    <div class="stat orange"><div class="num">${pct(ov.completion_rate_pct)}</div><div class="lbl">完成率</div></div>
+    <div class="stat purple"><div class="num">${Math.round(ov.avg_duration_sec)}s</div><div class="lbl">平均时长</div></div>
+    <div class="stat"><div class="num">${ov.avg_feedback}</div><div class="lbl">满意度评分</div></div>
+    <div class="stat green"><div class="num">${ov.dataset_count}</div><div class="lbl">数据集</div></div>`;
+  document.getElementById('ovHot').innerHTML = (ov.hot_scenarios||[]).map(h =>
+    `<div class="card" style="margin-bottom:6px"><strong>${esc(h.name)}</strong>
+     <span class="badge ok">使用 ${h.usage}</span></div>`).join('');
+  const maxV = Math.max(...(ov.trend||[]).map(t=>t.visits), 1);
+  document.getElementById('ovTrend').innerHTML = (ov.trend||[]).map(t => `
+    <div style="display:flex;align-items:center;gap:8px;margin:6px 0">
+      <span style="width:50px;color:var(--muted)">${t.day}</span>
+      <div class="bar" style="flex:1"><span style="width:${pct(t.visits/maxV*100)}"></span></div>
+      <span style="width:50px;text-align:right">${t.visits}</span>
+    </div>`).join('');
+}
+
+// ---------- 场景库 ----------
+async function loadScenarios() {
+  const cat = document.getElementById('scCat').value;
+  const kw = document.getElementById('scSearch').value;
+  const list = await api('/scenarios?category=' + encodeURIComponent(cat)
+    + '&keyword=' + encodeURIComponent(kw));
+  if (!list) return;
+  document.getElementById('scGrid').innerHTML = list.map(s => `
+    <div class="card">
+      <h3>${esc(s.name)}</h3>
+      <div class="meta">${esc(s.category)} · ${s.vuln_count} 漏洞 · ${s.estimated_minutes}分钟</div>
+      <div style="color:var(--muted);font-size:12px;margin-bottom:8px">${esc(s.description)}</div>
+      <div style="font-size:11px;margin-bottom:8px">🎯 ${esc(s.target)}</div>
+      <div>
+        <span class="badge ${s.status==='published'?'on':'off'}">${s.status}</span>
+        <span class="badge ok">完成率 ${pct(s.completion_rate_pct*100)}</span>
+      </div>
+      <div style="margin-top:8px">
+        <button class="primary" onclick="useScenario('${s.id}')">▶️ 用它演示</button>
+      </div>
+    </div>`).join('');
+  // 填充数据集场景下拉
+  const sel = document.getElementById('dsScenario');
+  sel.innerHTML = list.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
+}
+async function useScenario(sid) {
+  await api('/datasets/generate', 'POST', { scenario_id: sid,
+    options: { asset_count: 10, vuln_count: 6, alert_count: 15 } });
+  toast('已生成场景数据集，去「数据集」查看');
+}
+
+// ---------- 数据集 ----------
+async function loadDataset() {
+  const list = await api('/datasets');
+  if (!list) return;
+  const tb = document.querySelector('#dsTable tbody');
+  tb.innerHTML = list.map(d => `
+    <tr><td>${d.dataset_id}</td><td>${esc(d.scenario_name||'')}</td>
+    <td>${d.summary?.assets||0}</td><td>${d.summary?.vulns||0}</td>
+    <td>${d.summary?.alerts||0}</td><td>${d.summary?.events||0}</td>
+    <td>${d.generated_at||''}</td>
+    <td><button class="ghost" onclick="viewDataset('${d.dataset_id}')">查看</button>
+        <button class="warn" onclick="exportDataset('${d.dataset_id}')">导出</button></td></tr>`).join('');
+}
+async function generateDataset() {
+  const sid = document.getElementById('dsScenario').value;
+  const opt = {
+    asset_count: +document.getElementById('dsAssets').value||15,
+    vuln_count: +document.getElementById('dsVulns').value||8,
+    alert_count: +document.getElementById('dsAlerts').value||25,
+  };
+  const d = await api('/datasets/generate', 'POST', { scenario_id: sid, options: opt });
+  if (d) { toast('数据集生成成功: ' + d.dataset_id); loadDataset(); }
+}
+async function viewDataset(did) {
+  const d = await api('/datasets/' + did);
+  if (!d) return;
+  document.getElementById('dsDetail').classList.remove('hidden');
+  const v = (arr, n=5) => (arr||[]).slice(0,n).map(x =>
+    `<tr><td>${esc(JSON.stringify(x).slice(0,120))}</td></tr>`).join('');
+  document.getElementById('dsDetailBody').innerHTML = `
+    <div class="grid">
+      <div class="card"><h3>资产 (${d.summary.assets})</h3><table><tbody>${v(d.assets)}</tbody></table></div>
+      <div class="card"><h3>漏洞 (${d.summary.vulns})</h3><table><tbody>${v(d.vulns)}</tbody></table></div>
+      <div class="card"><h3>告警 (${d.summary.alerts})</h3><table><tbody>${v(d.alerts)}</tbody></table></div>
+      <div class="card"><h3>事件 (${d.summary.events})</h3><table><tbody>${v(d.events)}</tbody></table></div>
+    </div>`;
+}
+async function exportDataset(did) {
+  const pkg = await api('/datasets/' + did + '/export', 'POST');
+  if (pkg) {
+    const blob = new Blob([JSON.stringify(pkg, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = did + '.demo.json';
+    a.click(); toast('已导出 Demo 包 (sha256 已签名)');
+  }
+}
+async function doReset() {
+  if (!confirm('确认一键重置所有 Demo 数据？将自动备份。')) return;
+  const r = await api('/reset', 'POST', { scope: 'all' });
+  if (r) toast('重置完成，备份: ' + r.backup_id);
+}
+
+// ---------- 演示引擎 ----------
+async function loadEngine() {
+  await loadScripts();
+}
+async function loadScripts() {
+  const list = await api('/scripts');
+  if (!list) return;
+  document.querySelector('#scrTable tbody').innerHTML = list.map(s => `
+    <tr><td>${s.script_id}</td><td>${esc(s.name)}</td>
+    <td>${s.steps}</td><td>${s.version}</td>
+    <td><button class="primary" onclick="runScript('${s.script_id}')">▶️ 运行</button></td></tr>`).join('');
+  document.getElementById('exeScript').innerHTML = list.map(s =>
+    `<option value="${s.script_id}">${esc(s.name)}</option>`).join('');
+}
+async function createDefaultScript() {
+  const s = await api('/scripts', 'POST', {
+    name: '默认渗透演示脚本', scenario_id: 'scen_pentest',
+    steps: [
+      {action:'navigate', target:'/', wait_ms:500},
+      {action:'click', target:'#input-target', wait_ms:800},
+      {action:'input', target:'#input-target', value:'demo.local', wait_ms:300},
+      {action:'click', target:'#btn-scan', wait_ms:1500},
+      {action:'assert', target:'.vuln-list', expect:'exists'},
+      {action:'click', target:'#btn-report', wait_ms:800},
+      {action:'wait', wait_ms:1000},
+    ]
+  });
+  if (s) { toast('脚本已创建: ' + s.script_id); loadScripts(); }
+}
+async function startExec() {
+  const sid = document.getElementById('exeScript').value;
+  const mode = document.getElementById('exeMode').value;
+  const e = await api('/executions', 'POST', { script_id: sid, mode });
+  if (!e) return;
+  currentExecId = e.execution_id;
+  document.getElementById('exePanel').classList.remove('hidden');
+  refreshExec();
+  if (!pollTimer) pollTimer = setInterval(refreshExec, 1200);
+}
+async function runScript(sid) {
+  const e = await api('/executions', 'POST', { script_id: sid, mode:'auto' });
+  if (!e) return;
+  currentExecId = e.execution_id;
+  document.getElementById('exePanel').classList.remove('hidden');
+  refreshExec();
+  if (!pollTimer) pollTimer = setInterval(refreshExec, 1200);
+}
+async function ctrlExec(action) {
+  if (!currentExecId) return;
+  await api('/executions/' + currentExecId + '/control', 'POST', { action });
+  refreshExec();
+}
+async function refreshExec() {
+  if (!currentExecId) return;
+  const e = await api('/executions/' + currentExecId);
+  if (!e) return;
+  const dots = [];
+  for (let i=0;i<e.total_steps;i++) {
+    let cls = '';
+    if (i < e.step_index) cls = 'done';
+    else if (i === e.step_index) cls = 'cur';
+    dots.push(`<div class="step-dot ${cls}">${i+1}</div>`);
+  }
+  document.getElementById('exeSteps').innerHTML = dots.join('');
+  document.getElementById('exeLog').textContent =
+    (e.log||[]).map(l => `[${l.at}] 步骤${l.idx}: ${l.msg}`).join('\n');
+  if (e.status === 'finished' || e.status === 'stopped') {
+    clearInterval(pollTimer); pollTimer = null;
+    toast('演示已结束: ' + e.status, 'ok');
+  }
+}
+
+// ---------- 快速体验 ----------
+async function loadQuick() {
+  const list = await api('/quick-scenarios');
+  if (list) {
+    document.getElementById('qeGrid').innerHTML = list.map(q => `
+      <div class="card">
+        <h3>⚡ ${esc(q.name)}</h3>
+        <div class="meta">⏱ ${q.duration_sec} 秒</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${esc(q.description)}</div>
+        <div style="font-size:11px;margin-bottom:8px">步骤: ${q.steps.map(s=>esc(s)).join(' → ')}</div>
+        <button class="primary" onclick="startQuick('${q.id}')">🚀 开始体验</button>
+      </div>`).join('');
+  }
+  const sess = await api('/quick-sessions');
+  if (sess) {
+    document.querySelector('#qeTable tbody').innerHTML = sess.map(s => `
+      <tr><td>${s.session_id}</td><td>${esc(s.scenario_name)}</td>
+      <td>${s.step_index}/${s.total_steps}</td>
+      <td><span class="badge ${s.status==='completed'?'on':(s.status==='running'?'ok':'off')}">${s.status}</span></td>
+      <td>${s.started_at||''}</td></tr>`).join('');
+  }
+  const a = await api('/quick-analytics');
+  if (a) {
+    const maxF = Math.max(...(a.drop_off||[]).map(d=>d.pct), 1);
+    document.getElementById('qeFunnel').innerHTML = (a.drop_off||[]).map(d => `
+      <div style="display:flex;align-items:center;gap:8px;margin:6px 0">
+        <span style="width:80px">${d.step}</span>
+        <div class="bar" style="flex:1"><span style="width:${pct(d.pct)}"></span></div>
+        <span style="width:50px">${d.pct}%</span></div>`).join('');
+  }
+}
+async function startQuick(qid) {
+  const s = await api('/quick-sessions', 'POST', { scenario_id: qid, user:'demo' });
+  if (!s) return;
+  toast('体验会话已开始: ' + s.session_id);
+  // 自动跑两步演示效果
+  await api('/quick-sessions/' + s.session_id + '/advance', 'POST', {action:'generate_data'});
+  await api('/quick-sessions/' + s.session_id + '/advance', 'POST', {action:'next'});
+  loadQuick();
+}
+
+// ---------- 引导 ----------
+async function loadGuide() {
+  const list = await api('/guides');
+  if (list) {
+    document.getElementById('guideGrid').innerHTML = list.map(g => `
+      <div class="card"><h3>${esc(g.name)}</h3>
+      <div class="meta">类型: ${g.kind} · v${g.version} · ${g.steps}步</div>
+      <button class="primary" onclick="startGuide('${g.guide_id}')">▶️ 启动引导</button></div>`).join('');
+  }
+  const e = await api('/guide-effect');
+  if (e) {
+    document.getElementById('guideEffect').innerHTML = `
+      <div class="grid">
+        <div class="stat"><div class="num">${e.total_sessions}</div><div class="lbl">总会话</div></div>
+        <div class="stat green"><div class="num">${pct(e.completion_rate_pct)}</div><div class="lbl">完成率</div></div>
+        <div class="stat orange"><div class="num">${pct(e.skip_rate_pct)}</div><div class="lbl">跳过率</div></div>
+      </div>`;
+  }
+}
+async function startGuide(gid) {
+  const p = await api('/guides/' + gid + '/start', 'POST', { user:'demo' });
+  if (!p) return;
+  toast('引导已启动，请按步骤操作');
+  // 自动推进两步
+  setTimeout(async()=>{ await api('/progress/' + p.progress_id + '/advance', 'POST', {action:'next'}); }, 800);
+  setTimeout(async()=>{ await api('/progress/' + p.progress_id + '/advance', 'POST', {action:'next'}); }, 1600);
+}
+async function searchHelp() {
+  const kw = document.getElementById('helpKw').value;
+  const list = await api('/help?keyword=' + encodeURIComponent(kw));
+  if (!list) return;
+  document.getElementById('helpResult').innerHTML = list.map(d => `
+    <div class="card" style="margin-top:8px"><h3>${esc(d.title)}</h3>
+    <div class="meta">${esc(d.category||'')}</div>
+    <div style="font-size:12px">${esc(d.body)}</div></div>`).join('');
+}
+
+// ---------- 品牌 ----------
+async function loadBrand() {
+  const b = await api('/brand');
+  if (b) {
+    document.getElementById('brName').value = b.brand_name || '';
+    document.getElementById('brColor').value = b.primary_color || '';
+    document.getElementById('brContact').value = b.contact || '';
+    document.getElementById('brWatermark').value = b.watermark || '';
+    document.getElementById('brCopyright').value = b.copyright || '';
+  }
+  const sh = await api('/shares');
+  if (sh) {
+    document.querySelector('#shTable tbody').innerHTML = sh.map(s => `
+      <tr><td>${s.code}</td><td>${esc(s.title)}</td>
+      <td><span class="badge ok">${s.permission}</span></td>
+      <td>${s.access_count}</td>
+      <td><code style="color:var(--green)">${s.url}</code></td></tr>`).join('');
+  }
+}
+async function saveBrand() {
+  const b = await api('/brand', 'PUT', {
+    brand_name: document.getElementById('brName').value,
+    primary_color: document.getElementById('brColor').value,
+    contact: document.getElementById('brContact').value,
+    watermark: document.getElementById('brWatermark').value,
+    copyright: document.getElementById('brCopyright').value,
+  });
+  if (b) toast('品牌配置已保存');
+}
+async function createShare() {
+  const t = document.getElementById('shTitle').value || 'Demo 分享';
+  const s = await api('/shares', 'POST', { title: t, permission: 'view' });
+  if (s) { toast('分享已创建: ' + s.url); loadBrand(); }
+}
+async function createEmbed() {
+  const p = document.getElementById('embPlatform').value;
+  const e = await api('/embeds', 'POST', { platform: p });
+  if (e) {
+    document.getElementById('embResult').innerHTML =
+      `<pre class="log">${esc(e.snippet)}</pre>`;
+    toast('嵌入代码已生成');
+  }
+}
+
+// ---------- 设置 ----------
+async function loadSettings() {
+  const s = await api('/settings');
+  if (s) {
+    let html = '<div class="grid">';
+    for (const [k,v] of Object.entries(s)) {
+      html += `<div class="card"><h3>${k}</h3>
+        <div class="meta">${typeof v === 'boolean' ? (v?'✅ 开启':'❌ 关闭') : esc(String(v))}</div></div>`;
+    }
+    html += '</div>';
+    document.getElementById('setCard').innerHTML = html;
+  }
+  const log = await api('/audit-log?limit=50');
+  if (log) {
+    document.querySelector('#auditTable tbody').innerHTML = log.map(l => `
+      <tr><td>${l.at}</td><td>${esc(l.action)}</td><td>${esc(l.detail)}</td></tr>`).join('');
+  }
+}
+
+// ---------- 启动 ----------
+async function loadAll() {
+  loadOverview(); loadScenarios(); loadDataset(); loadEngine();
+  loadQuick(); loadGuide(); loadBrand(); loadSettings();
+}
+loadAll();
+</script>
+</body>
+</html>

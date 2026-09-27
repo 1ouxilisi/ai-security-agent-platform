@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>专业安全报告引擎 v30.2</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --border:#30363d; --fg:#e6edf3;
+  --muted:#8b949e; --accent:#58a6ff; --ok:#3fb950; --warn:#d29922;
+  --bad:#f85149;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:"Microsoft YaHei","Segoe UI",Arial,sans-serif;font-size:13px}
+header{padding:14px 22px;background:linear-gradient(90deg,#1f6feb33,#1f6feb00);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+header h1{font-size:18px;margin:0}
+header .sub{color:var(--muted);font-size:12px}
+.tabs{display:flex;gap:4px;padding:0 22px;background:var(--panel);
+  border-bottom:1px solid var(--border);flex-wrap:wrap}
+.tab{padding:10px 16px;cursor:pointer;border:none;background:transparent;
+  color:var(--muted);font-size:13px;border-bottom:2px solid transparent}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover{color:var(--fg)}
+main{padding:18px 22px;max-width:1500px;margin:0 auto}
+.panel{background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;padding:14px;margin-bottom:14px}
+.panel h2{margin:0 0 10px;font-size:15px;color:var(--accent)}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+input,select,textarea{background:#0d1117;border:1px solid var(--border);
+  color:var(--fg);padding:7px 10px;border-radius:4px;font-size:13px;
+  min-width:160px}
+textarea{width:100%;min-height:100px;font-family:Consolas,monospace}
+button{background:#238636;color:#fff;border:none;padding:7px 14px;
+  border-radius:4px;cursor:pointer;font-size:13px}
+button:hover{background:#2ea043}
+button.sec{background:#30363d}
+button.sec:hover{background:#444c56}
+pre{background:#0d1117;border:1px solid var(--border);padding:10px;
+  border-radius:4px;overflow:auto;max-height:420px;
+  font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;
+  font-size:11px;margin-right:4px}
+.b-critical{background:#f8514922;color:var(--bad)}
+.b-high{background:#ff7a4522;color:#ff7a45}
+.b-medium{background:#d2992222;color:var(--warn)}
+.b-low{background:#3fb95022;color:var(--ok)}
+.b-info{background:#58a6ff22;color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{border:1px solid var(--border);padding:6px 8px;text-align:left}
+th{background:#21262d}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+.hidden{display:none}
+.kv{color:var(--muted)}
+.chart-box{height:260px}
+</style>
+</head>
+<body>
+<header>
+  <h1>专业安全报告引擎</h1>
+  <span class="sub">Round 30 · Direction 2 · P2 报告质量升级（Nessus/AWVS 风格）</span>
+  <span style="flex:1"></span>
+  <span class="kv">HTML / Markdown / JSON · 内嵌 Chart.js</span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-tab="t-gen">生成报告</button>
+  <button class="tab" data-tab="t-list">历史报告</button>
+  <button class="tab" data-tab="t-compare">报告对比</button>
+  <button class="tab" data-tab="t-charts">图表预览</button>
+  <button class="tab" data-tab="t-kb">漏洞知识库</button>
+</div>
+
+<main>
+
+<section id="t-gen">
+  <div class="panel">
+    <h2>生成专业报告</h2>
+    <div class="row">
+      <input id="g-target" placeholder="目标 URL" value="https://demo.example.com" style="flex:1">
+      <input id="g-title" placeholder="报告标题" value="安全评估报告">
+      <button onclick="genReport()">生成</button>
+      <button class="sec" onclick="genSample()">示例报告</button>
+    </div>
+    <div class="row">
+      <label>格式:</label>
+      <label><input type="checkbox" id="f-html" checked> HTML</label>
+      <label><input type="checkbox" id="f-md" checked> Markdown</label>
+      <label><input type="checkbox" id="f-json" checked> JSON</label>
+    </div>
+    <div class="row">
+      <textarea id="g-findings" placeholder='[{"name":"SQL注入","severity":"critical","cvss_score":9.8,"cwe":"CWE-89","url":"http://x/?id=1"}]'></textarea>
+    </div>
+    <pre id="g-out">—</pre>
+  </div>
+</section>
+
+<section id="t-list" class="hidden">
+  <div class="panel">
+    <h2>历史报告</h2>
+    <div class="row">
+      <button onclick="loadList()">刷新</button>
+    </div>
+    <table id="list-table">
+      <thead><tr><th>报告ID</th><th>标题</th><th>目标</th>
+      <th>风险</th><th>漏洞数</th><th>文件</th><th>操作</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <pre id="list-detail" style="margin-top:10px">—</pre>
+  </div>
+</section>
+
+<section id="t-compare" class="hidden">
+  <div class="panel">
+    <h2>报告对比</h2>
+    <div class="row">
+      <input id="c-a" placeholder="报告A ID">
+      <input id="c-b" placeholder="报告B ID">
+      <button onclick="doCompare()">对比</button>
+    </div>
+    <pre id="c-out">—</pre>
+  </div>
+</section>
+
+<section id="t-charts" class="hidden">
+  <div class="panel">
+    <h2>图表预览（不生成报告）</h2>
+    <div class="grid">
+      <div><h3>风险分布</h3><canvas id="c-pie" class="chart-box"></canvas></div>
+      <div><h3>严重程度</h3><canvas id="c-bar" class="chart-box"></canvas></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button onclick="previewCharts()">加载示例数据</button>
+    </div>
+  </div>
+</section>
+
+<section id="t-kb" class="hidden">
+  <div class="panel">
+    <h2>内置漏洞知识库（CVSS/CWE/修复方案）</h2>
+    <div class="row">
+      <button onclick="loadKB()">加载</button>
+    </div>
+    <pre id="kb-out">—</pre>
+  </div>
+</section>
+
+</main>
+
+<script>
+const API = "/api/v1/report-pro";
+let charts = {};
+
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
+    document.getElementById(t.dataset.tab).classList.remove("hidden");
+  };
+});
+
+async function api(path, opts={}){
+  const r = await fetch(API+path, {
+    headers:{"Content-Type":"application/json"},
+    ...opts
+  });
+  return r.json();
+}
+function show(id, obj){
+  document.getElementById(id).textContent =
+    typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+}
+
+async function genReport(){
+  let findings = [];
+  const raw = document.getElementById("g-findings").value.trim();
+  if(raw){
+    try{ findings = JSON.parse(raw); }catch(e){ alert("findings JSON 解析失败"); return; }
+  }
+  const fmts = [];
+  if(document.getElementById("f-html").checked) fmts.push("html");
+  if(document.getElementById("f-md").checked) fmts.push("md");
+  if(document.getElementById("f-json").checked) fmts.push("json");
+  const r = await api("/generate", {method:"POST",
+    body: JSON.stringify({
+      target: document.getElementById("g-target").value,
+      title: document.getElementById("g-title").value,
+      findings, assets: [], fmts
+    })});
+  show("g-out", r);
+}
+async function genSample(){
+  const r = await api("/generate/sample", {method:"POST"});
+  show("g-out", r);
+}
+
+async function loadList(){
+  const r = await api("/list");
+  const tb = document.querySelector("#list-table tbody");
+  tb.innerHTML = "";
+  (r.data?.reports||[]).forEach(rep=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="mono">${rep.report_id}</td>
+      <td>${rep.title||""}</td><td>${rep.target||""}</td>
+      <td>${rep.overall_risk||""}</td>
+      <td>${rep.finding_count||"-"}</td>
+      <td>${Object.keys(rep.files||{}).join(",")}</td>
+      <td><button class="sec" onclick='viewReport("${rep.report_id}")'>查看</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+async function viewReport(rid){
+  const r = await api(`/${rid}?fmt=html`);
+  show("list-detail", r.data?.content?.slice(0,2000) || r);
+}
+
+async function doCompare(){
+  const a = document.getElementById("c-a").value.trim();
+  const b = document.getElementById("c-b").value.trim();
+  const r = await api("/compare/v2", {method:"POST",
+    body: JSON.stringify({report_a:a, report_b:b})});
+  show("c-out", r);
+}
+
+async function previewCharts(){
+  const findings = [
+    {severity:"critical"},{severity:"critical"},
+    {severity:"high"},{severity:"high"},{severity:"high"},
+    {severity:"medium"},{severity:"medium"},
+    {severity:"low"},{severity:"low"},{severity:"low"},{severity:"low"},
+  ];
+  const r = await api("/charts/preview", {method:"POST",
+    body: JSON.stringify({findings, assets: []})});
+  const pie = r.data?.pie, bar = r.data?.bar_severity;
+  if(charts.pie) charts.pie.destroy();
+  if(charts.bar) charts.bar.destroy();
+  charts.pie = new Chart(document.getElementById("c-pie"), pie);
+  charts.bar = new Chart(document.getElementById("c-bar"), bar);
+}
+
+async function loadKB(){
+  const r = await api("/templates/catalog");
+  show("kb-out", r);
+}
+
+loadList();
+</script>
+</body>
+</html>

@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOAR 安全编排自动化与响应控制台</title>
+<style>
+  :root {
+    --bg: #0b0f17; --panel: #131a26; --panel2: #1a2333; --border: #243049;
+    --txt: #d7e0ee; --muted: #7d8aa3; --accent: #1890ff; --ok: #52c41a;
+    --warn: #fa8c16; --bad: #ff4d4f; --purple: #722ed1; --cyan: #13c2c2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--txt);
+         font-family: "Segoe UI", "Microsoft YaHei", sans-serif; font-size: 13px; }
+  header { padding: 14px 22px; background: linear-gradient(90deg,#0f1826,#13223a);
+           border-bottom: 1px solid var(--border); display: flex; align-items: center;
+           justify-content: space-between; }
+  header h1 { font-size: 18px; font-weight: 600; }
+  header h1 span { color: var(--cyan); }
+  .badge { background: var(--panel2); border: 1px solid var(--border);
+           padding: 3px 10px; border-radius: 12px; color: var(--muted); font-size: 12px; }
+  nav { display: flex; gap: 4px; padding: 10px 22px; background: var(--panel);
+        border-bottom: 1px solid var(--border); overflow-x: auto; }
+  nav button { background: transparent; color: var(--muted); border: 1px solid transparent;
+               padding: 8px 16px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+               font-size: 13px; }
+  nav button.active { background: var(--accent); color: #fff; }
+  nav button:hover:not(.active) { background: var(--panel2); color: var(--txt); }
+  main { padding: 18px 22px; }
+  .tab { display: none; } .tab.active { display: block; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr));
+           gap: 12px; margin-bottom: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+          padding: 14px; }
+  .card .label { color: var(--muted); font-size: 12px; }
+  .card .val { font-size: 24px; font-weight: 600; margin-top: 4px; }
+  .card .sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .v-ok { color: var(--ok); } .v-warn { color: var(--warn); } .v-bad { color: var(--bad); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 980px) { .grid2 { grid-template-columns: 1fr; } }
+  table { width: 100%; border-collapse: collapse; background: var(--panel);
+          border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border);
+           font-size: 12px; }
+  th { background: var(--panel2); color: var(--muted); font-weight: 600; }
+  tr:hover td { background: #172133; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .t-critical { background: rgba(255,77,79,.15); color: var(--bad); }
+  .t-high { background: rgba(250,140,22,.15); color: var(--warn); }
+  .t-medium { background: rgba(24,144,255,.15); color: var(--accent); }
+  .t-low { background: rgba(82,196,26,.15); color: var(--ok); }
+  .panel { background: var(--panel); border: 1px solid var(--border);
+           border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .panel h3 { font-size: 14px; margin-bottom: 10px; color: var(--cyan); }
+  .bar { height: 8px; background: var(--panel2); border-radius: 4px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: linear-gradient(90deg,var(--accent),var(--cyan)); }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  button.btn { background: var(--accent); color: #fff; border: none; padding: 7px 14px;
+               border-radius: 5px; cursor: pointer; font-size: 12px; }
+  button.btn.ghost { background: var(--panel2); color: var(--txt); border: 1px solid var(--border); }
+  button.btn:hover { opacity: .85; }
+  input, select { background: var(--panel2); color: var(--txt); border: 1px solid var(--border);
+                   padding: 6px 10px; border-radius: 5px; font-size: 12px; }
+  .timeline { position: relative; padding-left: 18px; }
+  .timeline::before { content: ""; position: absolute; left: 6px; top: 4px; bottom: 4px;
+                      width: 2px; background: var(--border); }
+  .tl-item { position: relative; padding: 4px 0 10px 8px; font-size: 12px; }
+  .tl-item::before { content: ""; position: absolute; left: -16px; top: 8px;
+                     width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .muted { color: var(--muted); }
+  code { background: var(--panel2); padding: 1px 6px; border-radius: 4px; color: var(--cyan); }
+  pre { background: #0a0e16; padding: 10px; border-radius: 6px; overflow: auto;
+        font-size: 11px; max-height: 240px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡 <span>SOAR</span> 安全编排自动化与响应控制台</h1>
+  <div>
+    <span class="badge">v15.2 · 编排/管理视角 · 全部模拟执行</span>
+  </div>
+</header>
+<nav>
+  <button class="active" data-tab="playbooks">📋 剧本编排</button>
+  <button data-tab="actions">⚙ 动作库</button>
+  <button data-tab="triage">🚨 告警分诊</button>
+  <button data-tab="cases">🧾 案例管理</button>
+  <button data-tab="exec">⏱ 执行监控</button>
+  <button data-tab="metrics">📊 运营度量</button>
+</nav>
+<main>
+
+<!-- ============ 1. 剧本编排 ============ -->
+<section class="tab active" id="tab-playbooks">
+  <div class="cards" id="pb-cards"></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>📦 剧本模板库（50+）</h3>
+      <div class="toolbar">
+        <select id="pb-cat"><option value="">全部分类</option></select>
+        <button class="btn" onclick="loadTemplates()">刷新</button>
+        <button class="btn ghost" onclick="instantiateSelected()">实例化为剧本</button>
+      </div>
+      <table id="pb-tpl-table">
+        <thead><tr><th>模板</th><th>分类</th><th>严重度</th><th>触发条件</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <h3>📜 已发布剧本</h3>
+      <div class="toolbar">
+        <button class="btn ghost" onclick="loadPlaybooks()">刷新</button>
+        <button class="btn" onclick="createPlaybook()">新建空白剧本</button>
+      </div>
+      <table id="pb-list-table">
+        <thead><tr><th>ID</th><th>名称</th><th>节点</th><th>版本</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <h3 style="margin-top:14px">🧪 剧本 Dry-Run 测试</h3>
+      <div id="pb-test-out"><pre class="muted">选择剧本后点击"测试"</pre></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. 动作库 ============ -->
+<section class="tab" id="tab-actions">
+  <div class="cards" id="act-cards"></div>
+  <div class="panel">
+    <h3>⚙ 响应动作（100+）</h3>
+    <div class="toolbar">
+      <select id="act-cat"><option value="">全部分类</option></select>
+      <select id="act-risk"><option value="">全部风险</option><option>低</option><option>中</option><option>高</option></select>
+      <input id="act-kw" placeholder="关键字搜索…" style="flex:1">
+      <button class="btn" onclick="loadActions()">查询</button>
+    </div>
+    <table id="act-table">
+      <thead><tr><th>动作 ID</th><th>名称</th><th>分类</th><th>风险</th><th>审批</th><th>平台</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="panel">
+    <h3>▶ 模拟执行（dry-run）</h3>
+    <div id="act-exec-out"><pre class="muted">在动作列表点击"执行"发起模拟调用</pre></div>
+  </div>
+</section>
+
+<!-- ============ 3. 告警分诊 ============ -->
+<section class="tab" id="tab-triage">
+  <div class="cards" id="al-cards"></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>🚨 接入一条测试告警</h3>
+      <div class="toolbar">
+        <input id="al-title" placeholder="标题" value="疑似 C2 beacon 通信">
+        <input id="al-rule" placeholder="规则" value="c2_beacon">
+        <select id="al-sev"><option>critical</option><option>high</option><option selected>medium</option><option>low</option></select>
+        <input id="al-ip" placeholder="src_ip" value="203.0.113.66">
+        <input id="al-asset" placeholder="资产" value="WEB-EXT-01">
+        <input id="al-user" placeholder="用户" value="wang.wu">
+        <button class="btn" onclick="ingestAlert()">接入并自动分诊</button>
+      </div>
+      <table id="al-table">
+        <thead><tr><th>告警 ID</th><th>标题</th><th>严重度</th><th>评分</th><th>优先级</th><th>决策</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <h3>🧮 分诊结果详情</h3>
+      <div id="al-detail"><pre class="muted">点击左侧告警行查看富化/评分/关联</pre></div>
+      <h3 style="margin-top:10px">📈 聚合分组</h3>
+      <table id="al-groups"><thead><tr><th>分组</th><th>规则</th><th>次数</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. 案例管理 ============ -->
+<section class="tab" id="tab-cases">
+  <div class="cards" id="cs-cards"></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>🧾 案例列表</h3>
+      <div class="toolbar">
+        <button class="btn ghost" onclick="loadCases()">刷新</button>
+        <button class="btn" onclick="createCase()">快速建单</button>
+      </div>
+      <table id="cs-table">
+        <thead><tr><th>ID</th><th>标题</th><th>严重度</th><th>状态</th><th>负责人</th><th>SLA</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <h3>🧭 案例时间线 / 评论 / 证据</h3>
+      <div id="cs-detail"><pre class="muted">点击左侧案例查看详情</pre></div>
+      <h3 style="margin-top:10px">📚 知识库沉淀</h3>
+      <table id="cs-kb"><thead><tr><th>案例</th><th>根因</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. 执行监控 ============ -->
+<section class="tab" id="tab-exec">
+  <div class="cards" id="ex-cards"></div>
+  <div class="panel">
+    <h3>⏱ 执行任务队列</h3>
+    <div class="toolbar">
+      <button class="btn ghost" onclick="loadExec()">刷新</button>
+      <button class="btn" onclick="submitExec()">提交示例剧本执行</button>
+    </div>
+    <table id="ex-table">
+      <thead><tr><th>任务 ID</th><th>名称</th><th>状态</th><th>当前步</th><th>开始</th><th>结束</th><th>操作</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="panel">
+    <h3>🕒 执行时间线 / 审计</h3>
+    <div id="ex-timeline"><pre class="muted">点击"时间线"查看任务步骤</pre></div>
+  </div>
+</section>
+
+<!-- ============ 6. 运营度量 ============ -->
+<section class="tab" id="tab-metrics">
+  <div class="cards" id="mt-cards"></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>📈 7 天趋势</h3>
+      <table id="mt-trend"><thead><tr><th>日期</th><th>告警</th><th>自动化率</th><th>MTTR(分)</th><th>SLA%</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="panel">
+      <h3>👥 分析师效率 & 剧本分布</h3>
+      <table id="mt-analysts"><thead><tr><th>分析师</th><th>处理</th><th>关闭</th><th>平均耗时(分)</th></tr></thead><tbody></tbody></table>
+      <h3 style="margin-top:10px">🎯 剧本执行分布</h3>
+      <div id="mt-pb"></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+const BASE = "/api/v1/soar";
+async function api(path, opts={}) {
+  try {
+    const r = await fetch(BASE + path, {
+      headers: {"Content-Type":"application/json"}, ...opts
+    });
+    const j = await r.json();
+    if (!j.success) { console.warn(path, j.error); }
+    return j;
+  } catch (e) { console.error(path, e); return {success:false, error:String(e)}; }
+}
+function tag(sev) {
+  return `<span class="tag t-${sev||'low'}">${sev||'-'}</span>`;
+}
+function card(label, val, sub, cls="") {
+  return `<div class="card"><div class="label">${label}</div>
+          <div class="val ${cls}">${val}</div><div class="sub">${sub||''}</div></div>`;
+}
+function bar(pct) {
+  return `<div class="bar"><i style="width:${Math.min(100,Math.max(0,pct))}%"></i></div>
+          <span class="muted">${pct}%</span>`;
+}
+
+// ---- Tab switching ----
+document.querySelectorAll("nav button").forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    document.getElementById("tab-"+b.dataset.tab).classList.add("active");
+    loadTab(b.dataset.tab);
+  };
+});
+
+function loadTab(t){
+  if(t==="playbooks"){ loadPbCards(); loadTemplates(); loadPlaybooks(); }
+  if(t==="actions"){ loadActCards(); loadActions(); }
+  if(t==="triage"){ loadAlCards(); loadAlerts(); loadGroups(); }
+  if(t==="cases"){ loadCsCards(); loadCases(); loadKb(); }
+  if(t==="exec"){ loadExCards(); loadExec(); }
+  if(t==="metrics"){ loadMtCards(); loadTrend(); loadAnalysts(); loadPbDist(); }
+}
+
+// ============ 1. Playbooks ============
+let CUR_TPL=null, CUR_PB=null;
+async function loadPbCards(){
+  const j = await api("/workflow/overview");
+  if(!j.success) return;
+  const s=j.data;
+  document.getElementById("pb-cards").innerHTML =
+    card("模板库", s.playbooks.templates, "已沉淀剧本模板") +
+    card("已发布剧本", s.playbooks.playbooks, "可被告警触发") +
+    card("执行任务", s.execution.total_tasks, "累计自动化执行", "v-ok") +
+    card("案例数", s.cases.total_cases, "open: "+s.cases.open_cases, "v-warn");
+  const sel=document.getElementById("pb-cat");
+  Object.keys(s.playbooks.templates_by_category||{}).forEach(c=>{
+    const o=document.createElement("option"); o.value=c; o.textContent=c; sel.appendChild(o);
+  });
+}
+async function loadTemplates(){
+  const cat=document.getElementById("pb-cat").value;
+  const j=await api("/playbooks/templates"+(cat?("?category="+encodeURIComponent(cat)):""));
+  if(!j.success) return;
+  const tb=document.querySelector("#pb-tpl-table tbody"); tb.innerHTML="";
+  j.data.templates.forEach(t=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><code>${t.template_id}</code></td><td>${t.name}</td>
+      <td>${t.category}</td><td>${tag(t.severity)}</td>
+      <td class="muted">${(t.trigger_conditions||[]).join(", ")}</td>
+      <td><button class="btn ghost" onclick="pickTpl('${t.template_id}')">选用</button></td>`;
+    tr.onclick=()=>{CUR_TPL=t.template_id;
+      document.querySelectorAll("#pb-tpl-table tr").forEach(r=>r.style.background="");
+      tr.style.background="#1d2a44";};
+    tb.appendChild(tr);
+  });
+}
+function pickTpl(id){ CUR_TPL=id; }
+async function instantiateSelected(){
+  if(!CUR_TPL){ alert("先在左侧选择一个模板"); return; }
+  const j=await api("/playbooks/instantiate",{method:"POST",body:JSON.stringify({template_id:CUR_TPL})});
+  if(j.success){ alert("实例化成功: "+j.data.playbook_id); loadPlaybooks(); }
+}
+async function loadPlaybooks(){
+  const j=await api("/playbooks");
+  if(!j.success) return;
+  const tb=document.querySelector("#pb-list-table tbody"); tb.innerHTML="";
+  j.data.playbooks.forEach(p=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><code>${p.playbook_id}</code></td><td>${p.name}</td>
+      <td>${p.node_count}</td><td>v${p.current_version}</td>
+      <td><span class="tag t-medium">${p.status}</span></td>
+      <td><button class="btn" onclick="testPb('${p.playbook_id}')">测试</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+async function testPb(id){
+  const j=await api("/playbooks/"+id+"/test",{method:"POST",body:JSON.stringify({context:{}})});
+  document.getElementById("pb-test-out").innerHTML =
+    "<pre>"+JSON.stringify(j.data.result||j.error,null,2)+"</pre>";
+}
+async function createPlaybook(){
+  const name=prompt("新剧本名称","自定义响应剧本"); if(!name) return;
+  await api("/playbooks",{method:"POST",body:JSON.stringify({name})});
+  loadPlaybooks();
+}
+
+// ============ 2. Actions ============
+async function loadActCards(){
+  const j=await api("/actions/stats");
+  if(!j.success) return;
+  const s=j.data;
+  document.getElementById("act-cards").innerHTML =
+    card("动作总数", s.total_actions, "覆盖 10 大类", "v-ok") +
+    card("分类", s.categories, "主机/身份/取证/通知…") +
+    card("需审批动作", s.needs_approval, "高风险动作", "v-warn") +
+    card("高风险动作", s.by_risk["高"]||0, "变更前需审批", "v-bad");
+  const sel=document.getElementById("act-cat");
+  Object.entries({"host_isolation":"主机网络","identity":"身份治理","forensics":"取证",
+    "ticket":"工单","notification":"通知","scan_detect":"扫描检测","email":"邮件",
+    "cloud":"云与容器","database_app":"数据库应用","counter":"反制"}).forEach(([k,v])=>{
+    const o=document.createElement("option"); o.value=k; o.textContent=v; sel.appendChild(o);
+  });
+}
+async function loadActions(){
+  const cat=document.getElementById("act-cat").value;
+  const risk=document.getElementById("act-risk").value;
+  const kw=document.getElementById("act-kw").value;
+  const q=new URLSearchParams();
+  if(cat)q.set("category",cat); if(risk)q.set("risk",risk); if(kw)q.set("keyword",kw);
+  const j=await api("/actions?"+q.toString());
+  if(!j.success) return;
+  const tb=document.querySelector("#act-table tbody"); tb.innerHTML="";
+  j.data.actions.forEach(a=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><code>${a.action_id}</code></td><td>${a.name}</td>
+      <td>${a.category}</td><td>${tag(a.risk==='低'?'low':a.risk==='中'?'medium':'high')}</td>
+      <td>${a.requires_approval?'✅':'—'}</td>
+      <td class="muted">${(a.platforms||[]).slice(0,3).join(",")}</td>
+      <td><button class="btn" onclick="execAction('${a.action_id}')">执行</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+async function execAction(id){
+  const j=await api("/actions/execute",{method:"POST",
+    body:JSON.stringify({action_id:id,params:{host_id:"PC-DEMO",ip:"1.2.3.4"},dry_run:true})});
+  document.getElementById("act-exec-out").innerHTML =
+    "<pre>"+JSON.stringify(j.data||j.error,null,2)+"</pre>";
+}
+
+// ============ 3. Triage ============
+async function loadAlCards(){
+  const j=await api("/alerts/dashboard");
+  if(!j.success) return;
+  const d=j.data;
+  document.getElementById("al-cards").innerHTML =
+    card("告警总数", d.total_alerts, "当前接入") +
+    card("P1/P2 高危", (d.by_priority["P1"]||0)+(d.by_priority["P2"]||0), "需立即处置", "v-bad") +
+    card("聚合分组", d.groups, "去重后事件数") +
+    card("误报标记", d.false_positives, "已学习规则", "v-warn");
+}
+async function ingestAlert(){
+  const body={title:al_title.value,rule:al_rule.value,severity:al_sev.value,
+    src_ip:al_ip.value,asset:al_asset.value,user:al_user.value};
+  const j=await api("/alerts/ingest",{method:"POST",body:JSON.stringify(body)});
+  if(j.success){
+    loadAlCards(); loadAlerts(); loadGroups();
+    showAlertDetail(j.data.alert_id);
+  }
+}
+async function loadAlerts(){
+  const j=await api("/alerts?limit=30");
+  if(!j.success) return;
+  const tb=document.querySelector("#al-table tbody"); tb.innerHTML="";
+  j.data.alerts.forEach(a=>{
+    const tr=document.createElement("tr");
+    const sc=a.triage?a.triage.score:0, pr=a.triage?a.triage.priority:"-";
+    tr.innerHTML=`<td><code>${a.alert_id}</code></td><td>${a.title}</td>
+      <td>${tag(a.severity)}</td><td>${sc}</td><td>${tag(pr==='P1'?'critical':pr==='P2'?'high':'medium')}</td>
+      <td class="muted">${a.status}</td>`;
+    tr.onclick=()=>showAlertDetail(a.alert_id);
+    tb.appendChild(tr);
+  });
+}
+async function showAlertDetail(id){
+  const [e,s,c,dt]=await Promise.all([
+    api("/alerts/"+id+"/enrich"), api("/alerts/"+id+"/score"),
+    api("/alerts/"+id+"/correlate"), api("/alerts/"+id+"/auto-triage")]);
+  document.getElementById("al-detail").innerHTML =
+    "<pre>富化: "+JSON.stringify(e.data,null,2)+"\n评分: "+JSON.stringify(s.data,null,2)+
+    "\n关联: "+JSON.stringify(c.data.related||[],null,2)+"\n决策: "+JSON.stringify(dt.data,null,2)+"</pre>";
+}
+async function loadGroups(){
+  const j=await api("/alerts/groups/list");
+  if(!j.success) return;
+  const tb=document.querySelector("#al-groups tbody"); tb.innerHTML="";
+  j.data.groups.forEach(g=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td class="muted">${g.group_id.slice(0,40)}</td><td>${g.rule}</td><td>${g.count}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ============ 4. Cases ============
+async function loadCsCards(){
+  const j=await api("/workflow/overview");
+  if(!j.success) return;
+  const s=j.data.cases;
+  document.getElementById("cs-cards").innerHTML =
+    card("总案例", s.total_cases, "") +
+    card("开放中", s.open_cases, "未闭环", "v-warn") +
+    card("知识库", s.knowledge_entries, "复盘沉淀") +
+    card("分析师", s.analysts.join(","), "可分配");
+}
+async function loadCases(){
+  const j=await api("/cases");
+  if(!j.success) return;
+  const tb=document.querySelector("#cs-table tbody"); tb.innerHTML="";
+  j.data.cases.forEach(c=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><code>${c.case_id}</code></td><td>${c.title}</td>
+      <td>${tag(c.severity)}</td><td class="muted">${c.status}</td>
+      <td>${c.owner}</td><td class="muted">${c.sla.due_at.slice(5,16)}</td>`;
+    tr.onclick=()=>showCaseDetail(c.case_id);
+    tb.appendChild(tr);
+  });
+}
+async function showCaseDetail(id){
+  const j=await api("/cases/"+id); if(!j.success) return;
+  const c=j.data;
+  let html=`<pre>标题: ${c.title}\n状态: ${c.status}  负责人: ${c.owner}\nSLA: ${c.sla.due_at}\n\n时间线:\n`;
+  c.timeline.forEach(t=>{ html+=`  [${t.ts}] ${t.kind}: ${t.detail}\n`; });
+  html+=`\n评论 (${c.comments.length}):\n`;
+  c.comments.forEach(cm=>{ html+=`  ${cm.author}: ${cm.body}\n`; });
+  html+=`\n证据: ${c.evidence.length} 项</pre>`;
+  document.getElementById("cs-detail").innerHTML=html;
+}
+async function createCase(){
+  const title=prompt("案例标题","新安全事件 "+Date.now()); if(!title) return;
+  await api("/cases",{method:"POST",body:JSON.stringify({title,severity:"high",category:"入侵"})});
+  loadCsCards(); loadCases();
+}
+async function loadKb(){
+  const j=await api("/cases/knowledge/list");
+  if(!j.success) return;
+  const tb=document.querySelector("#cs-kb tbody"); tb.innerHTML="";
+  j.data.entries.forEach(k=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${k.title}</td><td>${k.root_cause}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ============ 5. Execution ============
+async function loadExCards(){
+  const j=await api("/executions/performance/overview");
+  if(!j.success) return;
+  const s=j.data;
+  document.getElementById("ex-cards").innerHTML =
+    card("执行任务", s.total_tasks, "") +
+    card("成功率", s.success_rate+"%", "近 30 天", s.success_rate>90?"v-ok":"v-warn") +
+    card("平均耗时", s.avg_duration_s+"s", "单任务") +
+    card("审计事件", s.audit_events, "可追溯", "v-cyan");
+}
+async function loadExec(){
+  const j=await api("/executions/list");
+  if(!j.success) return;
+  const tb=document.querySelector("#ex-table tbody"); tb.innerHTML="";
+  j.data.tasks.forEach(t=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><code>${t.task_id}</code></td><td>${t.name}</td>
+      <td>${tag(t.status==='success'?'low':t.status==='failed'?'critical':t.status==='waiting_approval'?'high':'medium')}</td>
+      <td>${t.current_step}</td><td class="muted">${(t.started_at||'-').slice(5,16)}</td>
+      <td class="muted">${(t.finished_at||'-').slice(5,16)}</td>
+      <td><button class="btn ghost" onclick="showTimeline('${t.task_id}')">时间线</button>
+          ${t.status==='waiting_approval'?`<button class="btn" onclick="approveExec('${t.task_id}')">批准</button>`:''}</td>`;
+    tb.appendChild(tr);
+  });
+}
+async function submitExec(){
+  const steps=[
+    {step_id:"s1",action_id:"ti.lookup_ip",params:{ip:"1.2.3.4"}},
+    {step_id:"s2",action_id:"host.isolate",params:{host_id:"PC-DEMO"},approval:true,retry:1},
+    {step_id:"s3",action_id:"evidence.collect_memory",params:{host_id:"PC-DEMO"}}
+  ];
+  await api("/executions/submit",{method:"POST",body:JSON.stringify({name:"示例响应剧本",steps})});
+  loadExec(); loadExCards();
+}
+async function approveExec(id){
+  await api("/executions/"+id+"/approve",{method:"POST",body:JSON.stringify({decision:"approve",approver:"analyst"})});
+  loadExec(); loadExCards();
+}
+async function showTimeline(id){
+  const j=await api("/executions/audit/list?task_id="+id);
+  let html='<div class="timeline">';
+  (j.data.logs||[]).forEach(l=>{
+    html+=`<div class="tl-item">[${l.at}] <b>${l.kind}</b> — ${l.detail}</div>`;
+  });
+  html+="</div>";
+  document.getElementById("ex-timeline").innerHTML=html||'<pre class="muted">无审计事件</pre>';
+}
+
+// ============ 6. Metrics ============
+async function loadMtCards(){
+  const j=await api("/metrics/summary");
+  if(!j.success) return;
+  const k=j.data.kpis;
+  document.getElementById("mt-cards").innerHTML =
+    card("MTTR", k.mttr_min+" 分", "目标 60 分", k.mttr_min<60?"v-ok":"v-warn") +
+    card("平均分诊", k.avg_triage_min+" 分", "MTTriage") +
+    card("自动化率", k.automation_rate_pct+"%", "目标 70%", k.automation_rate_pct>60?"v-ok":"v-warn") +
+    card("剧本成功率", k.playbook_success_pct+"%", "目标 95%", "v-ok") +
+    card("SLA 达成", k.sla_achievement_pct+"%", "目标 95%", k.sla_achievement_pct>90?"v-ok":"v-warn") +
+    card("告警减少率", k.alert_reduction_pct+"%", "聚合+抑制");
+}
+async function loadTrend(){
+  const j=await api("/metrics/trend?days=7");
+  if(!j.success) return;
+  const tb=document.querySelector("#mt-trend tbody"); tb.innerHTML="";
+  j.data.trend.forEach(d=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${d.day}</td><td>${d.alerts}</td>
+      <td>${bar(d.automation_rate)}</td><td>${d.mttr_min}</td><td>${bar(d.sla_achievement)}</td>`;
+    tb.appendChild(tr);
+  });
+}
+async function loadAnalysts(){
+  const j=await api("/metrics/analysts");
+  if(!j.success) return;
+  const tb=document.querySelector("#mt-analysts tbody"); tb.innerHTML="";
+  j.data.analysts.forEach(a=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${a.analyst}</td><td>${a.handled}</td><td>${a.closed}</td>
+      <td>${a.avg_handle_min}</td>`;
+    tb.appendChild(tr);
+  });
+  const j2=await api("/metrics/playbooks");
+  if(j2.success){
+    const wrap=document.getElementById("mt-pb"); wrap.innerHTML="";
+    j2.data.distribution.forEach(p=>{
+      wrap.innerHTML+=`<div style="margin-bottom:6px"><div class="muted">${p.name} <span class="muted">(${p.runs} 次, 成功率 ${p.success_rate}%)</span></div>${bar(p.success_rate)}</div>`;
+    });
+  }
+}
+async function loadPbDist(){ await loadAnalysts(); }
+
+// boot
+loadTab("playbooks");
+</script>
+</body>
+</html>

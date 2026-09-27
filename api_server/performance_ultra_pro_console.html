@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>性能极致优化 Pro · Performance Ultra Pro</title>
+<style>
+:root{
+  --bg:#0d1117; --card:#161b22; --inset:#010409; --border:#30363d;
+  --fg:#e6edf3; --muted:#8b949e; --faint:#6e7681;
+  --accent:#3fb6ff; --ok:#3fb950; --warn:#d29922; --bad:#f85149; --info:#39d2c0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);
+  font-family:"Inter","Microsoft YaHei",system-ui,sans-serif;font-size:14px}
+header{padding:18px 26px;background:linear-gradient(90deg,#1f6feb33,#1f6feb00);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:20px}
+header .sub{color:var(--muted);font-size:13px}
+header .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+main{padding:22px 26px;max-width:1400px;margin:0 auto}
+.grid{display:grid;gap:16px}
+.g-2{grid-template-columns:1fr 1fr}
+.g-3{grid-template-columns:repeat(3,1fr)}
+.g-6{grid-template-columns:repeat(6,1fr)}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px}
+.panel h2{font-size:15px;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.kpi{background:var(--inset);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.kpi .v{font-size:22px;font-weight:800}
+.kpi .l{color:var(--muted);font-size:11px;margin-top:4px}
+.score{padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--card)}
+.score .ic{font-size:24px}
+.score .t{font-weight:700;margin:6px 0 4px}
+.score .d{color:var(--muted);font-size:12px}
+.score.pass{border-left:4px solid var(--ok)}
+.score.fail{border-left:4px solid var(--bad)}
+button{background:var(--accent);color:#0d1117;border:none;padding:8px 14px;border-radius:8px;
+  cursor:pointer;font-weight:600;font-size:13px}
+button:hover{filter:brightness(1.1)}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--border)}
+button.ghost:hover{border-color:var(--accent);color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:600}
+.bar{height:10px;background:var(--inset);border-radius:6px;overflow:hidden;margin:6px 0}
+.bar>i{display:block;height:100%;background:var(--accent)}
+.tag{font-size:11px;padding:2px 8px;border-radius:10px;display:inline-block}
+.tag.pass{background:#3fb95022;color:var(--ok)}
+.tag.fail{background:#f8514922;color:var(--bad)}
+pre{background:var(--inset);border:1px solid var(--border);border-radius:8px;padding:10px;
+  font-size:12px;overflow:auto;max-height:220px;white-space:pre-wrap}
+input{background:var(--inset);border:1px solid var(--border);color:var(--fg);
+  padding:7px 10px;border-radius:8px;min-width:200px}
+.mono{font-family:Consolas,monospace;color:var(--info)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+@media(max-width:1100px){.g-2,.g-3,.g-6{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>⚡ 性能极致优化 Pro 控制台</h1>
+    <div class="sub">方向5 · 启动&lt;5s · P95&lt;30ms · 200 并发 · 多级缓存 · DB · 静态 · 内存</div>
+  </div>
+  <div class="right">
+    <button class="ghost" onclick="loadAll()">🔄 刷新</button>
+    <span class="tag pass">performance-ultra-pro</span>
+  </div>
+</header>
+
+<main>
+  <div class="grid g-6" id="scoreGrid" style="margin-bottom:16px"></div>
+
+  <div class="grid g-2">
+    <div class="panel">
+      <h2>⏱️ 启动速度（10s → 5s 内）</h2>
+      <div class="row">
+        <div class="kpi"><div class="v mono" id="suBefore">--</div><div class="l">优化前 ms</div></div>
+        <div class="kpi"><div class="v mono" id="suAfter">--</div><div class="l">优化后 ms</div></div>
+        <div class="kpi"><div class="v mono" id="suSaved">--</div><div class="l">节省 ms</div></div>
+      </div>
+      <div class="row">
+        <button onclick="warmup()">🔥 预热重模块</button>
+        <button class="ghost" onclick="lazyStatus()">懒加载状态</button>
+      </div>
+      <pre id="suOut">核心优先 + 非核心懒加载 + 路由懒加载。</pre>
+    </div>
+
+    <div class="panel">
+      <h2>📈 API 响应分位（P95 &lt; 30ms）</h2>
+      <div class="row">
+        <div class="kpi"><div class="v mono" id="p50">--</div><div class="l">P50</div></div>
+        <div class="kpi"><div class="v mono" id="p95">--</div><div class="l">P95</div></div>
+        <div class="kpi"><div class="v mono" id="p99">--</div><div class="l">P99</div></div>
+      </div>
+      <div class="bar"><i id="p95bar" style="width:0;background:var(--ok)"></i></div>
+      <div class="row">
+        <button onclick="recordLat()">上报 8ms</button>
+        <button class="ghost" onclick="cacheDemo()">缓存命中演示</button>
+        <button class="ghost" onclick="batchDemo()">批量合并</button>
+      </div>
+      <pre id="respOut">多级缓存 L1内存 + L2Redis，gzip/br 压缩。</pre>
+    </div>
+  </div>
+
+  <div class="grid g-2">
+    <div class="panel">
+      <h2>🧵 并发处理（200 并发不崩）</h2>
+      <div class="row">
+        <div class="kpi"><div class="v mono" id="ccMax">--</div><div class="l">并发上限</div></div>
+        <div class="kpi"><div class="v mono" id="ccRun">--</div><div class="l">运行中</div></div>
+        <div class="kpi"><div class="v mono" id="ccPeak">--</div><div class="l">峰值</div></div>
+      </div>
+      <div class="row">
+        <button onclick="stress(200)">💥 200 并发压测</button>
+        <button class="ghost" onclick="enqueueDemo()">入队任务</button>
+      </div>
+      <pre id="ccOut">信号量 + 请求队列 + 连接池。</pre>
+    </div>
+
+    <div class="panel">
+      <h2>💾 数据库优化</h2>
+      <div class="row">
+        <div class="kpi"><div class="v mono" id="dbT">--</div><div class="l">表</div></div>
+        <div class="kpi"><div class="v mono" id="dbIdx">--</div><div class="l">索引</div></div>
+        <div class="kpi"><div class="v mono" id="dbRows">--</div><div class="l">总行数</div></div>
+      </div>
+      <div class="row">
+        <input id="sqlInput" value="SELECT * FROM vulns WHERE severity='high'" />
+        <button onclick="explainSql()">执行计划</button>
+        <button class="ghost" onclick="slowSql()">慢查询</button>
+      </div>
+      <pre id="dbOut">索引 / 慢查询 / 查询缓存 / 连接池。</pre>
+    </div>
+  </div>
+
+  <div class="grid g-2">
+    <div class="panel">
+      <h2>🗜️ 静态资源</h2>
+      <div class="row">
+        <div class="kpi"><div class="v mono" id="stSaved">--</div><div class="l">压缩节省 %</div></div>
+        <div class="kpi"><div class="v mono" id="stCdn">CDN</div><div class="l">长缓存</div></div>
+      </div>
+      <pre id="stOut">gzip + brotli + contenthash + immutable 长缓存。</pre>
+    </div>
+
+    <div class="panel">
+      <h2>🧠 内存优化</h2>
+      <div class="row">
+        <div class="kpi"><div class="v mono" id="memRss">--</div><div class="l">RSS MB</div></div>
+        <div class="kpi"><div class="v mono" id="memPeak">--</div><div class="l">峰值 MB</div></div>
+      </div>
+      <div class="row">
+        <button onclick="runGc()">♻️ 手动 GC</button>
+        <button class="ghost" onclick="leakScan()">泄漏检测</button>
+      </div>
+      <pre id="memOut">对象池 + GC 调优 + 长稳运行。</pre>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>🔌 端点清单（35+）</h2>
+    <table><thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+    <tbody id="epBody"></tbody></table>
+  </div>
+</main>
+
+<script>
+const API='/api/v1/performance-ultra-pro';
+async function g(u){const r=await fetch(API+u);return r.json();}
+async function p(u,b){const r=await fetch(API+u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});return r.json();}
+function set(id,v){const e=document.getElementById(id); if(e)e.textContent=v;}
+
+async function loadScore(){
+  const d=await g('/scorecard'); if(!d.success)return;
+  document.getElementById('scoreGrid').innerHTML=Object.values(d.data).map(s=>`
+    <div class="score ${s.ok?'pass':'fail'}">
+      <div class="ic">${s.ok?'✅':'⛔'}</div>
+      <div class="t">${s.label}</div><div class="d">${s.detail}</div></div>`).join('');
+}
+async function loadStartup(){ const d=await g('/startup/compare'); if(!d.success)return; set('suBefore',d.data.before_ms); set('suAfter',d.data.after_ms); set('suSaved',d.data.saved_ms); }
+async function warmup(){ const d=await p('/startup/warmup',{modules:[]}); set('suOut','预热完成: '+d.data.warmed.length+' 个模块'); loadStartup(); }
+async function lazyStatus(){ const d=await g('/startup/status'); set('suOut','未加载 '+d.data.lazy_unloaded+' 个模块\n节省 '+d.data.deferred_saved_ms+'ms'); }
+
+async function loadLatency(){ const d=await g('/response/latency'); if(!d.success)return; set('p50',d.data.p50); set('p95',d.data.p95); set('p99',d.data.p99); const bar=document.getElementById('p95bar'); const pct=Math.min(100,d.data.p95/30*100); bar.style.width=pct+'%'; bar.style.background=d.data.meets_target?'var(--ok)':'var(--bad)'; }
+async function recordLat(){ await p('/response/latency',{ms:8+Math.random()*6}); loadLatency(); }
+async function cacheDemo(){ const d=await g('/response/cache/demo'); set('respOut','首次命中: '+d.data.first_call_cache_hit+'\n二次命中: '+d.data.second_call_cache_hit+'\n'+d.data.proof); }
+async function batchDemo(){ const d=await p('/response/batch',{paths:['/dashboard','/stats','/profile']}); set('respOut','合并 '+d.data.merged_paths.length+' 个子请求 → 1 次往返，节省 '+d.data.saved_roundtrips+' 次'); }
+
+async function loadCc(){ const d=await g('/concurrency/health'); if(!d.success)return; set('ccMax',d.data.max_concurrent); set('ccRun',d.data.running); set('ccPeak',d.data.peak_concurrent); }
+async function stress(n){ const d=await g('/concurrency/stress?n='+n); set('ccOut','请求 '+d.data.requested+' / 接受 '+d.data.accepted+' / 稳定不崩: '+d.data.stable_under_200); loadCc(); }
+async function enqueueDemo(){ const d=await p('/concurrency/enqueue',{kind:'demo',work_ms:20}); set('ccOut','已入队: '+d.data.task_id); loadCc(); }
+
+async function loadDb(){ const d=await g('/db/stats'); if(!d.success)return; set('dbT',d.data.tables); set('dbIdx',d.data.indexes); set('dbRows',d.data.total_rows); }
+async function explainSql(){ const d=await p('/db/explain',{sql:document.getElementById('sqlInput').value}); set('dbOut',JSON.stringify(d.data,null,2)); }
+async function slowSql(){ const d=await g('/db/slow-queries'); set('dbOut','慢查询:\n'+d.data.items.map(i=>i.sql+' ['+i.p95+'ms] → '+i.suggest).join('\n')); }
+
+async function loadStatic(){ const d=await g('/static/report'); if(!d.success)return; set('stSaved',d.data.saved_pct+'%'); set('stCdn',d.data.cdn.replace('https://','')); set('stOut',d.data.before_compress_kb+'KB → '+d.data.after_compress_kb+'KB\nCache-Control: '+d.data.cache_control); }
+
+async function loadMem(){ const d=await g('/memory/summary'); if(!d.success)return; set('memRss',d.data.rss_mb); set('memPeak',d.data.peak_mb); }
+async function runGc(){ const d=await p('/memory/gc?generation=2',{}); set('memOut','GC 释放 '+d.data.freed_mb+'MB，RSS → '+d.data.rss_after_mb); loadMem(); }
+async function leakScan(){ const d=await g('/memory/leak-scan'); set('memOut','疑似泄漏 '+d.data.suspects+' 个:\n'+d.data.candidates.map(c=>c.name+' ['+c.verdict+'] '+c.advice).join('\n')); }
+
+const EPS=[
+ ['GET','/overview','总览'],['GET','/scorecard','六项打分卡'],['GET','/all','批量合并'],
+ ['GET','/startup/compare','启动对比'],['GET','/startup/status','懒加载状态'],['POST','/startup/warmup','预热'],
+ ['POST','/startup/report','记录加载耗时'],['GET','/startup/heartbeat','心跳'],
+ ['GET','/response/latency','分位'],['POST','/response/latency','上报耗时'],
+ ['GET','/response/cache/stats','缓存统计'],['POST','/response/cache/set','写缓存'],['GET','/response/cache/get','读缓存'],
+ ['DELETE','/response/cache/invalidate','失效'],['DELETE','/response/cache/clear','清空'],['GET','/response/cache/demo','命中演示'],
+ ['POST','/response/compress','压缩'],['POST','/response/batch','批量合并'],
+ ['GET','/concurrency/health','并发健康'],['POST','/concurrency/enqueue','入队'],['GET','/concurrency/tasks','任务列表'],
+ ['POST','/concurrency/stress','压测'],['POST','/concurrency/complete/{id}','完成任务'],
+ ['GET','/db/schema','表结构'],['GET','/db/index-recommendations','索引建议'],['POST','/db/explain','执行计划'],
+ ['GET','/db/cache-layer','查询缓存'],['GET','/db/slow-queries','慢查询'],['GET','/db/pool','连接池'],['GET','/db/stats','DB统计'],
+ ['GET','/static/report','静态报告'],['GET','/static/policy','静态策略'],['GET','/static/preload','预加载'],
+ ['GET','/memory/summary','内存摘要'],['POST','/memory/report','上报内存'],['POST','/memory/gc','GC'],
+ ['GET','/memory/leak-scan','泄漏检测'],['GET','/memory/trend','内存趋势'],
+];
+document.getElementById('epBody').innerHTML=EPS.map(e=>`<tr>
+ <td><span class="tag pass">${e[0]}</span></td>
+ <td class="mono">/api/v1/performance-ultra-pro${e[1]}</td><td>${e[2]}</td></tr>`).join('');
+
+function loadAll(){ loadScore(); loadStartup(); loadLatency(); loadCc(); loadDb(); loadStatic(); loadMem(); }
+loadAll();
+</script>
+</body>
+</html>

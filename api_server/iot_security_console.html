@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IoT安全控制台 — 第12轮深化模块</title>
+<style>
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --border-color: #30363d;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --accent-blue: #58a6ff;
+  --accent-green: #3fb950;
+  --accent-yellow: #d29922;
+  --accent-red: #f85149;
+  --accent-purple: #bc8cff;
+  --accent-orange: #ffa657;
+  --radius: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.header {
+  background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%);
+  border-bottom: 1px solid var(--border-color);
+  padding: 20px 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.header h1 {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--accent-blue);
+}
+.header h1 .icon { margin-right: 10px; }
+.header .badge {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.tabs {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  overflow-x: auto;
+  padding: 0 20px;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 14px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text-primary); }
+.tab-btn.active {
+  color: var(--accent-blue);
+  border-bottom-color: var(--accent-blue);
+}
+.tab-content { display: none; padding: 24px; max-width: 1400px; margin: 0 auto; }
+.tab-content.active { display: block; }
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card h3 {
+  font-size: 16px;
+  margin-bottom: 14px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.form-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.form-group { flex: 1; min-width: 200px; }
+.form-group label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.form-group input, .form-group select {
+  width: 100%;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.btn {
+  background: var(--accent-blue);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+.btn:hover { opacity: 0.9; }
+.btn-secondary {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+.btn-danger { background: var(--accent-red); }
+.result-area {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 16px;
+  margin-top: 12px;
+  min-height: 100px;
+  font-family: "Cascadia Code", "Fira Code", monospace;
+  font-size: 13px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.stat-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+}
+.stat-card .value {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.stat-card .label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.risk-critical { color: var(--accent-red); }
+.risk-high { color: var(--accent-orange); }
+.risk-medium { color: var(--accent-yellow); }
+.risk-low { color: var(--accent-green); }
+.table-wrap { overflow-x: auto; margin-top: 12px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th, td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+th {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+tr:hover { background: var(--bg-tertiary); }
+.status-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.status-pending { background: #30363d; color: #8b949e; }
+.status-running { background: #1f6feb33; color: #58a6ff; }
+.status-success { background: #23863633; color: #3fb950; }
+.status-failed { background: #da363333; color: #f85149; }
+.progress-bar {
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent-blue);
+  transition: width 0.3s;
+}
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+}
+.checklist { list-style: none; }
+.checklist li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.checklist li::before { content: "▸"; color: var(--accent-blue); }
+.footer {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  border-top: 1px solid var(--border-color);
+  margin-top: 40px;
+}
+@media (max-width: 768px) {
+  .form-row { flex-direction: column; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="icon">🛡️</span>IoT安全控制台</h1>
+  <span class="badge">第12轮深化模块 · 防御评估视角</span>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="discovery">📡 设备发现</button>
+  <button class="tab-btn" data-tab="firmware">📦 固件分析</button>
+  <button class="tab-btn" data-tab="protocol">🔌 协议安全</button>
+  <button class="tab-btn" data-tab="credentials">🔑 默认凭据</button>
+  <button class="tab-btn" data-tab="communication">🔒 通信安全</button>
+  <button class="tab-btn" data-tab="vulnerability">🐛 漏洞检测</button>
+  <button class="tab-btn" data-tab="assessment">📊 综合评估</button>
+</div>
+
+<!-- Tab 1: 设备发现 -->
+<div class="tab-content active" id="tab-discovery">
+  <div class="card">
+    <h3>📡 IoT设备主动扫描</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>目标网络/IP</label>
+        <input type="text" id="disc-target" value="192.168.1.0/24" placeholder="例如 192.168.1.0/24 或 192.168.1.1">
+      </div>
+      <div class="form-group">
+        <label>扫描模式</label>
+        <select id="disc-mode">
+          <option value="active">主动扫描</option>
+          <option value="passive">被动监听</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button class="btn" onclick="startDiscovery()">开始扫描</button>
+      </div>
+    </div>
+    <div id="disc-status"></div>
+  </div>
+  <div class="card">
+    <h3>📋 已发现设备列表</h3>
+    <div id="disc-devices" class="empty-state">暂无设备数据，请先执行扫描</div>
+  </div>
+</div>
+
+<!-- Tab 2: 固件分析 -->
+<div class="tab-content" id="tab-firmware">
+  <div class="card">
+    <h3>📦 固件安全分析</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>固件文件路径</label>
+        <input type="text" id="fw-path" value="/opt/firmware/example.bin" placeholder="固件文件路径">
+      </div>
+      <div class="form-group">
+        <label>厂商提示（可选）</label>
+        <input type="text" id="fw-vendor" placeholder="例如 Hikvision / Dahua">
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button class="btn" onclick="startFirmwareAnalysis()">开始分析</button>
+      </div>
+    </div>
+    <div id="fw-status"></div>
+  </div>
+  <div class="card">
+    <h3>📄 固件分析报告</h3>
+    <div id="fw-report" class="empty-state">暂无分析结果</div>
+  </div>
+</div>
+
+<!-- Tab 3: 协议安全 -->
+<div class="tab-content" id="tab-protocol">
+  <div class="card">
+    <h3>🔌 IoT协议安全分析</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>目标主机</label>
+        <input type="text" id="proto-target" value="192.168.1.1" placeholder="目标IP/主机名">
+      </div>
+      <div class="form-group">
+        <label>协议（逗号分隔，留空=全部）</label>
+        <input type="text" id="proto-list" placeholder="MQTT,CoAP,HTTP,Modbus-TCP">
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button class="btn" onclick="startProtocolAnalysis()">开始分析</button>
+      </div>
+    </div>
+    <div id="proto-status"></div>
+  </div>
+  <div class="card">
+    <h3>📊 协议分析结果</h3>
+    <div id="proto-report" class="empty-state">暂无分析结果</div>
+  </div>
+</div>
+
+<!-- Tab 4: 默认凭据 -->
+<div class="tab-content" id="tab-credentials">
+  <div class="card">
+    <h3>🔑 默认凭据与弱口令风险评估</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>目标主机</label>
+        <input type="text" id="cred-target" value="192.168.1.1" placeholder="目标IP">
+      </div>
+      <div class="form-group">
+        <label>厂商</label>
+        <input type="text" id="cred-vendor" placeholder="例如 Hikvision / TP-Link">
+      </div>
+      <div class="form-group">
+        <label>设备类型</label>
+        <select id="cred-type">
+          <option value="未知">自动识别</option>
+          <option value="IP摄像头">IP摄像头</option>
+          <option value="网络路由器">网络路由器</option>
+          <option value="智能家居网关">智能家居网关</option>
+          <option value="工业网关">工业网关</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button class="btn" onclick="startCredentialCheck()">开始检测</button>
+      </div>
+    </div>
+    <div id="cred-status"></div>
+  </div>
+  <div class="card">
+    <h3>🗃️ 默认凭据库统计</h3>
+    <button class="btn btn-secondary" onclick="loadCredDatabase()">加载凭据库</button>
+    <div id="cred-db" class="empty-state">点击按钮加载默认凭据库统计</div>
+  </div>
+</div>
+
+<!-- Tab 5: 通信安全 -->
+<div class="tab-content" id="tab-communication">
+  <div class="card">
+    <h3>🔒 IoT通信安全分析</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>目标主机</label>
+        <input type="text" id="comm-target" value="192.168.1.1" placeholder="目标IP">
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button class="btn" onclick="startCommunicationAnalysis()">开始分析</button>
+      </div>
+    </div>
+    <div id="comm-status"></div>
+  </div>
+  <div class="card">
+    <h3>📊 通信安全报告</h3>
+    <div id="comm-report" class="empty-state">暂无分析结果</div>
+  </div>
+</div>
+
+<!-- Tab 6: 漏洞检测 -->
+<div class="tab-content" id="tab-vulnerability">
+  <div class="card">
+    <h3>🐛 IoT漏洞检测</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>目标主机</label>
+        <input type="text" id="vuln-target" value="192.168.1.1" placeholder="目标IP">
+      </div>
+      <div class="form-group">
+        <label>厂商</label>
+        <input type="text" id="vuln-vendor" placeholder="例如 Hikvision / Dahua">
+      </div>
+      <div class="form-group">
+        <label>设备类型</label>
+        <input type="text" id="vuln-type" placeholder="例如 IP摄像头">
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button class="btn" onclick="startVulnerabilityScan()">开始扫描</button>
+      </div>
+    </div>
+    <div id="vuln-status"></div>
+  </div>
+  <div class="card">
+    <h3>📊 漏洞检测报告</h3>
+    <div id="vuln-report" class="empty-state">暂无扫描结果</div>
+  </div>
+</div>
+
+<!-- Tab 7: 综合评估 -->
+<div class="tab-content" id="tab-assessment">
+  <div class="card">
+    <h3>📊 IoT安全综合评估</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>目标网络/IP</label>
+        <input type="text" id="asm-target" value="192.168.1.0/24" placeholder="目标CIDR或IP">
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button class="btn" onclick="startAssessment()">启动综合评估</button>
+      </div>
+    </div>
+    <div id="asm-status"></div>
+  </div>
+  <div class="card">
+    <h3>📋 评估结果总览</h3>
+    <div id="asm-summary" class="empty-state">暂无评估结果</div>
+  </div>
+  <div class="card">
+    <h3>📜 评估历史</h3>
+    <button class="btn btn-secondary" onclick="loadAssessmentHistory()">加载历史</button>
+    <div id="asm-history" class="empty-state">暂无历史记录</div>
+  </div>
+</div>
+
+<div class="footer">
+  IoT安全控制台 · 第12轮深化模块 · 仅用于授权安全评估 · 不实际入侵或破坏设备
+</div>
+
+<script>
+const API = '/api/v1/iot-security';
+
+// Tab切换
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// 工具函数
+async function apiCall(path, method='POST', body=null) {
+  const opts = { method, headers: {'Content-Type': 'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const resp = await fetch(API + path, opts);
+  return await resp.json();
+}
+function showStatus(elId, taskId) {
+  const el = document.getElementById(elId);
+  el.innerHTML = `<span class="status-pill status-running">任务 ${taskId} 运行中...</span>`;
+}
+function setResult(elId, data) {
+  document.getElementById(elId).innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+}
+function riskClass(level) {
+  return 'risk-' + (level || 'low');
+}
+
+// 1. 设备发现
+async function startDiscovery() {
+  const target = document.getElementById('disc-target').value;
+  const mode = document.getElementById('disc-mode').value;
+  try {
+    const resp = await apiCall('/discovery/scan', 'POST', {
+      target, passive: mode === 'passive'
+    });
+    if (resp.success) {
+      const tid = resp.data.task_id;
+      showStatus('disc-status', tid);
+      pollTask('/discovery/' + tid, 'disc-status', 'disc-devices');
+    } else {
+      document.getElementById('disc-status').innerHTML = '<span class="status-pill status-failed">' + resp.error + '</span>';
+    }
+  } catch(e) { alert('请求失败: ' + e); }
+}
+
+async function pollTask(basePath, statusElId, resultElId) {
+  const check = async () => {
+    try {
+      const s = await apiCall(basePath + '/status', 'GET');
+      if (s.success) {
+        const st = s.data.status;
+        if (st === 'success') {
+          const r = await apiCall(basePath + '/results', 'GET');
+          if (r.success) {
+            document.getElementById(statusElId).innerHTML = '<span class="status-pill status-success">完成</span>';
+            renderDevices(r.data, resultElId);
+          }
+          return;
+        } else if (st === 'failed') {
+          document.getElementById(statusElId).innerHTML = '<span class="status-pill status-failed">失败: ' + (s.data.error||'') + '</span>';
+          return;
+        }
+      }
+      setTimeout(check, 1500);
+    } catch(e) { console.error(e); }
+  };
+  check();
+}
+
+function renderDevices(data, elId) {
+  const el = document.getElementById(elId);
+  if (!data || !data.devices || data.devices.length === 0) {
+    el.innerHTML = '<div class="empty-state">未发现设备</div>';
+    return;
+  }
+  let html = '<div class="stat-grid">';
+  html += '<div class="stat-card"><div class="value">' + (data.summary?.devices_found||0) + '</div><div class="label">发现设备</div></div>';
+  html += '<div class="stat-card"><div class="value risk-critical">' + (data.summary?.critical_devices||0) + '</div><div class="label">严重风险</div></div>';
+  html += '<div class="stat-card"><div class="value risk-high">' + (data.summary?.high_devices||0) + '</div><div class="label">高风险</div></div>';
+  html += '</div>';
+  html += '<div class="table-wrap"><table><thead><tr><th>IP</th><th>厂商</th><th>类型</th><th>开放端口</th><th>风险等级</th></tr></thead><tbody>';
+  data.devices.forEach(d => {
+    html += `<tr><td>${d.ip}</td><td>${d.vendor||'-'}</td><td>${d.device_type||'-'}</td><td>${(d.open_ports||[]).map(p=>p.port).join(', ')||'-'}</td><td class="${riskClass(d.risk_level)}">${d.risk_level||'-'}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+// 2. 固件分析
+async function startFirmwareAnalysis() {
+  const path = document.getElementById('fw-path').value;
+  const vendor = document.getElementById('fw-vendor').value;
+  try {
+    const resp = await apiCall('/firmware/analyze', 'POST', { firmware_path: path, vendor_hint: vendor });
+    if (resp.success) {
+      const tid = resp.data.task_id;
+      document.getElementById('fw-status').innerHTML = '<span class="status-pill status-running">分析中...</span>';
+      const check = async () => {
+        const s = await apiCall('/firmware/' + tid + '/status', 'GET');
+        if (s.data.status === 'success') {
+          const r = await apiCall('/firmware/' + tid + '/report', 'GET');
+          if (r.success) renderFirmwareReport(r.data);
+          document.getElementById('fw-status').innerHTML = '<span class="status-pill status-success">完成</span>';
+        } else if (s.data.status === 'failed') {
+          document.getElementById('fw-status').innerHTML = '<span class="status-pill status-failed">失败</span>';
+        } else { setTimeout(check, 1500); }
+      };
+      check();
+    }
+  } catch(e) { alert(e); }
+}
+function renderFirmwareReport(data) {
+  let html = '<div class="stat-grid">';
+  html += '<div class="stat-card"><div class="value">' + (data.filesystem_type||'-') + '</div><div class="label">文件系统</div></div>';
+  html += '<div class="stat-card"><div class="value risk-critical">' + (data.hardcoded_credentials||[]).length + '</div><div class="label">硬编码凭据</div></div>';
+  html += '<div class="stat-card"><div class="value risk-high">' + (data.component_vulnerabilities||[]).length + '</div><div class="label">组件漏洞</div></div>';
+  html += '<div class="stat-card"><div class="value ' + riskClass(data.risk_level) + '">' + (data.risk_score||0) + '</div><div class="label">风险评分</div></div>';
+  html += '</div>';
+  if (data.recommendations) {
+    html += '<h4>加固建议</h4><ul class="checklist">';
+    data.recommendations.forEach(r => html += '<li>' + r + '</li>');
+    html += '</ul>';
+  }
+  document.getElementById('fw-report').innerHTML = html;
+}
+
+// 3. 协议安全
+async function startProtocolAnalysis() {
+  const target = document.getElementById('proto-target').value;
+  const protocols = document.getElementById('proto-list').value.split(',').map(s=>s.trim()).filter(Boolean);
+  try {
+    const resp = await apiCall('/protocol/analyze', 'POST', { target, protocols: protocols.length?protocols:null });
+    if (resp.success) {
+      const tid = resp.data.task_id;
+      document.getElementById('proto-status').innerHTML = '<span class="status-pill status-running">分析中...</span>';
+      const check = async () => {
+        const s = await apiCall('/protocol/' + tid + '/status', 'GET');
+        if (s.data.status === 'success') {
+          const r = await apiCall('/protocol/' + tid + '/report', 'GET');
+          if (r.success) renderProtocolReport(r.data);
+          document.getElementById('proto-status').innerHTML = '<span class="status-pill status-success">完成</span>';
+        } else if (s.data.status === 'failed') {
+          document.getElementById('proto-status').innerHTML = '<span class="status-pill status-failed">失败</span>';
+        } else { setTimeout(check, 1500); }
+      };
+      check();
+    }
+  } catch(e) { alert(e); }
+}
+function renderProtocolReport(data) {
+  let html = '<div class="stat-grid">';
+  html += '<div class="stat-card"><div class="value ' + riskClass(data.overall_risk) + '">' + (data.risk_score||0) + '</div><div class="label">综合风险分</div></div>';
+  const fs = data.findings_by_severity || {};
+  html += '<div class="stat-card"><div class="value risk-critical">' + (fs.critical||0) + '</div><div class="label">严重</div></div>';
+  html += '<div class="stat-card"><div class="value risk-high">' + (fs.high||0) + '</div><div class="label">高危</div></div>';
+  html += '<div class="stat-card"><div class="value risk-medium">' + (fs.medium||0) + '</div><div class="label">中危</div></div>';
+  html += '</div>';
+  if (data.recommendations) {
+    html += '<h4>加固建议</h4><ul class="checklist">';
+    data.recommendations.forEach(r => html += '<li>' + r + '</li>');
+    html += '</ul>';
+  }
+  document.getElementById('proto-report').innerHTML = html;
+}
+
+// 4. 默认凭据
+async function startCredentialCheck() {
+  const target = document.getElementById('cred-target').value;
+  const vendor = document.getElementById('cred-vendor').value;
+  const dtype = document.getElementById('cred-type').value;
+  try {
+    const resp = await apiCall('/credentials/check', 'POST', { target, vendor, device_type: dtype });
+    if (resp.success) {
+      const tid = resp.data.task_id;
+      document.getElementById('cred-status').innerHTML = '<span class="status-pill status-running">检测中...</span>';
+      const check = async () => {
+        const s = await apiCall('/credentials/' + tid + '/status', 'GET');
+        if (s.data.status === 'success') {
+          const r = await apiCall('/credentials/' + tid + '/results', 'GET');
+          if (r.success) {
+            const d = r.data;
+            let html = '<div class="stat-grid">';
+            html += '<div class="stat-card"><div class="value ' + riskClass(d.risk_level) + '">' + (d.risk_score||0) + '</div><div class="label">风险评分</div></div>';
+            html += '<div class="stat-card"><div class="value risk-critical">' + (d.matching_creds_count||0) + '</div><div class="label">匹配默认凭据</div></div>';
+            html += '</div>';
+            document.getElementById('cred-status').innerHTML = '<span class="status-pill status-success">完成</span>';
+            document.getElementById('cred-db').innerHTML = html;
+          }
+        } else if (s.data.status === 'failed') {
+          document.getElementById('cred-status').innerHTML = '<span class="status-pill status-failed">失败</span>';
+        } else { setTimeout(check, 1500); }
+      };
+      check();
+    }
+  } catch(e) { alert(e); }
+}
+async function loadCredDatabase() {
+  try {
+    const resp = await apiCall('/credentials/database', 'GET');
+    if (resp.success) {
+      const d = resp.data;
+      let html = '<div class="stat-grid">';
+      html += '<div class="stat-card"><div class="value">' + d.total_default_credentials + '</div><div class="label">默认凭据</div></div>';
+      html += '<div class="stat-card"><div class="value">' + d.total_vendors + '</div><div class="label">覆盖厂商</div></div>';
+      html += '<div class="stat-card"><div class="value">' + d.weak_passwords_total + '</div><div class="label">弱口令</div></div>';
+      html += '</div>';
+      document.getElementById('cred-db').innerHTML = html;
+    }
+  } catch(e) { alert(e); }
+}
+
+// 5. 通信安全
+async function startCommunicationAnalysis() {
+  const target = document.getElementById('comm-target').value;
+  try {
+    const resp = await apiCall('/communication/analyze', 'POST', { target });
+    if (resp.success) {
+      const tid = resp.data.task_id;
+      document.getElementById('comm-status').innerHTML = '<span class="status-pill status-running">分析中...</span>';
+      const check = async () => {
+        const s = await apiCall('/communication/' + tid + '/status', 'GET');
+        if (s.data.status === 'success') {
+          const r = await apiCall('/communication/' + tid + '/report', 'GET');
+          if (r.success) {
+            const d = r.data;
+            let html = '<div class="stat-grid">';
+            html += '<div class="stat-card"><div class="value ' + riskClass(d.risk_level) + '">' + (d.risk_score||0) + '</div><div class="label">通信安全评分</div></div>';
+            html += '<div class="stat-card"><div class="value risk-high">' + (d.plaintext_findings||[]).length + '</div><div class="label">明文传输</div></div>';
+            html += '<div class="stat-card"><div class="value risk-high">' + (d.mitm_risk_findings||[]).length + '</div><div class="label">MITM风险</div></div>';
+            html += '</div>';
+            if (d.recommendations) {
+              html += '<h4>加固建议</h4><ul class="checklist">';
+              d.recommendations.forEach(r => html += '<li>' + r + '</li>');
+              html += '</ul>';
+            }
+            document.getElementById('comm-report').innerHTML = html;
+          }
+          document.getElementById('comm-status').innerHTML = '<span class="status-pill status-success">完成</span>';
+        } else if (s.data.status === 'failed') {
+          document.getElementById('comm-status').innerHTML = '<span class="status-pill status-failed">失败</span>';
+        } else { setTimeout(check, 1500); }
+      };
+      check();
+    }
+  } catch(e) { alert(e); }
+}
+
+// 6. 漏洞检测
+async function startVulnerabilityScan() {
+  const target = document.getElementById('vuln-target').value;
+  const vendor = document.getElementById('vuln-vendor').value;
+  const dtype = document.getElementById('vuln-type').value;
+  try {
+    const resp = await apiCall('/vulnerability/scan', 'POST', { target, vendor, device_type: dtype });
+    if (resp.success) {
+      const tid = resp.data.task_id;
+      document.getElementById('vuln-status').innerHTML = '<span class="status-pill status-running">扫描中...</span>';
+      const check = async () => {
+        const s = await apiCall('/vulnerability/' + tid + '/status', 'GET');
+        if (s.data.status === 'success') {
+          const r = await apiCall('/vulnerability/' + tid + '/report', 'GET');
+          if (r.success) {
+            const d = r.data;
+            let html = '<div class="stat-grid">';
+            html += '<div class="stat-card"><div class="value">' + (d.total_vulns||0) + '</div><div class="label">漏洞总数</div></div>';
+            const bs = d.by_severity || {};
+            html += '<div class="stat-card"><div class="value risk-critical">' + (bs.critical||0) + '</div><div class="label">严重</div></div>';
+            html += '<div class="stat-card"><div class="value risk-high">' + (bs.high||0) + '</div><div class="label">高危</div></div>';
+            html += '<div class="stat-card"><div class="value risk-medium">' + (bs.medium||0) + '</div><div class="label">中危</div></div>';
+            html += '</div>';
+            if (d.vulnerabilities && d.vulnerabilities.length) {
+              html += '<div class="table-wrap"><table><thead><tr><th>ID</th><th>类型</th><th>严重度</th><th>描述</th></tr></thead><tbody>';
+              d.vulnerabilities.slice(0, 20).forEach(v => {
+                html += `<tr><td>${v.vuln_id}</td><td>${v.vuln_type}</td><td class="${riskClass(v.severity)}">${v.severity}</td><td>${v.description}</td></tr>`;
+              });
+              html += '</tbody></table></div>';
+            }
+            document.getElementById('vuln-report').innerHTML = html;
+          }
+          document.getElementById('vuln-status').innerHTML = '<span class="status-pill status-success">完成</span>';
+        } else if (s.data.status === 'failed') {
+          document.getElementById('vuln-status').innerHTML = '<span class="status-pill status-failed">失败</span>';
+        } else { setTimeout(check, 1500); }
+      };
+      check();
+    }
+  } catch(e) { alert(e); }
+}
+
+// 7. 综合评估
+async function startAssessment() {
+  const target = document.getElementById('asm-target').value;
+  try {
+    const resp = await apiCall('/assessment/run', 'POST', { target });
+    if (resp.success) {
+      const tid = resp.data.task_id;
+      document.getElementById('asm-status').innerHTML = '<span class="status-pill status-running">综合评估中...</span>';
+      const check = async () => {
+        const s = await apiCall('/assessment/' + tid + '/status', 'GET');
+        if (s.data.status === 'success') {
+          const r = await apiCall('/assessment/' + tid + '/report', 'GET');
+          if (r.success) {
+            const d = r.data;
+            let html = '<div class="stat-grid">';
+            html += '<div class="stat-card"><div class="value ' + riskClass(d.overall_risk) + '">' + (d.risk_score||0) + '</div><div class="label">综合风险分</div></div>';
+            html += '<div class="stat-card"><div class="value">' + (d.total_devices||0) + '</div><div class="label">设备数</div></div>';
+            html += '<div class="stat-card"><div class="value risk-critical">' + (d.total_vulnerabilities||0) + '</div><div class="label">漏洞数</div></div>';
+            html += '<div class="stat-card"><div class="value">' + (d.total_findings||0) + '</div><div class="label">总发现</div></div>';
+            html += '</div>';
+            if (d.assessment_conclusion) {
+              html += '<div class="card"><h4>评估结论</h4><p>' + d.assessment_conclusion + '</p></div>';
+            }
+            if (d.critical_fixes && d.critical_fixes.length) {
+              html += '<h4>紧急修复项</h4><ul class="checklist">';
+              d.critical_fixes.forEach(f => html += '<li>' + f + '</li>');
+              html += '</ul>';
+            }
+            document.getElementById('asm-summary').innerHTML = html;
+          }
+          document.getElementById('asm-status').innerHTML = '<span class="status-pill status-success">完成</span>';
+        } else if (s.data.status === 'failed') {
+          document.getElementById('asm-status').innerHTML = '<span class="status-pill status-failed">失败</span>';
+        } else { setTimeout(check, 2000); }
+      };
+      check();
+    }
+  } catch(e) { alert(e); }
+}
+async function loadAssessmentHistory() {
+  try {
+    const resp = await apiCall('/assessment/history', 'GET');
+    if (resp.success) {
+      const h = resp.data.history || [];
+      if (h.length === 0) {
+        document.getElementById('asm-history').innerHTML = '<div class="empty-state">暂无历史记录</div>';
+      } else {
+        let html = '<div class="table-wrap"><table><thead><tr><th>评估ID</th><th>目标</th><th>风险等级</th><th>设备数</th><th>漏洞数</th><th>时间</th></tr></thead><tbody>';
+        h.forEach(a => {
+          html += `<tr><td>${a.assessment_id}</td><td>${a.target}</td><td class="${riskClass(a.overall_risk)}">${a.overall_risk}</td><td>${a.total_devices}</td><td>${a.total_vulnerabilities}</td><td>${a.assessment_time}</td></tr>`;
+        });
+        html += '</tbody></table></div>';
+        document.getElementById('asm-history').innerHTML = html;
+      }
+    }
+  } catch(e) { alert(e); }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>代码审计控制台 V2 · Code Audit Console</title>
+<style>
+  :root {
+    --bg: #0d1117; --bg2: #161b22; --bg3: #1f2630;
+    --fg: #e6edf3; --muted: #8b949e; --border: #30363d;
+    --accent: #58a6ff; --green: #3fb950; --yellow: #d29922;
+    --red: #f85149; --orange: #db6d28; --purple: #bc8cff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    font-size: 14px; line-height: 1.6;
+  }
+  header {
+    background: linear-gradient(90deg, #0d1117, #161b22);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px; display: flex; align-items: center;
+    justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  }
+  header h1 { font-size: 18px; font-weight: 600; }
+  header h1 .dot { color: var(--red); }
+  .lang-switch button {
+    background: var(--bg3); color: var(--fg); border: 1px solid var(--border);
+    padding: 4px 10px; cursor: pointer; border-radius: 6px; margin-left: 6px;
+  }
+  .lang-switch button.active { background: var(--accent); color: #0d1117; border-color: var(--accent); }
+  nav.tabs {
+    display: flex; overflow-x: auto; background: var(--bg2);
+    border-bottom: 1px solid var(--border); padding: 0 12px;
+  }
+  nav.tabs button {
+    background: transparent; color: var(--muted); border: none;
+    padding: 12px 16px; cursor: pointer; font-size: 14px;
+    border-bottom: 2px solid transparent; white-space: nowrap;
+  }
+  nav.tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+  nav.tabs button:hover { color: var(--fg); }
+  main { padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px; margin-bottom: 16px;
+  }
+  .card h2 { font-size: 15px; margin-bottom: 12px; color: var(--accent); }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  input[type=text], input[type=number], select, textarea {
+    background: var(--bg); color: var(--fg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 10px; font-size: 13px;
+  }
+  input[type=text], select { min-width: 200px; }
+  textarea { width: 100%; min-height: 90px; font-family: Consolas, monospace; }
+  button.primary {
+    background: var(--accent); color: #0d1117; border: none;
+    padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: 600;
+  }
+  button.ghost {
+    background: var(--bg3); color: var(--fg); border: 1px solid var(--border);
+    padding: 8px 14px; border-radius: 6px; cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .stat {
+    background: var(--bg3); border-radius: 8px; padding: 12px; text-align: center;
+  }
+  .stat .num { font-size: 24px; font-weight: 700; }
+  .stat .lbl { color: var(--muted); font-size: 12px; }
+  .sev-Critical { color: var(--red); } .sev-High { color: var(--orange); }
+  .sev-Medium { color: var(--yellow); } .sev-Low { color: var(--green); }
+  .sev-Info { color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+  th { color: var(--muted); font-weight: 600; }
+  tr:hover td { background: var(--bg3); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .badge.ok { background: rgba(63,185,80,.15); color: var(--green); }
+  .badge.warn { background: rgba(210,153,34,.15); color: var(--yellow); }
+  .badge.err { background: rgba(248,81,73,.15); color: var(--red); }
+  pre.out {
+    background: #010409; border: 1px solid var(--border); border-radius: 6px;
+    padding: 12px; overflow: auto; max-height: 420px; font-size: 12px;
+    font-family: Consolas, monospace; white-space: pre-wrap;
+  }
+  .muted { color: var(--muted); font-size: 12px; }
+  .progress { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; margin: 6px 0; }
+  .progress > div { height: 100%; background: var(--accent); transition: width .3s; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  @media (max-width: 720px) {
+    main { padding: 12px; } input[type=text], select { min-width: 120px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="dot">●</span> <span data-i18n="title">代码审计控制台</span> <small class="muted">/ Code Audit V2</small></h1>
+  <div class="lang-switch">
+    <button onclick="setLang('zh')" id="btn-zh" class="active">中文</button>
+    <button onclick="setLang('en')" id="btn-en">EN</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="config" class="active" data-i18n="tab_config">代码源配置</button>
+  <button data-tab="sast">SAST</button>
+  <button data-tab="semgrep">Semgrep</button>
+  <button data-tab="sca">SCA</button>
+  <button data-tab="quality" data-i18n="tab_quality">代码质量</button>
+  <button data-tab="secure" data-i18n="tab_secure">安全编码</button>
+  <button data-tab="audit" data-i18n="tab_audit">综合审计</button>
+</nav>
+
+<main>
+  <!-- 代码源配置 -->
+  <section class="tab-panel active" id="panel-config">
+    <div class="card">
+      <h2 data-i18n="cfg_h">代码源配置</h2>
+      <div class="row">
+        <label class="muted" data-i18n="cfg_target">目标路径 / 仓库 URL</label>
+        <input type="text" id="cfg-target" value="." style="flex:2; min-width:260px;">
+        <label><input type="checkbox" id="cfg-remote"> <span data-i18n="cfg_remote">远程仓库</span></label>
+        <label><input type="checkbox" id="cfg-incr"> <span data-i18n="cfg_incr">增量审计</span></label>
+        <button class="primary" onclick="saveConfig()" data-i18n="cfg_save">保存配置</button>
+      </div>
+      <p class="muted" id="cfg-status" data-i18n="cfg_hint">默认扫描项目根目录 .</p>
+    </div>
+    <div class="card">
+      <h2 data-i18n="overview_h">能力总览</h2>
+      <div class="grid">
+        <div class="stat"><div class="num" id="ov-sast">211</div><div class="lbl" data-i18n="ov_sast">SAST 规则</div></div>
+        <div class="stat"><div class="num" id="ov-sc">150</div><div class="lbl" data-i18n="ov_sc">安全编码规则</div></div>
+        <div class="stat"><div class="num" id="ov-rs">5</div><div class="lbl" data-i18n="ov_rs">Semgrep 规则集</div></div>
+        <div class="stat"><div class="num" id="ov-lang">12</div><div class="lbl" data-i18n="ov_lang">支持语言</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SAST -->
+  <section class="tab-panel" id="panel-sast">
+    <div class="card">
+      <h2>SAST <span data-i18n="sast_h">静态分析</span></h2>
+      <div class="toolbar">
+        <input type="text" id="sast-target" value="." placeholder="目录或代码片段">
+        <select id="sast-lang">
+          <option value="python">Python</option><option value="javascript">JavaScript</option>
+          <option value="java">Java</option><option value="php">PHP</option>
+          <option value="go">Go</option><option value="c">C</option>
+        </select>
+        <label><input type="checkbox" id="sast-snippet"> <span data-i18n="sast_snip">内联片段</span></label>
+        <button class="primary" onclick="runSast()" data-i18n="btn_run">开始分析</button>
+        <button class="ghost" onclick="loadSastRules()" data-i18n="btn_rules">查看规则</button>
+      </div>
+      <div class="grid" id="sast-stats"></div>
+      <div id="sast-result"></div>
+    </div>
+  </section>
+
+  <!-- Semgrep -->
+  <section class="tab-panel" id="panel-semgrep">
+    <div class="card">
+      <h2>Semgrep <span data-i18n="sg_h">规则扫描</span></h2>
+      <div class="toolbar">
+        <input type="text" id="sg-target" value=".">
+        <select id="sg-ruleset" multiple size="3">
+          <option value="owasp-top-10" selected>OWASP Top 10</option>
+          <option value="cwe-top-25" selected>CWE Top 25</option>
+          <option value="lang-python">Python</option>
+          <option value="lang-javascript">JavaScript</option>
+          <option value="lang-java">Java</option>
+        </select>
+        <button class="primary" onclick="runSemgrep()" data-i18n="btn_run">开始扫描</button>
+        <button class="ghost" onclick="loadRulesets()" data-i18n="btn_rs">规则集</button>
+      </div>
+      <div id="sg-result"></div>
+    </div>
+  </section>
+
+  <!-- SCA -->
+  <section class="tab-panel" id="panel-sca">
+    <div class="card">
+      <h2>SCA <span data-i18n="sca_h">依赖漏洞扫描</span></h2>
+      <div class="toolbar">
+        <input type="text" id="sca-dir" value=".">
+        <button class="primary" onclick="runSca()" data-i18n="btn_run">开始扫描</button>
+        <button class="ghost" onclick="loadDeps()" data-i18n="sca_deps">依赖列表</button>
+        <button class="ghost" onclick="loadLicenses()" data-i18n="sca_lic">许可证</button>
+      </div>
+      <div id="sca-result"></div>
+    </div>
+  </section>
+
+  <!-- Quality -->
+  <section class="tab-panel" id="panel-quality">
+    <div class="card">
+      <h2 data-i18n="q_h">代码质量分析</h2>
+      <div class="toolbar">
+        <input type="text" id="q-dir" value=".">
+        <button class="primary" onclick="runQuality()" data-i18n="btn_run">开始分析</button>
+        <button class="ghost" onclick="loadQualityMetrics()" data-i18n="q_metrics">指标</button>
+      </div>
+      <div id="q-result"></div>
+    </div>
+  </section>
+
+  <!-- Secure coding -->
+  <section class="tab-panel" id="panel-secure">
+    <div class="card">
+      <h2 data-i18n="sec_h">安全编码合规检查</h2>
+      <div class="toolbar">
+        <input type="text" id="sec-dir" value=".">
+        <button class="primary" onclick="runSecure()" data-i18n="btn_run">开始检查</button>
+        <button class="ghost" onclick="loadSecureRules()" data-i18n="btn_rules">查看规则</button>
+      </div>
+      <div id="sec-result"></div>
+    </div>
+  </section>
+
+  <!-- Audit -->
+  <section class="tab-panel" id="panel-audit">
+    <div class="card">
+      <h2 data-i18n="au_h">综合代码审计</h2>
+      <div class="toolbar">
+        <input type="text" id="au-target" value=".">
+        <button class="primary" onclick="runAudit()" data-i18n="au_run">运行 8 步工作流</button>
+        <button class="ghost" onclick="loadHistory()" data-i18n="au_hist">历史</button>
+      </div>
+      <div id="au-result"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const API = '/api/v1/code-v2';
+let cfg = { target: '.', is_remote: false, incremental: false };
+
+const I18N = {
+  zh: { title:'代码审计控制台', tab_config:'代码源配置', tab_quality:'代码质量',
+    tab_secure:'安全编码', tab_audit:'综合审计', cfg_h:'代码源配置',
+    cfg_target:'目标路径 / 仓库 URL', cfg_remote:'远程仓库', cfg_incr:'增量审计',
+    cfg_save:'保存配置', cfg_hint:'默认扫描项目根目录 .', overview_h:'能力总览',
+    ov_sast:'SAST 规则', ov_sc:'安全编码规则', ov_rs:'Semgrep 规则集',
+    ov_lang:'支持语言', sast_h:'静态分析', sast_snip:'内联片段',
+    sg_h:'规则扫描', sca_h:'依赖漏洞扫描', sca_deps:'依赖列表', sca_lic:'许可证',
+    q_h:'代码质量分析', q_metrics:'指标', sec_h:'安全编码合规检查',
+    au_h:'综合代码审计', au_run:'运行 8 步工作流', au_hist:'历史',
+    btn_run:'开始', btn_rules:'查看规则', btn_rs:'规则集' },
+  en: { title:'Code Audit Console', tab_config:'Source', tab_quality:'Quality',
+    tab_secure:'Secure Coding', tab_audit:'Full Audit', cfg_h:'Code Source',
+    cfg_target:'Target path / repo URL', cfg_remote:'Remote repo', cfg_incr:'Incremental',
+    cfg_save:'Save', cfg_hint:'Defaults to project root .', overview_h:'Capability overview',
+    ov_sast:'SAST rules', ov_sc:'Secure rules', ov_rs:'Semgrep rulesets',
+    ov_lang:'Languages', sast_h:'Static Analysis', sast_snip:'Inline snippet',
+    sg_h:'Rule Scan', sca_h:'SCA Scan', sca_deps:'Dependencies', sca_lic:'Licenses',
+    q_h:'Quality Analysis', q_metrics:'Metrics', sec_h:'Secure Coding Check',
+    au_h:'Full Code Audit', au_run:'Run 8-step workflow', au_hist:'History',
+    btn_run:'Run', btn_rules:'Rules', btn_rs:'Rulesets' }
+};
+let lang = 'zh';
+
+function setLang(l) {
+  lang = l;
+  document.getElementById('btn-zh').classList.toggle('active', l==='zh');
+  document.getElementById('btn-en').classList.toggle('active', l==='en');
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (I18N[l][k]) el.textContent = I18N[l][k];
+  });
+  document.title = l==='zh' ? '代码审计控制台 V2' : 'Code Audit Console V2';
+}
+
+// Tabs
+document.querySelectorAll('nav.tabs button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+  };
+});
+
+function saveConfig() {
+  cfg.target = document.getElementById('cfg-target').value || '.';
+  cfg.is_remote = document.getElementById('cfg-remote').checked;
+  cfg.incremental = document.getElementById('cfg-incr').checked;
+  document.getElementById('cfg-status').textContent =
+    `已保存：${cfg.target}${cfg.is_remote?' (远程)':''}${cfg.incremental?' (增量)':''}`;
+  ['sast-target','sg-target','sca-dir','q-dir','sec-dir','au-target'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.value = cfg.target;
+  });
+}
+
+async function post(url, body) {
+  const r = await fetch(API+url, {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body||{})});
+  return r.json();
+}
+async function get(url) {
+  const r = await fetch(API+url);
+  return r.json();
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function sevBadge(sev){ return `<span class="badge sev-${esc(sev)}">${esc(sev)}</span>`; }
+function renderFindings(el, findings, limit=50) {
+  if(!findings||!findings.length){ el.innerHTML = '<p class="muted">无发现 / No findings</p>'; return; }
+  let rows = findings.slice(0,limit).map(f=>`<tr>
+    <td>${sevBadge(f.severity||f.extra?.severity)}</td>
+    <td>${esc(f.rule_id||f.check_id||'')}</td>
+    <td>${esc(f.file_path||f.path||f.package||'')}</td>
+    <td>${esc(f.line||f.start?.line||'')}</td>
+    <td>${esc(f.description||f.message||f.title||'')}</td></tr>`).join('');
+  el.innerHTML = `<table><thead><tr><th>级别</th><th>规则</th><th>文件</th><th>行</th><th>描述</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+async function runSast() {
+  const target = document.getElementById('sast-target').value;
+  const isSnip = document.getElementById('sast-snippet').checked;
+  const langSel = document.getElementById('sast-lang').value;
+  const body = isSnip ? {target, is_snippet:true, language:langSel} : {target, is_snippet:false};
+  const r = await post('/sast/analyze', body);
+  if(!r.success){ alert(r.error); return; }
+  const det = await get('/sast/'+r.data.task_id+'/results');
+  const d = det.data||{};
+  document.getElementById('sast-stats').innerHTML = ['Critical','High','Medium','Low'].map(s=>
+    `<div class="stat"><div class="num sev-${s}">${d.by_severity?.[s]||0}</div><div class="lbl">${s}</div></div>`).join('');
+  renderFindings(document.getElementById('sast-result'), d.findings);
+}
+async function loadSastRules() {
+  const r = await get('/sast/rules');
+  if(!r.success){ alert(r.error); return; }
+  const rules = r.data.rules.slice(0,50);
+  let rows = rules.map(x=>`<tr><td>${esc(x.id)}</td><td>${esc(x.name)}</td>
+    <td>${esc(x.language)}</td><td>${sevBadge(x.severity)}</td>
+    <td>${x.enabled?'<span class="badge ok">on</span>':'<span class="badge err">off</span>'}</td></tr>`).join('');
+  document.getElementById('sast-result').innerHTML =
+    `<p class="muted">共 ${r.data.stats.total} 条规则</p><table><thead><tr><th>ID</th><th>名称</th><th>语言</th><th>级别</th><th>状态</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+async function runSemgrep() {
+  const target = document.getElementById('sg-target').value;
+  const rs = [...document.getElementById('sg-ruleset').selectedOptions].map(o=>o.value);
+  const r = await post('/semgrep/scan', {target, rulesets:rs});
+  if(!r.success){ alert(r.error); return; }
+  const det = await get('/semgrep/'+r.data.task_id+'/results');
+  renderFindings(document.getElementById('sg-result'), (det.data||{}).findings);
+}
+async function loadRulesets() {
+  const r = await get('/semgrep/rulesets');
+  let rows = (r.data||[]).map(x=>`<tr><td>${esc(x.id)}</td><td>${esc(x.name)}</td>
+    <td>${esc((x.languages||[]).join(','))}</td><td>${x.check_count}</td></tr>`).join('');
+  document.getElementById('sg-result').innerHTML =
+    `<table><thead><tr><th>ID</th><th>名称</th><th>语言</th><th>规则数</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+async function runSca() {
+  const dir = document.getElementById('sca-dir').value;
+  const r = await post('/sca/scan', {directory:dir});
+  if(!r.success){ alert(r.error); return; }
+  const det = await get('/sca/'+r.data.task_id+'/results');
+  const d = det.data||{};
+  let stats = ['Critical','High','Medium'].map(s=>
+    `<div class="stat"><div class="num sev-${s}">${d.by_severity?.[s]||0}</div><div class="lbl">${s}</div></div>`).join('');
+  stats += `<div class="stat"><div class="num">${d.dependencies_count||0}</div><div class="lbl">依赖数</div></div>`;
+  document.getElementById('sca-result').innerHTML =
+    `<div class="grid">${stats}</div>`;
+  renderFindings(document.getElementById('sca-result'), d.vulnerabilities);
+}
+async function loadDeps() {
+  const dir = document.getElementById('sca-dir').value;
+  const r = await get('/sca/dependencies?directory='+encodeURIComponent(dir));
+  let rows = ((r.data||{}).dependencies||[]).slice(0,50).map(d=>
+    `<tr><td>${esc(d.ecosystem)}</td><td>${esc(d.name)}</td><td>${esc(d.version)}</td></tr>`).join('');
+  document.getElementById('sca-result').innerHTML =
+    `<table><thead><tr><th>生态</th><th>包</th><th>版本</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+async function loadLicenses() {
+  const dir = document.getElementById('sca-dir').value;
+  const r = await get('/sca/licenses?directory='+encodeURIComponent(dir));
+  document.getElementById('sca-result').innerHTML =
+    `<pre class="out">${esc(JSON.stringify(r.data||{}, null, 2))}</pre>`;
+}
+
+async function runQuality() {
+  const dir = document.getElementById('q-dir').value;
+  const r = await post('/quality/analyze', {directory:dir});
+  if(!r.success){ alert(r.error); return; }
+  const det = await get('/quality/'+r.data.task_id+'/results');
+  const d = det.data||{};
+  document.getElementById('q-result').innerHTML = `
+    <div class="grid">
+      <div class="stat"><div class="num">${d.quality_score}</div><div class="lbl">评分 (${d.grade})</div></div>
+      <div class="stat"><div class="num">${d.total_loc||0}</div><div class="lbl">LOC</div></div>
+      <div class="stat"><div class="num">${d.comment_ratio||0}</div><div class="lbl">注释率</div></div>
+      <div class="stat"><div class="num">${d.avg_cyclomatic||0}</div><div class="lbl">平均圈复杂度</div></div>
+      <div class="stat"><div class="num">${d.duplication_ratio||0}</div><div class="lbl">重复率</div></div>
+      <div class="stat"><div class="num">${d.test_coverage_estimate||0}%</div><div class="lbl">测试覆盖</div></div>
+    </div>`;
+}
+async function loadQualityMetrics() {
+  const r = await get('/quality/metrics');
+  document.getElementById('q-result').innerHTML =
+    `<pre class="out">${esc(JSON.stringify(r.data||{}, null, 2))}</pre>`;
+}
+
+async function runSecure() {
+  const dir = document.getElementById('sec-dir').value;
+  const r = await post('/secure-coding/check', {directory:dir});
+  if(!r.success){ alert(r.error); return; }
+  const det = await get('/secure-coding/'+r.data.task_id+'/results');
+  const d = det.data||{};
+  document.getElementById('sec-result').innerHTML =
+    `<div class="grid"><div class="stat"><div class="num">${d.compliance_score}</div><div class="lbl">合规分</div></div>
+     <div class="stat"><div class="num">${d.hits_count||0}</div><div class="lbl">不合规项</div></div></div>`;
+  renderFindings(document.getElementById('sec-result'), d.hits);
+}
+async function loadSecureRules() {
+  const r = await get('/secure-coding/rules');
+  const rules = (r.data||{}).rules||[];
+  let rows = rules.slice(0,50).map(x=>`<tr><td>${esc(x.id)}</td><td>${esc(x.name)}</td>
+    <td>${esc(x.spec)}</td><td>${sevBadge(x.severity)}</td></tr>`).join('');
+  document.getElementById('sec-result').innerHTML =
+    `<p class="muted">共 ${(r.data||{}).stats?.total||0} 条规则</p>
+     <table><thead><tr><th>ID</th><th>名称</th><th>规范</th><th>级别</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+async function runAudit() {
+  const target = document.getElementById('au-target').value;
+  const r = await post('/audit/run', {target, is_remote:cfg.is_remote, incremental:cfg.incremental});
+  if(!r.success){ alert(r.error); return; }
+  const det = await get('/audit/'+r.data.task_id+'/results');
+  const d = det.data||{};
+  const rep = d.report||{};
+  let steps = (d.steps||[]).map(s=>`<tr><td>${esc(s.step)}</td><td><span class="badge ${s.status==='done'?'ok':'err'}">${s.status}</span></td><td>${esc(s.detail)}</td></tr>`).join('');
+  document.getElementById('au-result').innerHTML = `
+    <div class="grid">
+      <div class="stat"><div class="num sev-${rep.risk_level||'Info'}">${rep.risk_level||'-'}</div><div class="lbl">风险等级</div></div>
+      <div class="stat"><div class="num">${rep.summary?.total_findings||0}</div><div class="lbl">总发现</div></div>
+      <div class="stat"><div class="num">${rep.summary?.quality_score||'-'}</div><div class="lbl">质量分</div></div>
+      <div class="stat"><div class="num">${rep.summary?.compliance_score||'-'}</div><div class="lbl">合规分</div></div>
+    </div>
+    <table><thead><tr><th>步骤</th><th>状态</th><th>详情</th></tr></thead><tbody>${steps}</tbody></table>
+    <p class="muted">${esc(rep.recommendation||'')}</p>`;
+}
+async function loadHistory() {
+  const r = await get('/audit/history?limit=20');
+  let rows = ((r.data||{}).history||[]).map(h=>`<tr><td>${esc(h.task_id)}</td>
+    <td>${esc(h.kind)}</td><td>${esc(h.status)}</td><td>${esc(h.risk||'-')}</td></tr>`).join('');
+  document.getElementById('au-result').innerHTML =
+    `<table><thead><tr><th>任务</th><th>类型</th><th>状态</th><th>风险</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+setLang('zh');
+</script>
+</body>
+</html>

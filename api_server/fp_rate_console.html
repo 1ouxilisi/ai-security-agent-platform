@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>误报率验证控制台 · P0-2</title>
+<style>
+  body{font-family:"Segoe UI",sans-serif;margin:0;background:#0d1117;color:#e6edf3}
+  header{padding:16px 24px;background:#161b22;border-bottom:1px solid #30363d}
+  h1{margin:0;font-size:20px}
+  .wrap{padding:20px 24px;max-width:1200px;margin:0 auto}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:16px 0}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px}
+  .kpi b{font-size:26px}
+  .ok{color:#3fb950}.bad{color:#f85149}.warn{color:#d29922}
+  table{border-collapse:collapse;width:100%;margin-top:8px}
+  th,td{border:1px solid #30363d;padding:6px 10px;text-align:left;font-size:13px}
+  button{background:#238636;color:#fff;border:0;border-radius:6px;padding:8px 16px;cursor:pointer}
+  button:disabled{opacity:.5}
+  select,input{background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:6px}
+  .muted{color:#8b949e;font-size:12px}
+  pre{background:#0d1117;padding:10px;border-radius:6px;overflow:auto;font-size:12px;max-height:240px}
+</style>
+</head>
+<body>
+<header><h1>误报率验证控制台 <span class="muted">P0-2 · 真实工具扫描 + 靶场比对</span></h1></header>
+<div class="wrap">
+
+  <div class="card">
+    <b>工具可用性</b>
+    <div id="tools" class="muted">加载中…</div>
+  </div>
+
+  <div class="card">
+    <b>一键靶场验证</b>
+    <p class="muted">选择已知漏洞靶场，自动执行 nmap + nuclei + nikto 真实扫描，对比已知漏洞清单计算误报/漏报率。</p>
+    <select id="rangeSel"></select>
+    <button id="runBtn" onclick="runTest()">运行验证</button>
+    <span id="runState" class="muted"></span>
+  </div>
+
+  <div class="grid" id="kpis"></div>
+
+  <div class="card">
+    <b>最新结果</b>
+    <pre id="latest">尚无结果</pre>
+  </div>
+
+  <div class="card">
+    <b>历史趋势</b>
+    <table id="histTable"><thead><tr><th>时间</th><th>准确率</th><th>召回率</th><th>F1</th><th>误报率</th><th>漏报率</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <div class="card">
+    <b>靶场清单</b>
+    <table id="rangeTable"><thead><tr><th>名称</th><th>URL</th><th>已知漏洞数</th><th>难度</th><th>状态</th></tr></thead><tbody></tbody></table>
+  </div>
+
+</div>
+<script>
+const B = "/api/v1/real-validation";
+async function j(u,o){const r=await fetch(u,o);return r.json();}
+function pct(x){return (x*100).toFixed(1)+"%";}
+
+async function loadTools(){
+  const d = await j(B+"/fp-test/tools-status");
+  const t = d.data||{};
+  document.getElementById("tools").innerHTML =
+    Object.entries(t).map(([k,v])=>`${k}: <span class="${v.available?'ok':'bad'}">${v.available?'✓ '+v.version:'✗ '+v.error}</span>`).join(" &nbsp; ");
+}
+async function loadRanges(){
+  const d = await j(B+"/fp-test/ranges");
+  const rs = d.data||[];
+  const sel = document.getElementById("rangeSel");
+  sel.innerHTML = rs.map(r=>`<option value="${r.id}">${r.name} (${r.url})</option>`).join("");
+  document.querySelector("#rangeTable tbody").innerHTML = rs.map(r=>
+    `<tr><td>${r.name}</td><td>${r.url}</td><td>${r.known_vuln_count}</td><td>${r.difficulty}</td><td>${r.status}</td></tr>`).join("");
+}
+async function loadLatest(){
+  const d = await j(B+"/fp-test/results");
+  const rec = (d.data||{}).record;
+  if(!rec){return;}
+  const m = rec.metrics;
+  document.getElementById("kpis").innerHTML = `
+    <div class="card kpi">准确率<br><b class="ok">${pct(m.precision)}</b></div>
+    <div class="card kpi">召回率<br><b class="ok">${pct(m.recall)}</b></div>
+    <div class="card kpi">F1<br><b class="ok">${pct(m.f1_score)}</b></div>
+    <div class="card kpi">误报率<br><b class="${m.false_positive_rate>0.3?'bad':'warn'}">${pct(m.false_positive_rate)}</b></div>
+    <div class="card kpi">漏报率<br><b class="${m.false_negative_rate>0.3?'bad':'warn'}">${pct(m.false_negative_rate)}</b></div>`;
+  document.getElementById("latest").textContent = JSON.stringify(rec,null,2);
+}
+async function loadHistory(){
+  const d = await j(B+"/fp-test/history?limit=20");
+  document.querySelector("#histTable tbody").innerHTML = (d.data||[]).map(h=>
+    `<tr><td>${h.executed_at}</td><td>${pct(h.metrics.precision)}</td><td>${pct(h.metrics.recall)}</td><td>${pct(h.metrics.f1_score)}</td><td>${pct(h.metrics.false_positive_rate)}</td><td>${pct(h.metrics.false_negative_rate)}</td></tr>`).join("");
+}
+async function runTest(){
+  const rid = document.getElementById("rangeSel").value;
+  const btn = document.getElementById("runBtn"); btn.disabled=true;
+  document.getElementById("runState").textContent="扫描中（可能耗时数分钟）…";
+  try{
+    const d = await j(B+"/fp-test/run",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({range_id:rid})});
+    document.getElementById("runState").textContent = d.success?"完成":"失败: "+d.error;
+    await loadLatest(); await loadHistory();
+  }catch(e){document.getElementById("runState").textContent="错误: "+e;}
+  btn.disabled=false;
+}
+loadTools(); loadRanges(); loadLatest(); loadHistory();
+</script>
+</body>
+</html>

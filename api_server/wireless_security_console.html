@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>无线网络安全控制台 - Wireless Security Console</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #131a23;
+    --panel-2: #1a2330;
+    --border: #243040;
+    --text: #d8e1ec;
+    --muted: #7a8aa0;
+    --accent: #00d4ff;
+    --ok: #2ecc71;
+    --warn: #f39c12;
+    --crit: #e74c3c;
+    --hi: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+    font-size: 14px; line-height: 1.5;
+  }
+  header {
+    padding: 14px 24px; background: linear-gradient(90deg, #0d1420, #14202f);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  header h1 { margin: 0; font-size: 18px; color: var(--accent); letter-spacing: 1px; }
+  header .meta { color: var(--muted); font-size: 12px; }
+  nav.tabs {
+    display: flex; background: var(--panel); border-bottom: 1px solid var(--border);
+    padding: 0 12px; overflow-x: auto;
+  }
+  nav.tabs button {
+    background: transparent; border: none; color: var(--muted);
+    padding: 12px 16px; cursor: pointer; font-size: 14px;
+    border-bottom: 2px solid transparent; white-space: nowrap;
+  }
+  nav.tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+  main { padding: 20px; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px; padding: 16px; margin-bottom: 16px;
+  }
+  .card h2 { margin-top: 0; font-size: 15px; color: var(--accent); }
+  .btn {
+    background: var(--accent); color: #001018; border: none; padding: 8px 16px;
+    border-radius: 4px; cursor: pointer; font-weight: 600;
+  }
+  .btn:hover { filter: brightness(1.1); }
+  .btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px; border-bottom: 1px solid var(--border); text-align: left; }
+  th { color: var(--muted); font-weight: 600; }
+  .badge { padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+  .badge.critical { background: rgba(231,76,60,.18); color: var(--crit); }
+  .badge.high { background: rgba(255,107,107,.18); color: var(--hi); }
+  .badge.medium { background: rgba(243,156,18,.18); color: var(--warn); }
+  .badge.low { background: rgba(46,204,113,.18); color: var(--ok); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .stat { background: var(--panel-2); padding: 14px; border-radius: 6px; }
+  .stat .label { color: var(--muted); font-size: 12px; }
+  .stat .value { font-size: 22px; font-weight: 700; color: var(--accent); }
+  pre.out {
+    background: #0a0e13; border: 1px solid var(--border); padding: 12px;
+    border-radius: 4px; max-height: 400px; overflow: auto; font-size: 12px;
+  }
+  .progress {
+    height: 8px; background: #0a0e13; border-radius: 4px; overflow: hidden; margin-top: 6px;
+  }
+  .progress > div { height: 100%; background: var(--ok); }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .hint { color: var(--muted); font-size: 12px; }
+  footer { padding: 16px 24px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<header>
+  <h1>WLAN / BT / ZIGBEE 安全控制台</h1>
+  <div class="meta">v12.0 · 仅授权评估 · 不破解 / 不注入 / 不中间人</div>
+</header>
+
+<nav class="tabs">
+  <button data-tab="wifi" class="active">WiFi 扫描</button>
+  <button data-tab="wifisec">WiFi 安全</button>
+  <button data-tab="eviltwin">邪恶孪生</button>
+  <button data-tab="bt">蓝牙安全</button>
+  <button data-tab="zigbee">Zigbee</button>
+  <button data-tab="spectrum">频谱分析</button>
+  <button data-tab="assessment">综合评估</button>
+</nav>
+
+<main>
+  <!-- WiFi 扫描 -->
+  <section class="tab-pane active" id="tab-wifi">
+    <div class="card">
+      <h2>AP 发现与扫描</h2>
+      <div class="row">
+        <button class="btn" onclick="startWifiScan()">启动扫描</button>
+        <span class="hint">扫描结果将在下方表格中展示（BSSID/SSID/信道/加密/信号）</span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>AP 列表</h2>
+      <div id="wifi-aps"></div>
+    </div>
+  </section>
+
+  <!-- WiFi 安全 -->
+  <section class="tab-pane" id="tab-wifisec">
+    <div class="card">
+      <h2>WiFi 安全评估</h2>
+      <div class="row">
+        <button class="btn" onclick="startWifiSec()">执行评估</button>
+        <button class="btn ghost" onclick="loadDict()">查看弱密码字典(前50)</button>
+      </div>
+      <div id="wifisec-out" class="hint mt"></div>
+    </div>
+    <div class="card">
+      <h2>评估结果</h2>
+      <div id="wifisec-result"></div>
+    </div>
+  </section>
+
+  <!-- 邪恶孪生 -->
+  <section class="tab-pane" id="tab-eviltwin">
+    <div class="card">
+      <h2>邪恶孪生 / 钓鱼 AP 检测</h2>
+      <button class="btn" onclick="startEvilTwin()">开始检测</button>
+    </div>
+    <div class="card"><h2>检测结果</h2><div id="evil-result"></div></div>
+  </section>
+
+  <!-- 蓝牙 -->
+  <section class="tab-pane" id="tab-bt">
+    <div class="card">
+      <h2>蓝牙设备发现与漏洞面评估</h2>
+      <button class="btn" onclick="startBt()">扫描蓝牙</button>
+    </div>
+    <div class="card"><h2>蓝牙结果</h2><div id="bt-result"></div></div>
+  </section>
+
+  <!-- Zigbee -->
+  <section class="tab-pane" id="tab-zigbee">
+    <div class="card">
+      <h2>Zigbee 信道扫描与 IoT 安全</h2>
+      <button class="btn" onclick="startZigbee()">开始分析</button>
+    </div>
+    <div class="card"><h2>Zigbee 结果</h2><div id="zig-result"></div></div>
+  </section>
+
+  <!-- 频谱 -->
+  <section class="tab-pane" id="tab-spectrum">
+    <div class="card">
+      <h2>2.4G / 5G 频谱分析</h2>
+      <button class="btn" onclick="startSpectrum()">开始分析</button>
+    </div>
+    <div class="card"><h2>频谱结果</h2><div id="spec-result"></div></div>
+  </section>
+
+  <!-- 综合评估 -->
+  <section class="tab-pane" id="tab-assessment">
+    <div class="card">
+      <h2>综合评估工作流</h2>
+      <button class="btn" onclick="startAssessment()">一键运行全部</button>
+    </div>
+    <div class="card"><h2>综合报告</h2><div id="assess-result"></div></div>
+    <div class="card"><h2>历史</h2><div id="assess-history" class="hint"></div></div>
+  </section>
+</main>
+
+<footer>
+  本控制台仅用于授权范围内的无线网络安全评估与加固建议，不进行密码破解、流量注入或中间人攻击。
+</footer>
+
+<script>
+const BASE = "/api/v1/wireless-security";
+
+// Tab 切换
+document.querySelectorAll("nav.tabs button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("nav.tabs button").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+  });
+});
+
+async function api(path, opts) {
+  const r = await fetch(BASE + path, opts || {});
+  const j = await r.json().catch(() => ({success:false, error:"bad json"}));
+  return j;
+}
+
+async function poll(taskId, interval=800) {
+  while (true) {
+    const s = await api(`/${taskId.split('-')[0] === 'wifi-scan' ? 'wifi' : taskId.split('-')[0]}/${taskId}/status`).catch(()=>null);
+    // 通用：直接用 task 前缀推断路径
+    await new Promise(r => setTimeout(r, interval));
+    const st = await genericStatus(taskId);
+    if (st && (st.status === "success" || st.status === "failed")) return st;
+  }
+}
+
+async function genericStatus(taskId) {
+  // 从 task_id 前缀推断所属路由
+  const prefix = taskId.split("-")[0];
+  const map = {
+    "wifi-scan": "wifi",
+    "wifi-security": "wifi/security",
+    "evil-twin": "evil-twin",
+    "bluetooth": "bluetooth",
+    "zigbee": "zigbee",
+    "spectrum": "spectrum",
+    "assessment": "assessment",
+  };
+  const seg = map[prefix] || prefix;
+  const r = await api(`/${seg}/${taskId}/status`);
+  return r.data;
+}
+
+async function genericResults(taskId) {
+  const prefix = taskId.split("-")[0];
+  const map = {
+    "wifi-scan": "wifi",
+    "wifi-security": "wifi/security",
+    "evil-twin": "evil-twin",
+    "bluetooth": "bluetooth",
+    "zigbee": "zigbee",
+    "spectrum": "spectrum",
+    "assessment": "assessment",
+  };
+  const seg = map[prefix] || prefix;
+  const r = await api(`/${seg}/${taskId}/results`);
+  return r.data;
+}
+
+function render(el, data) {
+  document.getElementById(el).innerHTML = "<pre class='out'>" + JSON.stringify(data, null, 2) + "</pre>";
+}
+
+async function startWifiScan() {
+  const r = await api("/wifi/scan", {method:"POST"});
+  if (!r.success) return alert(r.error);
+  const tid = r.data.task_id;
+  const st = await poll(tid);
+  const res = await api(`/wifi/${tid}/results`);
+  document.getElementById("wifi-aps").innerHTML = buildApsTable(res.data);
+}
+
+function buildApsTable(data) {
+  const aps = (data && data.aps) || [];
+  if (!aps.length) return "<span class='hint'>无数据</span>";
+  let html = "<table><tr><th>BSSID</th><th>SSID</th><th>信道</th><th>频段</th><th>RSSI</th><th>加密</th><th>WPS</th></tr>";
+  aps.forEach(a => {
+    html += `<tr><td>${a.bssid}</td><td>${a.ssid||"(hidden)"}</td><td>${a.channel}</td><td>${a.band}</td><td>${a.rssi}</td><td>${a.encryption}</td><td>${a.wps_enabled?"是":"否"}</td></tr>`;
+  });
+  return html + "</table>";
+}
+
+async function startWifiSec() {
+  const r = await api("/wifi/security/assess", {method:"POST"});
+  if (!r.success) return alert(r.error);
+  const tid = r.data.task_id;
+  await poll(tid);
+  const res = await api(`/wifi/security/${tid}/results`);
+  render("wifisec-result", res.data);
+}
+
+async function loadDict() {
+  const r = await api("/wifi/security/dictionary");
+  render("wifisec-out", r.data);
+}
+
+async function startEvilTwin() {
+  const r = await api("/evil-twin/detect", {method:"POST"});
+  const tid = r.data.task_id; await poll(tid);
+  const res = await api(`/evil-twin/${tid}/results`);
+  render("evil-result", res.data);
+}
+
+async function startBt() {
+  const r = await api("/bluetooth/scan", {method:"POST"});
+  const tid = r.data.task_id; await poll(tid);
+  const res = await api(`/bluetooth/${tid}/results`);
+  render("bt-result", res.data);
+}
+
+async function startZigbee() {
+  const r = await api("/zigbee/scan", {method:"POST"});
+  const tid = r.data.task_id; await poll(tid);
+  const res = await api(`/zigbee/${tid}/results`);
+  render("zig-result", res.data);
+}
+
+async function startSpectrum() {
+  const r = await api("/spectrum/analyze", {method:"POST"});
+  const tid = r.data.task_id; await poll(tid);
+  const res = await api(`/spectrum/${tid}/results`);
+  render("spec-result", res.data);
+}
+
+async function startAssessment() {
+  const r = await api("/assessment/run", {method:"POST"});
+  const tid = r.data.task_id; await poll(tid);
+  const res = await api(`/assessment/${tid}/results`);
+  render("assess-result", res.data);
+  const h = await api("/assessment/history");
+  document.getElementById("assess-history").textContent = "历史任务数：" + (h.data.total || 0);
+}
+</script>
+</body>
+</html>

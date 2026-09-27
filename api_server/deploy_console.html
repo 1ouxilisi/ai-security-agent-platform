@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一键部署与安装包控制台 · Round 20</title>
+<style>
+:root{
+  --bg:#0b0f17;--panel:#131a26;--panel2:#1a2333;--border:#233049;
+  --text:#d6deee;--muted:#7a8aa8;--accent:#39c5bb;--accent2:#ff6b6b;
+  --crit:#ff4d4f;--high:#fa8c16;--med:#fadb14;--low:#52c41a;--info:#1890ff;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;}
+header{background:linear-gradient(90deg,#0d1522,#16223a);padding:14px 22px;
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+header h1{margin:0;font-size:18px;color:var(--accent);}
+header .tag{background:var(--panel2);padding:3px 10px;border-radius:10px;font-size:12px;color:var(--muted);}
+nav{display:flex;flex-wrap:wrap;gap:4px;padding:10px 22px;background:#0e1522;border-bottom:1px solid var(--border);}
+nav button{background:transparent;color:var(--muted);border:1px solid var(--border);
+  padding:7px 14px;cursor:pointer;border-radius:6px;font-size:13px;}
+nav button.active{background:var(--accent);color:#001;border-color:var(--accent);font-weight:600;}
+nav button:hover{color:var(--text);}
+main{padding:18px 22px;max-width:1400px;margin:0 auto;}
+.tab{display:none;}.tab.active{display:block;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+@media(max-width:900px){.grid,.grid3{grid-template-columns:1fr;}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px;}
+.card h3{margin:0 0 10px;font-size:14px;color:var(--accent);}
+.card h4{margin:8px 0 6px;font-size:13px;color:var(--info);}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;}
+th{color:var(--muted);font-weight:600;}
+tr:hover td{background:var(--panel2);}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+.badge.ok{background:#16351f;color:#52c41a;}
+.badge.warn{background:#3d3010;color:#fadb14;}
+.badge.err{background:#3d1515;color:#ff4d4f;}
+.badge.info{background:#102a4d;color:#1890ff;}
+.badge.high{background:#3d2510;color:#fa8c16;}
+.btn{background:var(--accent);color:#001;border:0;padding:7px 14px;border-radius:5px;
+  cursor:pointer;font-size:13px;font-weight:600;}
+.btn:hover{opacity:.9;}
+.btn.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border);}
+.btn.danger{background:var(--crit);color:#fff;}
+input,select,textarea{background:var(--panel2);color:var(--text);border:1px solid var(--border);
+  padding:6px 10px;border-radius:5px;font-size:13px;width:100%;margin:4px 0;}
+label{font-size:12px;color:var(--muted);display:block;margin-top:6px;}
+pre{background:#0a0e16;border:1px solid var(--border);border-radius:6px;padding:10px;
+  overflow:auto;max-height:400px;font-size:12px;line-height:1.5;color:#a0d0a0;white-space:pre-wrap;word-break:break-all;}
+.stat{display:inline-block;background:var(--panel2);padding:8px 14px;border-radius:6px;
+  margin:4px;font-size:13px;}
+.stat b{color:var(--accent);font-size:18px;}
+.progress{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;margin:4px 0;}
+.progress>div{height:100%;background:var(--accent);transition:width .3s;}
+.score-big{font-size:48px;font-weight:700;text-align:center;}
+.log-line{font-family:Consolas,monospace;font-size:12px;padding:2px 0;}
+.log-INFO{color:#7ec8e3;}.log-WARN{color:#fadb14;}.log-ERROR{color:#ff6b6b;}.log-DEBUG{color:#5a7a9a;}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;}
+.muted{color:var(--muted);font-size:12px;}
+.flex{display:flex;gap:10px;flex-wrap:wrap;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🚀 一键部署与安装包控制台</h1>
+  <span class="tag">Round 20 · 方向 1</span>
+  <span class="tag" id="verTag">v20.1.0</span>
+  <span class="tag" id="timeTag"></span>
+</header>
+<nav>
+  <button class="active" onclick="showTab('env',this)">🖥 环境检测</button>
+  <button onclick="showTab('install',this)">📦 一键安装</button>
+  <button onclick="showTab('wizard',this)">⚙️ 配置向导</button>
+  <button onclick="showTab('backup',this)">💾 备份恢复</button>
+  <button onclick="showTab('multienv',this)">🌐 多环境部署</button>
+  <button onclick="showTab('dash',this)">📊 部署管理</button>
+</nav>
+<main>
+
+<!-- ==================== TAB 1: 环境检测 ==================== -->
+<div class="tab active" id="tab-env">
+  <div class="toolbar">
+    <button class="btn" onclick="loadEnvReport()">🔍 生成完整环境报告</button>
+    <button class="btn secondary" onclick="loadSystem()">系统环境</button>
+    <button class="btn secondary" onclick="loadDeps()">Python 依赖</button>
+    <button class="btn secondary" onclick="loadTools()">外部工具</button>
+    <button class="btn secondary" onclick="loadDb()">数据库</button>
+    <button class="btn secondary" onclick="loadPorts()">端口</button>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>健康评分</h3>
+      <div class="score-big" id="envScore">--</div>
+      <div id="envGrade" style="text-align:center;color:var(--muted)"></div>
+    </div>
+    <div class="card">
+      <h3>问题列表与修复建议</h3>
+      <div id="envIssues"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>系统环境</h3>
+    <div id="envSystem" class="muted">点击上方按钮加载...</div>
+  </div>
+  <div class="card">
+    <h3>Python 依赖检测</h3>
+    <div id="envDeps" class="muted">点击"Python 依赖"按钮加载...</div>
+  </div>
+  <div class="card">
+    <h3>外部工具检测</h3>
+    <div id="envTools" class="muted">点击"外部工具"按钮加载...</div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>数据库检测</h3>
+      <div id="envDb" class="muted">点击"数据库"按钮加载...</div>
+    </div>
+    <div class="card">
+      <h3>端口检测</h3>
+      <div id="envPorts" class="muted">点击"端口"按钮加载...</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>一键修复脚本</h3>
+    <pre id="envFixScript">-- 生成环境报告后自动填充 --</pre>
+  </div>
+</div>
+
+<!-- ==================== TAB 2: 一键安装 ==================== -->
+<div class="tab" id="tab-install">
+  <div class="toolbar">
+    <label style="margin:0">平台:</label>
+    <select id="instPlatform" style="width:auto">
+      <option value="windows">Windows (PowerShell)</option>
+      <option value="linux">Linux (Bash)</option>
+      <option value="macos">macOS (brew)</option>
+      <option value="docker">Docker</option>
+      <option value="k8s">Kubernetes</option>
+      <option value="offline">离线安装包</option>
+    </select>
+    <label style="margin:0">端口:</label>
+    <input id="instPort" type="number" value="8000" style="width:80px">
+    <button class="btn" onclick="generateInstaller()">🛠 生成安装脚本</button>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>生成的安装文件</h3>
+      <div id="installFiles" class="muted">选择平台并点击"生成安装脚本"</div>
+    </div>
+    <div class="card">
+      <h3>离线包清单</h3>
+      <div id="offlineManifest" class="muted">选择 offline 平台生成</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>脚本内容预览</h3>
+    <pre id="scriptPreview">-- 选择文件后预览 --</pre>
+  </div>
+</div>
+
+<!-- ==================== TAB 3: 配置向导 ==================== -->
+<div class="tab" id="tab-wizard">
+  <div class="grid">
+    <div class="card">
+      <h3>首次启动向导</h3>
+      <div id="wizardSteps"></div>
+      <div class="progress"><div id="wizardBar" style="width:0%"></div></div>
+      <div class="muted" id="wizardProgress">0%</div>
+      <button class="btn secondary" onclick="wizardNext()" style="margin-top:8px">下一步</button>
+      <button class="btn danger" onclick="wizardReset()">重置向导</button>
+    </div>
+    <div class="card">
+      <h3>配置文件管理</h3>
+      <h4>配置模板</h4>
+      <pre id="configTpl" class="muted">加载中...</pre>
+      <h4>验证配置</h4>
+      <button class="btn secondary" onclick="validateConfig()">验证当前配置</button>
+      <div id="configVal"></div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>数据库初始化（模拟）</h3>
+      <label>管理员用户名</label><input id="dbUser" value="admin">
+      <label>管理员密码</label><input id="dbPass" type="password" value="admin123">
+      <button class="btn" onclick="initDb()" style="margin-top:8px">初始化数据库</button>
+      <div id="dbInitResult" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h3>数据迁移</h3>
+      <label>从版本</label><input id="migFrom" value="20.0.0">
+      <label>到版本</label><input id="migTo" value="20.1.0">
+      <div class="flex">
+        <button class="btn secondary" onclick="migPlan()">查看迁移计划</button>
+        <button class="btn" onclick="migRun()">执行迁移</button>
+      </div>
+      <div id="migResult" style="margin-top:8px"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>服务管理</h3>
+    <div class="flex">
+      <button class="btn" onclick="svcAction('start')">启动</button>
+      <button class="btn danger" onclick="svcAction('stop')">停止</button>
+      <button class="btn secondary" onclick="svcAction('restart')">重启</button>
+      <button class="btn secondary" onclick="svcAction('status')">状态</button>
+      <button class="btn secondary" onclick="svcHealth()">健康检查</button>
+    </div>
+    <pre id="svcResult" style="margin-top:8px">-- 服务管理输出 --</pre>
+  </div>
+</div>
+
+<!-- ==================== TAB 4: 备份恢复 ==================== -->
+<div class="tab" id="tab-backup">
+  <div class="grid">
+    <div class="card">
+      <h3>版本管理</h3>
+      <div id="versionInfo" class="muted">加载中...</div>
+      <button class="btn secondary" onclick="checkUpdate()" style="margin-top:8px">检查更新</button>
+    </div>
+    <div class="card">
+      <h3>一键升级</h3>
+      <label>目标版本</label><input id="upgTarget" value="20.1.0">
+      <div class="flex">
+        <button class="btn secondary" onclick="upgPlan()">升级计划</button>
+        <button class="btn" onclick="upgRun()">执行升级</button>
+      </div>
+      <pre id="upgResult" style="margin-top:8px">-- 升级输出 --</pre>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>数据备份</h3>
+      <div class="flex">
+        <button class="btn" onclick="createBackup('full')">全量备份</button>
+        <button class="btn secondary" onclick="createBackup('incremental')">增量备份</button>
+        <button class="btn secondary" onclick="listBackups()">刷新列表</button>
+      </div>
+      <div id="backupList" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h3>数据恢复</h3>
+      <label>备份 ID</label><input id="recBakId" placeholder="输入备份ID">
+      <div class="flex">
+        <button class="btn secondary" onclick="recPreview()">预览恢复</button>
+        <button class="btn danger" onclick="recExecute()">确认恢复</button>
+      </div>
+      <pre id="recResult" style="margin-top:8px">-- 恢复输出 --</pre>
+    </div>
+  </div>
+  <div class="card">
+    <h3>灾难恢复计划</h3>
+    <div id="drPlan" class="muted">加载中...</div>
+  </div>
+</div>
+
+<!-- ==================== TAB 5: 多环境部署 ==================== -->
+<div class="tab" id="tab-multienv">
+  <div class="toolbar">
+    <button class="btn" onclick="loadEnvironments()">加载环境列表</button>
+    <button class="btn secondary" onclick="loadCloud()">云部署模板</button>
+    <button class="btn secondary" onclick="loadCluster()">集群状态</button>
+    <button class="btn secondary" onclick="loadDeployHistory()">部署历史</button>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>环境列表</h3>
+      <div id="envList" class="muted">点击"加载环境列表"</div>
+    </div>
+    <div class="card">
+      <h3>环境对比</h3>
+      <div class="flex">
+        <select id="cmpA"><option value="development">开发</option><option value="staging">测试</option><option value="production">生产</option></select>
+        <span>vs</span>
+        <select id="cmpB"><option value="production">生产</option><option value="staging">测试</option><option value="development">开发</option></select>
+      </div>
+      <button class="btn" onclick="cmpEnv()" style="margin-top:6px">对比</button>
+      <div id="cmpResult" style="margin-top:6px"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>云部署模板</h3>
+    <div id="cloudTpl" class="muted">点击"云部署模板"</div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>集群节点</h3>
+      <div id="clusterNodes" class="muted">点击"集群状态"</div>
+    </div>
+    <div class="card">
+      <h3>部署历史</h3>
+      <div id="deployHist" class="muted">点击"部署历史"</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB 6: 部署管理 ==================== -->
+<div class="tab" id="tab-dash">
+  <div class="toolbar">
+    <button class="btn" onclick="loadDashboard()">🔄 刷新大屏</button>
+    <button class="btn secondary" onclick="loadMonitoring()">监控指标</button>
+    <button class="btn secondary" onclick="loadLogs()">日志中心</button>
+    <button class="btn secondary" onclick="loadAlerts()">告警规则</button>
+    <button class="btn secondary" onclick="loadDocs()">部署文档</button>
+  </div>
+  <div class="card">
+    <h3>部署状态大屏</h3>
+    <div id="dashStats" class="muted">点击"刷新大屏"</div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>监控指标</h3>
+      <div id="monitorData" class="muted">点击"监控指标"</div>
+    </div>
+    <div class="card">
+      <h3>告警规则</h3>
+      <div id="alertRules" class="muted">点击"告警规则"</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>日志中心</h3>
+    <div class="toolbar">
+      <select id="logLevel" style="width:auto"><option value="">全部级别</option><option>DEBUG</option><option>INFO</option><option>WARN</option><option>ERROR</option></select>
+      <button class="btn secondary" onclick="loadLogs()">查询</button>
+    </div>
+    <pre id="logArea" style="max-height:300px">-- 日志输出 --</pre>
+  </div>
+  <div class="card">
+    <h3>部署文档</h3>
+    <div id="docList" class="muted">点击"部署文档"</div>
+  </div>
+</div>
+
+</main>
+
+<script>
+const BASE = '/api/v1/deploy';
+async function api(path, opts={}){
+  try{
+    const r = await fetch(BASE+path,{headers:{'Content-Type':'application/json'},...opts});
+    const j = await r.json();
+    if(!j.success) throw new Error(j.error||'API error');
+    return j.data;
+  }catch(e){
+    console.error(path,e);
+    return {__error:String(e)};
+  }
+}
+function showTab(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+function esc(s){return String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function kv(o){return Object.entries(o||{}).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${typeof v==='object'?esc(JSON.stringify(v)):esc(v)}</td></tr>`).join('');}
+
+// ---------- Tab 1: 环境检测 ----------
+async function loadEnvReport(){
+  const d = await api('/env/report');
+  if(d.__error) return;
+  const r = d.report||d;
+  document.getElementById('envScore').textContent = r.score??'--';
+  document.getElementById('envGrade').textContent = '评级: '+(r.grade||'?');
+  const issues = r.issues||[];
+  document.getElementById('envIssues').innerHTML = issues.length
+    ? issues.map(i=>`<div><span class="badge ${i.level==='crit'?'err':i.level==='high'?'high':i.level==='med'?'warn':'ok'}">${i.level}</span> <b>${esc(i.item)}</b>: ${esc(i.detail)}</div>`).join('<br>')
+    : '<span class="badge ok">无问题</span>';
+  document.getElementById('envFixScript').textContent = r.fix_script||'无修复脚本';
+}
+async function loadSystem(){
+  const d = await api('/env/system');
+  if(d.__error) return;
+  document.getElementById('envSystem').innerHTML = '<table>'+kv(d)+'</table>';
+}
+async function loadDeps(){
+  const d = await api('/env/python-deps');
+  if(d.__error) return;
+  let html = `<p>已安装包: <b>${d.installed_count}</b> | 必需: ${d.required_ok}/${d.required_total}</p>`;
+  if(d.missing&&d.missing.length) html += `<p><span class="badge err">缺失 ${d.missing.length}</span> ${d.missing.join(', ')}</p>`;
+  if(d.outdated&&d.outdated.length) html += `<p><span class="badge warn">过时 ${d.outdated.length}</span></p>`;
+  html += '<table><tr><th>包</th><th>要求</th><th>已装</th><th>状态</th></tr>';
+  (d.required_detail||[]).slice(0,20).forEach(r=>{
+    const cls = r.status==='ok'?'ok':r.status==='missing'?'err':'warn';
+    html += `<tr><td>${esc(r.name)}</td><td>${esc(r.required_min)}</td><td>${esc(r.installed||'-')}</td><td><span class="badge ${cls}">${r.status}</span></td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('envDeps').innerHTML = html;
+}
+async function loadTools(){
+  const d = await api('/env/tools');
+  if(d.__error) return;
+  let html = `<p>可用: <b>${d.available_count}/${d.total}</b></p>`;
+  html += '<table><tr><th>工具</th><th>类别</th><th>可用</th><th>版本</th></tr>';
+  (d.detail||[]).forEach(t=>{
+    html += `<tr><td>${esc(t.name)}</td><td>${esc(t.category)}</td><td>${t.available?'<span class="badge ok">✓</span>':'<span class="badge err">✗</span>'}</td><td>${esc(t.version||'-')}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('envTools').innerHTML = html;
+}
+async function loadDb(){
+  const d = await api('/env/database');
+  if(d.__error) return;
+  let html = `<p>SQLite 版本: ${esc(d.sqlite_version)} | 数据库文件: ${d.db_file_count}</p>`;
+  (d.databases||[]).forEach(db=>{
+    html += `<div class="card" style="margin:6px 0"><b>${esc(db.path)}</b><br>表: ${db.table_count||0} | 完整性: ${esc(db.integrity||'?')}</div>`;
+  });
+  document.getElementById('envDb').innerHTML = html;
+}
+async function loadPorts(){
+  const d = await api('/env/ports');
+  if(d.__error) return;
+  let html = `<p>检测 ${d.checked} 端口, 占用 ${d.in_use_count}</p><table><tr><th>端口</th><th>服务</th><th>占用</th><th>风险</th></tr>`;
+  (d.in_use||[]).forEach(p=>{
+    const rc = p.risk==='crit'?'err':p.risk==='high'?'high':p.risk==='med'?'warn':'info';
+    html += `<tr><td>${p.port}</td><td>${esc(p.service)}</td><td>${p.in_use?'<span class="badge err">占用</span>':'<span class="badge ok">空闲</span>'}</td><td><span class="badge ${rc}">${p.risk}</span></td></tr>`;
+  });
+  html += '</table><p>推荐端口: '+(d.recommended_ports||[]).join(', ')+'</p>';
+  document.getElementById('envPorts').innerHTML = html;
+}
+
+// ---------- Tab 2: 一键安装 ----------
+let _instFiles = {};
+async function generateInstaller(){
+  const platform = document.getElementById('instPlatform').value;
+  const port = parseInt(document.getElementById('instPort').value)||8000;
+  const d = await api('/installer/'+platform+(platform==='offline'?'':'?port='+port));
+  if(d.__error) return;
+  _instFiles = d.files||{};
+  let html = '';
+  for(const [name,content] of Object.entries(_instFiles)){
+    html += `<div style="margin:4px 0"><button class="btn secondary" onclick="previewScript('${name}')">${esc(name)}</button> <span class="muted">${(content.length/1024).toFixed(1)} KB</span></div>`;
+  }
+  document.getElementById('installFiles').innerHTML = html||'<span class="muted">无文件</span>';
+  if(platform==='offline' && d.manifest){
+    document.getElementById('offlineManifest').innerHTML = '<pre>'+esc(JSON.stringify(d.manifest,null,2))+'</pre>';
+  }
+}
+function previewScript(name){
+  document.getElementById('scriptPreview').textContent = _instFiles[name]||'';
+}
+
+// ---------- Tab 3: 配置向导 ----------
+async function loadWizard(){
+  const d = await api('/wizard/status');
+  if(d.__error) return;
+  let html = '';
+  (d.steps||[]).forEach(s=>{
+    const cls = s.done?'ok':s.active?'info':'err';
+    html += `<div><span class="badge ${cls}">${s.done?'✓':s.step}</span> <b>${esc(s.title)}</b> — ${esc(s.description)}</div>`;
+  });
+  document.getElementById('wizardSteps').innerHTML = html;
+  document.getElementById('wizardBar').style.width = (d.progress||0)+'%';
+  document.getElementById('wizardProgress').textContent = (d.progress||0)+'%';
+}
+async function wizardNext(){ await api('/wizard/step',{method:'POST',body:JSON.stringify({step:1,data:{}})}); loadWizard(); }
+async function wizardReset(){ await api('/wizard/reset',{method:'POST'}); loadWizard(); }
+async function loadConfigTpl(){
+  const d = await api('/config/template');
+  if(d.__error) return;
+  document.getElementById('configTpl').textContent = d.env_file_sample||JSON.stringify(d.template,null,2);
+}
+async function validateConfig(){
+  const d = await api('/config/validate',{method:'POST',body:JSON.stringify({config:{}})});
+  if(d.__error) return;
+  let html = `<span class="badge ${d.valid?'ok':'err'}">${d.valid?'有效':'无效'}</span>`;
+  (d.errors||[]).forEach(e=>html+=`<div style="color:var(--crit)">✗ ${esc(e)}</div>`);
+  (d.warnings||[]).forEach(w=>html+=`<div style="color:var(--med)">⚠ ${esc(w)}</div>`);
+  document.getElementById('configVal').innerHTML = html;
+}
+async function initDb(){
+  const u = document.getElementById('dbUser').value, p = document.getElementById('dbPass').value;
+  const d = await api('/db/init',{method:'POST',body:JSON.stringify({admin_username:u,admin_password:p})});
+  if(d.__error) return;
+  document.getElementById('dbInitResult').innerHTML = '<pre>'+esc(JSON.stringify(d,null,2))+'</pre>';
+}
+async function migPlan(){
+  const f = document.getElementById('migFrom').value, t = document.getElementById('migTo').value;
+  const d = await api('/migration/plan',{method:'POST',body:JSON.stringify({from_version:f,to_version:t})});
+  document.getElementById('migResult').innerHTML = '<pre>'+esc(JSON.stringify(d,null,2))+'</pre>';
+}
+async function migRun(){
+  const f = document.getElementById('migFrom').value, t = document.getElementById('migTo').value;
+  const d = await api('/migration/run',{method:'POST',body:JSON.stringify({from_version:f,to_version:t})});
+  document.getElementById('migResult').innerHTML = '<pre>'+esc(JSON.stringify(d,null,2))+'</pre>';
+}
+async function svcAction(a){
+  const d = await api('/service/'+a,{method:'POST'});
+  document.getElementById('svcResult').textContent = JSON.stringify(d,null,2);
+}
+
+// ---------- Tab 4: 备份恢复 ----------
+async function loadVersion(){
+  const d = await api('/version/info');
+  if(d.__error) return;
+  document.getElementById('versionInfo').innerHTML = `<p>当前版本: <b>${d.current_version}</b> | 最新: ${d.latest_version}</p>`;
+  document.getElementById('versionInfo').innerHTML += '<pre>'+esc(d.release_notes||'')+'</pre>';
+}
+async function checkUpdate(){
+  const d = await api('/update/check',{method:'POST'});
+  alert('检查结果: '+(d.update_available?'有新版本 v'+d.latest+'':'已是最新'));
+}
+async function upgPlan(){
+  const v = document.getElementById('upgTarget').value;
+  const d = await api('/upgrade/plan',{method:'POST',body:JSON.stringify({target_version:v})});
+  document.getElementById('upgResult').textContent = JSON.stringify(d,null,2);
+}
+async function upgRun(){
+  const v = document.getElementById('upgTarget').value;
+  const d = await api('/upgrade/run',{method:'POST',body:JSON.stringify({target_version:v})});
+  document.getElementById('upgResult').textContent = JSON.stringify(d,null,2);
+}
+async function createBackup(type){
+  const d = await api('/backup/create',{method:'POST',body:JSON.stringify({type,encrypt:true,compress:true})});
+  listBackups();
+}
+async function listBackups(){
+  const d = await api('/backup/list');
+  if(d.__error||!Array.isArray(d)) return;
+  let html = '<table><tr><th>ID</th><th>类型</th><th>大小</th><th>时间</th><th>状态</th></tr>';
+  d.forEach(b=>{ html += `<tr><td>${esc(b.backup_id)}</td><td>${esc(b.type)}</td><td>${b.size_mb}MB</td><td>${esc(b.created_at)}</td><td><span class="badge ok">${b.status}</span></td></tr>`; });
+  html += '</table>';
+  document.getElementById('backupList').innerHTML = html;
+}
+async function recPreview(){
+  const id = document.getElementById('recBakId').value;
+  const d = await api('/recovery/preview',{method:'POST',body:JSON.stringify({backup_id:id})});
+  document.getElementById('recResult').textContent = JSON.stringify(d,null,2);
+}
+async function recExecute(){
+  const id = document.getElementById('recBakId').value;
+  const d = await api('/recovery/execute',{method:'POST',body:JSON.stringify({backup_id:id,confirm:true})});
+  document.getElementById('recResult').textContent = JSON.stringify(d,null,2);
+}
+async function loadDrPlan(){
+  const d = await api('/dr/plan');
+  if(d.__error) return;
+  document.getElementById('drPlan').innerHTML = '<pre>'+esc(JSON.stringify(d,null,2))+'</pre>';
+}
+
+// ---------- Tab 5: 多环境 ----------
+async function loadEnvironments(){
+  const d = await api('/environments');
+  if(d.__error||!Array.isArray(d)) return;
+  let html = '<table><tr><th>环境</th><th>调试</th><th>日志</th><th>Worker</th><th>描述</th></tr>';
+  d.forEach(e=>{
+    html += `<tr><td>${esc(e.display_name||e.name)}</td><td>${e.debug?'<span class="badge warn">是</span>':'<span class="badge ok">否</span>'}</td><td>${esc(e.log_level||'-')}</td><td>${e.workers||'-'}</td><td>${esc(e.description||'')}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('envList').innerHTML = html;
+}
+async function cmpEnv(){
+  const a = document.getElementById('cmpA').value, b = document.getElementById('cmpB').value;
+  const d = await api('/environment/compare',{method:'POST',body:JSON.stringify({env_a:a,env_b:b})});
+  document.getElementById('cmpResult').innerHTML = '<pre>'+esc(JSON.stringify(d,null,2))+'</pre>';
+}
+async function loadCloud(){
+  const d = await api('/cloud/templates');
+  if(d.__error||!Array.isArray(d)) return;
+  let html = '<table><tr><th>云厂商</th><th>服务</th><th>模板</th><th>月费</th></tr>';
+  d.forEach(c=>{ html += `<tr><td>${esc(c.provider)}</td><td>${(c.services||[]).join(', ')}</td><td>${esc(c.template_type)}</td><td>$${c.estimated_cost_monthly_usd}</td></tr>`; });
+  html += '</table>';
+  document.getElementById('cloudTpl').innerHTML = html;
+}
+async function loadCluster(){
+  const d = await api('/cluster/status');
+  if(d.__error) return;
+  let html = `<p>节点: ${d.healthy_nodes}/${d.total_nodes} 健康</p><table><tr><th>节点</th><th>IP</th><th>角色</th><th>状态</th><th>CPU</th></tr>`;
+  (d.nodes||[]).forEach(n=>{ html += `<tr><td>${esc(n.node_id)}</td><td>${esc(n.ip)}</td><td>${esc(n.role)}</td><td><span class="badge ${n.status==='ready'?'ok':'err'}">${n.status}</span></td><td>${n.cpu_usage}%</td></tr>`; });
+  html += '</table>';
+  document.getElementById('clusterNodes').innerHTML = html;
+}
+async function loadDeployHistory(){
+  const d = await api('/deployments');
+  if(d.__error||!Array.isArray(d)) return;
+  let html = '<table><tr><th>ID</th><th>版本</th><th>环境</th><th>结果</th><th>时间</th></tr>';
+  d.forEach(x=>{ html += `<tr><td>${esc(x.deploy_id)}</td><td>${esc(x.version)}</td><td>${esc(x.environment)}</td><td><span class="badge ${x.result==='success'?'ok':'err'}">${x.result}</span></td><td>${esc(x.deployed_at)}</td></tr>`; });
+  html += '</table>';
+  document.getElementById('deployHist').innerHTML = html;
+}
+
+// ---------- Tab 6: 部署管理 ----------
+async function loadDashboard(){
+  const d = await api('/dashboard/overview');
+  if(d.__error) return;
+  let html = `<span class="stat">版本 <b>${d.version}</b></span>`;
+  html += `<span class="stat">运行 <b>${d.uptime_hours}h</b></span>`;
+  html += `<span class="stat">健康 <b>${d.health_check?.status}</b></span>`;
+  html += `<span class="stat">CPU <b>${d.resources?.cpu_percent}%</b></span>`;
+  html += `<span class="stat">内存 <b>${d.resources?.memory_percent||'-'}%</b></span>`;
+  html += `<table style="margin-top:10px"><tr><th>服务</th><th>端口</th><th>状态</th><th>延迟</th></tr>`;
+  (d.services||[]).forEach(s=>{ html += `<tr><td>${esc(s.name)}</td><td>${s.port||'-'}</td><td><span class="badge ok">${s.status}</span></td><td>${s.latency_ms?s.latency_ms+'ms':'-'}</td></tr>`; });
+  html += '</table>';
+  document.getElementById('dashStats').innerHTML = html;
+}
+async function loadMonitoring(){
+  const d = await api('/monitoring');
+  if(d.__error) return;
+  document.getElementById('monitorData').innerHTML = '<table>'+kv(d)+'</table>';
+}
+async function loadLogs(){
+  const lv = document.getElementById('logLevel').value;
+  const d = await api('/logs?level='+encodeURIComponent(lv));
+  if(d.__error) return;
+  let html = '';
+  (d.logs||[]).forEach(l=>{ html += `<div class="log-line log-${l.level}">[${l.ts}] [${l.level}] [${l.source}] ${l.message}</div>`; });
+  document.getElementById('logArea').innerHTML = html;
+}
+async function loadAlerts(){
+  const rules = await api('/alerts/rules');
+  const hist = await api('/alerts/history');
+  let html = '<table><tr><th>规则</th><th>指标</th><th>阈值</th><th>启用</th></tr>';
+  (Array.isArray(rules)?rules:[]).forEach(r=>{ html += `<tr><td>${esc(r.rule_id)}</td><td>${esc(r.metric)}</td><td>${r.threshold}</td><td>${r.enabled?'<span class="badge ok">是</span>':'<span class="badge warn">否</span>'}</td></tr>`; });
+  html += '</table>';
+  document.getElementById('alertRules').innerHTML = html;
+}
+async function loadDocs(){
+  const d = await api('/docs');
+  if(d.__error||!Array.isArray(d)) return;
+  let html = '<table><tr><th>ID</th><th>标题</th><th>分类</th></tr>';
+  d.forEach(x=>{ html += `<tr><td>${esc(x.id)}</td><td>${esc(x.title)}</td><td>${esc(x.category)}</td></tr>`; });
+  html += '</table>';
+  document.getElementById('docList').innerHTML = html;
+}
+
+// 初始化
+document.getElementById('timeTag').textContent = new Date().toLocaleString();
+loadWizard();
+loadVersion();
+loadConfigTpl();
+loadDrPlan();
+</script>
+</body>
+</html>

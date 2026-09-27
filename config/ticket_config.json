@@ -1,0 +1,22 @@
+{
+  "type": "webhook",
+  "timeout": 10,
+  "jira": {
+    "base_url": "https://your-jira.example.com",
+    "api_token": "",
+    "username": "",
+    "project_key": "SEC"
+  },
+  "zentao": {
+    "base_url": "https://your-zentao.example.com",
+    "token": "",
+    "product_id": "1"
+  },
+  "feishu": {
+    "app_id": "",
+    "app_secret": ""
+  },
+  "webhook": {
+    "url": ""
+  }
+}

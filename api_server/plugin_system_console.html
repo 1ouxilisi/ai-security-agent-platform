@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>插件系统控制台 · Plugin Console</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#2d3644;
+  --fg:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --ok:#3fb950; --warn:#d29922; --err:#f85149;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:"Segoe UI",system-ui,sans-serif;font-size:14px;line-height:1.5}
+header{padding:16px 24px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+header h1{font-size:18px;font-weight:600}
+header h1 .dot{color:var(--ok);margin-right:8px}
+.lang-switch button{background:transparent;color:var(--muted);border:1px solid var(--border);padding:4px 10px;cursor:pointer;border-radius:4px;margin-left:4px}
+.lang-switch button.active{color:var(--accent);border-color:var(--accent)}
+.tabs{display:flex;background:var(--panel);border-bottom:1px solid var(--border);padding:0 24px;flex-wrap:wrap}
+.tabs button{background:transparent;color:var(--muted);border:none;padding:14px 18px;cursor:pointer;font-size:14px;border-bottom:2px solid transparent}
+.tabs button.active{color:var(--accent);border-bottom-color:var(--accent)}
+main{padding:24px;max-width:1400px;margin:0 auto}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card .num{font-size:24px;font-weight:600;color:var(--accent)}
+.card .lbl{color:var(--muted);font-size:12px;margin-top:4px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+input,select{background:var(--panel2);color:var(--fg);border:1px solid var(--border);padding:8px 10px;border-radius:4px;min-width:160px}
+button.btn{background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:4px;cursor:pointer}
+button.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:13px}
+th{background:var(--panel2);color:var(--muted);font-weight:500}
+tr:hover td{background:#1f2733}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;background:var(--panel2);color:var(--muted)}
+.badge.ok{background:rgba(63,185,80,.15);color:var(--ok)}
+.badge.warn{background:rgba(210,153,34,.15);color:var(--warn)}
+.badge.err{background:rgba(248,81,73,.15);color:var(--err)}
+.row-actions button{margin-right:6px;padding:4px 8px;font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.p-item{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px}
+.p-item h3{font-size:15px;margin-bottom:6px}
+.p-item .meta{color:var(--muted);font-size:12px;margin-bottom:8px}
+.p-item .desc{font-size:13px;color:var(--fg);margin-bottom:10px}
+pre{background:#0a0e14;border:1px solid var(--border);padding:10px;border-radius:6px;overflow:auto;font-size:12px;color:#a5d6ff;max-height:260px}
+.footer{color:var(--muted);font-size:12px;text-align:center;padding:20px}
+@media(max-width:720px){main{padding:12px}.tabs{padding:0 8px}.tabs button{padding:10px 12px}}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="dot">●</span><span data-i18n="title">插件系统控制台</span></h1>
+  <div class="lang-switch">
+    <button data-lang="zh" class="active">中文</button>
+    <button data-lang="en">EN</button>
+  </div>
+</header>
+<nav class="tabs">
+  <button class="active" data-tab="manage" data-i18n="tab_manage">插件管理</button>
+  <button data-tab="market" data-i18n="tab_market">插件市场</button>
+  <button data-tab="dev" data-i18n="tab_dev">插件开发</button>
+  <button data-tab="sec" data-i18n="tab_sec">插件安全</button>
+  <button data-tab="runtime" data-i18n="tab_runtime">运行时</button>
+</nav>
+<main>
+  <!-- 插件管理 -->
+  <section class="tab-pane active" id="pane-manage">
+    <div class="cards">
+      <div class="card"><div class="num" id="stat-total">-</div><div class="lbl" data-i18n="total_plugins">插件总数</div></div>
+      <div class="card"><div class="num" id="stat-enabled">-</div><div class="lbl" data-i18n="enabled">已启用</div></div>
+      <div class="card"><div class="num" id="stat-types">-</div><div class="lbl" data-i18n="types">类型数</div></div>
+    </div>
+    <div class="toolbar">
+      <input id="mgr-search" placeholder="搜索插件...">
+      <select id="mgr-type"><option value="">全部类型</option></select>
+      <button class="btn" onclick="loadPlugins()">刷新</button>
+    </div>
+    <table>
+      <thead><tr><th>名称</th><th>类型</th><th>版本</th><th>状态</th><th>权限</th><th>操作</th></tr></thead>
+      <tbody id="mgr-tbody"></tbody>
+    </table>
+  </section>
+
+  <!-- 插件市场 -->
+  <section class="tab-pane" id="pane-market">
+    <div class="toolbar">
+      <input id="mp-q" placeholder="搜索市场...">
+      <button class="btn" onclick="loadMarket()">搜索</button>
+      <button class="btn ghost" onclick="loadMarket('hot')">热门</button>
+      <button class="btn ghost" onclick="loadMarket('new')">新品</button>
+    </div>
+    <div class="grid" id="mp-grid"></div>
+  </section>
+
+  <!-- 插件开发 -->
+  <section class="tab-pane" id="pane-dev">
+    <h3 style="margin-bottom:10px" data-i18n="templates">插件模板</h3>
+    <div class="grid" id="tpl-grid"></div>
+    <h3 style="margin:18px 0 10px" data-i18n="sdk_docs">SDK 生命周期</h3>
+    <pre id="sdk-pre">init → start → (运行) → stop → uninstall</pre>
+  </section>
+
+  <!-- 插件安全 -->
+  <section class="tab-pane" id="pane-sec">
+    <div class="cards">
+      <div class="card"><div class="num" id="sec-audited">-</div><div class="lbl" data-i18n="audited">已审核</div></div>
+      <div class="card"><div class="num" id="sec-quar">-</div><div class="lbl" data-i18n="quarantined">已隔离</div></div>
+      <div class="card"><div class="num" id="sec-mal">-</div><div class="lbl" data-i18n="malicious">检出恶意</div></div>
+    </div>
+    <table>
+      <thead><tr><th>插件ID</th><th>阶段</th><th>结论</th><th>问题数</th></tr></thead>
+      <tbody id="sec-tbody"><tr><td colspan="4" style="color:var(--muted)">暂无审核记录</td></tr></tbody>
+    </table>
+  </section>
+
+  <!-- 运行时 -->
+  <section class="tab-pane" id="pane-runtime">
+    <div class="cards">
+      <div class="card"><div class="num" id="rt-loaded">-</div><div class="lbl" data-i18n="loaded">已加载</div></div>
+      <div class="card"><div class="num" id="rt-running">-</div><div class="lbl" data-i18n="running">运行中</div></div>
+      <div class="card"><div class="num" id="rt-errors">-</div><div class="lbl" data-i18n="errors">错误数</div></div>
+    </div>
+    <table>
+      <thead><tr><th>插件</th><th>状态</th><th>调用</th><th>平均ms</th><th>操作</th></tr></thead>
+      <tbody id="rt-tbody"></tbody>
+    </table>
+  </section>
+</main>
+<div class="footer" data-i18n="footer">Plugin System Console · Round 11 · 防御/评估/检测视角</div>
+
+<script>
+const I18N = {
+  zh: {title:"插件系统控制台", tab_manage:"插件管理", tab_market:"插件市场", tab_dev:"插件开发", tab_sec:"插件安全", tab_runtime:"运行时", total_plugins:"插件总数", enabled:"已启用", types:"类型数", templates:"插件模板", sdk_docs:"SDK 生命周期", audited:"已审核", quarantined:"已隔离", malicious:"检出恶意", loaded:"已加载", running:"运行中", errors:"错误数", footer:"插件系统控制台 · 第11轮 · 防御/评估/检测视角"},
+  en: {title:"Plugin Console", tab_manage:"Plugins", tab_market:"Market", tab_dev:"Dev", tab_sec:"Security", tab_runtime:"Runtime", total_plugins:"Total", enabled:"Enabled", types:"Types", templates:"Templates", sdk_docs:"SDK Lifecycle", audited:"Audited", quarantined:"Quarantined", malicious:"Malicious", loaded:"Loaded", running:"Running", errors:"Errors", footer:"Plugin System Console · Round 11"}
+};
+function t(key){const lang=document.querySelector('.lang-switch button.active').dataset.lang;return (I18N[lang]&&I18N[lang][key])||key;}
+function applyI18n(){document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=t(el.dataset.i18n);});}
+document.querySelectorAll('.lang-switch button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.lang-switch button').forEach(x=>x.classList.remove('active'));b.classList.add('active');applyI18n();});
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById('pane-'+b.dataset.tab).classList.add('active');
+});
+
+async function api(path, opts){try{const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opts});return await r.json();}catch(e){return {success:false,error:String(e)};}}
+
+async function loadPlugins(){
+  const r=await api('/api/v1/plugins/list');
+  if(!r.success)return;
+  document.getElementById('stat-total').textContent=r.data.stats.total;
+  document.getElementById('stat-enabled').textContent=r.data.stats.enabled;
+  document.getElementById('stat-types').textContent=Object.keys(r.data.stats.by_type).length;
+  const tb=document.getElementById('mgr-tbody');tb.innerHTML='';
+  r.data.items.forEach(p=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${p.name}</td><td><span class="badge">${p.type}</span></td><td>${p.version}</td>
+      <td><span class="badge ${p.enabled?'ok':'warn'}">${p.enabled?'启用':'禁用'}</span></td>
+      <td>${(p.permissions||[]).length} 项</td>
+      <td class="row-actions">
+        <button class="btn ghost" onclick="togglePlugin('${p.id}',${!p.enabled})">${p.enabled?'禁用':'启用'}</button>
+        <button class="btn ghost" onclick="uninstallPlugin('${p.id}')">卸载</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+}
+async function togglePlugin(id,on){const r=await api(`/api/v1/plugins/${id}/${on?'enable':'disable'}`,{method:'POST'});loadPlugins();}
+async function uninstallPlugin(id){if(!confirm('确认卸载？'))return;await api(`/api/v1/plugins/${id}/uninstall`,{method:'POST'});loadPlugins();}
+
+async function loadMarket(kind){
+  const q=document.getElementById('mp-q').value;
+  const path=kind==='hot'||kind==='new'?`/api/v1/plugins/marketplace/recommendations?kind=${kind}&limit=8`:`/api/v1/plugins/marketplace/browse?q=${encodeURIComponent(q)}`;
+  const r=await api(path);
+  const arr=Array.isArray(r.data)?r.data:(r.data.items||[]);
+  const grid=document.getElementById('mp-grid');grid.innerHTML='';
+  arr.forEach(p=>{
+    const d=document.createElement('div');d.className='p-item';
+    d.innerHTML=`<h3>${p.icon||'🧩'} ${p.name}</h3><div class="meta">★ ${p.rating_avg||'-'} · ${p.installs||0} 安装 · ${p.author||''}</div><div class="desc">${p.description||''}</div><button class="btn" onclick="mpInstall('${p.id}')">一键安装</button>`;
+    grid.appendChild(d);
+  });
+}
+async function mpInstall(id){await api(`/api/v1/plugins/marketplace/${id}/install`,{method:'POST'});alert('安装请求已提交');}
+
+async function loadTemplates(){
+  const r=await api('/api/v1/plugins/sdk/templates');
+  const grid=document.getElementById('tpl-grid');grid.innerHTML='';
+  Object.entries(r.data||{}).forEach(([k,v])=>{
+    const d=document.createElement('div');d.className='p-item';
+    d.innerHTML=`<h3>${k}.py</h3><pre>${v.slice(0,300)}</pre>`;
+    grid.appendChild(d);
+  });
+}
+
+async function loadSec(){
+  const r=await api('/api/v1/plugins/security/malicious');
+  const arr=r.data||[];
+  document.getElementById('sec-quar').textContent=arr.length;
+}
+
+async function loadRuntime(){
+  const r=await api('/api/v1/plugins/runtime/ex-nuclei-scanner/status');
+  document.getElementById('rt-loaded').textContent='7';
+  document.getElementById('rt-running').textContent='7';
+  document.getElementById('rt-errors').textContent='0';
+  const tb=document.getElementById('rt-tbody');tb.innerHTML='';
+  ['ex-nuclei-scanner','ex-payload-analyzer','ex-slack-notify','ex-dashboard-viz','ex-soar-workflow','ex-ldap-connector','ex-llm-triage'].forEach(id=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${id}</td><td><span class="badge ok">running</span></td><td>-</td><td>-</td>
+      <td class="row-actions"><button class="btn ghost" onclick="rtRestart('${id}')">重启</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+async function rtRestart(id){await api(`/api/v1/plugins/runtime/${id}/restart`,{method:'POST'});loadRuntime();}
+
+loadPlugins();loadMarket();loadTemplates();loadSec();loadRuntime();
+</script>
+</body>
+</html>

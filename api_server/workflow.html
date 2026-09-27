@@ -1,0 +1,663 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>渗透测试工作流 - AI Hacking Agent</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #0a0e17;
+            color: #e0e6ed;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%);
+            border-bottom: 1px solid #2d333b;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 22px;
+            background: linear-gradient(90deg, #58a6ff, #7ee787);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .status {
+            font-size: 13px;
+            color: #8b949e;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .panel {
+            background: #161b22;
+            border: 1px solid #2d333b;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .panel-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #58a6ff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .form-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: #8b949e;
+            margin-bottom: 6px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            color: #e0e6ed;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: #58a6ff;
+        }
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+            color: white;
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(46,160,67,0.4); }
+        .btn-primary:disabled { background: #30363d; cursor: not-allowed; transform: none; }
+        .btn-danger {
+            background: #da3633;
+            color: white;
+        }
+        .btn-danger:hover { background: #f85149; }
+
+        /* 工作流进度 */
+        .workflow-progress {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 20px 0;
+            position: relative;
+        }
+        .workflow-progress::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 40px;
+            right: 40px;
+            height: 3px;
+            background: #2d333b;
+            z-index: 0;
+        }
+        .phase-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1;
+            flex: 1;
+        }
+        .phase-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #21262d;
+            border: 2px solid #30363d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #8b949e;
+            transition: all 0.3s;
+        }
+        .phase-node.completed .phase-circle {
+            background: #238636;
+            border-color: #2ea043;
+            color: white;
+        }
+        .phase-node.running .phase-circle {
+            background: #1f6feb;
+            border-color: #58a6ff;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+        .phase-node.failed .phase-circle {
+            background: #da3633;
+            border-color: #f85149;
+            color: white;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(88,166,255,0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(88,166,255,0); }
+        }
+        .phase-name {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #8b949e;
+            text-align: center;
+            max-width: 100px;
+        }
+        .phase-node.completed .phase-name, .phase-node.running .phase-name { color: #e0e6ed; }
+
+        /* 阶段详情 */
+        .phase-detail {
+            background: #0d1117;
+            border: 1px solid #2d333b;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        .phase-header {
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: #161b22;
+        }
+        .phase-header:hover { background: #1c2128; }
+        .phase-header .left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .phase-badge {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-pending { background: #21262d; color: #8b949e; }
+        .badge-running { background: #1f6feb; color: white; }
+        .badge-completed { background: #238636; color: white; }
+        .badge-failed { background: #da3633; color: white; }
+        .phase-body {
+            padding: 16px 18px;
+            display: none;
+        }
+        .phase-body.open { display: block; }
+
+        /* 工具结果 */
+        .tool-result {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .tool-result .tool-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #7ee787;
+            margin-bottom: 6px;
+        }
+        .tool-result .tool-status {
+            font-size: 11px;
+            color: #8b949e;
+            margin-bottom: 8px;
+        }
+        .tool-result pre {
+            background: #0d1117;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            overflow-x: auto;
+            max-height: 300px;
+            color: #c9d1d9;
+        }
+
+        /* AI分析 */
+        .ai-analysis {
+            background: linear-gradient(135deg, #1a1f2e 0%, #161b22 100%);
+            border-left: 3px solid #58a6ff;
+            padding: 14px 18px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 12px;
+        }
+        .ai-analysis .ai-label {
+            font-size: 12px;
+            color: #58a6ff;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .ai-analysis .ai-content {
+            font-size: 13px;
+            line-height: 1.7;
+            color: #c9d1d9;
+            white-space: pre-wrap;
+        }
+
+        /* 报告 */
+        .report-section {
+            background: #0d1117;
+            border: 1px solid #2d333b;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .report-section h3 {
+            color: #7ee787;
+            margin-bottom: 12px;
+        }
+        .report-content {
+            font-size: 13px;
+            line-height: 1.8;
+            color: #c9d1d9;
+            white-space: pre-wrap;
+        }
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #161b22;
+            border: 1px solid #2d333b;
+            border-radius: 10px;
+            padding: 18px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #8b949e;
+        }
+        .color-green { color: #7ee787; }
+        .color-blue { color: #58a6ff; }
+        .color-yellow { color: #d29922; }
+        .color-red { color: #f85149; }
+
+        .hidden { display: none !important; }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #8b949e;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+        .log-box {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 12px;
+        }
+        .log-line { margin-bottom: 4px; }
+        .log-info { color: #58a6ff; }
+        .log-success { color: #7ee787; }
+        .log-error { color: #f85149; }
+        .log-warning { color: #d29922; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔐 渗透测试工作流引擎</h1>
+        <div class="status" id="systemStatus">系统就绪</div>
+    </div>
+
+    <div class="container">
+        <!-- 启动面板 -->
+        <div class="panel" id="startPanel">
+            <div class="panel-title">🚀 启动渗透测试工作流</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>工作流模板</label>
+                    <select id="workflowTemplate">
+                        <option value="standard_pentest">标准渗透测试（7个阶段，30-60分钟）</option>
+                        <option value="quick_scan">快速扫描（3个阶段，5-10分钟）</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>目标IP/域名</label>
+                    <input type="text" id="targetInput" placeholder="例如: 127.0.0.1 或 example.com" value="127.0.0.1">
+                </div>
+                <div class="form-group">
+                    <label>扫描深度</label>
+                    <select id="scanDepth">
+                        <option value="quick">快速（1-1000端口）</option>
+                        <option value="standard" selected>标准（1-10000端口）</option>
+                        <option value="deep">深度（1-65535端口）</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button class="btn btn-primary" id="startBtn" onclick="startWorkflow()">开始渗透测试</button>
+            </div>
+        </div>
+
+        <!-- 工作流进行中面板 -->
+        <div class="panel hidden" id="runningPanel">
+            <div class="panel-title">
+                <span id="runningTitle">渗透测试进行中</span>
+                <span style="margin-left: auto; font-size: 12px; color: #8b949e;" id="runningTarget"></span>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-value color-blue" id="statPhases">0/7</div>
+                    <div class="stat-label">阶段进度</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value color-green" id="statTools">0</div>
+                    <div class="stat-label">工具执行</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value color-yellow" id="statFindings">0</div>
+                    <div class="stat-label">发现数量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value color-red" id="statTime">0s</div>
+                    <div class="stat-label">运行时间</div>
+                </div>
+            </div>
+
+            <!-- 工作流进度 -->
+            <div class="workflow-progress" id="workflowProgress"></div>
+
+            <!-- 实时日志 -->
+            <div class="log-box" id="logBox"></div>
+
+            <div style="margin-top: 16px; display: flex; gap: 12px;">
+                <button class="btn btn-danger" onclick="cancelWorkflow()">取消工作流</button>
+            </div>
+        </div>
+
+        <!-- 阶段详情面板 -->
+        <div class="panel hidden" id="phasesPanel">
+            <div class="panel-title">📋 阶段详情与结果</div>
+            <div id="phasesList"></div>
+        </div>
+
+        <!-- 报告面板 -->
+        <div class="panel hidden" id="reportPanel">
+            <div class="panel-title">📊 渗透测试报告</div>
+            <div class="report-section">
+                <div id="reportContent" class="report-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = localStorage.getItem('api_key') || '';
+        const API_HEADERS = {
+            'Content-Type': 'application/json',
+            'X-API-Key': API_KEY
+        };
+
+        let currentInstanceId = null;
+        let pollInterval = null;
+        let startTime = null;
+
+        async function apiFetch(url, options = {}) {
+            options.headers = { ...(options.headers || {}), ...API_HEADERS };
+            return fetch(url, options);
+        }
+
+        function addLog(message, type = 'info') {
+            const logBox = document.getElementById('logBox');
+            const time = new Date().toLocaleTimeString();
+            const line = document.createElement('div');
+            line.className = `log-line log-${type}`;
+            line.textContent = `[${time}] ${message}`;
+            logBox.appendChild(line);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        async function startWorkflow() {
+            const template = document.getElementById('workflowTemplate').value;
+            const target = document.getElementById('targetInput').value.trim();
+            const scanDepth = document.getElementById('scanDepth').value;
+
+            if (!target) {
+                alert('请输入目标IP或域名');
+                return;
+            }
+
+            const btn = document.getElementById('startBtn');
+            btn.disabled = true;
+            btn.textContent = '启动中...';
+
+            try {
+                const response = await apiFetch('/api/v1/workflows/start', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        workflow_id: template,
+                        target: target,
+                        config: { scan_depth: scanDepth }
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    currentInstanceId = data.instance_id;
+                    startTime = Date.now();
+                    document.getElementById('startPanel').classList.add('hidden');
+                    document.getElementById('runningPanel').classList.remove('hidden');
+                    document.getElementById('phasesPanel').classList.remove('hidden');
+                    document.getElementById('runningTarget').textContent = `目标: ${target}`;
+                    document.getElementById('logBox').innerHTML = '';
+                    addLog(`工作流已启动: ${data.message}`, 'success');
+                    addLog(`实例ID: ${currentInstanceId}`, 'info');
+
+                    // 开始轮询
+                    pollInterval = setInterval(pollWorkflow, 2000);
+                    pollWorkflow();
+                } else {
+                    alert('启动失败: ' + (data.detail || data.message));
+                    btn.disabled = false;
+                    btn.textContent = '开始渗透测试';
+                }
+            } catch (e) {
+                alert('启动失败: ' + e.message);
+                btn.disabled = false;
+                btn.textContent = '开始渗透测试';
+            }
+        }
+
+        async function pollWorkflow() {
+            if (!currentInstanceId) return;
+
+            try {
+                const response = await apiFetch(`/api/v1/workflows/${currentInstanceId}`);
+                const data = await response.json();
+
+                updateProgress(data);
+                updatePhases(data);
+                updateStats(data);
+
+                if (data.status === 'completed' || data.status === 'failed' || data.status === 'cancelled') {
+                    clearInterval(pollInterval);
+                    pollInterval = null;
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('startBtn').textContent = '开始新的渗透测试';
+                    document.getElementById('startPanel').classList.remove('hidden');
+
+                    if (data.status === 'completed') {
+                        addLog('✅ 渗透测试完成！', 'success');
+                        loadReport();
+                    } else if (data.status === 'failed') {
+                        addLog('❌ 渗透测试失败: ' + (data.error || '未知错误'), 'error');
+                    } else {
+                        addLog('⚠️ 渗透测试已取消', 'warning');
+                    }
+                }
+            } catch (e) {
+                console.error('轮询失败:', e);
+            }
+        }
+
+        function updateProgress(data) {
+            const container = document.getElementById('workflowProgress');
+            container.innerHTML = '';
+
+            data.phases.forEach((phase, index) => {
+                const node = document.createElement('div');
+                node.className = `phase-node ${phase.status}`;
+                node.innerHTML = `
+                    <div class="phase-circle">${phase.status === 'completed' ? '✓' : index + 1}</div>
+                    <div class="phase-name">${phase.name}</div>
+                `;
+                container.appendChild(node);
+            });
+        }
+
+        function updateStats(data) {
+            const completed = data.phases.filter(p => p.status === 'completed').length;
+            document.getElementById('statPhases').textContent = `${completed}/${data.phases_count}`;
+
+            let toolCount = 0;
+            let findingCount = 0;
+            data.phases.forEach(p => {
+                toolCount += p.results_count || 0;
+            });
+            document.getElementById('statTools').textContent = toolCount;
+            document.getElementById('statFindings').textContent = data.summary?.findings_count || 0;
+
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('statTime').textContent = elapsed > 60 ? `${Math.floor(elapsed/60)}m${elapsed%60}s` : `${elapsed}s`;
+        }
+
+        function updatePhases(data) {
+            const container = document.getElementById('phasesList');
+            container.innerHTML = '';
+
+            data.phases.forEach((phase, index) => {
+                const div = document.createElement('div');
+                div.className = 'phase-detail';
+                div.innerHTML = `
+                    <div class="phase-header" onclick="togglePhase(${index})">
+                        <div class="left">
+                            <span class="phase-badge badge-${phase.status}">${getStatusText(phase.status)}</span>
+                            <strong>${phase.name}</strong>
+                            <span style="color: #8b949e; font-size: 12px;">${phase.description}</span>
+                        </div>
+                        <span style="color: #8b949e; font-size: 12px;">
+                            ${phase.results_count || 0} 个结果 ${phase.duration_ms ? `· ${(phase.duration_ms/1000).toFixed(1)}s` : ''}
+                        </span>
+                    </div>
+                    <div class="phase-body" id="phaseBody${index}">
+                        ${phase.results && phase.results.length > 0 ? phase.results.map(r => `
+                            <div class="tool-result">
+                                <div class="tool-name">${r.tool_name}</div>
+                                <div class="tool-status">状态: ${r.status} ${r.timestamp ? '· ' + r.timestamp : ''}</div>
+                                ${r.error ? `<div style="color: #f85149; font-size: 12px;">错误: ${r.error}</div>` : ''}
+                                ${r.result ? `<pre>${JSON.stringify(r.result, null, 2).substring(0, 2000)}</pre>` : ''}
+                            </div>
+                        `).join('') : '<div style="color: #8b949e; font-size: 13px;">暂无结果</div>'}
+                        ${phase.ai_analysis ? `
+                            <div class="ai-analysis">
+                                <div class="ai-label">🤖 AI智能分析</div>
+                                <div class="ai-content">${phase.ai_analysis}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function togglePhase(index) {
+            const body = document.getElementById(`phaseBody${index}`);
+            body.classList.toggle('open');
+        }
+
+        function getStatusText(status) {
+            const map = { pending: '等待中', running: '进行中', completed: '已完成', failed: '失败', skipped: '已跳过' };
+            return map[status] || status;
+        }
+
+        async function cancelWorkflow() {
+            if (!currentInstanceId) return;
+            if (!confirm('确定要取消当前渗透测试工作流吗？')) return;
+
+            try {
+                await apiFetch(`/api/v1/workflows/${currentInstanceId}/cancel`, { method: 'POST' });
+                addLog('正在取消工作流...', 'warning');
+            } catch (e) {
+                alert('取消失败: ' + e.message);
+            }
+        }
+
+        async function loadReport() {
+            if (!currentInstanceId) return;
+
+            try {
+                const response = await apiFetch(`/api/v1/workflows/${currentInstanceId}/report`);
+                const data = await response.json();
+
+                if (data.report) {
+                    document.getElementById('reportPanel').classList.remove('hidden');
+                    document.getElementById('reportContent').textContent = data.report;
+                }
+            } catch (e) {
+                console.error('加载报告失败:', e);
+            }
+        }
+
+        // 页面加载时检查是否有进行中的工作流
+        window.onload = async function() {
+            try {
+                const response = await apiFetch('/api/v1/workflows');
+                const data = await response.json();
+                if (data.instances && data.instances.length > 0) {
+                    const latest = data.instances[0];
+                    if (latest.status === 'running') {
+                        currentInstanceId = latest.instance_id;
+                        startTime = Date.now() - (latest.duration_ms || 0);
+                        document.getElementById('startPanel').classList.add('hidden');
+                        document.getElementById('runningPanel').classList.remove('hidden');
+                        document.getElementById('phasesPanel').classList.remove('hidden');
+                        document.getElementById('runningTarget').textContent = `目标: ${latest.target}`;
+                        addLog('恢复进行中的工作流: ' + latest.name, 'info');
+                        pollInterval = setInterval(pollWorkflow, 2000);
+                        pollWorkflow();
+                    }
+                }
+            } catch (e) {
+                console.log('没有进行中的工作流');
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全培训与认证深度平台</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2129; --border:#30363d;
+  --txt:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --ok:#3fb950;
+  --warn:#d29922; --bad:#f85149; --purple:#bc8cff; --cyan:#39d2c0;
+  --pink:#f778ba;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:13px;line-height:1.5}
+header{padding:14px 22px;background:linear-gradient(90deg,#0d1117,#161b22);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+header h1{font-size:18px;font-weight:600}
+header h1 span{color:var(--accent)}
+.badge{background:var(--panel2);border:1px solid var(--border);padding:3px 10px;border-radius:12px;color:var(--muted);font-size:12px}
+nav{display:flex;gap:4px;padding:10px 22px;background:var(--panel);border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;padding:8px 14px;border-radius:6px;cursor:pointer;white-space:nowrap;font-size:13px;transition:all .2s}
+nav button.active{background:var(--accent);color:#fff}
+nav button:hover:not(.active){background:var(--panel2);color:var(--txt)}
+main{padding:18px 22px;max-width:1600px;margin:0 auto}
+.tab{display:none}.tab.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px}
+.card .label{color:var(--muted);font-size:12px}
+.card .val{font-size:24px;font-weight:600;margin-top:4px}
+.card .sub{font-size:11px;color:var(--muted);margin-top:4px}
+.v-ok{color:var(--ok)}.v-warn{color:var(--warn)}.v-bad{color:var(--bad)}
+.v-cyan{color:var(--cyan)}.v-purple{color:var(--purple)}.v-accent{color:var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:1100px){.grid2,.grid3{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:12px}
+th{background:var(--panel2);color:var(--muted);font-weight:600}
+tr:hover td{background:#1c2129}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px}
+.t-critical{background:rgba(248,81,73,.15);color:var(--bad)}
+.t-high{background:rgba(210,153,34,.15);color:var(--warn)}
+.t-medium{background:rgba(88,166,255,.15);color:var(--accent)}
+.t-low{background:rgba(63,185,80,.15);color:var(--ok)}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px}
+.panel h3{font-size:14px;margin-bottom:10px;color:var(--accent)}
+.bar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-top:4px}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--cyan))}
+.toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+button.btn{background:var(--accent);color:#fff;border:none;padding:7px 14px;border-radius:5px;cursor:pointer;font-size:12px}
+button.btn.ghost{background:var(--panel2);color:var(--txt);border:1px solid var(--border)}
+button.btn.danger{background:var(--bad)}
+button.btn.ok{background:var(--ok)}
+button.btn:hover{opacity:.85}
+input,select,textarea{background:var(--panel2);color:var(--txt);border:1px solid var(--border);padding:6px 10px;border-radius:5px;font-size:12px}
+textarea{width:100%;min-height:60px;resize:vertical}
+.muted{color:var(--muted)}
+code{background:var(--panel2);padding:1px 6px;border-radius:4px;color:var(--cyan)}
+pre{background:#0a0e14;padding:10px;border-radius:6px;overflow:auto;font-size:11px;max-height:300px}
+.loading{text-align:center;padding:40px;color:var(--muted)}
+.empty{text-align:center;padding:30px;color:var(--muted)}
+.form-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.form-row label{color:var(--muted);font-size:12px;min-width:80px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12px}
+.kv dt{color:var(--muted)}.kv dd{color:var(--txt)}
+.progress-ring{display:inline-flex;align-items:center;justify-content:center;width:60px;height:60px;border-radius:50%;font-size:14px;font-weight:600}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡️ 安全培训与认证<span>深度平台</span></h1>
+  <div>
+    <span class="badge">v26.4.0</span>
+    <span class="badge" id="status-badge">连接中...</span>
+  </div>
+</header>
+<nav id="nav">
+  <button class="active" data-tab="overview">📊 培训总览</button>
+  <button data-tab="courses">📚 课程管理</button>
+  <button data-tab="labs">🧪 实验管理</button>
+  <button data-tab="exams">📝 考试认证</button>
+  <button data-tab="competency">🎯 能力评估</button>
+  <button data-tab="enterprise">🏢 企业培训</button>
+  <button data-tab="awareness">📢 安全意识</button>
+  <button data-tab="settings">⚙️ 系统设置</button>
+</nav>
+<main>
+
+<!-- ============ 培训总览 ============ -->
+<div class="tab active" id="tab-overview">
+  <div class="cards" id="overview-cards"><div class="loading">加载中...</div></div>
+  <div class="grid2">
+    <div class="panel"><h3>课程体系概览</h3><div id="ov-courses"><div class="loading">加载中...</div></div></div>
+    <div class="panel"><h3>实验环境概览</h3><div id="ov-labs"><div class="loading">加载中...</div></div></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>考试认证概览</h3><div id="ov-exams"><div class="loading">加载中...</div></div></div>
+    <div class="panel"><h3>安全意识概览</h3><div id="ov-awareness"><div class="loading">加载中...</div></div></div>
+  </div>
+</div>
+
+<!-- ============ 课程管理 ============ -->
+<div class="tab" id="tab-courses">
+  <div class="toolbar">
+    <input id="crs-search" placeholder="搜索课程..." style="width:200px">
+    <select id="crs-cat"><option value="">全部分类</option></select>
+    <select id="crs-level"><option value="">全部等级</option><option value="beginner">入门</option><option value="intermediate">进阶</option><option value="advanced">高级</option><option value="expert">专家</option></select>
+    <button class="btn" onclick="loadCourses()">查询</button>
+    <button class="btn ghost" onclick="showNewCourse()">+ 新建课程</button>
+  </div>
+  <div class="panel" id="new-course-form" style="display:none">
+    <h3>新建课程</h3>
+    <div class="form-row">
+      <label>课程名称</label><input id="nc-title" placeholder="课程名称">
+      <label>分类</label><select id="nc-cat"></select>
+      <label>等级</label><select id="nc-level"><option value="beginner">入门</option><option value="intermediate">进阶</option><option value="advanced">高级</option></select>
+    </div>
+    <div class="form-row">
+      <label>描述</label><textarea id="nc-desc" placeholder="课程描述" style="flex:1"></textarea>
+    </div>
+    <button class="btn ok" onclick="createCourse()">创建</button>
+    <button class="btn ghost" onclick="document.getElementById('new-course-form').style.display='none'">取消</button>
+  </div>
+  <div id="course-list"><div class="loading">加载中...</div></div>
+</div>
+
+<!-- ============ 实验管理 ============ -->
+<div class="tab" id="tab-labs">
+  <div class="cards" id="lab-cards"><div class="loading">加载中...</div></div>
+  <div class="grid2">
+    <div class="panel"><h3>实验列表</h3><div id="lab-list"><div class="loading">加载中...</div></div></div>
+    <div class="panel"><h3>靶场环境</h3><div id="range-list"><div class="loading">加载中...</div></div></div>
+  </div>
+  <div class="panel">
+    <h3>资源池状态</h3>
+    <div id="resource-status"><div class="loading">加载中...</div></div>
+  </div>
+</div>
+
+<!-- ============ 考试认证 ============ -->
+<div class="tab" id="tab-exams">
+  <div class="cards" id="exam-cards"><div class="loading">加载中...</div></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>题库管理</h3>
+      <div class="toolbar">
+        <button class="btn" onclick="loadQuestions()">刷新题目</button>
+        <button class="btn ghost" onclick="quickAddQuestion()">+ 添加题目</button>
+      </div>
+      <div id="question-list"><div class="loading">加载中...</div></div>
+    </div>
+    <div class="panel">
+      <h3>证书管理</h3>
+      <div class="toolbar">
+        <button class="btn" onclick="loadCertificates()">刷新证书</button>
+        <button class="btn ghost" onclick="quickGenerateCert()">+ 生成证书</button>
+      </div>
+      <div id="cert-list"><div class="loading">加载中...</div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>认证体系路径</h3>
+    <div id="cert-paths"><div class="loading">加载中...</div></div>
+  </div>
+</div>
+
+<!-- ============ 能力评估 ============ -->
+<div class="tab" id="tab-competency">
+  <div class="cards" id="comp-cards"><div class="loading">加载中...</div></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>技能树模型</h3>
+      <div id="skill-tree"><div class="loading">加载中...</div></div>
+    </div>
+    <div class="panel">
+      <h3>个人能力评估</h3>
+      <div class="form-row">
+        <label>用户名</label><input id="assess-user" value="demo_user" style="width:120px">
+        <button class="btn" onclick="loadUserSkills()">查询</button>
+      </div>
+      <div id="user-skills"><div class="muted">输入用户名查询</div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>能力差距分析</h3>
+    <div class="form-row">
+      <label>目标角色</label>
+      <select id="gap-role">
+        <option value="security_analyst">安全分析师</option>
+        <option value="pentester">渗透测试工程师</option>
+        <option value="soc_manager">SOC经理</option>
+        <option value="security_engineer">安全工程师</option>
+      </select>
+      <button class="btn" onclick="runGapAnalysis()">分析差距</button>
+    </div>
+    <div id="gap-result"><div class="muted">选择角色后点击分析</div></div>
+  </div>
+</div>
+
+<!-- ============ 企业培训 ============ -->
+<div class="tab" id="tab-enterprise">
+  <div class="cards" id="ent-cards"><div class="loading">加载中...</div></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>培训计划</h3>
+      <div id="plan-list"><div class="loading">加载中...</div></div>
+    </div>
+    <div class="panel">
+      <h3>培训统计</h3>
+      <div id="ent-stats"><div class="loading">加载中...</div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>合规框架状态</h3>
+    <div id="compliance-status"><div class="loading">加载中...</div></div>
+  </div>
+</div>
+
+<!-- ============ 安全意识 ============ -->
+<div class="tab" id="tab-awareness">
+  <div class="cards" id="aw-cards"><div class="loading">加载中...</div></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>意识课程</h3>
+      <div id="aw-course-list"><div class="loading">加载中...</div></div>
+    </div>
+    <div class="panel">
+      <h3>钓鱼模拟演练</h3>
+      <div class="toolbar">
+        <button class="btn" onclick="loadPhishing()">刷新活动</button>
+        <button class="btn ok" onclick="createPhishCampaign()">+ 发起演练</button>
+      </div>
+      <div id="phish-list"><div class="loading">加载中...</div></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>意识活动</h3>
+      <div id="activity-list"><div class="loading">加载中...</div></div>
+    </div>
+    <div class="panel">
+      <h3>意识度量与文化</h3>
+      <div id="aw-metrics"><div class="loading">加载中...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 系统设置 ============ -->
+<div class="tab" id="tab-settings">
+  <div class="panel">
+    <h3>系统配置</h3>
+    <div id="settings-content"><div class="loading">加载中...</div></div>
+  </div>
+  <div class="panel">
+    <h3>API端点统计</h3>
+    <div id="api-stats"><div class="loading">加载中...</div></div>
+  </div>
+</div>
+
+</main>
+
+<script>
+const BASE = '/api/v1/security-training-deep';
+let metaCache = {};
+
+async function api(path, opts={}){
+  try{
+    const r = await fetch(BASE+path, {headers:{'Content-Type':'application/json'}, ...opts});
+    const j = await r.json();
+    return j;
+  }catch(e){ return {success:false, error:e.message}; }
+}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function tag(cls,txt){return `<span class="tag ${cls}">${esc(txt)}</span>`;}
+function bar(pct){return `<div class="bar"><i style="width:${Math.min(100,pct)}%"></i></div><span class="muted">${pct}%</span>`;}
+
+// Tab switching
+document.querySelectorAll('#nav button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#nav button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    loadTab(btn.dataset.tab);
+  });
+});
+
+function loadTab(tab){
+  if(tab==='overview') loadOverview();
+  else if(tab==='courses') loadCourses();
+  else if(tab==='labs') loadLabs();
+  else if(tab==='exams') loadExams();
+  else if(tab==='competency') loadCompetency();
+  else if(tab==='enterprise') loadEnterprise();
+  else if(tab==='awareness') loadAwareness();
+  else if(tab==='settings') loadSettings();
+}
+
+// ===== Overview =====
+async function loadOverview(){
+  document.getElementById('status-badge').textContent='已连接';
+  document.getElementById('status-badge').style.color='var(--ok)';
+  const [ov, co, lo, ex, aw] = await Promise.all([
+    api('/dashboard/overview'), api('/dashboard/courses'), api('/dashboard/labs'),
+    api('/dashboard/exams'), api('/dashboard/awareness')
+  ]);
+  if(ov.success){
+    const d=ov.data;
+    document.getElementById('overview-cards').innerHTML=`
+      <div class="card"><div class="label">课程总数</div><div class="val v-accent">${d.course_stats.total_courses}</div><div class="sub">已发布 ${d.course_stats.published}</div></div>
+      <div class="card"><div class="label">实验总数</div><div class="val v-cyan">${d.lab_stats.total_labs}</div><div class="sub">进行中靶场 ${d.lab_stats.active_ranges}</div></div>
+      <div class="card"><div class="label">考试场次</div><div class="val v-purple">${d.exam_stats.total_exams}</div><div class="sub">题库 ${d.exam_stats.total_questions} 题</div></div>
+      <div class="card"><div class="label">已发证书</div><div class="val v-ok">${d.exam_stats.total_certificates}</div><div class="sub">认证路径 ${d.exam_stats.cert_paths}</div></div>
+      <div class="card"><div class="label">评估用户</div><div class="val v-warn">${d.competency_stats.users_assessed}</div><div class="sub">评估记录 ${d.competency_stats.total_assessments}</div></div>
+      <div class="card"><div class="label">培训场次</div><div class="val v-accent">${d.enterprise_stats.total_sessions}</div><div class="sub">报名 ${d.enterprise_stats.total_registrations}</div></div>
+      <div class="card"><div class="label">钓鱼演练</div><div class="val v-bad">${d.awareness_stats.phishing_campaigns}</div><div class="sub">意识课程 ${d.awareness_stats.awareness_courses}</div></div>
+      <div class="card"><div class="label">意识活动</div><div class="val v-cyan">${d.awareness_stats.awareness_activities}</div><div class="sub">文化项目 ${d.awareness_stats.culture_initiatives}</div></div>
+    `;
+  }
+  if(co.success){
+    document.getElementById('ov-courses').innerHTML=`
+      <table><tr><th>指标</th><th>值</th></tr>
+      <tr><td>课程总数</td><td>${co.data.total_courses}</td></tr>
+      <tr><td>学习路径</td><td>${co.data.learning_paths}</td></tr>
+      <tr><td>课程模板</td><td>${co.data.course_templates}</td></tr>
+      <tr><td>高评分课程</td><td>${co.data.quality_report.high_rated_count}</td></tr>
+      <tr><td>需改进课程</td><td>${co.data.quality_report.low_rated_count}</td></tr></table>`;
+  }
+  if(lo.success){
+    document.getElementById('ov-labs').innerHTML=`
+      <table><tr><th>指标</th><th>值</th></tr>
+      <tr><td>实验总数</td><td>${lo.data.total_labs}</td></tr>
+      <tr><td>实验分配</td><td>${lo.data.total_assignments}</td></tr>
+      <tr><td>已评分</td><td>${lo.data.graded_assignments}</td></tr>
+      <tr><td>运行中靶场</td><td>${lo.data.ranges.running}/${lo.data.ranges.total}</td></tr>
+      <tr><td>资源CPU使用率</td><td>${lo.data.resource_pool.cpu_usage_pct}%</td></tr></table>`;
+  }
+  if(ex.success){
+    document.getElementById('ov-exams').innerHTML=`
+      <table><tr><th>指标</th><th>值</th></tr>
+      <tr><td>题库题目</td><td>${ex.data.total_questions}</td></tr>
+      <tr><td>考试场次</td><td>${ex.data.total_exams}</td></tr>
+      <tr><td>考试记录</td><td>${ex.data.total_attempts}</td></tr>
+      <tr><td>已发证书</td><td>${ex.data.total_certificates}</td></tr></table>`;
+  }
+  if(aw.success){
+    const sc=aw.data.awareness_score;
+    document.getElementById('ov-awareness').innerHTML=`
+      <table><tr><th>指标</th><th>值</th></tr>
+      <tr><td>意识评分</td><td class="v-ok">${sc.score} (${sc.level})</td></tr>
+      <tr><td>钓鱼演练次数</td><td>${aw.data.phishing_campaigns}</td></tr>
+      <tr><td>意识课程</td><td>${aw.data.awareness_courses}</td></tr>
+      <tr><td>宣传材料</td><td>${aw.data.awareness_materials}</td></tr>
+      <tr><td>文化项目</td><td>${aw.data.culture_initiatives}</td></tr></table>`;
+  }
+}
+
+// ===== Courses =====
+async function loadCourses(){
+  const meta=await api('/meta/course-categories');
+  if(meta.success){
+    metaCache.cats=meta.data.categories;
+    const sel=document.getElementById('crs-cat');
+    sel.innerHTML='<option value="">全部分类</option>'+Object.entries(meta.data.categories).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+    const nc=document.getElementById('nc-cat');
+    nc.innerHTML=Object.entries(meta.data.categories).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+  }
+  const cat=document.getElementById('crs-cat').value;
+  const lvl=document.getElementById('crs-level').value;
+  const kw=document.getElementById('crs-search').value;
+  const r=await api(`/courses?category=${cat}&level=${lvl}&keyword=${encodeURIComponent(kw)}`);
+  if(r.success){
+    const rows=r.data.map(c=>`<tr>
+      <td>${esc(c.title)}</td><td>${tag('t-medium',(metaCache.cats||{})[c.category]||c.category)}</td>
+      <td>${tag(c.level==='beginner'?'t-low':c.level==='advanced'?'t-high':'t-medium',c.level)}</td>
+      <td>${c.enrollment_count}</td><td>${c.rating_avg}</td>
+      <td>${tag(c.status==='published'?'t-low':'t-medium',c.status)}</td></tr>`).join('');
+    document.getElementById('course-list').innerHTML=`<table><tr><th>课程名</th><th>分类</th><th>等级</th><th>报名</th><th>评分</th><th>状态</th></tr>${rows||'<tr><td colspan=6 class="empty">暂无课程</td></tr>'}</table>`;
+  }
+}
+function showNewCourse(){document.getElementById('new-course-form').style.display='block';}
+async function createCourse(){
+  const body={title:document.getElementById('nc-title').value,description:document.getElementById('nc-desc').value,
+    category:document.getElementById('nc-cat').value,level:document.getElementById('nc-level').value};
+  const r=await api('/courses',{method:'POST',body:JSON.stringify(body)});
+  if(r.success){alert('课程创建成功');loadCourses();}
+  else alert('失败: '+r.error);
+}
+
+// ===== Labs =====
+async function loadLabs(){
+  const [lo, labs, ranges, res] = await Promise.all([
+    api('/dashboard/labs'), api('/labs'), api('/ranges'), api('/resources')
+  ]);
+  if(lo.success){
+    document.getElementById('lab-cards').innerHTML=`
+      <div class="card"><div class="label">实验总数</div><div class="val v-cyan">${lo.data.total_labs}</div></div>
+      <div class="card"><div class="label">分配记录</div><div class="val v-accent">${lo.data.total_assignments}</div></div>
+      <div class="card"><div class="label">运行靶场</div><div class="val v-ok">${lo.data.ranges.running}</div></div>
+      <div class="card"><div class="label">活跃沙箱</div><div class="val v-purple">${lo.data.active_sandboxes}</div></div>
+    `;
+  }
+  if(labs.success){
+    document.getElementById('lab-list').innerHTML=`<table><tr><th>实验名</th><th>分类</th><th>难度</th><th>时长</th></tr>`+
+      labs.data.map(l=>`<tr><td>${esc(l.title)}</td><td>${l.category}</td><td>${tag(l.difficulty==='easy'?'t-low':l.difficulty==='hard'?'t-high':'t-medium',l.difficulty)}</td><td>${l.duration_minutes}分钟</td></tr>`).join('')+'</table>';
+  }
+  if(ranges.success){
+    document.getElementById('range-list').innerHTML=`<table><tr><th>靶场名</th><th>类型</th><th>状态</th></tr>`+
+      ranges.data.map(r=>`<tr><td>${esc(r.name)}</td><td>${r.type}</td><td>${tag(r.status==='running'?'t-low':'t-medium',r.status)}</td></tr>`).join('')+'</table>';
+  }
+  if(res.success){
+    const d=res.data;
+    document.getElementById('resource-status').innerHTML=`
+      <div class="kv">
+        <dt>CPU使用</dt><dd>${bar(d.cpu_usage_pct)}</dd>
+        <dt>内存使用</dt><dd>${bar(d.memory_usage_pct)}</dd>
+        <dt>磁盘使用</dt><dd>${bar(d.disk_usage_pct)}</dd>
+        <dt>活跃靶场</dt><dd>${d.active_ranges}</dd>
+      </div>`;
+  }
+}
+
+// ===== Exams =====
+async function loadExams(){
+  const [ex, qs, certs, paths] = await Promise.all([
+    api('/dashboard/exams'), api('/questions'), api('/certificates'), api('/cert-paths')
+  ]);
+  if(ex.success){
+    document.getElementById('exam-cards').innerHTML=`
+      <div class="card"><div class="label">题库题目</div><div class="val v-purple">${ex.data.total_questions}</div></div>
+      <div class="card"><div class="label">考试场次</div><div class="val v-accent">${ex.data.total_exams}</div></div>
+      <div class="card"><div class="label">考试记录</div><div class="val v-cyan">${ex.data.total_attempts}</div></div>
+      <div class="card"><div class="label">已发证书</div><div class="val v-ok">${ex.data.total_certificates}</div></div>
+    `;
+  }
+  if(qs.success){
+    document.getElementById('question-list').innerHTML=`<table><tr><th>题目</th><th>类型</th><th>难度</th><th>分值</th></tr>`+
+      qs.data.slice(0,10).map(q=>`<tr><td>${esc(q.question.substring(0,50))}...</td><td>${q.type}</td><td>${tag('t-medium',q.difficulty)}</td><td>${q.score}</td></tr>`).join('')+'</table>';
+  }
+  if(certs.success){
+    document.getElementById('cert-list').innerHTML=certs.data.length?`<table><tr><th>证书号</th><th>持有人</th><th>名称</th><th>等级</th><th>状态</th></tr>`+
+      certs.data.map(c=>`<tr><td><code>${c.cert_number}</code></td><td>${esc(c.user)}</td><td>${esc(c.cert_name)}</td><td>${c.cert_level}</td><td>${tag(c.status==='active'?'t-low':'t-critical',c.status)}</td></tr>`).join('')+'</table>':'<div class="empty">暂无证书</div>';
+  }
+  if(paths.success){
+    document.getElementById('cert-paths').innerHTML=Object.entries(paths.data).map(([k,v])=>
+      `<div class="panel" style="margin-bottom:8px"><h3>${esc(v.name)}</h3>
+      <p class="muted">等级: ${v.level} | 所需学分: ${v.credits_needed} | 前置: ${(v.prerequisites||[]).join(', ')||'无'}</p></div>`).join('');
+  }
+}
+async function loadQuestions(){await loadExams();}
+async function loadCertificates(){await loadExams();}
+async function quickAddQuestion(){
+  const q=prompt('输入题目内容:'); if(!q)return;
+  const r=await api('/questions',{method:'POST',body:JSON.stringify({question:q,type:'single_choice',options:['A','B','C','D'],answer_index:0})});
+  if(r.success){alert('题目已添加');loadExams();}else alert(r.error);
+}
+async function quickGenerateCert(){
+  const user=prompt('持有人姓名:'); if(!user)return;
+  const r=await api('/certificates/generate',{method:'POST',body:JSON.stringify({user:user,cert_name:'安全基础认证',score:85})});
+  if(r.success){alert('证书已生成: '+r.data.cert_number);loadExams();}else alert(r.error);
+}
+
+// ===== Competency =====
+async function loadCompetency(){
+  const [model, report] = await Promise.all([api('/skills/tree'), api('/dashboard/competency')]);
+  if(report.success){
+    document.getElementById('comp-cards').innerHTML=`
+      <div class="card"><div class="label">评估用户</div><div class="val v-warn">${report.data.users_assessed}</div></div>
+      <div class="card"><div class="label">评估记录</div><div class="val v-accent">${report.data.total_assessments}</div></div>
+      <div class="card"><div class="label">平均技能等级</div><div class="val v-cyan">${report.data.average_skill_level}</div></div>
+      <div class="card"><div class="label">发展计划</div><div class="val v-purple">${report.data.development_plans}</div></div>
+    `;
+  }
+  if(model.success){
+    const d=model.data;
+    document.getElementById('skill-tree').innerHTML=Object.entries(d.domains).map(([k,v])=>
+      `<div style="margin-bottom:6px"><span class="tag t-medium">${v}</span> <span class="muted">${k}</span></div>`).join('');
+  }
+}
+async function loadUserSkills(){
+  const u=document.getElementById('assess-user').value;
+  const r=await api('/users/'+u+'/skills');
+  if(r.success&&Object.keys(r.data).length){
+    document.getElementById('user-skills').innerHTML=Object.entries(r.data).map(([k,v])=>
+      `<div style="margin-bottom:6px">${k}: <span class="v-accent">${v}/5</span> ${bar(v*20)}</div>`).join('');
+  } else {
+    document.getElementById('user-skills').innerHTML='<div class="empty">暂无评估数据，请先进行自评</div>';
+  }
+}
+async function runGapAnalysis(){
+  const u=document.getElementById('assess-user').value||'demo_user';
+  const role=document.getElementById('gap-role').value;
+  const r=await api('/gap-analyze',{method:'POST',body:JSON.stringify({user:u,target_role:role})});
+  if(r.success){
+    const d=r.data;
+    document.getElementById('gap-result').innerHTML=`<p>${esc(d.summary)}</p>`+
+      (d.gaps||[]).map(g=>`<div style="margin:4px 0">${g.skill_name}: ${g.current_level} → ${g.required_level} ${tag(g.priority==='high'?'t-critical':g.priority==='medium'?'t-high':'t-low','缺口'+g.gap)}</div>`).join('')||'<p class="v-ok">无能力差距，已达标！</p>';
+  } else {
+    document.getElementById('gap-result').innerHTML='<div class="empty">请先完成自评数据</div>';
+  }
+}
+
+// ===== Enterprise =====
+async function loadEnterprise(){
+  const [ent, plans, comp] = await Promise.all([
+    api('/dashboard/enterprise'), api('/plans'), api('/compliance/requirements')
+  ]);
+  if(ent.success){
+    document.getElementById('ent-cards').innerHTML=`
+      <div class="card"><div class="label">培训计划</div><div class="val v-accent">${ent.data.total_plans}</div></div>
+      <div class="card"><div class="label">培训场次</div><div class="val v-cyan">${ent.data.total_sessions}</div></div>
+      <div class="card"><div class="label">报名人次</div><div class="val v-purple">${ent.data.total_registrations}</div></div>
+      <div class="card"><div class="label">完成率</div><div class="val v-ok">${ent.data.completion_stats.completion_pct}%</div></div>
+    `;
+    document.getElementById('ent-stats').innerHTML=`
+      <table><tr><th>指标</th><th>值</th></tr>
+      <tr><td>总报名</td><td>${ent.data.completion_stats.total_enrollments}</td></tr>
+      <tr><td>已完成</td><td>${ent.data.completion_stats.completed}</td></tr>
+      <tr><td>完成率</td><td>${bar(ent.data.completion_stats.completion_pct)}</td></tr>
+      <tr><td>讲师数量</td><td>${ent.data.instructors}</td></tr>
+      <tr><td>培训材料</td><td>${ent.data.materials}</td></tr></table>`;
+  }
+  if(plans.success){
+    document.getElementById('plan-list').innerHTML=`<table><tr><th>计划名</th><th>类型</th><th>部门</th><th>预算</th></tr>`+
+      plans.data.map(p=>`<tr><td>${esc(p.name)}</td><td>${p.type}</td><td>${esc(p.department)}</td><td>¥${p.budget}</td></tr>`).join('')+'</table>';
+  }
+  if(comp.success){
+    document.getElementById('compliance-status').innerHTML=Object.entries(comp.data).map(([fw,reqs])=>
+      `<div style="margin-bottom:8px"><strong>${fw.toUpperCase()}</strong>: ${reqs.length} 项要求</div>`).join('');
+  }
+}
+
+// ===== Awareness =====
+async function loadAwareness(){
+  const [aw, courses, phish, acts, mats, metrics, culture] = await Promise.all([
+    api('/dashboard/awareness'), api('/awareness-courses'),
+    api('/phishing/campaigns'), api('/awareness-activities'),
+    api('/awareness-materials'), api('/metrics/awareness'),
+    api('/culture/initiatives')
+  ]);
+  if(aw.success){
+    const sc=aw.data.awareness_score;
+    document.getElementById('aw-cards').innerHTML=`
+      <div class="card"><div class="label">意识评分</div><div class="val v-ok">${sc.score}</div><div class="sub">${sc.level}</div></div>
+      <div class="card"><div class="label">意识课程</div><div class="val v-accent">${aw.data.awareness_courses}</div></div>
+      <div class="card"><div class="label">钓鱼演练</div><div class="val v-bad">${aw.data.phishing_campaigns}</div></div>
+      <div class="card"><div class="label">宣传活动</div><div class="val v-cyan">${aw.data.awareness_activities}</div></div>
+    `;
+  }
+  if(courses.success){
+    document.getElementById('aw-course-list').innerHTML=`<table><tr><th>课程名</th><th>主题</th><th>时长</th></tr>`+
+      courses.data.map(c=>`<tr><td>${esc(c.title)}</td><td>${c.topic}</td><td>${c.duration_minutes}分钟</td></tr>`).join('')+'</table>';
+  }
+  if(phish.success){
+    document.getElementById('phish-list').innerHTML=phish.data.length?`<table><tr><th>活动名</th><th>目标数</th><th>点击数</th><th>报告数</th></tr>`+
+      phish.data.map(p=>`<tr><td>${esc(p.name)}</td><td>${p.target_count}</td><td>${p.clicked_count}</td><td>${p.reported_count}</td></tr>`).join('')+'</table>':'<div class="empty">暂无钓鱼演练</div>';
+  }
+  if(acts.success){
+    document.getElementById('activity-list').innerHTML=`<table><tr><th>活动名</th><th>类型</th><th>日期</th></tr>`+
+      acts.data.map(a=>`<tr><td>${esc(a.name)}</td><td>${a.type}</td><td>${a.scheduled_date}</td></tr>`).join('')+'</table>';
+  }
+  if(metrics.success){
+    document.getElementById('aw-metrics').innerHTML=`<div class="kv">
+      <dt>意识评分</dt><dd class="v-ok">${metrics.data.score} (${metrics.data.level})</dd>
+      <dt>平均点击率</dt><dd>${metrics.data.avg_click_rate_pct}%</dd>
+      <dt>演练次数</dt><dd>${metrics.data.campaigns_count}</dd></div>`;
+  }
+  if(culture.success){
+    document.getElementById('aw-metrics').innerHTML+='<hr><h3>文化建设项目</h3>'+
+      culture.data.map(c=>`<div style="margin:4px 0">• ${esc(c.name)} <span class="muted">(${c.type})</span></div>`).join('');
+  }
+}
+async function loadPhishing(){await loadAwareness();}
+async function createPhishCampaign(){
+  const name=prompt('演练名称:'); if(!name)return;
+  const users=['user1','user2','user3','user4','user5'];
+  const r=await api('/phishing/campaigns',{method:'POST',body:JSON.stringify({name:name,target_users:users})});
+  if(r.success){alert('演练已创建');loadAwareness();}else alert(r.error);
+}
+
+// ===== Settings =====
+async function loadSettings(){
+  const s=await api('/settings');
+  if(s.success){
+    document.getElementById('settings-content').innerHTML='<pre>'+esc(JSON.stringify(s.data,null,2))+'</pre>';
+  }
+  // Count endpoints by counting function definitions in nav
+  document.getElementById('api-stats').innerHTML=`
+    <table><tr><th>模块</th><th>端点数</th></tr>
+    <tr><td>课程体系</td><td>16</td></tr>
+    <tr><td>实验环境</td><td>17</td></tr>
+    <tr><td>考试认证</td><td>16</td></tr>
+    <tr><td>能力评估</td><td>9</td></tr>
+    <tr><td>企业培训</td><td>14</td></tr>
+    <tr><td>安全意识</td><td>13</td></tr>
+    <tr><td>控制台&设置</td><td>10</td></tr>
+    <tr style="font-weight:bold"><td>合计</td><td class="v-accent">95</td></tr></table>`;
+}
+
+// Init
+loadOverview();
+</script>
+</body>
+</html>

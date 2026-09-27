@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>任务执行控制台 · Task Console v2</title>
+<style>
+:root{
+  --bg:#0d1117; --bg2:#161b22; --bg3:#1f2630; --border:#2d3644;
+  --fg:#e6edf3; --muted:#8b98a8; --accent:#3ddc84; --accent2:#58a6ff;
+  --crit:#ff5c5c; --high:#ff9f43; --med:#f1c40f; --low:#6cc4ff; --info:#8b98a8;
+  --ok:#3ddc84; --warn:#f1c40f; --err:#ff5c5c;
+}
+html[data-theme="light"]{
+  --bg:#f5f7fa; --bg2:#ffffff; --bg3:#eaeef3; --border:#d0d7de;
+  --fg:#1f2328; --muted:#57606a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--fg);font-size:14px;overflow:hidden}
+a{color:var(--accent2);text-decoration:none}
+.layout{display:grid;grid-template-columns:230px 1fr;grid-template-rows:54px 1fr;height:100vh}
+/* sidebar */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:12px 0;overflow-y:auto}
+.brand{padding:10px 18px;font-weight:700;color:var(--accent);border-bottom:1px solid var(--border);margin-bottom:8px}
+.nav-group{padding:6px 10px;font-size:11px;color:var(--muted);text-transform:letter-spacing;margin-top:8px}
+.nav-item{display:flex;gap:8px;align-items:center;padding:9px 18px;cursor:pointer;color:var(--fg);border-left:3px solid transparent}
+.nav-item:hover{background:var(--bg3)}
+.nav-item.active{background:var(--bg3);border-left-color:var(--accent);color:var(--accent)}
+/* topbar */
+.topbar{grid-column:1/3;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;padding:0 16px}
+.crumb{color:var(--muted);font-size:13px}
+.crumb b{color:var(--fg)}
+.searchbox{position:relative;flex:0 1 320px}
+.searchbox input{width:100%;padding:7px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--fg)}
+.suggest{position:absolute;top:38px;left:0;right:0;background:var(--bg2);border:1px solid var(--border);border-radius:6px;z-index:50;display:none;max-height:300px;overflow:auto}
+.suggest .row{padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between}
+.suggest .row:hover{background:var(--bg3)}
+.bell{position:relative;cursor:pointer;font-size:18px}
+.bell .dot{position:absolute;top:-4px;right:-6px;background:var(--err);color:#fff;border-radius:10px;font-size:10px;padding:1px 5px}
+.user{margin-left:auto;display:flex;align-items:center;gap:8px;cursor:pointer}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#000;display:grid;place-items:center;font-weight:700}
+/* main */
+.main{overflow-y:auto;padding:18px;background:var(--bg)}
+.view{display:none}.view.active{display:block}
+h2{margin-bottom:12px;font-size:18px}
+h3{margin:14px 0 8px;font-size:15px;color:var(--muted)}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--fg);cursor:pointer;font-size:13px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
+.btn.danger{background:var(--err);color:#fff;border-color:var(--err)}
+.btn.sm{padding:3px 8px;font-size:12px}
+input,select,textarea{padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--fg);font-size:13px}
+label{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:600;cursor:pointer;user-select:none}
+tr:hover td{background:var(--bg3)}
+.badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge.critical{background:rgba(255,92,92,.15);color:var(--crit)}
+.badge.high{background:rgba(255,159,67,.15);color:var(--high)}
+.badge.medium{background:rgba(241,196,15,.15);color:var(--med)}
+.badge.low{background:rgba(108,196,255,.15);color:var(--low)}
+.badge.info{background:rgba(139,152,168,.15);color:var(--info)}
+.badge.done,.badge.fixed,.badge.active{background:rgba(61,220,132,.15);color:var(--ok)}
+.badge.running{background:rgba(88,166,255,.15);color:var(--accent2)}
+.badge.failed,.badge.open{background:rgba(255,92,92,.15);color:var(--err)}
+.badge.pending{background:rgba(241,196,15,.15);color:var(--med)}
+.progress{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.progress>div{height:100%;background:var(--accent);transition:width .4s}
+.timeline{border-left:2px solid var(--border);margin:8px 0 0 8px;padding-left:14px}
+.tstep{margin-bottom:10px;position:relative}
+.tstep::before{content:"";position:absolute;left:-21px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--border)}
+.tstep.done::before{background:var(--ok)}
+.tstep.running::before{background:var(--accent2);box-shadow:0 0 6px var(--accent2)}
+.log{background:#0a0d12;border:1px solid var(--border);border-radius:6px;padding:8px;font-family:Consolas,monospace;font-size:12px;max-height:160px;overflow:auto;color:#9ecb9e}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.tab{padding:8px 14px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.stat{text-align:center;padding:10px}
+.stat .num{font-size:26px;font-weight:700;color:var(--accent)}
+.stat .lbl{font-size:12px;color:var(--muted)}
+.drawer{position:fixed;top:0;right:-520px;width:500px;height:100vh;background:var(--bg2);border-left:1px solid var(--border);z-index:100;transition:right .3s;overflow-y:auto;padding:18px}
+.drawer.open{right:0}
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;display:none}
+.modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;z-index:110;width:480px;display:none;max-height:80vh;overflow:auto}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg3);border-left:3px solid var(--accent);padding:10px 16px;border-radius:6px;z-index:200;display:none}
+.pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:10px}
+.bulkbar{display:none;background:rgba(61,220,132,.08);border:1px solid var(--accent);padding:8px 12px;border-radius:6px;margin-bottom:10px;align-items:center;gap:10px}
+.filterpanel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.kv{display:grid;grid-template-columns:120px 1fr;gap:6px 10px;margin:8px 0}
+.kv .k{color:var(--muted)}
+.comment{border-left:2px solid var(--border);padding:6px 10px;margin:6px 0}
+.virtualbox{height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:6px}
+.vrow{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
+.theme-dot{width:22px;height:22px;border-radius:50%;display:inline-block;cursor:pointer;border:2px solid transparent}
+.theme-dot.active{border-color:#fff}
+@media(max-width:900px){.layout{grid-template-columns:60px 1fr}.sidebar .lbl{display:none}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">⚡ TaskConsole v2</div>
+    <div class="nav-group">主工作区</div>
+    <div class="nav-item active" data-view="tasks"><span>▶️</span><span class="lbl">任务执行面板</span></div>
+    <div class="nav-item" data-view="reports"><span>📄</span><span class="lbl">交互式报告</span></div>
+    <div class="nav-item" data-view="data"><span>🗃️</span><span class="lbl">数据管理</span></div>
+    <div class="nav-group">感知与体验</div>
+    <div class="nav-item" data-view="notifications"><span>🔔</span><span class="lbl">通知活动流</span></div>
+    <div class="nav-item" data-view="perf"><span>⚡</span><span class="lbl">性能与体验</span></div>
+    <div class="nav-item" data-view="nav"><span>🧭</span><span class="lbl">导航与布局</span></div>
+  </aside>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <span class="crumb" id="crumb">首页 / <b id="crumbCur">任务执行面板</b></span>
+    <div class="searchbox">
+      <input id="gsearch" placeholder="全局搜索：页面 / 漏洞 / 资产 / 报告 / 知识库…" autocomplete="off">
+      <div class="suggest" id="gsugg"></div>
+    </div>
+    <div class="bell" id="bell" title="通知">🔔<span class="dot" id="bellDot">0</span></div>
+    <div class="user" id="userBtn">
+      <div class="avatar">A</div><span id="userName">sec-analyst</span>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main" id="main">
+
+    <!-- ============ VIEW 1: TASKS ============ -->
+    <section class="view active" id="view-tasks">
+      <h2>▶️ 任务执行面板</h2>
+      <div class="card">
+        <h3>提交新任务</h3>
+        <div class="row">
+          <label>场景模板
+            <select id="scenarioSel" style="min-width:220px"></select>
+          </label>
+          <label>目标
+            <input id="targetIn" placeholder="https://example.com" style="min-width:260px">
+          </label>
+          <button class="btn" onclick="toggleAdv()">⚙ 高级配置</button>
+          <button class="btn primary" onclick="submitTask()">提交任务</button>
+        </div>
+        <div id="advBox" style="display:none;margin-top:10px" class="row">
+          <label>爬取深度 <input type="number" id="pDepth" value="3" style="width:80px"></label>
+          <label>并发线程 <input type="number" id="pThreads" value="10" style="width:80px"></label>
+          <label><input type="checkbox" id="pOwasp" checked> OWASP Top10</label>
+        </div>
+      </div>
+
+      <div class="card" id="liveCard" style="display:none">
+        <div class="row" style="justify-content:space-between">
+          <b id="liveTitle"></b>
+          <span id="liveStatus"></span>
+        </div>
+        <div class="progress" style="margin:8px 0"><div id="liveBar" style="width:0%"></div></div>
+        <div class="grid2">
+          <div>
+            <h3>执行步骤</h3>
+            <div class="timeline" id="liveSteps"></div>
+          </div>
+          <div>
+            <h3>实时日志</h3>
+            <div class="log" id="liveLog"></div>
+          </div>
+        </div>
+        <div class="row" id="liveActions" style="margin-top:10px"></div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <h3 style="margin:0">任务历史</h3>
+          <div class="row">
+            <input id="taskQ" placeholder="搜索目标/ID" oninput="loadTasks()">
+            <select id="taskStatus" onchange="loadTasks()">
+              <option value="">全部状态</option><option>pending</option><option>running</option>
+              <option>done</option><option>failed</option><option>cancelled</option>
+            </select>
+            <select id="taskSc" onchange="loadTasks()"><option value="">全部场景</option></select>
+          </div>
+        </div>
+        <table>
+          <thead><tr>
+            <th data-sort="created_at">时间</th><th>场景</th><th>目标</th><th data-sort="progress">进度</th>
+            <th>状态</th><th>风险分</th><th>操作</th>
+          </tr></thead>
+          <tbody id="taskTbody"></tbody>
+        </table>
+        <div class="pager">
+          <button class="btn sm" onclick="taskPage--;loadTasks()">上一页</button>
+          <span id="taskPageInfo"></span>
+          <button class="btn sm" onclick="taskPage++;loadTasks()">下一页</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VIEW 2: REPORTS ============ -->
+    <section class="view" id="view-reports">
+      <h2>📄 交互式报告查看器</h2>
+      <div class="card">
+        <div class="row">
+          <label>选择报告 <select id="repSel" style="min-width:280px" onchange="loadReport()"></select></label>
+          <button class="btn" onclick="exportCurReport()">⬇ 导出报告</button>
+          <select id="exportFmt"><option value="html">HTML</option><option value="markdown">Markdown</option>
+            <option value="json">JSON</option><option value="csv">CSV</option><option value="pdf">PDF</option></select>
+        </div>
+      </div>
+      <div class="bulkbar" id="bulkBar">
+        已选 <b id="bulkCount">0</b> 项
+        <select id="bulkStatus">
+          <option value="open">未修复</option><option value="in_progress">修复中</option>
+          <option value="fixed">已修复</option><option value="false_positive">误报</option>
+          <option value="accepted">接受风险</option>
+        </select>
+        <button class="btn sm primary" onclick="batchStatus()">批量更新状态</button>
+        <button class="btn sm" onclick="batchExport()">批量导出 CSV</button>
+        <button class="btn sm" onclick="clearSel()">清除选择</button>
+      </div>
+      <div class="card">
+        <div class="filterpanel">
+          <select id="fSeverity" onchange="loadVulns()"><option value="">全部严重度</option>
+            <option value="critical">Critical</option><option value="high">High</option>
+            <option value="medium">Medium</option><option value="low">Low</option></select>
+          <select id="fStatus" onchange="loadVulns()"><option value="">全部状态</option>
+            <option value="open">未修复</option><option value="in_progress">修复中</option>
+            <option value="fixed">已修复</option><option value="false_positive">误报</option>
+            <option value="accepted">接受风险</option></select>
+          <input id="fQ" placeholder="搜索 CVE / 标题 / 描述" oninput="loadVulns()" style="min-width:220px">
+          <button class="btn sm" onclick="vulnPage=1;loadVulns()">应用筛选</button>
+        </div>
+        <table>
+          <thead><tr>
+            <th><input type="checkbox" onclick="toggleAll(this)"></th>
+            <th>CVE</th><th>标题</th><th>严重度</th><th>CVSS</th><th>类型</th><th>状态</th><th>操作</th>
+          </tr></thead>
+          <tbody id="vulnTbody"></tbody>
+        </table>
+        <div class="pager">
+          <button class="btn sm" onclick="vulnPage--;loadVulns()">上一页</button>
+          <span id="vulnPageInfo"></span>
+          <button class="btn sm" onclick="vulnPage++;loadVulns()">下一页</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VIEW 3: DATA CRUD ============ -->
+    <section class="view" id="view-data">
+      <h2>🗃️ 数据管理 CRUD</h2>
+      <div class="tabs">
+        <div class="tab active" data-tab="assets" onclick="switchTab(this)">资产</div>
+        <div class="tab" data-tab="vulns" onclick="switchTab(this)">漏洞</div>
+        <div class="tab" data-tab="tasks" onclick="switchTab(this)">任务</div>
+        <div class="tab" data-tab="reports" onclick="switchTab(this)">报告</div>
+        <div class="tab" data-tab="knowledge_base" onclick="switchTab(this)">知识库</div>
+      </div>
+      <div class="card">
+        <div class="filterpanel">
+          <input id="crudQ" placeholder="搜索" oninput="crudPage=1;loadCrud()">
+          <select id="crudStatus" onchange="crudPage=1;loadCrud()"><option value="">全部状态</option></select>
+          <button class="btn sm primary" onclick="openCreate()">＋ 新增</button>
+          <button class="btn sm" onclick="exportCrud('csv')">⬇ CSV</button>
+          <button class="btn sm" onclick="exportCrud('json')">⬇ JSON</button>
+          <button class="btn sm danger" onclick="batchDeleteCrud()">🗑 批量删除</button>
+        </div>
+        <div id="crudTable"></div>
+        <div class="pager">
+          <button class="btn sm" onclick="crudPage--;loadCrud()">上一页</button>
+          <span id="crudPageInfo"></span>
+          <button class="btn sm" onclick="crudPage++;loadCrud()">下一页</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VIEW 4: NOTIFICATIONS ============ -->
+    <section class="view" id="view-notifications">
+      <h2>🔔 通知与活动流</h2>
+      <div class="grid2">
+        <div class="card">
+          <div class="row" style="justify-content:space-between">
+            <h3 style="margin:0">通知列表</h3>
+            <div class="row">
+              <button class="btn sm" onclick="markAllRead()">全部已读</button>
+              <button class="btn sm danger" onclick="clearNtf()">清空</button>
+            </div>
+          </div>
+          <select id="ntfType" onchange="loadNtf()">
+            <option value="">全部类型</option><option value="task_done">任务完成</option>
+            <option value="task_failed">任务失败</option><option value="security_alert">安全告警</option>
+            <option value="system">系统</option><option value="update">更新</option>
+          </select>
+          <div id="ntfList" style="margin-top:10px"></div>
+        </div>
+        <div>
+          <div class="card">
+            <h3>活动流</h3>
+            <div class="timeline" id="actList"></div>
+          </div>
+          <div class="card">
+            <h3>通知设置</h3>
+            <div id="ntfSettings"></div>
+            <button class="btn primary sm" onclick="saveNtfSettings()">保存设置</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VIEW 5: PERF ============ -->
+    <section class="view" id="view-perf">
+      <h2>⚡ 性能与体验</h2>
+      <div class="card">
+        <div class="grid2" id="perfCards"></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <h3>慢接口 Top10</h3>
+          <div id="slowApis"></div>
+        </div>
+        <div class="card">
+          <h3>缓存命中</h3>
+          <div id="cacheBox"></div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn sm" onclick="invalidateCache()">失效全部缓存</button>
+            <button class="btn sm" onclick="warmupCache()">预热缓存</button>
+            <button class="btn sm primary" onclick="reportPerf()">上报一次性能样本</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>优化建议</h3>
+        <div id="suggestList"></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <h3>骨架屏演示（首次加载）</h3>
+          <div id="skeletonBox" class="log">加载中…</div>
+        </div>
+        <div class="card">
+          <h3>虚拟滚动演示（5000 行）</h3>
+          <div class="virtualbox" id="virtualBox"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VIEW 6: NAV ============ -->
+    <section class="view" id="view-nav">
+      <h2>🧭 导航与布局</h2>
+      <div class="card">
+        <h3>全局搜索（输入即建议）</h3>
+        <div class="searchbox" style="flex:1"><input id="navSearch" placeholder="试试输入：sql / 报告 / 资产" autocomplete="off">
+          <div class="suggest" id="navSugg"></div></div>
+        <div id="globalResult" style="margin-top:10px"></div>
+      </div>
+      <div class="card">
+        <h3>主题切换</h3>
+        <div class="row">
+          <button class="btn sm" onclick="setTheme('dark')">🌙 深色</button>
+          <button class="btn sm" onclick="setTheme('light')">☀️ 浅色</button>
+          <span>主题色：</span>
+          <span class="theme-dot" style="background:#3ddc84" onclick="setPrimary('#3ddc84')"></span>
+          <span class="theme-dot" style="background:#58a6ff" onclick="setPrimary('#58a6ff')"></span>
+          <span class="theme-dot" style="background:#ff9f43" onclick="setPrimary('#ff9f43')"></span>
+        </div>
+        <pre id="themeOut" style="margin-top:10px;color:var(--muted)"></pre>
+      </div>
+      <div class="card">
+        <h3>面包屑演示</h3>
+        <div id="crumbDemo"></div>
+      </div>
+      <div class="card">
+        <h3>菜单配置</h3>
+        <div id="menuBox"></div>
+      </div>
+      <div class="card">
+        <h3>快捷操作 / 最近访问 / 收藏</h3>
+        <div id="quickBox"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- DRAWER -->
+<div class="mask" id="mask" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="row" style="justify-content:space-between"><h3 id="dwTitle">漏洞详情</h3>
+    <button class="btn sm" onclick="closeDrawer()">✕</button></div>
+  <div id="dwBody"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <h3 id="mTitle">新增</h3>
+  <div id="mBody" style="margin:10px 0"></div>
+  <div class="row" style="justify-content:flex-end">
+    <button class="btn" onclick="closeModal()">取消</button>
+    <button class="btn primary" onclick="submitModal()">保存</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "/api/v1/task-console";
+let taskPage=1, vulnPage=1, crudPage=1;
+let curReport="", curCrud="assets", selVulns=new Set();
+let scenarios=[], sortField="created_at";
+
+async function api(path, opts={}){
+  const r = await fetch(API+path, {headers:{"Content-Type":"application/json"}, ...opts});
+  const j = await r.json().catch(()=>({success:false,error:"bad json"}));
+  if(!j.success){ toast("❌ "+(j.error||"error")); throw new Error(j.error); }
+  return j.data;
+}
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.style.display="block";
+  clearTimeout(t._h); t._h=setTimeout(()=>t.style.display="none",2200); }
+function esc(s){ return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]); }
+function sevBadge(s){ return `<span class="badge ${s}">${s}</span>`; }
+function statusBadge(s){ return `<span class="badge ${s}">${s}</span>`; }
+
+/* ---------- view router ---------- */
+document.querySelectorAll(".nav-item").forEach(el=>{
+  el.onclick=()=>{
+    document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
+    el.classList.add("active");
+    const v=el.dataset.view;
+    document.querySelectorAll(".view").forEach(s=>s.classList.remove("active"));
+    document.getElementById("view-"+v).classList.add("active");
+    document.getElementById("crumbCur").textContent=el.innerText.trim();
+    loadView(v);
+  };
+});
+function loadView(v){
+  if(v==="tasks"){loadScenarios();loadTasks();}
+  if(v==="reports"){loadReportList();}
+  if(v==="data"){loadCrud();}
+  if(v==="notifications"){loadNtf();loadAct();loadNtfSettings();}
+  if(v==="perf"){loadPerf();loadSkeleton();loadVirtual();}
+  if(v==="nav"){loadNav();}
+}
+
+/* ---------- TASKS ---------- */
+async function loadScenarios(){
+  scenarios = await api("/scenarios");
+  const sel=document.getElementById("scenarioSel");
+  sel.innerHTML = scenarios.map(s=>`<option value="${s.code}">${s.icon} ${s.name}</option>`).join("")
+    + `<option value="">-- 选择场景 --</option>`;
+  const sc=document.getElementById("taskSc");
+  sc.innerHTML=`<option value="">全部场景</option>`+scenarios.map(s=>`<option value="${s.code}">${s.name}</option>`).join("");
+}
+function toggleAdv(){ document.getElementById("advBox").style.display =
+  document.getElementById("advBox").style.display==="none"?"flex":"none"; }
+async function submitTask(){
+  const sc=document.getElementById("scenarioSel").value;
+  const tg=document.getElementById("targetIn").value.trim();
+  const params={depth:+document.getElementById("pDepth").value,
+    threads:+document.getElementById("pThreads").value,
+    check_owasp:document.getElementById("pOwasp").checked};
+  const t = await api("/tasks",{method:"POST",body:JSON.stringify({scenario:sc,target:tg,params})});
+  toast("任务已提交: "+t.task_id);
+  loadTasks(); showLive(t.task_id);
+}
+async function loadTasks(){
+  const q=document.getElementById("taskQ").value;
+  const st=document.getElementById("taskStatus").value;
+  const sc=document.getElementById("taskSc").value;
+  const d = await api(`/tasks?page=${taskPage}&page_size=10&q=${encodeURIComponent(q)}&status=${st}&scenario=${sc}&sort_by=${sortField}&sort_dir=desc`);
+  document.getElementById("taskPageInfo").textContent=`第 ${d.page} 页 / 共 ${d.total} 条`;
+  document.getElementById("taskTbody").innerHTML = d.items.map(t=>`
+    <tr>
+      <td>${t.created_at}</td><td>${t.scenario_name}</td><td>${esc(t.target)}</td>
+      <td><div class="progress" style="width:100px"><div style="width:${t.progress}%"></div></div> ${t.progress}%</td>
+      <td>${statusBadge(t.status)}</td>
+      <td>${t.result? t.result.risk_score : "-"}</td>
+      <td>
+        <button class="btn sm" onclick="showLive('${t.task_id}')">详情</button>
+        <button class="btn sm" onclick="retryT('${t.task_id}')">重试</button>
+        <button class="btn sm" onclick="cancelT('${t.task_id}')">取消</button>
+        <button class="btn sm" onclick="delT('${t.task_id}')">删除</button>
+        <button class="btn sm" onclick="exportT('${t.task_id}')">导出</button>
+        <button class="btn sm" onclick="shareT('${t.task_id}')">分享</button>
+      </td>
+    </tr>`).join("");
+}
+async function showLive(tid){
+  const t = await api("/tasks/"+tid);
+  document.getElementById("liveCard").style.display="block";
+  document.getElementById("liveTitle").textContent=`${t.scenario_name} — ${t.target} (${tid})`;
+  document.getElementById("liveStatus").innerHTML=statusBadge(t.status);
+  document.getElementById("liveBar").style.width=t.progress+"%";
+  document.getElementById("liveSteps").innerHTML=(t.steps||[]).map(s=>
+    `<div class="tstep ${s.status}">${s.name} <small style="color:var(--muted)">${s.duration_ms}ms</small></div>`).join("");
+  document.getElementById("liveLog").innerHTML=(t.logs||[]).map(esc).join("<br>")||"(暂无日志)";
+  document.getElementById("liveActions").innerHTML=`
+    <button class="btn sm" onclick="retryT('${tid}')">重试</button>
+    <button class="btn sm" onclick="cancelT('${tid}')">取消</button>
+    <button class="btn sm" onclick="exportT('${tid}')">导出报告</button>
+    <button class="btn sm" onclick="shareT('${tid}')">生成分享链接</button>`;
+  if(t.result){
+    document.getElementById("liveActions").insertAdjacentHTML("beforeend",
+      `<span class="badge done">风险分 ${t.result.risk_score} · 发现 ${t.result.findings_count}</span>`);
+  }
+  document.getElementById("liveCard").scrollIntoView({behavior:"smooth"});
+}
+async function retryT(id){ await api(`/tasks/${id}/retry`,{method:"POST"}); toast("已重试"); loadTasks(); showLive(id); }
+async function cancelT(id){ await api(`/tasks/${id}/cancel`,{method:"POST"}); toast("已取消"); loadTasks(); }
+async function delT(id){ if(!confirm("确认删除该任务？"))return; await api(`/tasks/${id}`,{method:"DELETE"}); toast("已删除"); loadTasks(); }
+async function exportT(id){
+  const d = await api(`/tasks/${id}/export?fmt=json`);
+  prompt("导出内容（已生成）：", d.content.slice(0,200));
+}
+async function shareT(id){ const d=await api(`/tasks/${id}/share`); toast("分享链接: "+d.share_url); }
+
+/* ---------- REPORTS ---------- */
+async function loadReportList(){
+  const d = await api("/reports?page=1&page_size=50");
+  const sel=document.getElementById("repSel");
+  sel.innerHTML=d.items.map(r=>`<option value="${r.report_id}">${esc(r.title)}</option>`).join("");
+  curReport = d.items[0]?.report_id || "";
+  if(curReport) loadReport();
+}
+async function loadReport(){
+  if(!curReport) return;
+  vulnPage=1; loadVulns();
+}
+async function loadVulns(){
+  if(!curReport) return;
+  const sev=document.getElementById("fSeverity").value;
+  const st=document.getElementById("fStatus").value;
+  const q=document.getElementById("fQ").value;
+  const d = await api(`/reports/${curReport}/vulns?page=${vulnPage}&page_size=10&severity=${sev}&status=${st}&q=${encodeURIComponent(q)}&sort_by=cvss&sort_dir=desc`);
+  document.getElementById("vulnPageInfo").textContent=`第 ${d.page} 页 / 共 ${d.total} 条`;
+  document.getElementById("vulnTbody").innerHTML=d.items.map(v=>`
+    <tr>
+      <td><input type="checkbox" ${selVulns.has(v.vuln_id)?"checked":""} onchange="toggleSel('${v.vuln_id}',this)"></td>
+      <td>${v.cve}</td><td>${esc(v.title)}</td>
+      <td>${sevBadge(v.severity)}</td><td>${v.cvss}</td><td>${v.vuln_type}</td>
+      <td>${statusBadge(v.status)}</td>
+      <td><button class="btn sm" onclick="openVuln('${v.vuln_id}')">详情</button></td>
+    </tr>`).join("");
+  updateBulk();
+}
+function toggleSel(id,el){ el.checked?selVulns.add(id):selVulns.delete(id); updateBulk(); }
+function toggleAll(el){
+  document.querySelectorAll("#vulnTbody input[type=checkbox]").forEach(c=>{
+    c.checked=el.checked;
+    const id=c.closest("tr").querySelector("button").onclick.toString().match(/'([^']+)'/)[1];
+    el.checked?selVulns.add(id):selVulns.delete(id);
+  });
+  updateBulk();
+}
+function updateBulk(){
+  document.getElementById("bulkCount").textContent=selVulns.size;
+  document.getElementById("bulkBar").style.display=selVulns.size?"flex":"none";
+}
+function clearSel(){ selVulns.clear(); loadVulns(); }
+async function batchStatus(){
+  const st=document.getElementById("bulkStatus").value;
+  const d=await api(`/reports/${curReport}/vulns/batch`,{method:"POST",body:JSON.stringify({vuln_ids:[...selVulns],status:st})});
+  toast(`已批量更新 ${d.updated} 条`); clearSel(); loadVulns();
+}
+async function batchExport(){
+  const d=await api(`/reports/${curReport}/vulns/batch?x=1`) /* placeholder */;
+  // 走专用导出
+  const exp = await api(`/reports/${curReport}/export?fmt=csv`);
+  prompt("批量导出 CSV（前 500 字）：", exp.content.slice(0,500));
+}
+async function openVuln(vid){
+  const v = await api(`/reports/${curReport}/vulns/${vid}`);
+  const cmts = await api(`/reports/${curReport}/vulns/${vid}/comments`);
+  document.getElementById("dwTitle").textContent=`${v.cve} · ${v.title}`;
+  document.getElementById("dwBody").innerHTML=`
+    <div class="kv">
+      <span class="k">严重度</span><span>${sevBadge(v.severity)}</span>
+      <span class="k">CVSS</span><span>${v.cvss}</span>
+      <span class="k">类型</span><span>${v.vuln_type}</span>
+      <span class="k">受影响资产</span><span>${esc(v.asset)}</span>
+      <span class="k">当前状态</span><span id="dwStatus">${statusBadge(v.status)}</span>
+    </div>
+    <h3>描述</h3><p>${esc(v.description)}</p>
+    <h3>证据</h3><div class="log">${esc(v.evidence)}</div>
+    <h3>修复建议</h3><p>${esc(v.fix)}</p>
+    <h3>POC</h3><div class="log">${esc(v.poc)}</div>
+    <h3>参考</h3><p><a href="${esc(v.reference)}" target="_blank">${esc(v.reference)}</a></p>
+    <h3>更新状态</h3>
+    <div class="row">
+      <select id="dwStatusSel">
+        <option value="open">未修复</option><option value="in_progress">修复中</option>
+        <option value="fixed">已修复</option><option value="false_positive">误报</option>
+        <option value="accepted">接受风险</option>
+      </select>
+      <button class="btn sm primary" onclick="saveVulnStatus('${vid}')">保存</button>
+    </div>
+    <h3>评论</h3>
+    <div id="dwCmts">${cmts.map(c=>`<div class="comment"><b>${esc(c.author)}</b> · ${c.created_at}<br>${esc(c.content)}
+      <a href="#" onclick="delCmt('${vid}','${c.comment_id}');return false">删除</a></div>`).join("")||"<i>暂无评论</i>"}</div>
+    <div class="row" style="margin-top:8px">
+      <input id="dwCmt" placeholder="写评论…" style="flex:1">
+      <button class="btn sm" onclick="addCmt('${vid}')">发送</button>
+    </div>`;
+  document.getElementById("dwStatusSel").value=v.status;
+  document.getElementById("drawer").classList.add("open");
+  document.getElementById("mask").style.display="block";
+}
+function closeDrawer(){ document.getElementById("drawer").classList.remove("open");
+  document.getElementById("mask").style.display="none"; }
+async function saveVulnStatus(vid){
+  const st=document.getElementById("dwStatusSel").value;
+  await api(`/reports/${curReport}/vulns/${vid}/status`,{method:"PATCH",body:JSON.stringify({status:st})});
+  toast("状态已更新"); closeDrawer(); loadVulns();
+}
+async function addCmt(vid){
+  const c=document.getElementById("dwCmt").value.trim(); if(!c)return;
+  await api(`/reports/${curReport}/vulns/${vid}/comments`,{method:"POST",body:JSON.stringify({author:"me",content:c})});
+  toast("评论已添加"); openVuln(vid);
+}
+async function delCmt(vid,cid){
+  await api(`/reports/${curReport}/vulns/${vid}/comments/${cid}`,{method:"DELETE"});
+  openVuln(vid);
+}
+async function exportCurReport(){
+  const fmt=document.getElementById("exportFmt").value;
+  const d=await api(`/reports/${curReport}/export?fmt=${fmt}`);
+  prompt(`导出 ${fmt}（前 600 字）：`, d.content.slice(0,600));
+}
+
+/* ---------- DATA CRUD ---------- */
+function switchTab(el){
+  document.querySelectorAll("#view-data .tab").forEach(t=>t.classList.remove("active"));
+  el.classList.add("active"); curCrud=el.dataset.tab; crudPage=1; loadCrud();
+}
+const CRUD_FIELDS={
+  assets:["name","ip_or_domain","type","env","status","owner"],
+  vulns:["title","severity","vuln_type","status","asset"],
+  tasks:["name","scenario","status","target"],
+  reports:["title","category","status","risk_score"],
+  knowledge_base:["title","category","tags","content"]
+};
+async function loadCrud(){
+  const q=document.getElementById("crudQ").value;
+  const st=document.getElementById("crudStatus").value;
+  const d=await api(`/crud/${curCrud}?page=${crudPage}&page_size=10&q=${encodeURIComponent(q)}&status=${st}`);
+  document.getElementById("crudPageInfo").textContent=`第 ${d.page} 页 / 共 ${d.total} 条`;
+  const rows=d.items;
+  if(!rows.length){document.getElementById("crudTable").innerHTML="<i>暂无数据</i>";return;}
+  const cols=Object.keys(rows[0]);
+  let html=`<table><thead><tr><th></th>`+cols.map(c=>`<th>${c}</th>`).join("")+`<th>操作</th></tr></thead><tbody>`;
+  rows.forEach(r=>{
+    html+=`<tr><td><input type="checkbox" class="crud-check" data-id="${r.id}"></td>`;
+    cols.forEach(c=>{
+      html+=`<td><span ondblclick="inlineEdit('${r.id}','${c}',this)">${esc(r[c])}</span></td>`;
+    });
+    html+=`<td><button class="btn sm" onclick="editItem('${r.id}')">编辑</button>
+      <button class="btn sm danger" onclick="delCrud('${r.id}')">删</button></td></tr>`;
+  });
+  html+="</tbody></table>";
+  document.getElementById("crudTable").innerHTML=html;
+}
+async function inlineEdit(id,field,el){
+  const nv=prompt("修改 "+field+":", el.textContent); if(nv===null)return;
+  await api(`/crud/${curCrud}/${id}/field`,{method:"PATCH",body:JSON.stringify({field,value:nv})});
+  toast("已更新 "+field); loadCrud();
+}
+let modalEditId=null;
+function openCreate(){ modalEditId=null;
+  document.getElementById("mTitle").textContent="新增记录 ("+curCrud+")";
+  const fields=CRUD_FIELDS[curCrud]||["name"];
+  document.getElementById("mBody").innerHTML=fields.map(f=>
+    `<div style="margin:6px 0"><label>${f}</label><br><input id="mf_${f}" style="width:100%"></div>`).join("");
+  document.getElementById("modal").style.display="block";
+}
+async function editItem(id){
+  const it=await api(`/crud/${curCrud}/${id}`);
+  modalEditId=id;
+  document.getElementById("mTitle").textContent="编辑记录 "+id;
+  const fields=CRUD_FIELDS[curCrud]||Object.keys(it);
+  document.getElementById("mBody").innerHTML=fields.map(f=>
+    `<div style="margin:6px 0"><label>${f}</label><br><input id="mf_${f}" style="width:100%" value="${esc(it[f]??"")}"></div>`).join("");
+  document.getElementById("modal").style.display="block";
+}
+function closeModal(){ document.getElementById("modal").style.display="none"; }
+async function submitModal(){
+  const fields=CRUD_FIELDS[curCrud]||[];
+  const data={};
+  fields.forEach(f=>{ const el=document.getElementById("mf_"+f); if(el) data[f]=el.value; });
+  try{
+    if(modalEditId) await api(`/crud/${curCrud}/${modalEditId}`,{method:"PUT",body:JSON.stringify({data})});
+    else await api(`/crud/${curCrud}`,{method:"POST",body:JSON.stringify({data})});
+    toast("保存成功"); closeModal(); loadCrud();
+  }catch(e){}
+}
+async function delCrud(id){ if(!confirm("确认删除？"))return;
+  await api(`/crud/${curCrud}/${id}`,{method:"DELETE"}); toast("已删除"); loadCrud(); }
+async function batchDeleteCrud(){
+  const ids=[...document.querySelectorAll(".crud-check:checked")].map(c=>c.dataset.id);
+  if(!ids.length){toast("未选择");return;}
+  const d=await api(`/crud/${curCrud}/batch-delete`,{method:"POST",body:JSON.stringify({ids})});
+  toast(`已删除 ${d.removed} 条`); loadCrud();
+}
+async function exportCrud(fmt){
+  const d=await api(`/crud/${curCrud}/export?fmt=${fmt}`);
+  prompt(`导出 ${fmt}（前 500 字）：`, d.content.slice(0,500));
+}
+
+/* ---------- NOTIFICATIONS ---------- */
+async function loadNtf(){
+  const t=document.getElementById("ntfType").value;
+  const d=await api(`/notifications?ntype=${t}&page=1&page_size=50`);
+  document.getElementById("ntfList").innerHTML=d.items.map(n=>`
+    <div class="comment" style="${n.read?"opacity:.5":""}">
+      <b>${esc(n.title)}</b> <span class="badge ${n.type}">${n.type}</span><br>
+      <span style="color:var(--muted);font-size:12px">${n.created_at}</span><br>
+      ${esc(n.body)}<br>
+      ${n.read?"":`<button class="btn sm" onclick="readNtf('${n.id}')">标已读</button>`}
+      <button class="btn sm danger" onclick="delNtf('${n.id}')">删除</button>
+    </div>`).join("");
+  const uc=await api("/notifications/unread-count");
+  document.getElementById("bellDot").textContent=uc.total;
+}
+async function readNtf(id){ await api(`/notifications/${id}/read`,{method:"POST"}); loadNtf(); }
+async function markAllRead(){ await api("/notifications/read-all",{method:"POST"}); toast("全部已读"); loadNtf(); }
+async function delNtf(id){ await api(`/notifications/${id}`,{method:"DELETE"}); loadNtf(); }
+async function clearNtf(){ if(!confirm("清空全部通知？"))return;
+  await api("/notifications/clear",{method:"POST"}); loadNtf(); }
+async function loadAct(){
+  const d=await api("/activity?limit=30");
+  document.getElementById("actList").innerHTML=d.map(a=>
+    `<div class="tstep done"><b>${esc(a.title)}</b><br><small style="color:var(--muted)">${a.time||a.created_at} · ${a.kind} · ${esc(a.ref)}</small></div>`).join("");
+}
+let ntfSettings=null;
+async function loadNtfSettings(){
+  ntfSettings=await api("/notification-settings");
+  let html="";
+  for(const [k,v] of Object.entries(ntfSettings.types)){
+    html+=`<div><label><input type="checkbox" id="nt_${k}" ${v?"checked":""}> ${k}</label></div>`;
+  }
+  html+=`<h3 style="margin-top:8px">推送方式</h3>`;
+  for(const [k,v] of Object.entries(ntfSettings.channels)){
+    html+=`<label><input type="checkbox" id="nc_${k}" ${v?"checked":""}> ${k}</label> `;
+  }
+  document.getElementById("ntfSettings").innerHTML=html;
+}
+async function saveNtfSettings(){
+  const types={}, channels={};
+  document.querySelectorAll("[id^=nt_]").forEach(el=>types[el.id.slice(3)]=el.checked);
+  document.querySelectorAll("[id^=nc_]").forEach(el=>channels[el.id.slice(3)]=el.checked);
+  await api("/notification-settings",{method:"PUT",body:JSON.stringify({types,channels})});
+  toast("设置已保存");
+}
+
+/* ---------- PERF ---------- */
+async function loadPerf(){
+  const d=await api("/perf/summary");
+  document.getElementById("perfCards").innerHTML=`
+    <div class="card" style="margin:0"><div class="stat"><div class="num">${d.load_p50_ms}</div><div class="lbl">页面加载 P50 (ms)</div></div></div>
+    <div class="card" style="margin:0"><div class="stat"><div class="num">${d.load_p95_ms}</div><div class="lbl">页面加载 P95 (ms)</div></div></div>
+    <div class="card" style="margin:0"><div class="stat"><div class="num">${d.api_p95_ms}</div><div class="lbl">API 响应 P95 (ms)</div></div></div>
+    <div class="card" style="margin:0"><div class="stat"><div class="num">${(d.error_rate*100).toFixed(2)}%</div><div class="lbl">错误率</div></div></div>`;
+  document.getElementById("slowApis").innerHTML = d.slow_apis.length?
+    "<table><tr><th>页面</th><th>API ms</th><th>加载 ms</th></tr>"+
+    d.slow_apis.map(s=>`<tr><td>${esc(s.page)}</td><td>${s.api_ms}</td><td>${s.load_ms}</td></tr>`).join("")+"</table>"
+    :"<i>暂无慢接口，已使用演示基线</i>";
+  document.getElementById("cacheBox").innerHTML=
+    `总命中率: <b>${(d.cache.overall_hit_rate*100).toFixed(1)}%</b><br>`+
+    d.cache.keys.map(k=>`${k.key}: ${(k.hit_rate*100).toFixed(1)}% (hit ${k.hit})`).join("<br>");
+  document.getElementById("suggestList").innerHTML="<ul>"+d.suggestions.map(s=>`<li>${esc(s)}</li>`).join("")+"</ul>";
+}
+async function loadSkeleton(){
+  const d=await api("/perf/skeleton?module=tasks");
+  document.getElementById("skeletonBox").textContent=JSON.stringify(d,null,2);
+}
+async function loadVirtual(){
+  const d=await api("/perf/virtual-list?offset=0&limit=100");
+  document.getElementById("virtualBox").innerHTML=d.items.map(r=>
+    `<div class="vrow"><span>${r.name}</span><span>${statusBadge(r.status)} · ${r.duration_s}s</span></div>`).join("");
+}
+async function invalidateCache(){ const d=await api("/perf/cache/invalidate?key="); toast("已失效: "+d.invalidated.join(",")); loadPerf(); }
+async function warmupCache(){ await api("/perf/cache/warmup",{method:"POST"}); toast("缓存已预热"); loadPerf(); }
+async function reportPerf(){
+  await api("/perf/metrics",{method:"POST",body:JSON.stringify({page:"manual",load_ms:Math.random()*800,api_ms:Math.random()*200,error:false})});
+  toast("样本已上报"); loadPerf();
+}
+
+/* ---------- NAV ---------- */
+async function loadNav(){
+  const menu=await api("/nav/menu");
+  document.getElementById("menuBox").innerHTML=menu.map(g=>
+    `<b>${g.icon} ${g.group}</b><br>`+g.items.map(i=>`· ${i.icon} ${i.label} (${i.route})`).join("<br>")+"<br>").join("");
+  const crumbs=await api("/nav/breadcrumbs?path=/tasks/reports");
+  document.getElementById("crumbDemo").innerHTML=crumbs.map((c,i)=>(i?" / ":"")+`<a href="${c.route}">${c.label}</a>`).join("");
+  const qa=await api("/quick-actions");
+  document.getElementById("quickBox").innerHTML=
+    "<b>快捷操作</b><br>"+qa.actions.map(a=>`${a.icon} <a href="${a.route}">${a.label}</a> ${a.hotkey?"("+a.hotkey+")":""}`).join(" · ")+
+    "<br><br><b>最近访问</b><br>"+qa.recent.map(r=>`· <a href="${r.route}">${r.title}</a>`).join("<br>")+
+    "<br><br><b>收藏</b><br>"+qa.favorites.map(f=>`· <a href="${f.route}">${f.title}</a>`).join("<br>");
+  const t=await api("/theme");
+  document.getElementById("themeOut").textContent=JSON.stringify(t,null,2);
+  document.documentElement.dataset.theme=t.mode;
+}
+async function setTheme(mode){ await api("/theme",{method:"PUT",body:JSON.stringify({patch:{mode}})});
+  document.documentElement.dataset.theme=mode; loadNav(); }
+async function setPrimary(c){ await api("/theme",{method:"PUT",body:JSON.stringify({patch:{primary_color:c}})});
+  document.documentElement.style.setProperty("--accent",c); toast("主题色已更新"); }
+
+/* global search */
+const gsBox=document.getElementById("gsearch");
+gsBox.addEventListener("input", async e=>{
+  const q=e.target.value.trim();
+  const box=document.getElementById("gsugg");
+  if(!q){box.style.display="none";return;}
+  const d=await api("/global-search?q="+encodeURIComponent(q));
+  const flat=[...(d.pages||[]),...(d.vulns||[]),...(d.assets||[]),...(d.reports||[]),...(d.kb||[])];
+  box.innerHTML=flat.map(f=>`<div class="row" onclick="pickSearch('${f.route}')"><span>${esc(f.title)}</span><small>${f.type}</small></div>`).join("")||"<div class='row'>无结果</div>";
+  box.style.display="block";
+});
+function pickSearch(route){ document.getElementById("gsugg").style.display="none";
+  document.getElementById("gsearch").value=""; location.hash=route; }
+document.addEventListener("click",e=>{ if(!e.target.closest(".searchbox")){
+  document.getElementById("gsugg").style.display="none"; document.getElementById("navSugg").style.display="none"; }});
+
+/* nav page search */
+const navIn=document.getElementById("navSearch");
+navIn.addEventListener("input", async e=>{
+  const q=e.target.value.trim();
+  const box=document.getElementById("navSugg");
+  const res=document.getElementById("globalResult");
+  if(!q){box.style.display="none";return;}
+  const sug=await api("/search/suggest?q="+encodeURIComponent(q));
+  box.innerHTML=sug.map(s=>`<div class="row"><span>${esc(s.label)}</span><small>${s.type}</small></div>`).join("")||"<div class='row'>无建议</div>";
+  box.style.display="block";
+  const d=await api("/global-search?q="+encodeURIComponent(q));
+  res.innerHTML=["pages","vulns","assets","reports","kb"].map(k=>
+    (d[k]&&d[k].length)?`<b>${k}</b><ul>${d[k].map(x=>`<li><a href="${x.route}">${esc(x.title)}</a></li>`).join("")}</ul>`:"").join("");
+});
+
+/* init */
+loadView("tasks");
+loadNtf();
+</script>
+</body>
+</html>

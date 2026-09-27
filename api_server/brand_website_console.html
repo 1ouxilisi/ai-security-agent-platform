@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>品牌官网落地页控制台 — AI Hacking Agent</title>
+<style>
+:root{
+  --bg:#0b1220; --panel:#111827; --panel2:#1f2937; --border:#1e3a5f;
+  --text:#e5e7eb; --muted:#94a3b8; --accent:#38bdf8; --green:#34d399;
+  --red:#f87171; --yellow:#fbbf24; --purple:#a78bfa;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+header{background:linear-gradient(90deg,#0b1220,#111827);padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+header h1{font-size:18px;color:var(--accent)}
+header .badge{background:var(--panel2);padding:3px 10px;border-radius:12px;font-size:12px;color:var(--muted)}
+.tabs{display:flex;background:var(--panel);padding:0 24px;border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{padding:12px 18px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover{color:var(--text)}
+main{padding:20px 24px;max-width:1400px;margin:0 auto}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.panel h3{color:var(--accent);margin-bottom:12px;font-size:15px;border-bottom:1px solid var(--border);padding-bottom:8px}
+.grid{display:grid;gap:12px}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.grid-4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:12px}
+.card .label{color:var(--muted);font-size:12px;margin-bottom:4px}
+.card .value{font-size:22px;font-weight:600;color:var(--text)}
+.card .value.green{color:var(--green)} .card .value.red{color:var(--red)} .card .value.yellow{color:var(--yellow)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:500;background:var(--panel2)}
+tr:hover td{background:#162032}
+.btn{background:var(--accent);color:#0b1220;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-weight:600;font-size:13px}
+.btn:hover{filter:brightness(1.15)}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn.danger{background:var(--red);color:#fff}
+.btn.sm{padding:3px 8px;font-size:12px}
+input,select,textarea{background:#0b1220;border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:4px;font-size:13px;width:100%}
+textarea{min-height:80px;font-family:monospace}
+.row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.row label{min-width:90px;color:var(--muted);font-size:13px}
+.status{padding:2px 8px;border-radius:10px;font-size:12px}
+.status.published{background:rgba(52,211,153,.15);color:var(--green)}
+.status.draft{background:rgba(251,191,36,.15);color:var(--yellow)}
+.status.offline{background:rgba(248,113,113,.15);color:var(--red)}
+.hidden{display:none}
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.toolbar input{width:auto;min-width:160px}
+pre{background:#0b1220;padding:10px;border-radius:4px;overflow:auto;max-height:300px;font-size:12px;color:#a5d6ff}
+.muted{color:var(--muted);font-size:12px}
+.bar-chart{display:flex;align-items:flex-end;gap:3px;height:120px;padding-top:8px}
+.bar-chart .bar{flex:1;background:var(--accent);border-radius:2px 2px 0 0;min-height:2px;position:relative}
+.bar-chart .bar:hover{background:var(--green)}
+.funnel-step{padding:8px 12px;margin:4px 0;border-radius:4px;background:var(--panel2);border-left:3px solid var(--accent);display:flex;justify-content:space-between}
+.tab-page{display:none}
+.tab-page.active{display:block}
+.tag{display:inline-block;background:var(--panel2);padding:2px 8px;border-radius:10px;font-size:11px;margin:2px}
+.footer{padding:20px 24px;color:var(--muted);text-align:center;font-size:12px;border-top:1px solid var(--border);margin-top:20px}
+</style>
+</head>
+<body>
+<header>
+  <h1>◈ 品牌官网落地页控制台</h1>
+  <span class="badge">v21 升级方向2</span>
+  <span class="badge" id="endpointCount">API: --</span>
+  <span class="badge" id="healthBadge">状态: --</span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="content">内容管理</div>
+  <div class="tab" data-tab="product">产品展示</div>
+  <div class="tab" data-tab="pricing">定价购买</div>
+  <div class="tab" data-tab="docs">文档支持</div>
+  <div class="tab" data-tab="blog">博客营销</div>
+  <div class="tab" data-tab="dashboard">运营仪表盘</div>
+</div>
+
+<main>
+<!-- ==================== 内容管理 ==================== -->
+<section class="tab-page active" id="tab-content">
+  <div class="panel">
+    <h3>页面管理</h3>
+    <div class="toolbar">
+      <button class="btn" onclick="loadPages()">刷新页面列表</button>
+      <input id="newPageTitle" placeholder="新页面标题">
+      <button class="btn ghost" onclick="createPage()">创建页面</button>
+      <select id="pageStatusFilter"><option value="">全部状态</option>
+        <option>已发布</option><option>草稿</option><option>已下线</option>
+      </select>
+    </div>
+    <div id="pagesTable"></div>
+  </div>
+
+  <div class="panel">
+    <h3>页面编辑器 / 预览</h3>
+    <div class="row"><label>页面 slug</label><input id="editSlug" placeholder="home"></div>
+    <div class="row"><label>标题</label><input id="editTitle"></div>
+    <div class="row"><label>正文 Markdown</label><textarea id="editContent"></textarea></div>
+    <div class="row"><label>SEO 标题</label><input id="editSeoTitle"></div>
+    <div class="row"><label>SEO 描述</label><input id="editSeoDesc"></div>
+    <div class="row">
+      <button class="btn" onclick="savePage()">保存编辑</button>
+      <button class="btn ghost" onclick="publishPage()">发布</button>
+      <button class="btn ghost" onclick="unpublishPage()">下线</button>
+      <button class="btn ghost" onclick="previewPage()">预览落地页 HTML</button>
+      <button class="btn ghost" onclick="saveVersion()">保存版本</button>
+    </div>
+    <pre id="previewOut"></pre>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="panel">
+      <h3>媒体库</h3>
+      <div class="toolbar">
+        <button class="btn sm" onclick="loadMedia()">刷新</button>
+        <input id="mediaName" placeholder="文件名">
+        <select id="mediaType"><option value="image">图片</option><option value="video">视频</option><option value="doc">文档</option><option value="icon">图标</option></select>
+        <button class="btn sm" onclick="uploadMedia()">上传</button>
+      </div>
+      <div id="mediaList"></div>
+    </div>
+    <div class="panel">
+      <h3>导航菜单</h3>
+      <div id="navList"></div>
+      <div class="row" style="margin-top:8px">
+        <input id="navLabel" placeholder="菜单名">
+        <input id="navUrl" placeholder="/url">
+        <button class="btn sm" onclick="addNav()">添加到主导航</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="panel">
+      <h3>多语言</h3>
+      <div id="langList"></div>
+    </div>
+    <div class="panel">
+      <h3>SEO 设置</h3>
+      <div class="row"><label>站点名</label><input id="seoSite"></div>
+      <div class="row"><label>默认标题</label><input id="seoTitle"></div>
+      <div class="row"><label>描述</label><input id="seoDesc"></div>
+      <button class="btn" onclick="saveSeo()">保存 SEO</button>
+      <button class="btn ghost" onclick="genSitemap()">生成 sitemap</button>
+      <pre id="sitemapOut"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 产品展示 ==================== -->
+<section class="tab-page" id="tab-product">
+  <div class="panel">
+    <h3>产品介绍</h3>
+    <div id="productList"></div>
+  </div>
+  <div class="panel">
+    <h3>功能列表</h3>
+    <div id="featureList"></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="panel">
+      <h3>版本对比</h3>
+      <div id="versionCompare"></div>
+    </div>
+    <div class="panel">
+      <h3>技术架构</h3>
+      <div id="archList"></div>
+    </div>
+  </div>
+  <div class="grid grid-2">
+    <div class="panel">
+      <h3>客户案例</h3>
+      <div id="caseList"></div>
+    </div>
+    <div class="panel">
+      <h3>合作伙伴</h3>
+      <div id="partnerList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 定价购买 ==================== -->
+<section class="tab-page" id="tab-pricing">
+  <div class="panel">
+    <h3>定价表</h3>
+    <div id="plansList"></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="panel">
+      <h3>购买流程</h3>
+      <div class="row"><label>套餐</label>
+        <select id="orderPlan"><option value="pro">专业版</option><option value="ent">企业版</option><option value="free">社区版</option></select>
+      </div>
+      <div class="row"><label>周期</label>
+        <select id="orderPeriod"><option value="yearly">年付</option><option value="monthly">月付</option><option value="quarterly">季付</option></select>
+      </div>
+      <div class="row"><label>用户数</label><input id="orderUsers" type="number" value="1"></div>
+      <div class="row"><label>优惠券</label><input id="orderCoupon" placeholder="WELCOME2026"></div>
+      <button class="btn" onclick="createOrder()">下单并支付</button>
+      <pre id="orderOut"></pre>
+    </div>
+    <div class="panel">
+      <h3>订单与支付记录</h3>
+      <div id="orderList"></div>
+    </div>
+  </div>
+  <div class="grid grid-2">
+    <div class="panel">
+      <h3>优惠券</h3>
+      <div id="couponList"></div>
+      <div class="row" style="margin-top:8px">
+        <input id="cpCode" placeholder="CODE">
+        <input id="cpValue" type="number" placeholder="面额" value="50">
+        <button class="btn sm" onclick="createCoupon()">创建</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>免费试用 / 企业定制</h3>
+      <div class="row"><label>联系方式</label><input id="trialContact" placeholder="email"></div>
+      <button class="btn sm" onclick="applyTrial()">申请 14 天试用</button>
+      <div id="trialStats" style="margin-top:10px"></div>
+      <hr style="border-color:var(--border);margin:12px 0">
+      <div class="row"><label>公司</label><input id="entCompany"></div>
+      <div class="row"><label>需求</label><input id="entReq"></div>
+      <button class="btn sm" onclick="customReq()">提交定制需求</button>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 文档支持 ==================== -->
+<section class="tab-page" id="tab-docs">
+  <div class="grid grid-2">
+    <div class="panel">
+      <h3>文档中心</h3>
+      <div id="docsList"></div>
+    </div>
+    <div class="panel">
+      <h3>知识库</h3>
+      <div id="kbList"></div>
+    </div>
+  </div>
+  <div class="grid grid-2">
+    <div class="panel">
+      <h3>工单系统</h3>
+      <div class="row"><label>标题</label><input id="ticketTitle"></div>
+      <div class="row"><label>优先级</label>
+        <select id="ticketPriority"><option value="low">低</option><option value="normal" selected>普通</option><option value="high">高</option></select>
+      </div>
+      <button class="btn sm" onclick="createTicket()">建工单</button>
+      <div id="ticketList" style="margin-top:10px"></div>
+    </div>
+    <div class="panel">
+      <h3>在线客服 / 视频教程</h3>
+      <div class="row"><label>我的消息</label><input id="chatMsg" placeholder="你好，我有问题"></div>
+      <button class="btn sm" onclick="startChat()">发起会话</button>
+      <pre id="chatOut"></pre>
+      <hr style="border-color:var(--border);margin:12px 0">
+      <div id="videoList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 博客营销 ==================== -->
+<section class="tab-page" id="tab-blog">
+  <div class="grid grid-2">
+    <div class="panel">
+      <h3>博客文章</h3>
+      <div class="row"><label>标题</label><input id="postTitle"></div>
+      <div class="row"><label>分类</label><input id="postCat" value="tech"></div>
+      <div class="row"><label>摘要</label><input id="postSummary"></div>
+      <button class="btn sm" onclick="createPost()">写文章</button>
+      <div id="postList" style="margin-top:10px"></div>
+    </div>
+    <div class="panel">
+      <h3>内容日历</h3>
+      <div class="row"><label>选题</label><input id="calTitle"></div>
+      <div class="row"><label>截止</label><input id="calDue" placeholder="2026-10-01"></div>
+      <button class="btn sm" onclick="planContent()">排期</button>
+      <div id="calList" style="margin-top:10px"></div>
+    </div>
+  </div>
+  <div class="grid grid-2">
+    <div class="panel">
+      <h3>SEO 分析</h3>
+      <div id="seoReport"></div>
+    </div>
+    <div class="panel">
+      <h3>社交媒体 & 邮件营销</h3>
+      <div id="socialList"></div>
+      <hr style="border-color:var(--border);margin:10px 0">
+      <div id="campaignList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 运营仪表盘 ==================== -->
+<section class="tab-page" id="tab-dashboard">
+  <div class="grid grid-4" id="kpiCards"></div>
+  <div class="grid grid-2">
+    <div class="panel">
+      <h3>30 天访问趋势 (PV/UV)</h3>
+      <div class="bar-chart" id="trendChart"></div>
+    </div>
+    <div class="panel">
+      <h3>转化漏斗</h3>
+      <div id="funnelBox"></div>
+    </div>
+  </div>
+  <div class="grid grid-3">
+    <div class="panel"><h3>内容健康</h3><div id="dashContent"></div></div>
+    <div class="panel"><h3>商业统计</h3><div id="dashBusiness"></div></div>
+    <div class="panel"><h3>支持满意度</h3><div id="dashSupport"></div></div>
+  </div>
+  <div class="panel">
+    <h3>营销 ROI</h3>
+    <div id="dashMarketing"></div>
+  </div>
+</section>
+</main>
+
+<div class="footer">品牌官网落地页控制台 · AI Hacking Agent · 全部数据内存模拟 · 统一响应 {success,data,error}</div>
+
+<script>
+const API = "/api/v1/brand-website";
+async function api(path, opts={}){
+  try{
+    const r = await fetch(API+path, {
+      headers:{"Content-Type":"application/json"}, ...opts
+    });
+    const j = await r.json();
+    if(!j.success){ console.error("API error", path, j.error); }
+    return j;
+  }catch(e){ console.error("fetch fail", path, e); return {success:false,error:String(e)}; }
+}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function table(rows, cols){
+  if(!rows||!rows.length) return '<p class="muted">暂无数据</p>';
+  const head = "<tr>"+cols.map(c=>`<th>${esc(c.label)}</th>`).join("")+"</tr>";
+  const body = rows.map(r=>"<tr>"+cols.map(c=>`<td>${esc(c.render?c.render(r):r[c.key])}</td>`).join("")+"</tr>").join("");
+  return `<table>${head}${body}</table>`;
+}
+// tabs
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".tab-page").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    document.getElementById("tab-"+t.dataset.tab).classList.add("active");
+    loadTab(t.dataset.tab);
+  };
+});
+function loadTab(name){
+  if(name==="content"){loadPages();loadMedia();loadNav();loadLangs();loadSeo();}
+  if(name==="product"){loadProducts();loadFeatures();loadVersions();loadArch();loadCases();loadPartners();}
+  if(name==="pricing"){loadPlans();loadOrders();loadCoupons();loadTrial();}
+  if(name==="docs"){loadDocs();loadKb();loadTickets();loadVideos();}
+  if(name==="blog"){loadPosts();loadCalendar();loadSeoReport();loadSocial();loadCampaigns();}
+  if(name==="dashboard"){loadOverview();}
+}
+
+// ---------- 内容管理 ----------
+async function loadPages(){
+  const j = await api("/pages");
+  const rows = j.data||[];
+  document.getElementById("pagesTable").innerHTML = table(rows,[
+    {key:"title",label:"标题"},{key:"slug",label:"Slug"},{key:"type",label:"类型"},
+    {key:"version",label:"版本"},{key:"author",label:"作者"},
+    {key:"status",label:"状态",render:r=>`<span class="status ${r.status==='已发布'?'published':r.status==='草稿'?'draft':'offline'}">${esc(r.status)}</span>`},
+    {key:"op",label:"操作",render:r=>`<button class="btn sm ghost" onclick='editPage("${r.slug}")'>编辑</button>`}
+  ]);
+}
+async function editPage(slug){
+  document.getElementById("editSlug").value=slug;
+  const j = await api("/pages/"+slug+"/preview");
+  const d = j.data||{};
+  document.getElementById("editTitle").value=d.title||"";
+}
+async function createPage(){
+  const title=document.getElementById("newPageTitle").value.trim();
+  if(!title) return alert("请输入标题");
+  await api("/pages",{method:"POST",body:JSON.stringify({title})});
+  document.getElementById("newPageTitle").value="";
+  loadPages();
+}
+async function savePage(){
+  const slug=document.getElementById("editSlug").value.trim();
+  if(!slug) return alert("先在列表点编辑");
+  await api("/pages/"+slug,{method:"PUT",body:JSON.stringify({
+    title:document.getElementById("editTitle").value,
+    content_md:document.getElementById("editContent").value,
+    seo_title:document.getElementById("editSeoTitle").value,
+    seo_description:document.getElementById("editSeoDesc").value
+  })});
+  alert("已保存");
+}
+async function publishPage(){const s=document.getElementById("editSlug").value;await api("/pages/"+s+"/publish",{method:"POST"});loadPages();}
+async function unpublishPage(){const s=document.getElementById("editSlug").value;await api("/pages/"+s+"/unpublish",{method:"POST"});loadPages();}
+async function previewPage(){
+  const s=document.getElementById("editSlug").value||"home";
+  const j=await api("/landing/"+s);
+  document.getElementById("previewOut").textContent=(j.data&&j.data.result&&j.data.result.html)||j.error||"(空)";
+}
+async function saveVersion(){const s=document.getElementById("editSlug").value;await api("/pages/"+s+"/version",{method:"POST"});alert("版本已保存");}
+
+async function loadMedia(){
+  const j=await api("/media");
+  document.getElementById("mediaList").innerHTML=table(j.data||[],[
+    {key:"name",label:"文件名"},{key:"type",label:"类型"},{key:"category",label:"分类"},{key:"size",label:"大小"}
+  ]);
+}
+async function uploadMedia(){
+  const name=document.getElementById("mediaName").value.trim();
+  if(!name) return alert("文件名");
+  await api("/media/upload",{method:"POST",body:JSON.stringify({name,mtype:document.getElementById("mediaType").value})});
+  document.getElementById("mediaName").value="";loadMedia();
+}
+async function loadNav(){
+  const j=await api("/nav");
+  const rows=(j.data||[]).flatMap(m=>m.items.map(i=>({menu:m.name,label:i.label,url:i.url,order:i.order})));
+  document.getElementById("navList").innerHTML=table(rows,[
+    {key:"menu",label:"菜单"},{key:"label",label:"名称"},{key:"url",label:"链接"},{key:"order",label:"排序"}
+  ]);
+}
+async function addNav(){
+  await api("/nav/main/items",{method:"POST",body:JSON.stringify({
+    label:document.getElementById("navLabel").value,url:document.getElementById("navUrl").value,order:99})});
+  loadNav();
+}
+async function loadLangs(){
+  const j=await api("/languages");
+  document.getElementById("langList").innerHTML=table(j.data||[],[
+    {key:"code",label:"代码"},{key:"name",label:"名称"},{key:"keys",label:"翻译条数"}
+  ]);
+}
+async function loadSeo(){
+  const j=await api("/seo/global");const d=j.data||{};
+  document.getElementById("seoSite").value=d.site_name||"";
+  document.getElementById("seoTitle").value=d.default_title||"";
+  document.getElementById("seoDesc").value=d.default_description||"";
+}
+async function saveSeo(){
+  await api("/seo/global",{method:"PUT",body:JSON.stringify({
+    site_name:document.getElementById("seoSite").value,
+    default_title:document.getElementById("seoTitle").value,
+    default_description:document.getElementById("seoDesc").value
+  })});alert("SEO 已保存");
+}
+async function genSitemap(){
+  const j=await api("/sitemap");
+  document.getElementById("sitemapOut").textContent=(j.data&&j.data.xml)||j.error||"";
+}
+
+// ---------- 产品展示 ----------
+async function loadProducts(){
+  const j=await api("/products");
+  document.getElementById("productList").innerHTML=table(j.data||[],[
+    {key:"name",label:"名称"},{key:"positioning",label:"定位"},{key:"core_value",label:"核心价值"},
+    {key:"demo_url",label:"演示"}
+  ]);
+}
+async function loadFeatures(){
+  const j=await api("/features");
+  document.getElementById("featureList").innerHTML=table(j.data||[],[
+    {key:"name",label:"功能"},{key:"category",label:"分类"},{key:"description",label:"描述"},{key:"roadmap",label:"路线图"}
+  ]);
+}
+async function loadVersions(){
+  const j=await api("/versions/compare");const d=j.data||{};
+  let h=table(d.versions||[],[
+    {key:"name",label:"版本"},{key:"price_monthly",label:"月价(元)"},{key:"users",label:"用户数"},{key:"support",label:"支持"}
+  ]);
+  h+="<h4 style='margin-top:10px;color:var(--accent)'>功能矩阵</h4>";
+  h+="<table><tr><th>功能</th>"+(d.versions||[]).map(v=>`<th>${esc(v.name)}</th>`).join("")+"</tr>";
+  (d.feature_matrix||[]).forEach(f=>{
+    h+="<tr><td>"+esc(f.feature)+"</td>"+(d.versions||[]).map(v=>`<td>${f[v.id]?"✓":"—"}</td>`).join("")+"</tr>";
+  });
+  h+="</table>";
+  document.getElementById("versionCompare").innerHTML=h;
+}
+async function loadArch(){
+  const j=await api("/architecture");const d=j.data||{};
+  document.getElementById("archList").innerHTML=
+    "<p><b>分层：</b>"+(d.layers||[]).map(esc).join(" → ")+"</p>"+
+    "<p><b>技术栈：</b>"+(d.tech_stack||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join("")+"</p>"+
+    "<p><b>部署：</b>"+(d.deployment||[]).map(esc).join(" / ")+"</p>";
+}
+async function loadCases(){
+  const j=await api("/cases");
+  document.getElementById("caseList").innerHTML=table(j.data||[],[
+    {key:"customer",label:"客户"},{key:"industry",label:"行业"},{key:"quote",label:"评价"}
+  ]);
+}
+async function loadPartners(){
+  const j=await api("/partners");
+  document.getElementById("partnerList").innerHTML=table(j.data||[],[
+    {key:"name",label:"名称"},{key:"type",label:"类型"},{key:"mode",label:"合作模式"}
+  ]);
+}
+
+// ---------- 定价购买 ----------
+async function loadPlans(){
+  const j=await api("/plans");
+  document.getElementById("plansList").innerHTML=table(j.data||[],[
+    {key:"name",label:"版本"},{key:"monthly",label:"月付"},{key:"quarterly",label:"季付"},{key:"yearly",label:"年付"},{key:"per_user",label:"每用户"}
+  ]);
+}
+async function createOrder(){
+  const j=await api("/orders",{method:"POST",body:JSON.stringify({
+    plan_id:document.getElementById("orderPlan").value,
+    period:document.getElementById("orderPeriod").value,
+    users:parseInt(document.getElementById("orderUsers").value)||1,
+    coupon:document.getElementById("orderCoupon").value,
+    contact:"console@aihacking.io"
+  })});
+  if(j.data&&j.data.id){
+    const p=await api("/orders/"+j.data.id+"/pay?channel=alipay",{method:"POST"});
+    document.getElementById("orderOut").textContent=JSON.stringify(p.data||p.error,null,2);
+  } else {document.getElementById("orderOut").textContent=JSON.stringify(j,null,2);}
+  loadOrders();
+}
+async function loadOrders(){
+  const j=await api("/orders");
+  document.getElementById("orderList").innerHTML=table(j.data||[],[
+    {key:"id",label:"订单"},{key:"plan",label:"套餐"},{key:"total",label:"金额"},{key:"status",label:"状态"}
+  ]);
+}
+async function loadCoupons(){
+  const j=await api("/coupons");
+  document.getElementById("couponList").innerHTML=table(j.data||[],[
+    {key:"code",label:"码"},{key:"type",label:"类型"},{key:"value",label:"值"},{key:"used",label:"已用"}
+  ]);
+}
+async function createCoupon(){
+  await api("/coupons",{method:"POST",body:JSON.stringify({
+    code:document.getElementById("cpCode").value,type:"fixed",
+    value:parseFloat(document.getElementById("cpValue").value)||50})});
+  loadCoupons();
+}
+async function loadTrial(){
+  const j=await api("/trials/stats");const d=j.data||{};
+  document.getElementById("trialStats").innerHTML=
+    `<div class="grid grid-3">
+      <div class="card"><div class="label">总试用</div><div class="value">${d.total||0}</div></div>
+      <div class="card"><div class="label">进行中</div><div class="value yellow">${d.active||0}</div></div>
+      <div class="card"><div class="label">转化率</div><div class="value green">${d.conversion_rate||0}%</div></div>
+    </div>`;
+}
+async function applyTrial(){
+  await api("/trials",{method:"POST",body:JSON.stringify({contact:document.getElementById("trialContact").value||"test@x.com"})});
+  loadTrial();
+}
+async function customReq(){
+  await api("/custom",{method:"POST",body:JSON.stringify({
+    company:document.getElementById("entCompany").value,
+    requirements:document.getElementById("entReq").value})});
+  alert("需求已提交");
+}
+
+// ---------- 文档支持 ----------
+async function loadDocs(){
+  const j=await api("/docs");
+  document.getElementById("docsList").innerHTML=table(j.data||[],[
+    {key:"title",label:"标题"},{key:"category",label:"分类"},{key:"views",label:"浏览"}
+  ]);
+}
+async function loadKb(){
+  const j=await api("/kb");
+  document.getElementById("kbList").innerHTML=table(j.data||[],[
+    {key:"title",label:"标题"},{key:"category",label:"分类"},{key:"rating",label:"评分"},{key:"views",label:"浏览"}
+  ]);
+}
+async function loadTickets(){
+  const j=await api("/tickets");
+  document.getElementById("ticketList").innerHTML=table(j.data||[],[
+    {key:"id",label:"单号"},{key:"title",label:"标题"},{key:"priority",label:"优先级"},{key:"status",label:"状态"}
+  ]);
+}
+async function createTicket(){
+  await api("/tickets",{method:"POST",body:JSON.stringify({
+    title:document.getElementById("ticketTitle").value,
+    priority:document.getElementById("ticketPriority").value})});
+  loadTickets();
+}
+async function startChat(){
+  const j=await api("/chats",{method:"POST",body:JSON.stringify({user:"me",message:document.getElementById("chatMsg").value})});
+  document.getElementById("chatOut").textContent=JSON.stringify(j.data||j.error,null,2);
+}
+async function loadVideos(){
+  const j=await api("/videos");
+  document.getElementById("videoList").innerHTML=table(j.data||[],[
+    {key:"title",label:"视频"},{key:"category",label:"分类"},{key:"duration",label:"时长"},{key:"views",label:"播放"}
+  ]);
+}
+
+// ---------- 博客营销 ----------
+async function loadPosts(){
+  const j=await api("/posts");
+  document.getElementById("postList").innerHTML=table(j.data||[],[
+    {key:"title",label:"标题"},{key:"category",label:"分类"},{key:"author",label:"作者"},
+    {key:"views",label:"浏览"},{key:"status",label:"状态"}
+  ]);
+}
+async function createPost(){
+  await api("/posts",{method:"POST",body:JSON.stringify({
+    title:document.getElementById("postTitle").value,
+    category:document.getElementById("postCat").value,
+    summary:document.getElementById("postSummary").value})});
+  loadPosts();
+}
+async function loadCalendar(){
+  const j=await api("/calendar");
+  document.getElementById("calList").innerHTML=table(j.data||[],[
+    {key:"title",label:"选题"},{key:"type",label:"类型"},{key:"owner",label:"负责人"},{key:"due",label:"截止"},{key:"status",label:"状态"}
+  ]);
+}
+async function planContent(){
+  await api("/calendar",{method:"POST",body:JSON.stringify({
+    title:document.getElementById("calTitle").value,
+    due:document.getElementById("calDue").value})});
+  loadCalendar();
+}
+async function loadSeoReport(){
+  const j=await api("/seo/report");const d=j.data||{};
+  let h=`<p><b>收录：</b>${d.indexed_pages||0} 页 | <b>反链：</b>${d.backlinks||0} | <b>权重：</b>${d.domain_authority||0}</p>`;
+  h+="<table><tr><th>关键词</th><th>排名</th><th>搜索量</th></tr>";
+  (d.keywords||[]).forEach(k=>h+=`<tr><td>${esc(k.word)}</td><td>${k.rank}</td><td>${k.volume}</td></tr>`);
+  h+="</table><p class='muted'>建议："+(d.suggestions||[]).map(esc).join("；")+"</p>";
+  document.getElementById("seoReport").innerHTML=h;
+}
+async function loadSocial(){
+  const j=await api("/social");
+  document.getElementById("socialList").innerHTML=table(j.data||[],[
+    {key:"platform",label:"平台"},{key:"followers",label:"粉丝"},{key:"connected",label:"已连接",render:r=>r.connected?"✓":"—"}
+  ]);
+}
+async function loadCampaigns(){
+  const j=await api("/campaigns");
+  document.getElementById("campaignList").innerHTML=table(j.data||[],[
+    {key:"name",label:"活动"},{key:"list_size",label:"名单"},{key:"open_rate",label:"打开率"},{key:"ctr",label:"点击率"}
+  ]);
+}
+
+// ---------- 仪表盘 ----------
+async function loadOverview(){
+  const j=await api("/dashboard/overview");const d=j.data||{};const k=d.kpis||{};
+  document.getElementById("kpiCards").innerHTML=`
+    <div class="card"><div class="label">30天 PV</div><div class="value">${k.visits_30d||0}</div></div>
+    <div class="card"><div class="label">30天 UV</div><div class="value green">${k.uv_30d||0}</div></div>
+    <div class="card"><div class="label">注册</div><div class="value">${k.registrations||0}</div></div>
+    <div class="card"><div class="label">试用</div><div class="value yellow">${k.trials||0}</div></div>
+    <div class="card"><div class="label">购买</div><div class="value green">${k.purchases||0}</div></div>
+    <div class="card"><div class="label">收入(元)</div><div class="value green">${k.revenue_cny||0}</div></div>
+    <div class="card"><div class="label">转化率</div><div class="value">${k.conversion_rate||0}%</div></div>
+    <div class="card"><div class="label">页面数</div><div class="value">${(d.content_counts||{}).pages||0}</div></div>
+  `;
+  // traffic chart
+  const tj=await api("/dashboard/traffic");const td=tj.data||{};
+  const pvs=td.pv||[];const max=Math.max(...pvs,1);
+  document.getElementById("trendChart").innerHTML=pvs.map(v=>
+    `<div class="bar" style="height:${Math.round(v/max*100)}%" title="${td.days&&td.days[pvs.indexOf(v)]}: PV ${v}"></div>`).join("");
+  // funnel
+  const fj=await api("/analytics");const fn=fj.data&&fj.data.funnel||[];
+  document.getElementById("funnelBox").innerHTML=fn.map(f=>
+    `<div class="funnel-step"><span>${esc(f.stage)}</span><span>${f.count}</span></div>`).join("");
+  // sub dashboards
+  const cj=await api("/dashboard/content");const cd=cj.data||{};
+  document.getElementById("dashContent").innerHTML=
+    `<p>总页面：${cd.total_pages||0} · 已发布：${cd.published||0} · 草稿：${cd.drafts||0}</p>
+     <p>媒体：${cd.media_total||0} · 菜单：${(cd.nav_menus||[]).join(", ")}</p>`;
+  const bj=await api("/dashboard/business");const bd2=bj.data||{};
+  document.getElementById("dashBusiness").innerHTML=
+    `<p>订单：${bd2.total_orders||0} · 已付：${bd2.paid_orders||0}</p>
+     <p>收入：¥${bd2.revenue_cny||0} · 客单：¥${bd2.avg_order_value||0}</p>`;
+  const sj=await api("/dashboard/support");const sd=sj.data||{};
+  document.getElementById("dashSupport").innerHTML=
+    `<p>工单：${sd.tickets_total||0} · 解决率：${sd.resolution_rate||0}%</p>
+     <p>知识库：${sd.kb_articles||0} · 视频：${sd.videos||0}</p>`;
+  const mj=await api("/dashboard/marketing");const md3=mj.data||{};
+  document.getElementById("dashMarketing").innerHTML=
+    `<p>SEO 收录：${(md3.seo||{}).indexed_pages||0} · 反链：${(md3.seo||{}).backlinks||0}</p>
+     <p>邮件活动：${(md3.email||{}).campaigns||0} · 打开率：${(md3.email||{}).avg_open_rate||0}</p>
+     <p>粉丝：${(md3.social||[]).map(s=>`${s.platform}:${s.followers}`).join(" / ")}</p>`;
+}
+
+// boot
+(async function init(){
+  try{
+    const r=await fetch(API+"/dashboard/overview");
+    const j=await r.json();
+    document.getElementById("healthBadge").textContent="状态: "+(j.success?"在线":"异常");
+  }catch(e){document.getElementById("healthBadge").textContent="状态: 离线";}
+  loadTab("content");
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>终端安全EDR控制台</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--accent:#58a6ff;--red:#f85149;--orange:#d29922;--green:#3fb950;--purple:#bc8cff;--cyan:#39d2c0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5}
+.header{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:18px;font-weight:600;color:var(--accent)}
+.header .badge{background:var(--green);color:#000;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;overflow-x:auto}
+.tab{padding:10px 18px;cursor:pointer;border:none;background:none;color:var(--text2);font-size:13px;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.content{padding:20px;max-width:1600px;margin:0 auto}
+.panel{display:none}
+.panel.active{display:block}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:16px}
+.card h3{font-size:14px;margin-bottom:12px;color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--bg3);border-radius:6px;padding:14px;text-align:center}
+.stat .num{font-size:24px;font-weight:700}
+.stat .label{font-size:11px;color:var(--text2);margin-top:4px}
+.stat.red .num{color:var(--red)}.stat.orange .num{color:var(--orange)}.stat.green .num{color:var(--green)}.stat.blue .num{color:var(--accent)}.stat.purple .num{color:var(--purple)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:var(--bg3);text-align:left;padding:8px 10px;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid var(--border)}
+tr:hover td{background:var(--bg3)}
+.sev-critical{color:var(--red);font-weight:700}.sev-high{color:var(--orange);font-weight:600}.sev-medium{color:var(--cyan)}.sev-low{color:var(--text2)}
+.status-active{color:var(--green)}.status-offline{color:var(--text2)}.status-pending{color:var(--orange)}.status-quarantined{color:var(--red)}
+.btn{padding:6px 14px;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn-primary{background:var(--accent);color:#000}.btn-danger{background:var(--red);color:#fff}.btn-success{background:var(--green);color:#000}.btn-sm{padding:4px 10px;font-size:11px}
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+select,input{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-size:12px}
+.tree{font-family:'Consolas',monospace;font-size:12px;line-height:1.8}
+.tree .node{padding-left:20px}
+.tree .child{padding-left:30px;border-left:1px solid var(--border);margin-left:8px}
+.alert-item{padding:10px;border-left:3px solid;margin-bottom:8px;background:var(--bg3);border-radius:0 4px 4px 0}
+.alert-item.critical{border-color:var(--red)}.alert-item.high{border-color:var(--orange)}.alert-item.medium{border-color:var(--cyan)}.alert-item.low{border-color:var(--text2)}
+.flow-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
+.flow-item .time{color:var(--text2);min-width:140px}
+.toast{position:fixed;top:20px;right:20px;background:var(--bg3);border:1px solid var(--accent);padding:12px 20px;border-radius:6px;z-index:9999;display:none;max-width:400px}
+.badge-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;margin-right:4px}
+.tag-critical{background:rgba(248,81,73,.2);color:var(--red)}.tag-high{background:rgba(210,153,34,.2);color:var(--orange)}.tag-medium{background:rgba(57,210,192,.2);color:var(--cyan)}.tag-low{background:rgba(139,148,158,.2);color:var(--text2)}
+.drawer{position:fixed;top:0;right:-600px;width:600px;height:100vh;background:var(--bg2);border-left:1px solid var(--border);z-index:1000;transition:right .3s;overflow-y:auto;padding:20px}
+.drawer.open{right:0}
+.drawer h3{margin-bottom:12px;color:var(--accent)}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:999;display:none}
+.overlay.open{display:block}
+.progress-bar{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin:4px 0}
+.progress-fill{height:100%;border-radius:4px;transition:width .3s}
+.svg-container{background:var(--bg3);border-radius:6px;padding:10px}
+.legend{display:flex;gap:16px;margin-top:8px;font-size:11px;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.kv{display:grid;grid-template-columns:120px 1fr;gap:4px;font-size:12px;margin:8px 0}
+.kv .k{color:var(--text2)}
+.timeline{position:relative;padding-left:20px}
+.timeline::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--border)}
+.tl-item{position:relative;padding:6px 0 6px 16px}
+.tl-item::before{content:'';position:absolute;left:-18px;top:12px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.flex{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.mt8{margin-top:8px}.mt16{margin-top:16px}.mb8{margin-bottom:8px}
+.text-muted{color:var(--text2)}.text-red{color:var(--red)}.text-green{color:var(--green)}.text-orange{color:var(--orange)}.text-blue{color:var(--accent)}
+@media(max-width:768px){.stat-grid{grid-template-columns:repeat(2,1fr)}.drawer{width:100%;right:-100%}.content{padding:10px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>终端安全 EDR 控制台</h1>
+  <div><span class="badge">在线运营中</span></div>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('assets')">终端资产</button>
+  <button class="tab" onclick="switchTab('process')">进程行为</button>
+  <button class="tab" onclick="switchTab('malware')">恶意软件</button>
+  <button class="tab" onclick="switchTab('threat')">威胁响应</button>
+  <button class="tab" onclick="switchTab('vuln')">漏洞补丁</button>
+  <button class="tab" onclick="switchTab('dashboard')">EDR仪表盘</button>
+</div>
+<div class="content">
+
+<!-- ============ Tab 1: 终端资产 ============ -->
+<div class="panel active" id="panel-assets">
+  <div class="stat-grid" id="asset-stats"></div>
+  <div class="card">
+    <h3>终端清单</h3>
+    <div class="toolbar">
+      <select id="filter-dept" onchange="loadAssets()"><option value="">全部部门</option></select>
+      <select id="filter-risk" onchange="loadAssets()"><option value="">全部风险</option><option value="critical">严重</option><option value="high">高</option><option value="medium">中</option><option value="low">低</option></select>
+      <select id="filter-online" onchange="loadAssets()"><option value="">全部状态</option><option value="true">在线</option><option value="false">离线</option></select>
+      <input id="filter-search" placeholder="搜索主机名/IP..." style="width:160px" onkeyup="if(event.key==='Enter')loadAssets()">
+      <button class="btn btn-primary btn-sm" onclick="loadAssets()">查询</button>
+      <button class="btn btn-success btn-sm" onclick="doDiscover()">网络发现</button>
+    </div>
+    <div style="overflow-x:auto"><table id="asset-table"><thead><tr><th>主机名</th><th>IP</th><th>OS</th><th>部门</th><th>风险</th><th>状态</th><th>CPU%</th><th>内存%</th><th>最后通信</th><th>操作</th></tr></thead><tbody></tbody></table></div>
+  </div>
+  <div class="card">
+    <h3>终端分组</h3>
+    <div id="groups-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px"></div>
+  </div>
+</div>
+
+<!-- ============ Tab 2: 进程行为 ============ -->
+<div class="panel" id="panel-process">
+  <div class="toolbar">
+    <label style="color:var(--text2)">终端:</label>
+    <select id="proc-asset" onchange="loadProcessData()"></select>
+    <button class="btn btn-primary btn-sm" onclick="loadProcessData()">加载进程数据</button>
+  </div>
+  <div class="card">
+    <h3>进程树</h3>
+    <div class="tree" id="process-tree">点击"加载进程数据"查看进程树...</div>
+  </div>
+  <div class="card">
+    <h3>异常进程与行为评分</h3>
+    <div id="anomaly-list"></div>
+  </div>
+  <div class="card">
+    <h3>命令行审计（可疑命令高亮）</h3>
+    <div style="overflow-x:auto"><table id="cmdline-table"><thead><tr><th>时间</th><th>终端</th><th>用户</th><th>命令行</th><th>规则</th><th>级别</th></tr></thead><tbody></tbody></table></div>
+  </div>
+  <div class="flex" style="gap:16px">
+    <div class="card" style="flex:1;min-width:300px">
+      <h3>进程注入检测</h3>
+      <div id="injection-list"></div>
+    </div>
+    <div class="card" style="flex:1;min-width:300px">
+      <h3>持久化点清单</h3>
+      <div id="persistence-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Tab 3: 恶意软件 ============ -->
+<div class="panel" id="panel-malware">
+  <div class="stat-grid" id="malware-stats"></div>
+  <div class="card">
+    <h3>检测结果（签名/行为/YARA/启发式）</h3>
+    <div style="overflow-x:auto"><table id="malware-table"><thead><tr><th>检测ID</th><th>终端</th><th>文件/规则</th><th>类型</th><th>家族</th><th>级别</th><th>状态</th></tr></thead><tbody></tbody></table></div>
+  </div>
+  <div class="flex" style="gap:16px">
+    <div class="card" style="flex:1;min-width:300px">
+      <h3>YARA规则管理</h3>
+      <div id="yara-rules"></div>
+    </div>
+    <div class="card" style="flex:1;min-width:300px">
+      <h3>沙箱分析报告</h3>
+      <div id="sandbox-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Tab 4: 威胁响应 ============ -->
+<div class="panel" id="panel-threat">
+  <div class="stat-grid" id="threat-stats"></div>
+  <div class="card">
+    <h3>告警列表</h3>
+    <div class="toolbar">
+      <select id="alert-sev" onchange="loadAlerts()"><option value="">全部级别</option><option value="critical">严重</option><option value="high">高</option><option value="medium">中</option><option value="low">低</option></select>
+      <select id="alert-status" onchange="loadAlerts()"><option value="">全部状态</option><option value="new">新建</option><option value="triaged">分诊</option><option value="confirmed">已确认</option><option value="false_positive">误报</option><option value="escalated">已升级</option><option value="resolved">已解决</option></select>
+    </div>
+    <div style="overflow-x:auto"><table id="alert-table"><thead><tr><th>告警ID</th><th>终端</th><th>规则</th><th>Tactic</th><th>级别</th><th>状态</th><th>首次</th><th>操作</th></tr></thead><tbody></tbody></table></div>
+  </div>
+  <div class="flex" style="gap:16px">
+    <div class="card" style="flex:1;min-width:300px">
+      <h3>响应动作面板</h3>
+      <div class="toolbar">
+        <input id="action-asset" placeholder="终端ID (如EP-0007)" style="width:140px">
+      </div>
+      <div id="action-buttons" class="flex" style="flex-direction:column;align-items:stretch"></div>
+      <div class="mt16"><h3 style="font-size:13px">事件时间线</h3><div class="timeline" id="incident-timeline"></div></div>
+    </div>
+    <div class="card" style="flex:1;min-width:300px">
+      <h3>威胁狩猎查询</h3>
+      <div class="toolbar">
+        <input id="hunt-query" placeholder="搜索关键词..." style="flex:1">
+        <select id="hunt-type"><option value="process">进程</option><option value="file">文件</option><option value="registry">注册表</option><option value="network">网络连接</option></select>
+        <button class="btn btn-primary btn-sm" onclick="runHunt()">狩猎</button>
+      </div>
+      <div id="hunt-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Tab 5: 漏洞补丁 ============ -->
+<div class="panel" id="panel-vuln">
+  <div class="stat-grid" id="vuln-stats"></div>
+  <div class="card">
+    <h3>漏洞列表（CVE/CVSS/严重程度/受影响终端）</h3>
+    <div style="overflow-x:auto"><table id="vuln-table"><thead><tr><th>CVE</th><th>产品</th><th>CVSS</th><th>严重程度</th><th>可利用</th><th>影响终端数</th><th>修复优先级</th></tr></thead><tbody></tbody></table></div>
+  </div>
+  <div class="flex" style="gap:16px">
+    <div class="card" style="flex:1;min-width:300px">
+      <h3>补丁管理</h3>
+      <div id="patch-list"></div>
+    </div>
+    <div class="card" style="flex:1;min-width:300px">
+      <h3>配置基线检查</h3>
+      <div id="baseline-list"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>修复任务跟踪</h3>
+    <div style="overflow-x:auto"><table id="fixtask-table"><thead><tr><th>任务ID</th><th>标题</th><th>终端</th><th>状态</th><th>优先级</th><th>已开天</th><th>SLA(天)</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</div>
+
+<!-- ============ Tab 6: EDR仪表盘 ============ -->
+<div class="panel" id="panel-dashboard">
+  <div class="stat-grid" id="dash-stats"></div>
+  <div class="flex" style="gap:16px">
+    <div class="card" style="flex:1;min-width:350px">
+      <h3>实时告警流</h3>
+      <div id="realtime-alerts"></div>
+    </div>
+    <div class="card" style="flex:1;min-width:350px">
+      <h3>终端健康状态</h3>
+      <div id="health-stats"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>威胁地图（SVG拓扑）</h3>
+    <div class="svg-container" id="threat-map"></div>
+    <div class="legend">
+      <span><span class="dot" style="background:#f85149"></span>攻击者</span>
+      <span><span class="dot" style="background:#d29922"></span>已感染</span>
+      <span><span class="dot" style="background:#58a6ff"></span>观察</span>
+      <span><span class="dot" style="background:#3fb950"></span>正常</span>
+    </div>
+  </div>
+  <div class="card">
+    <h3>EDR度量指标</h3>
+    <div id="metrics-grid" class="stat-grid"></div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<!-- 终端详情抽屉 -->
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <h3>终端详情</h3>
+  <div id="drawer-content"></div>
+  <button class="btn btn-danger btn-sm mt16" onclick="closeDrawer()">关闭</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API='/api/v1/endpoint-security';
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',3000)}
+async function api(path,opts){try{const r=await fetch(API+path,opts);const j=await r.json();return j}catch(e){return{success:false,error:e.message}}}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function sevTag(s){const m={critical:'tag-critical',high:'tag-high',medium:'tag-medium',low:'tag-low'};return `<span class="badge-tag ${m[s]||'tag-low'}">${esc(s)}</span>`}
+function switchTab(name){document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['assets','process','malware','threat','vuln','dashboard'][i]===name));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('panel-'+name).classList.add('active');loadTab(name)}
+function loadTab(n){if(n==='assets'){loadAssets();loadGroups()}else if(n==='process'){loadProcessAssets();loadCmdline();loadInjection();loadPersistence()}else if(n==='malware'){loadMalware();loadYaraRules();loadSandbox()}else if(n==='threat'){loadThreatStats();loadAlerts();loadActions()}else if(n==='vuln'){loadVuln();loadPatches();loadBaseline();loadFixTasks()}else if(n==='dashboard'){loadDashboard()}}
+
+// ===== Tab1: 终端资产 =====
+async function loadAssets(){
+  const d=await api('/asset/list');if(!d.success)return;
+  const s=d.data.summary;
+  document.getElementById('asset-stats').innerHTML=`
+    <div class="stat blue"><div class="num">${s.total}</div><div class="label">终端总数</div></div>
+    <div class="stat green"><div class="num">${s.online}</div><div class="label">在线</div></div>
+    <div class="stat"><div class="num">${s.offline}</div><div class="label">离线</div></div>
+    <div class="stat red"><div class="num">${s.by_risk.critical||0}</div><div class="label">严重风险</div></div>
+    <div class="stat orange"><div class="num">${s.by_risk.high||0}</div><div class="label">高风险</div></div>`;
+  const tb=document.querySelector('#asset-table tbody');tb.innerHTML=d.data.assets.slice(0,30).map(a=>`<tr>
+    <td><a href="#" onclick="showDetail('${a.asset_id}');return false" style="color:var(--accent)">${esc(a.hostname)}</a></td>
+    <td>${esc(a.ip_address)}</td><td>${esc(a.os_name)}</td><td>${esc(a.department)}</td>
+    <td>${sevTag(a.risk_level)}</td>
+    <td class="${a.online?'status-active':'status-offline'}">${a.online?'在线':'离线'}</td>
+    <td>${a.cpu_usage_pct}%</td><td>${a.memory_usage_pct}%</td><td>${esc(a.last_communication)}</td>
+    <td><button class="btn btn-primary btn-sm" onclick="showDetail('${a.asset_id}')">详情</button></td></tr>`).join('');
+}
+async function loadGroups(){
+  const d=await api('/asset/groups');if(!d.success)return;
+  document.getElementById('groups-list').innerHTML=d.data.groups.map(g=>`<div class="card" style="margin:0;padding:10px">
+    <strong>${esc(g.name)}</strong> <span class="text-muted">[${esc(g.type)}]</span><br>
+    <span class="text-muted">规则: ${esc(g.rule)}</span><br>
+    <span class="text-blue">成员: ${g.member_count}</span></div>`).join('');
+}
+async function showDetail(aid){
+  const d=await api('/asset/'+aid+'/detail');if(!d.success){toast(d.error);return}
+  const a=d.data;
+  document.getElementById('drawer-content').innerHTML=`
+    <div class="kv"><span class="k">主机名</span><span>${esc(a.hostname)}</span>
+    <span class="k">IP</span><span>${esc(a.ip_address)}</span><span class="k">MAC</span><span>${esc(a.mac_address)}</span>
+    <span class="k">操作系统</span><span>${esc(a.os_name)} (${esc(a.os_build)})</span>
+    <span class="k">CPU</span><span>${esc(a.cpu_model)} × ${a.cpu_cores}核</span>
+    <span class="k">内存</span><span>${a.memory_gb}GB (${a.memory_usage_pct}%)</span>
+    <span class="k">磁盘</span><span>${a.disk_gb}GB (${a.disk_usage_pct}%)</span>
+    <span class="k">部门</span><span>${esc(a.department)}</span><span class="k">位置</span><span>${esc(a.location)}</span>
+    <span class="k">所有者</span><span>${esc(a.owner)}</span><span class="k">Agent</span><span>${esc(a.agent_version)}</span>
+    <span class="k">风险等级</span><span>${sevTag(a.risk_level)}</span>
+    <span class="k">生命周期</span><span>${esc(a.lifecycle_state)}</span></div>
+    <h4 class="mt16" style="color:var(--accent)">安装软件</h4>
+    <table><thead><tr><th>名称</th><th>版本</th></tr></thead><tbody>${(a.software||[]).map(s=>`<tr><td>${esc(s.name)}</td><td>${esc(s.version)}</td></tr>`).join('')}</tbody></table>
+    <h4 class="mt16" style="color:var(--accent)">服务状态</h4>
+    <table><thead><tr><th>服务</th><th>状态</th></tr></thead><tbody>${(a.services||[]).map(s=>`<tr><td>${esc(s.name)}</td><td class="${s.status==='running'?'text-green':'text-muted'}">${esc(s.status)}</td></tr>`).join('')}</tbody></table>
+    <h4 class="mt16" style="color:var(--accent)">开放端口</h4>
+    <div class="flex">${(a.ports||[]).map(p=>`<span class="badge-tag" style="background:rgba(88,166,255,.15);color:var(--accent)">${p}</span>`).join('')}</div>`;
+  document.getElementById('drawer').classList.add('open');document.getElementById('overlay').classList.add('open');
+}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('overlay').classList.remove('open')}
+async function doDiscover(){const d=await api('/asset/discover',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({network_range:'10.10.0.0/16',method:'Agent上报'})});if(d.success)toast('发现'+d.data.new_count+'个新终端');else toast(d.error)}
+
+// ===== Tab2: 进程行为 =====
+async function loadProcessAssets(){
+  const sel=document.getElementById('proc-asset');
+  const d=await api('/asset/list');if(!d.success)return;
+  sel.innerHTML=d.data.assets.slice(0,10).map(a=>`<option value="${a.asset_id}">${a.hostname} (${a.asset_id})</option>`).join('');
+}
+async function loadProcessData(){
+  const aid=document.getElementById('proc-asset').value;if(!aid)return;
+  const d=await api('/process/'+aid+'/tree');if(!d.success)return;
+  document.getElementById('process-tree').innerHTML=renderTree(d.data.process_tree,0);
+  const b=await api('/process/'+aid+'/behavior');
+  if(b.success){const bd=b.data;document.getElementById('anomaly-list').innerHTML=`
+    <div class="kv"><span class="k">行为评分</span><span class="${bd.behavior_score<60?'text-red':'text-green'}" style="font-size:18px;font-weight:700">${bd.behavior_score}</span>
+    <span class="k">风险等级</span><span>${sevTag(bd.risk_level)}</span></div>
+    ${bd.anomalies.map(a=>`<div class="alert-item ${a.severity}"><strong>${esc(a.process_name)}</strong> - ${esc(a.anomaly_type)} (评分:${a.score})<br><span class="text-muted">${esc(a.detail)}</span></div>`).join('')}`;}
+}
+function renderTree(nodes,depth){
+  if(!nodes||!nodes.length)return'<span class="text-muted">无子进程</span>';
+  return nodes.map(n=>`<div class="node" style="padding-left:${depth*16}px">
+    <span style="color:${n.signed?'var(--green)':'var(--red)'}">●</span> ${esc(n.name)} <span class="text-muted">PID:${n.pid} ${n.cpu_pct}% CPU</span>
+    ${n.children&&n.children.length?'<div class="child">'+renderTree(n.children,depth+1)+'</div>':''}</div>`).join('');
+}
+async function loadCmdline(){
+  const d=await api('/process/cmdline/audit');if(!d.success)return;
+  document.querySelector('#cmdline-table tbody').innerHTML=d.data.events.map(e=>`<tr>
+    <td>${esc(e.detected_at)}</td><td>${esc(e.asset_id)}</td><td>${esc(e.user)}</td>
+    <td style="font-family:monospace;max-width:400px;overflow:hidden;text-overflow:ellipsis">${esc(e.cmdline.substring(0,80))}...</td>
+    <td><span class="badge-tag" style="background:rgba(188,140,255,.15);color:var(--purple)">${esc(e.matched_rule)}</span></td>
+    <td>${sevTag(e.severity)}</td></tr>`).join('');
+}
+async function loadInjection(){
+  const d=await api('/process/injection/detections');if(!d.success)return;
+  document.getElementById('injection-list').innerHTML=d.data.detections.map(x=>`<div class="alert-item ${x.severity}">
+    <strong>${esc(x.injection_type)}</strong> <span class="text-muted">→ ${esc(x.target_process)}</span><br>
+    <span class="text-muted">${esc(x.technique)}</span><br><span class="text-muted">${esc(x.detail)}</span></div>`).join('')||'<p class="text-muted">无注入检测</p>';
+}
+async function loadPersistence(){
+  const d=await api('/process/persistence');if(!d.success)return;
+  document.getElementById('persistence-list').innerHTML=d.data.persistence_points.map(p=>`<div class="alert-item ${p.severity}">
+    <strong>${esc(p.type)}</strong><br><span class="text-muted">${esc(p.location)}</span><br>
+    <span style="font-family:monospace;font-size:11px">${esc(p.value_data)}</span></div>`).join('')||'<p class="text-muted">无持久化点</p>';
+}
+
+// ===== Tab3: 恶意软件 =====
+async function loadMalware(){
+  const d1=await api('/malware/signature/scan');
+  const d2=await api('/malware/behavior/detections');
+  const d3=await api('/malware/yara/scan');
+  const d4=await api('/malware/heuristic/scan');
+  const sg=d1.data||{},bd=d2.data||{},yh=d3.data||{},hd=d4.data||{};
+  document.getElementById('malware-stats').innerHTML=`
+    <div class="stat red"><div class="num">${sg.total_hits||0}</div><div class="label">签名检测命中</div></div>
+    <div class="stat orange"><div class="num">${bd.total||0}</div><div class="label">行为检测</div></div>
+    <div class="stat purple"><div class="num">${yh.total_hits||0}</div><div class="label">YARA命中</div></div>
+    <div class="stat blue"><div class="num">${hd.total||0}</div><div class="label">启发式检测</div></div>`;
+  const all=[...(sg.hits||[]).map(h=>({...h,det:'签名'})),...(bd.detections||[]).map(h=>({...h,det:'行为',family:h.type})),...(yh.hits||[]).map(h=>({...h,det:'YARA',family:h.rule_name}))];
+  document.querySelector('#malware-table tbody').innerHTML=all.slice(0,20).map(h=>`<tr>
+    <td>${esc(h.detection_id||h.hit_id||'')}</td><td>${esc(h.asset_id)}</td>
+    <td>${esc(h.file_path||h.target_file||'')}</td><td>${esc(h.det)}</td>
+    <td>${esc(h.family||'—')}</td><td>${sevTag(h.severity)}</td><td>${esc(h.status||'detected')}</td></tr>`).join('');
+}
+async function loadYaraRules(){
+  const d=await api('/malware/yara/rules');if(!d.success)return;
+  document.getElementById('yara-rules').innerHTML=d.data.rules.map(r=>`<div style="padding:6px 0;border-bottom:1px solid var(--border)">
+    <strong>${esc(r.name)}</strong> ${sevTag(r.severity)}<br><span class="text-muted">${esc(r.category)} · 命中:${r.hits}</span></div>`).join('');
+}
+async function loadSandbox(){
+  const d=await api('/malware/sandbox/SBOX-001/report');if(!d.success)return;
+  const r=d.data;
+  document.getElementById('sandbox-list').innerHTML=`
+    <div class="alert-item ${r.verdict==='malicious'?'critical':'high'}">
+      <strong>${esc(r.file_name)}</strong> <span class="badge-tag tag-${r.verdict}">${esc(r.verdict)}</span><br>
+      <span class="text-muted">威胁评分: ${r.threat_score} · 状态: ${esc(r.status)}</span><br>
+      <span class="text-muted">网络连接: ${(r.network_behavior.connections||[]).length} · 文件操作: ${(r.file_operation||{}).files_written||0}</span>
+    </div>`;
+}
+
+// ===== Tab4: 威胁响应 =====
+async function loadThreatStats(){
+  const d=await api('/threat/alerts');if(!d.success)return;
+  const s=d.data.by_severity,st=d.data.by_status;
+  document.getElementById('threat-stats').innerHTML=`
+    <div class="stat red"><div class="num">${s.critical||0}</div><div class="label">严重告警</div></div>
+    <div class="stat orange"><div class="num">${s.high||0}</div><div class="label">高危告警</div></div>
+    <div class="stat blue"><div class="num">${d.data.total}</div><div class="label">告警总数</div></div>
+    <div class="stat"><div class="num">${st.new||0}</div><div class="label">待分诊</div></div>
+    <div class="stat green"><div class="num">${st.resolved||0}</div><div class="label">已解决</div></div>`;
+}
+async function loadAlerts(){
+  const sev=document.getElementById('alert-sev').value;
+  const st=document.getElementById('alert-status').value;
+  let url='/threat/alerts?';if(sev)url+='severity='+sev;if(st)url+='&status='+st;
+  const d=await api(url);if(!d.success)return;
+  document.querySelector('#alert-table tbody').innerHTML=d.data.alerts.slice(0,20).map(a=>`<tr>
+    <td>${esc(a.alert_id)}</td><td>${esc(a.asset_id)}</td><td>${esc(a.rule_name)}</td>
+    <td><span class="badge-tag" style="background:rgba(57,210,192,.15);color:var(--cyan)">${esc(a.tactic)}</span></td>
+    <td>${sevTag(a.severity)}</td><td>${esc(a.status)}</td><td>${esc(a.first_seen)}</td>
+    <td><button class="btn btn-primary btn-sm" onclick="ackAlert('${a.alert_id}')">确认</button></td></tr>`).join('');
+}
+async function ackAlert(aid){const d=await api('/threat/alerts/'+aid,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'confirmed'})});toast(d.success?'告警已确认':d.error);loadAlerts()}
+async function loadActions(){
+  const d=await api('/threat/actions');if(!d.success)return;
+  document.getElementById('action-buttons').innerHTML=d.data.actions.map(a=>`<button class="btn ${a.severity_required==='critical'?'btn-danger':a.severity_required==='high'?'btn-primary':'btn-success'}" onclick="execAction('${a.action}')">${esc(a.name)}</button>`).join('');
+}
+async function execAction(act){
+  const aid=document.getElementById('action-asset').value||'EP-0007';
+  const d=await api('/threat/actions/execute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:act,asset_id:aid})});
+  toast(d.success?('动作 '+act+' 已执行'):d.error);
+}
+async function runHunt(){
+  const q=document.getElementById('hunt-query').value;if(!q){toast('请输入搜索关键词');return}
+  const t=document.getElementById('hunt-type').value;
+  const d=await api('/threat/hunt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q,hunt_type:t})});
+  if(d.success)document.getElementById('hunt-results').innerHTML=d.data.results.map(r=>`<div class="alert-item medium"><strong>${esc(r.asset_id)}</strong> - ${esc(r.detail)}</div>`).join('');
+}
+
+// ===== Tab5: 漏洞补丁 =====
+async function loadVuln(){
+  const d=await api('/vuln/list');if(!d.success)return;
+  const s=d.data.by_severity;
+  document.getElementById('vuln-stats').innerHTML=`
+    <div class="stat red"><div class="num">${s.critical||0}</div><div class="label">严重漏洞</div></div>
+    <div class="stat orange"><div class="num">${s.high||0}</div><div class="label">高危漏洞</div></div>
+    <div class="stat blue"><div class="num">${d.data.total}</div><div class="label">漏洞总数</div></div>`;
+  document.querySelector('#vuln-table tbody').innerHTML=d.data.vulnerabilities.map(v=>`<tr>
+    <td><span style="font-family:monospace">${esc(v.cve_id)}</span></td><td>${esc(v.product)}</td>
+    <td><strong>${v.cvss}</strong></td><td>${sevTag(v.severity)}</td>
+    <td>${v.exploitable?'<span class="text-red">是</span>':'<span class="text-muted">否</span>'}</td>
+    <td>${v.affected_count}</td><td><span class="badge-tag ${v.fix_priority==='P0'?'tag-critical':v.fix_priority==='P1'?'tag-high':'tag-medium'}">${v.fix_priority}</span></td></tr>`).join('');
+}
+async function loadPatches(){
+  const d=await api('/vuln/patches');if(!d.success)return;
+  document.getElementById('patch-list').innerHTML=d.data.patches.map(p=>`<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+    <strong>${esc(p.kb)}</strong> ${sevTag(p.severity)}<br>
+    <span class="text-muted">${esc(p.title)}</span><br>
+    <span class="text-muted">影响: ${p.affected_assets}终端 · 状态: ${esc(p.status)}</span></div>`).join('')
+    +`<div class="mt8 text-muted">补丁合规率: <strong class="text-green">${d.data.compliance_rate}%</strong></div>`;
+}
+async function loadBaseline(){
+  const d=await api('/vuln/baseline');if(!d.success)return;
+  document.getElementById('baseline-list').innerHTML=`
+    <div class="kv"><span class="k">基线评分</span><span class="${d.data.baseline_score<60?'text-red':'text-green'}" style="font-size:20px;font-weight:700">${d.data.baseline_score}%</span>
+    <span class="k">合规项</span><span class="text-green">${d.data.compliant_count}/${d.data.total_checks}</span></div>
+    ${d.data.checks.map(c=>`<div style="padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span class="${c.compliant?'text-green':'text-red'}">${c.compliant?'✓':'✗'}</span> ${esc(c.name)}
+      <br><span class="text-muted" style="font-size:11px">当前: ${esc(c.current)}</span></div>`).join('')}`;
+}
+async function loadFixTasks(){
+  const d=await api('/vuln/fix-tasks');if(!d.success)return;
+  document.querySelector('#fixtask-table tbody').innerHTML=d.data.tasks.map(t=>`<tr>
+    <td>${esc(t.task_id)}</td><td>${esc(t.title)}</td><td>${esc(t.asset_id)}</td>
+    <td class="${t.status==='overdue'?'text-red':t.status==='completed'?'text-green':''}">${esc(t.status)}</td>
+    <td>${sevTag(t.priority)}</td><td>${t.days_open}</td><td>${t.sla_days}</td></tr>`).join('');
+}
+
+// ===== Tab6: EDR仪表盘 =====
+async function loadDashboard(){
+  const [p,ra,hm,hl,m]=await Promise.all([api('/dashboard/posture'),api('/dashboard/realtime-alerts'),api('/dashboard/threat-map'),api('/dashboard/health'),api('/dashboard/metrics')]);
+  if(p.success){const s=p.data;
+    document.getElementById('dash-stats').innerHTML=`
+      <div class="stat blue"><div class="num">${s.total_endpoints}</div><div class="label">终端总数</div></div>
+      <div class="stat green"><div class="num">${s.online}</div><div class="label">在线</div></div>
+      <div class="stat red"><div class="num">${s.risk_endpoints}</div><div class="label">风险终端</div></div>
+      <div class="stat orange"><div class="num">${s.total_alerts_today}</div><div class="label">今日告警</div></div>
+      <div class="stat purple"><div class="num">${s.isolated_endpoints}</div><div class="label">已隔离</div></div>
+      <div class="stat"><div class="num">${s.patch_compliance_pct}%</div><div class="label">补丁覆盖率</div></div>`;}
+  if(ra.success){document.getElementById('realtime-alerts').innerHTML=ra.data.alerts.slice(0,10).map(a=>`<div class="alert-item ${a.severity}"><strong>${esc(a.type)}</strong> <span class="text-muted">@ ${esc(a.asset_id)}</span><br><span class="text-muted" style="font-size:11px">${esc(a.time)}</span></div>`).join('')}
+  if(hm.success){const m2=hm.data;
+    let svg=`<svg width="100%" height="300" viewBox="0 0 820 400">`;
+    const colors={attacker:'#f85149',infected:'#d29922',watch:'#58a6ff',server:'#3fb950'};
+    m2.edges.forEach(e=>{const f=m2.nodes.find(n=>n.id===e.from),t=m2.nodes.find(n=>n.id===e.to);if(f&&t)svg+=`<line x1="${f.x}" y1="${f.y}" x2="${t.x}" y2="${t.y}" stroke="${e.type==='c2'?'#f85149':e.type==='lateral_movement'?'#d29922':'#58a6ff'}" stroke-width="2" stroke-dasharray="${e.type==='c2'?'5,5':'none'}"><title>${e.type} ${e.protocol}:${e.port}</title></line>`});
+    m2.nodes.forEach(n=>{svg+=`<circle cx="${n.x}" cy="${n.y}" r="22" fill="${colors[n.type]||'#8b949e'}" opacity="0.8"/><text x="${n.x}" y="${n.y+4}" text-anchor="middle" fill="#fff" font-size="10">${esc(n.label.substring(0,8))}</text>`});
+    svg+=`</svg>`;
+    document.getElementById('threat-map').innerHTML=svg;}
+  if(hl.success){const h=hl.data;
+    document.getElementById('health-stats').innerHTML=`
+      <div class="kv"><span class="k">平均CPU</span><span>${h.avg_cpu_pct}%</span><span class="k">平均内存</span><span>${h.avg_memory_pct}%</span>
+      <span class="k">平均磁盘</span><span>${h.avg_disk_pct}%</span><span class="k">健康评分</span><span class="text-green">${h.avg_health_score}</span>
+      <span class="k">离线终端</span><span class="text-orange">${h.offline}</span><span class="k">Agent异常</span><span class="text-red">${h.agent_down_count}</span></div>`;}
+  if(m.success){const mt=m.data;
+    document.getElementById('metrics-grid').innerHTML=`
+      <div class="stat green"><div class="num">${mt.detection_rate_pct}%</div><div class="label">检测率</div></div>
+      <div class="stat blue"><div class="num">${mt.mttd_minutes}m</div><div class="label">MTTD</div></div>
+      <div class="stat orange"><div class="num">${mt.mttr_minutes}m</div><div class="label">MTTR</div></div>
+      <div class="stat purple"><div class="num">${mt.false_positive_rate_pct}%</div><div class="label">误报率</div></div>
+      <div class="stat"><div class="num">${mt.isolation_count_week}</div><div class="label">本周隔离</div></div>
+      <div class="stat green"><div class="num">${mt.vuln_fix_rate_pct}%</div><div class="label">漏洞修复率</div></div>`;}
+}
+
+// 初始化
+loadTab('assets');
+</script>
+</body>
+</html>

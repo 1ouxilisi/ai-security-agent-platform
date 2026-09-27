@@ -1,0 +1,13 @@
+{
+  "algorithm": "sliding_window",
+  "policies": {
+    "ip:/test": {
+      "requests_per_minute": 5,
+      "burst": 2,
+      "window_seconds": 60
+    }
+  },
+  "whitelist": {
+    "ip": []
+  }
+}

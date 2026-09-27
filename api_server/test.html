@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>测试页面</title>
+<style>
+body { background-color: #1a1a2e; color: #fff; font-family: Arial; padding: 20px; }
+#test { color: #0f0; font-size: 20px; margin-top: 20px; }
+button { background: #0f3460; color: #fff; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-top: 20px; }
+</style>
+</head>
+<body>
+<h1>测试页面</h1>
+<p>如果你看到深色背景，说明CSS正常工作。</p>
+<div id="test">JS还没执行...</div>
+<button onclick="runTest()">点击测试JS</button>
+<script>
+document.getElementById('test').innerHTML = 'JS执行成功！当前时间: ' + new Date().toLocaleString();
+function runTest() {
+    alert('JS点击事件正常！');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>实时可视化控制台</title>
+<style>
+:root{
+  --bg:#0a0e14; --panel:#131a24; --border:#2a3543; --fg:#dbe4ee;
+  --muted:#7d8a9c; --accent:#2dd4bf; --ok:#3fb950; --warn:#e3b341;
+  --bad:#f85149; --info:#58a6ff; --violet:#a371f7;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:"Microsoft YaHei","Segoe UI",Arial,sans-serif;font-size:13px}
+header{padding:14px 22px;background:linear-gradient(90deg,#2dd4bf33,#2dd4bf00);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+header h1{font-size:18px;margin:0}
+header .sub{color:var(--muted);font-size:12px}
+.wrap{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;padding:16px 22px;max-width:1700px;margin:0 auto}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px}
+.panel h2{margin:0 0 10px;font-size:14px;color:var(--accent)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+input{background:#0a0e14;border:1px solid var(--border);color:var(--fg);
+  padding:7px 10px;border-radius:5px;font-size:13px;min-width:150px}
+button{background:#0d9488;color:#fff;border:none;padding:7px 13px;border-radius:5px;cursor:pointer;font-size:13px}
+button:hover{background:#14b8a6}
+button.sec{background:#2a3543}
+button.sec:hover{background:#3b4a5e}
+button.warn{background:#9e6a03}
+button.warn:hover{background:#bb8009}
+.conn{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;
+  border-radius:12px;font-size:12px;background:#2a3543}
+.dot{width:9px;height:9px;border-radius:50%}
+.dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.dot.off{background:var(--bad)}
+.progress{height:14px;background:#0a0e14;border-radius:7px;overflow:hidden;border:1px solid var(--border)}
+.progress>div{height:100%;background:linear-gradient(90deg,#0d9488,#2dd4bf);transition:width .3s}
+.bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
+.steps{max-height:260px;overflow:auto;margin-top:8px}
+.step{display:flex;gap:8px;padding:6px 8px;border-bottom:1px solid var(--border);font-size:12px}
+.step .n{color:var(--muted);width:24px}
+.step.done{color:var(--ok)}
+.step.running{color:var(--info)}
+.step.failed{color:var(--bad)}
+.logbox{height:340px;overflow:auto;background:#06090e;border:1px solid var(--border);
+  border-radius:6px;padding:8px;font-family:Consolas,monospace;font-size:12px}
+.logline{padding:1px 0;white-space:pre-wrap;word-break:break-all}
+.finding{border-left:3px solid var(--bad);padding:6px 8px;margin-bottom:6px;
+  background:#06090e;border-radius:0 5px 5px 0;font-size:12px}
+.thinking{border-left:3px solid var(--violet);padding:6px 8px;margin-bottom:6px;
+  background:#06090e;border-radius:0 5px 5px 0;font-size:12px;color:#d8ccff}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.stat{background:#0a0e14;border:1px solid var(--border);border-radius:6px;padding:8px;text-align:center}
+.stat .v{font-size:18px;color:var(--accent)}
+.stat .k{font-size:11px;color:var(--muted)}
+.mono{font-family:Consolas,monospace}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{border:1px solid var(--border);padding:5px 7px;text-align:left}
+th{background:#0a0e14}
+</style>
+</head>
+<body>
+<header>
+  <h1>实时可视化控制台</h1>
+  <span class="sub">Direction 2 · WebSocket 实时推送 · 进度条 · 彩色日志流</span>
+  <span style="flex:1"></span>
+  <span class="conn"><span class="dot off" id="ws-dot"></span><span id="ws-text">未连接</span></span>
+</header>
+
+<div class="wrap">
+  <!-- 左列：控制 + 进度 -->
+  <div>
+    <div class="panel">
+      <h2>启动实时会话</h2>
+      <div class="row">
+        <input id="target" placeholder="http://target.example.com" style="flex:1">
+        <button onclick="startDemo()">开始实时演示</button>
+        <button class="sec" onclick="stopDemo()">停止</button>
+      </div>
+      <div class="row">
+        <button class="sec" onclick="pauseLogs()">暂停日志</button>
+        <button class="sec" onclick="resumeLogs()">继续日志</button>
+        <button class="warn" onclick="clearLogs()">清空日志</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>整体进度 <span class="mono" id="eta" style="color:var(--muted);font-size:12px"></span></h2>
+      <div class="bar-label"><span id="pct">0%</span><span id="cur-stage">—</span></div>
+      <div class="progress"><div id="pfill" style="width:0%"></div></div>
+      <div class="steps" id="steps"></div>
+    </div>
+
+    <div class="panel">
+      <h2>统计</h2>
+      <div class="stat-grid">
+        <div class="stat"><div class="v" id="s-conn">0</div><div class="k">WS 连接</div></div>
+        <div class="stat"><div class="v" id="s-tasks">0</div><div class="k">任务</div></div>
+        <div class="stat"><div class="v" id="s-logs">0</div><div class="k">日志</div></div>
+        <div class="stat"><div class="v" id="s-find">0</div><div class="k">发现</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右列：日志流 + 事件 -->
+  <div>
+    <div class="panel">
+      <h2>实时日志流</h2>
+      <div class="logbox" id="logbox"></div>
+    </div>
+    <div class="panel">
+      <h2>AI 思考 / 漏洞发现</h2>
+      <div id="events" style="max-height:260px;overflow:auto"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const BASE = "/api/v1/realtime-visualization";
+let curTask = null, ws = null, findCount = 0, logPaused = false;
+
+async function api(path, opts={}){
+  const r = await fetch(BASE+path, Object.assign({headers:{'Content-Type':'application/json'}}, opts));
+  return r.json();
+}
+async function post(path, body){ return api(path, {method:'POST', body: JSON.stringify(body||{})}); }
+
+async function startDemo(){
+  const target = document.getElementById('target').value.trim() || 'http://target.example.com';
+  const r = await post('/demo/start', {target});
+  if(!r.success){ alert(r.error); return; }
+  curTask = r.data.task_id;
+  findCount = 0;
+  connectWS(curTask);
+}
+async function stopDemo(){ if(curTask) await post('/demo/'+curTask+'/stop'); if(ws) ws.close(); }
+async function pauseLogs(){ if(curTask){ logPaused=true; await post('/logs/'+curTask+'/pause'); } }
+async function resumeLogs(){ if(curTask){ logPaused=false; await post('/logs/'+curTask+'/resume'); } }
+async function clearLogs(){ if(curTask){ await post('/logs/'+curTask+'/clear'); document.getElementById('logbox').innerHTML=''; } }
+
+function connectWS(taskId){
+  if(ws){ ws.close(); }
+  const proto = location.protocol==='https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}${BASE}/ws/realtime/${taskId}`);
+  ws.onopen = ()=>{ setConn(true); };
+  ws.onclose = ()=>{ setConn(false); };
+  ws.onerror = ()=>{ setConn(false); };
+  ws.onmessage = (ev)=>{
+    const m = JSON.parse(ev.data);
+    handleMsg(m);
+  };
+}
+function setConn(on){
+  document.getElementById('ws-dot').className = 'dot '+(on?'on':'off');
+  document.getElementById('ws-text').textContent = on ? '已连接' : '未连接';
+}
+
+function handleMsg(m){
+  if(m.type==='progress' || m.type==='snapshot'){
+    const d = m.data;
+    document.getElementById('pct').textContent = (d.overall_pct||0)+'%';
+    document.getElementById('pfill').style.width = (d.overall_pct||0)+'%';
+    document.getElementById('eta').textContent = d.eta_seconds? ('ETA ~'+d.eta_seconds+'s'):'';
+    document.getElementById('steps').innerHTML = (d.steps||[]).map((s,i)=>`
+      <div class="step ${s.status}"><span class="n">${i+1}</span><span>${s.name}</span>
+      <span style="margin-left:auto">${Math.round(s.progress*100)}%</span></div>`).join('');
+  } else if(m.type==='log'){
+    if(!logPaused) appendLog(m.data);
+  } else if(m.type==='finding'){
+    findCount++;
+    appendFinding(m.data);
+  } else if(m.type==='thinking'){
+    appendThinking(m.data);
+  } else if(m.type==='step_started'){
+    document.getElementById('cur-stage').textContent = m.data.tool+' / '+m.data.stage;
+  } else if(m.type==='completed'){
+    appendLog({level:'ok', message:'会话完成', source:'system', timestamp:m.ts});
+  }
+}
+function appendLog(e){
+  const box = document.getElementById('logbox');
+  const t = new Date((e.timestamp||Date.now()/1000)*1000).toLocaleTimeString();
+  const div = document.createElement('div');
+  div.className = 'logline';
+  div.style.color = e.color || '#dbe4ee';
+  div.textContent = `[${t}] [${e.level}] ${e.source?('('+e.source+') '):''}${e.message}`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+function appendFinding(f){
+  const box = document.getElementById('events');
+  const div = document.createElement('div');
+  div.className = 'finding';
+  div.innerHTML = `<b style="color:var(--bad)">发现 [${f.severity}]</b> ${f.title}<br><span class="mono" style="color:var(--muted)">${f.evidence||''}</span>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  document.getElementById('s-find').textContent = findCount;
+}
+function appendThinking(t){
+  const box = document.getElementById('events');
+  const div = document.createElement('div');
+  div.className = 'thinking';
+  div.innerHTML = `<b>AI 思考</b><br>观察：${t.observation}<br>决策：${t.decision}<br>推理：${t.reasoning}`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function refreshStats(){
+  const r = await api('/dashboard/overview');
+  if(r.success){
+    document.getElementById('s-conn').textContent = r.data.websocket.total_connections;
+    document.getElementById('s-tasks').textContent = r.data.progress.tasks;
+    document.getElementById('s-logs').textContent = r.data.logs.total_logs;
+  }
+}
+setInterval(refreshStats, 2000);
+refreshStats();
+</script>
+</body>
+</html>

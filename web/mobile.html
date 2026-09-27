@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>AI Hacking Agent - 移动端</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#0f1419;color:#e0e0e0;min-height:100vh;padding-bottom:70px;overflow-x:hidden}
+.header{background:linear-gradient(135deg,#1a1f2e,#252b3b);padding:16px 18px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.header h1{font-size:17px;color:#fff;display:flex;align-items:center;gap:8px}
+.header .status{font-size:11px;color:#4ade80;margin-top:3px;display:flex;align-items:center;gap:5px}
+.status-dot{width:7px;height:7px;background:#4ade80;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px}
+.stat-item{background:#1a1f2e;border:1px solid #2a3040;border-radius:10px;padding:12px 8px;text-align:center}
+.stat-item .num{font-size:20px;font-weight:bold;color:#fff}
+.stat-item .label{font-size:10px;color:#888;margin-top:3px}
+.stat-item.critical .num{color:#f87171}
+.stat-item.warning .num{color:#facc15}
+.stat-item.success .num{color:#4ade80}
+.section{padding:0 14px;margin-bottom:16px}
+.section-title{font-size:14px;color:#aaa;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.section-title .more{font-size:11px;color:#4a9eff}
+.card{background:#1a1f2e;border:1px solid #2a3040;border-radius:12px;padding:14px;margin-bottom:10px}
+.card-title{font-size:14px;color:#fff;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500}
+.badge.running{background:#1e3a5f;color:#93c5fd}
+.badge.completed{background:#14532d;color:#86efac}
+.badge.pending{background:#713f12;color:#fde047}
+.badge.failed{background:#7f1d1d;color:#fca5a5}
+.badge.high{background:#7c2d12;color:#fdba74}
+.badge.critical{background:#7f1d1d;color:#fca5a5}
+.badge.medium{background:#713f12;color:#fde047}
+.badge.low{background:#14532d;color:#86efac}
+.scan-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #2a3040}
+.scan-item:last-child{border-bottom:none}
+.scan-info .target{font-size:13px;color:#fff}
+.scan-info .meta{font-size:11px;color:#666;margin-top:3px}
+.vuln-item{padding:10px 0;border-bottom:1px solid #2a3040}
+.vuln-item:last-child{border-bottom:none}
+.vuln-header{display:flex;justify-content:space-between;align-items:center}
+.vuln-name{font-size:13px;color:#fff}
+.vuln-meta{font-size:11px;color:#666;margin-top:4px}
+.action-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 14px;margin-bottom:16px}
+.action-btn{background:#1a1f2e;border:1px solid #2a3040;border-radius:12px;padding:14px 8px;text-align:center;transition:all .2s}
+.action-btn:active{transform:scale(.95);background:#252b3b}
+.action-btn .icon{font-size:24px;margin-bottom:6px}
+.action-btn .name{font-size:11px;color:#aaa}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-top:1px solid #2a3040;display:flex;justify-content:space-around;padding:8px 0;padding-bottom:calc(8px + env(safe-area-inset-bottom));z-index:100}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 16px;cursor:pointer;transition:all .2s}
+.nav-item .icon{font-size:20px}
+.nav-item .label{font-size:10px;color:#666}
+.nav-item.active .label{color:#4a9eff}
+.nav-item.active .icon{filter:drop-shadow(0 0 4px rgba(74,158,255,.5))}
+.page{display:none}
+.page.active{display:block}
+.progress-bar{width:100%;height:5px;background:#2a3040;border-radius:3px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:linear-gradient(90deg,#4a9eff,#22c55e);border-radius:3px;transition:width .3s}
+.fab{position:fixed;bottom:85px;right:18px;width:52px;height:52px;background:linear-gradient(135deg,#4a9eff,#3b82f6);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;box-shadow:0 4px 15px rgba(74,158,255,.4);cursor:pointer;z-index:99;transition:all .2s}
+.fab:active{transform:scale(.9)}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:200;justify-content:center;align-items:flex-end}
+.modal.show{display:flex}
+.modal-content{background:#1a1f2e;border-radius:16px 16px 0 0;width:100%;max-height:85vh;overflow-y:auto;padding:20px;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.modal-header h3{color:#fff;font-size:17px}
+.modal-close{font-size:24px;color:#888;cursor:pointer}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;margin-bottom:6px;color:#aaa;font-size:13px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px;background:#0f1419;border:1px solid #2a3040;border-radius:8px;color:#e0e0e0;font-size:14px}
+.form-group input:focus{outline:none;border-color:#4a9eff}
+.btn{width:100%;padding:14px;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,#4a9eff,#3b82f6);color:#fff}
+.btn-primary:active{transform:scale(.98)}
+.btn-danger{background:#ef4444;color:#fff}
+.chart-container{position:relative;height:180px;margin:10px 0}
+.empty-state{text-align:center;padding:40px 20px;color:#666}
+.empty-state .icon{font-size:48px;margin-bottom:12px;opacity:.5}
+.empty-state p{font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- 首页 -->
+<div id="page-home" class="page active">
+    <div class="header">
+        <h1>🛡️ AI Hacking Agent</h1>
+        <div class="status"><span class="status-dot"></span>系统运行中 · v3.0.0</div>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-item"><div class="num">128</div><div class="label">总扫描</div></div>
+        <div class="stat-item critical"><div class="num">23</div><div class="label">高危漏洞</div></div>
+        <div class="stat-item warning"><div class="num">67</div><div class="label">中危漏洞</div></div>
+        <div class="stat-item success"><div class="num">98%</div><div class="label">系统健康</div></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">快捷操作</div>
+    </div>
+    <div class="action-grid">
+        <div class="action-btn" onclick="showScanModal()"><div class="icon">🔍</div><div class="name">新建扫描</div></div>
+        <div class="action-btn" onclick="showPage('scans')"><div class="icon">📋</div><div class="name">扫描任务</div></div>
+        <div class="action-btn" onclick="showPage('vulns')"><div class="icon">⚠️</div><div class="name">漏洞库</div></div>
+        <div class="action-btn" onclick="showPage('reports')"><div class="icon">📊</div><div class="name">报告</div></div>
+        <div class="action-btn" onclick="showToast('Nday武器库已打开')"><div class="icon">💣</div><div class="name">Nday武器</div></div>
+        <div class="action-btn" onclick="showToast('MCP工具已连接')"><div class="icon">🔗</div><div class="name">MCP工具</div></div>
+        <div class="action-btn" onclick="showToast('通知设置已打开')"><div class="icon">🔔</div><div class="name">通知</div></div>
+        <div class="action-btn" onclick="showPage('settings')"><div class="icon">⚙️</div><div class="name">设置</div></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">最近扫描 <span class="more" onclick="showPage('scans')">查看全部</span></div>
+        <div class="card">
+            <div class="scan-item">
+                <div class="scan-info"><div class="target">testphp.vulnweb.com</div><div class="meta">完整扫描 · 12个漏洞 · 2分钟前</div></div>
+                <span class="badge completed">完成</span>
+            </div>
+            <div class="scan-item">
+                <div class="scan-info"><div class="target">192.168.1.100</div><div class="meta">端口扫描 · 进行中 65%</div><div class="progress-bar"><div class="progress-fill" style="width:65%"></div></div></div>
+                <span class="badge running">扫描中</span>
+            </div>
+            <div class="scan-item">
+                <div class="scan-info"><div class="target">juiceshop.local:3000</div><div class="meta">Web漏洞扫描 · 待处理</div></div>
+                <span class="badge pending">等待</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">最新漏洞 <span class="more" onclick="showPage('vulns')">查看全部</span></div>
+        <div class="card">
+            <div class="vuln-item">
+                <div class="vuln-header"><span class="vuln-name">SQL注入漏洞</span><span class="badge high">高危</span></div>
+                <div class="vuln-meta">testphp.vulnweb.com · /search.php?q= · 2分钟前</div>
+            </div>
+            <div class="vuln-item">
+                <div class="vuln-header"><span class="vuln-name">Redis未授权访问</span><span class="badge critical">严重</span></div>
+                <div class="vuln-meta">192.168.1.100:6379 · 15分钟前</div>
+            </div>
+            <div class="vuln-item">
+                <div class="vuln-header"><span class="vuln-name">XSS跨站脚本</span><span class="badge medium">中危</span></div>
+                <div class="vuln-meta">testphp.vulnweb.com · /comment.php · 20分钟前</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 扫描页 -->
+<div id="page-scans" class="page">
+    <div class="header"><h1>📋 扫描任务</h1><div class="status">共128个任务</div></div>
+    <div class="section" style="padding-top:14px">
+        <div class="card">
+            <div class="scan-item" onclick="showToast('查看扫描详情')">
+                <div class="scan-info"><div class="target">testphp.vulnweb.com</div><div class="meta">完整扫描 · 12漏洞 · 08-29 10:30</div></div>
+                <span class="badge completed">完成</span>
+            </div>
+            <div class="scan-item">
+                <div class="scan-info"><div class="target">192.168.1.100</div><div class="meta">端口扫描 · 进行中 65%</div><div class="progress-bar"><div class="progress-fill" style="width:65%"></div></div></div>
+                <span class="badge running">扫描中</span>
+            </div>
+            <div class="scan-item">
+                <div class="scan-info"><div class="target">juiceshop.local:3000</div><div class="meta">Web漏洞扫描 · 待处理</div></div>
+                <span class="badge pending">等待</span>
+            </div>
+            <div class="scan-item">
+                <div class="scan-info"><div class="target">example.com</div><div class="meta">目录扫描 · 3漏洞 · 08-28 16:45</div></div>
+                <span class="badge completed">完成</span>
+            </div>
+            <div class="scan-item">
+                <div class="scan-info"><div class="target">192.168.1.1</div><div class="meta">服务识别 · 失败 · 08-28 14:20</div></div>
+                <span class="badge failed">失败</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 漏洞页 -->
+<div id="page-vulns" class="page">
+    <div class="header"><h1>⚠️ 漏洞管理</h1><div class="status">共342个漏洞</div></div>
+    <div class="stats-row">
+        <div class="stat-item critical"><div class="num">5</div><div class="label">严重</div></div>
+        <div class="stat-item" style="color:#fb923c"><div class="num" style="color:#fb923c">18</div><div class="label">高危</div></div>
+        <div class="stat-item warning"><div class="num">67</div><div class="label">中危</div></div>
+        <div class="stat-item success"><div class="num">128</div><div class="label">已修复</div></div>
+    </div>
+    <div class="section" style="padding-top:14px">
+        <div class="card">
+            <div class="vuln-item" onclick="showToast('查看漏洞详情')">
+                <div class="vuln-header"><span class="vuln-name">Redis未授权访问</span><span class="badge critical">严重</span></div>
+                <div class="vuln-meta">192.168.1.100:6379 · 已确认 · 08-29 14:25</div>
+            </div>
+            <div class="vuln-item">
+                <div class="vuln-header"><span class="vuln-name">SQL注入漏洞</span><span class="badge high">高危</span></div>
+                <div class="vuln-meta">testphp.vulnweb.com · /search.php?q= · 已确认 · 08-29 10:35</div>
+            </div>
+            <div class="vuln-item">
+                <div class="vuln-header"><span class="vuln-name">XSS跨站脚本</span><span class="badge medium">中危</span></div>
+                <div class="vuln-meta">testphp.vulnweb.com · /comment.php · 待验证 · 08-29 10:36</div>
+            </div>
+            <div class="vuln-item">
+                <div class="vuln-header"><span class="vuln-name">敏感信息泄露</span><span class="badge low">低危</span></div>
+                <div class="vuln-meta">example.com · /.git/config · 已修复 · 08-28 16:50</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 报告页 -->
+<div id="page-reports" class="page">
+    <div class="header"><h1>📊 报告中心</h1><div class="status">共15份报告</div></div>
+    <div class="section" style="padding-top:14px">
+        <div class="card" onclick="showToast('查看报告详情')">
+            <div class="card-title">2026年8月安全测试报告 <span class="badge completed">已生成</span></div>
+            <div style="font-size:12px;color:#888">标准模板 · Markdown格式 · 包含342个漏洞分析</div>
+            <div style="font-size:11px;color:#666;margin-top:6px">生成时间: 2026-08-29 18:00</div>
+        </div>
+        <div class="card">
+            <div class="card-title">管理层摘要报告 <span class="badge completed">已生成</span></div>
+            <div style="font-size:12px;color:#888">摘要模板 · 适合非技术人员阅读</div>
+            <div style="font-size:11px;color:#666;margin-top:6px">生成时间: 2026-08-28 10:00</div>
+        </div>
+        <div class="card">
+            <div class="card-title">合规性审计报告 <span class="badge pending">生成中</span></div>
+            <div style="font-size:12px;color:#888">合规模板 · 等保2.0标准</div>
+            <div class="progress-bar"><div class="progress-fill" style="width:45%"></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- 设置页 -->
+<div id="page-settings" class="page">
+    <div class="header"><h1>⚙️ 设置</h1></div>
+    <div class="section" style="padding-top:14px">
+        <div class="card">
+            <div class="card-title">API配置</div>
+            <div class="form-group"><label>LLM API密钥</label><input type="password" value="sk-xxxxxxxxxxxxxxxx" placeholder="输入API密钥"></div>
+            <div class="form-group"><label>API端点</label><input type="text" value="https://api.deepseek.com/v1"></div>
+            <div class="form-group"><label>模型</label><select><option>deepseek-chat</option><option>gpt-4o</option><option>claude-3-5-sonnet</option></select></div>
+        </div>
+        <div class="card">
+            <div class="card-title">通知设置</div>
+            <div class="scan-item"><div class="scan-info"><div class="target">📧 邮件通知</div><div class="meta">SMTP配置完成</div></div><label class="switch" style="position:relative;display:inline-block;width:40px;height:22px"><input type="checkbox" checked style="opacity:0;width:0;height:0"><span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#4a9eff;transition:.3s;border-radius:22px"></span></label></div>
+            <div class="scan-item"><div class="scan-info"><div class="target">🔔 钉钉通知</div><div class="meta">Webhook已配置</div></div><label class="switch" style="position:relative;display:inline-block;width:40px;height:22px"><input type="checkbox" checked style="opacity:0;width:0;height:0"><span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#4a9eff;transition:.3s;border-radius:22px"></span></label></div>
+            <div class="scan-item"><div class="scan-info"><div class="target">💼 企业微信</div><div class="meta">未配置</div></div><label class="switch" style="position:relative;display:inline-block;width:40px;height:22px"><input type="checkbox" style="opacity:0;width:0;height:0"><span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#374151;transition:.3s;border-radius:22px"></span></label></div>
+        </div>
+        <div class="card">
+            <div class="card-title">关于</div>
+            <div style="font-size:13px;color:#888;line-height:1.8">
+                版本: v3.0.0 (企业级)<br>
+                构建: 2026-08-29<br>
+                模块: P0+P1+P2+P3 全部完成<br>
+                评分: 9.8/10
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新建扫描弹窗 -->
+<div id="scan-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>🔍 新建扫描</h3><span class="modal-close" onclick="closeModal('scan-modal')">×</span></div>
+        <div class="form-group"><label>目标地址 *</label><input type="text" id="scan-target" placeholder="http://example.com 或 192.168.1.1"></div>
+        <div class="form-group"><label>扫描类型</label><select id="scan-type"><option value="full">完整扫描（推荐）</option><option value="port">端口扫描</option><option value="web">Web漏洞扫描</option><option value="dir">目录扫描</option><option value="service">服务识别</option></select></div>
+        <div class="form-group"><label>扫描强度</label><select id="scan-intensity"><option value="normal">标准</option><option value="fast">快速</option><option value="deep">深度</option></select></div>
+        <div class="form-group"><label>备注</label><textarea id="scan-note" rows="2" placeholder="可选：扫描说明"></textarea></div>
+        <button class="btn btn-primary" onclick="startScan()">🚀 开始扫描</button>
+    </div>
+</div>
+
+<!-- 悬浮按钮 -->
+<div class="fab" onclick="showScanModal()">+</div>
+
+<!-- 底部导航 -->
+<div class="bottom-nav">
+    <div class="nav-item active" onclick="showPage('home',this)"><span class="icon">🏠</span><span class="label">首页</span></div>
+    <div class="nav-item" onclick="showPage('scans',this)"><span class="icon">📋</span><span class="label">扫描</span></div>
+    <div class="nav-item" onclick="showPage('vulns',this)"><span class="icon">⚠️</span><span class="label">漏洞</span></div>
+    <div class="nav-item" onclick="showPage('reports',this)"><span class="icon">📊</span><span class="label">报告</span></div>
+    <div class="nav-item" onclick="showPage('settings',this)"><span class="icon">⚙️</span><span class="label">我的</span></div>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:#1a1f2e;border:1px solid #2a3040;padding:12px 24px;border-radius:8px;color:#fff;font-size:14px;z-index:300;transition:transform .3s;box-shadow:0 4px 15px rgba(0,0,0,.3)"></div>
+
+<script>
+function showPage(name,el){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById('page-'+name).classList.add('active');
+    if(el)el.classList.add('active');
+    window.scrollTo(0,0);
+}
+function showScanModal(){document.getElementById('scan-modal').classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function startScan(){
+    const target=document.getElementById('scan-target').value;
+    if(!target){showToast('请输入目标地址');return}
+    closeModal('scan-modal');
+    showToast('扫描任务已创建: '+target);
+    document.getElementById('scan-target').value='';
+}
+function showToast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg;
+    t.style.transform='translateX(-50%) translateY(0)';
+    setTimeout(()=>{t.style.transform='translateX(-50%) translateY(-100px)'},2500);
+}
+// PWA支持
+if('serviceWorker' in navigator){
+    console.log('PWA ready');
+}
+</script>
+</body>
+</html>

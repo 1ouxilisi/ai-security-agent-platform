@@ -1,0 +1,98 @@
+{
+  "tenant_id": "1",
+  "exported_at": "2026-09-12 18:29:35",
+  "tenant": null,
+  "files": {},
+  "audit_logs": [
+    {
+      "ts": 1789206508.1666658,
+      "tenant_id": "1",
+      "username": "system",
+      "action": "data:export",
+      "resource": "data\\tenants\\_meta\\export_1_1789206508.json",
+      "details": {
+        "path": "data\\tenants\\_meta\\export_1_1789206508.json"
+      }
+    },
+    {
+      "ts": 1789206508.218929,
+      "tenant_id": "1",
+      "username": "system",
+      "action": "data:delete",
+      "resource": "tenant:1",
+      "details": {
+        "reason": "gdpr_delete_request"
+      }
+    },
+    {
+      "ts": 1789206508.3443348,
+      "tenant_id": "1",
+      "username": "system",
+      "action": "data:deleted",
+      "resource": "tenant:1",
+      "details": {
+        "files": 0
+      }
+    },
+    {
+      "ts": 1789207997.1112728,
+      "tenant_id": "1",
+      "username": "system",
+      "action": "data:export",
+      "resource": "data\\tenants\\_meta\\export_1_1789207997.json",
+      "details": {
+        "path": "data\\tenants\\_meta\\export_1_1789207997.json"
+      }
+    },
+    {
+      "ts": 1789207997.1174164,
+      "tenant_id": "1",
+      "username": "system",
+      "action": "data:delete",
+      "resource": "tenant:1",
+      "details": {
+        "reason": "gdpr_delete_request"
+      }
+    },
+    {
+      "ts": 1789207997.1184998,
+      "tenant_id": "1",
+      "username": "system",
+      "action": "data:deleted",
+      "resource": "tenant:1",
+      "details": {
+        "files": 0
+      }
+    },
+    {
+      "ts": 1789208347.843048,
+      "tenant_id": "1",
+      "username": "system",
+      "action": "data:export",
+      "resource": "data\\tenants\\_meta\\export_1_1789208347.json",
+      "details": {
+        "path": "data\\tenants\\_meta\\export_1_1789208347.json"
+      }
+    },
+    {
+      "ts": 1789208347.849771,
+      "tenant_id": "1",
+      "username": "system",
+      "action": "data:delete",
+      "resource": "tenant:1",
+      "details": {
+        "reason": "gdpr_delete_request"
+      }
+    },
+    {
+      "ts": 1789208347.8509398,
+      "tenant_id": "1",
+      "username": "system",
+      "action": "data:deleted",
+      "resource": "tenant:1",
+      "details": {
+        "files": 0
+      }
+    }
+  ]
+}

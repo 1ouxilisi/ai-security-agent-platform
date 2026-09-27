@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一键安全评估 - AI Hacking Agent</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #0a0e17;
+            color: #e0e6ed;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+
+        /* 头部 */
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 {
+            font-size: 32px;
+            background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .header p { color: #8892a6; font-size: 14px; }
+
+        /* 工具状态 */
+        .tools-status {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .tool-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: #1a2332;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        .tool-badge .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+        }
+        .dot.ok { background: #10b981; box-shadow: 0 0 8px #10b981; }
+        .dot.fail { background: #ef4444; }
+
+        /* 输入卡片 */
+        .card {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 25px;
+        }
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #00d4ff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 输入框 */
+        .input-group { margin-bottom: 20px; }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #9ca3af;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: #0a0e17;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            color: #e0e6ed;
+            font-size: 16px;
+            font-family: 'Consolas', monospace;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+        .input-group input::placeholder { color: #4b5563; }
+
+        /* 扫描类型选择 */
+        .scan-types {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        .scan-type {
+            flex: 1;
+            padding: 12px;
+            background: #0a0e17;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .scan-type:hover { border-color: #4b5563; }
+        .scan-type.active {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.08);
+        }
+        .scan-type .name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .scan-type .desc { font-size: 11px; color: #6b7280; }
+
+        /* 按钮 */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-secondary {
+            background: #1f2937;
+            color: #9ca3af;
+        }
+        .btn-secondary:hover { background: #374151; color: #e0e6ed; box-shadow: none; }
+
+        /* 进度区域 */
+        .progress-section { display: none; }
+        .progress-section.show { display: block; }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #1f2937;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            border-radius: 3px;
+            transition: width 0.5s;
+            width: 0%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .progress-text {
+            text-align: center;
+            color: #9ca3af;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .step {
+            text-align: center;
+            flex: 1;
+            position: relative;
+        }
+        .step .icon {
+            width: 36px; height: 36px;
+            margin: 0 auto 8px;
+            border-radius: 50%;
+            background: #1f2937;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .step.active .icon { background: rgba(0, 212, 255, 0.2); color: #00d4ff; }
+        .step.done .icon { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .step .label { font-size: 11px; color: #6b7280; }
+        .step.active .label { color: #00d4ff; }
+
+        /* 结果区域 */
+        .result-section { display: none; }
+        .result-section.show { display: block; }
+        .risk-banner {
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .risk-banner.severe { background: linear-gradient(135deg, #7f1d1d, #991b1b); }
+        .risk-banner.high { background: linear-gradient(135deg, #7c2d12, #9a3412); }
+        .risk-banner.medium { background: linear-gradient(135deg, #78350f, #92400e); }
+        .risk-banner.low { background: linear-gradient(135deg, #064e3b, #065f46); }
+        .risk-banner.safe { background: linear-gradient(135deg, #14532d, #166534); }
+        .risk-banner .level { font-size: 24px; font-weight: bold; }
+        .risk-banner .score { font-size: 42px; font-weight: bold; }
+        .risk-banner .summary { font-size: 13px; opacity: 0.9; margin-top: 5px; }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .result-stat {
+            background: #0a0e17;
+            padding: 18px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .result-stat .num { font-size: 28px; font-weight: bold; color: #00d4ff; }
+        .result-stat .label { font-size: 12px; color: #6b7280; margin-top: 5px; }
+
+        /* 表格 */
+        .result-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .result-table th, .result-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #1f2937;
+            font-size: 13px;
+        }
+        .result-table th { background: #0a0e17; color: #9ca3af; font-weight: 600; }
+        .severity-tag {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .sev-critical { background: #7f1d1d; color: #fca5a5; }
+        .sev-high { background: #7c2d12; color: #fdba74; }
+        .sev-medium { background: #78350f; color: #fcd34d; }
+        .sev-low { background: #064e3b; color: #6ee7b7; }
+        .sev-info { background: #1e3a5f; color: #93c5fd; }
+
+        /* 建议列表 */
+        .rec-list { list-style: none; }
+        .rec-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #1f2937;
+            font-size: 14px;
+        }
+        .rec-list li:last-child { border-bottom: none; }
+
+        /* 历史任务 */
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #0a0e17;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .task-item:hover { background: #1a2332; }
+        .task-item .target { font-family: 'Consolas', monospace; font-size: 14px; }
+        .task-item .meta { font-size: 12px; color: #6b7280; }
+        .task-status { padding: 3px 10px; border-radius: 12px; font-size: 11px; }
+        .status-running { background: #1e3a5f; color: #93c5fd; }
+        .status-completed { background: #064e3b; color: #6ee7b7; }
+        .status-failed { background: #7f1d1d; color: #fca5a5; }
+
+        /* 错误提示 */
+        .error-box {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: #fca5a5;
+            font-size: 13px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .error-box.show { display: block; }
+
+        /* 报告链接 */
+        .report-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #10b981;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+        .report-link:hover { background: #059669; }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #4b5563;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>🔍 一键安全评估</h1>
+            <p>输入目标IP或域名，自动完成端口扫描 → 漏洞扫描 → Web检测 → 风险评级 → 报告生成</p>
+        </div>
+
+        <!-- 工具状态 -->
+        <div class="tools-status" id="toolsStatus">
+            <div class="tool-badge"><span class="dot" id="nmapDot"></span> nmap</div>
+            <div class="tool-badge"><span class="dot" id="nucleiDot"></span> nuclei</div>
+            <div class="tool-badge" style="color:#6b7280;">⏱️ 快速扫描约1-2分钟</div>
+        </div>
+
+        <!-- 输入卡片 -->
+        <div class="card" id="inputCard">
+            <h2>🎯 目标设置</h2>
+            <div class="input-group">
+                <label>目标IP地址或域名</label>
+                <input type="text" id="targetInput" placeholder="例如: 192.168.1.1 或 example.com" value="">
+            </div>
+            <div class="scan-types">
+                <div class="scan-type active" data-type="quick" onclick="selectScanType(this)">
+                    <div class="name">⚡ 快速</div>
+                    <div class="desc">常用端口+高危漏洞</div>
+                </div>
+                <div class="scan-type" data-type="full" onclick="selectScanType(this)">
+                    <div class="name">🔍 完整</div>
+                    <div class="desc">1-10000端口+全漏洞</div>
+                </div>
+                <div class="scan-type" data-type="deep" onclick="selectScanType(this)">
+                    <div class="name">🔥 深度</div>
+                    <div class="desc">全端口+脚本+自动扫描</div>
+                </div>
+            </div>
+            <div class="error-box" id="errorBox"></div>
+            <button class="btn" id="startBtn" onclick="startAssessment()">🚀 开始评估</button>
+        </div>
+
+        <!-- 进度卡片 -->
+        <div class="card progress-section" id="progressCard">
+            <h2>⏳ 评估进行中</h2>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="progress-text" id="progressText">正在初始化...</div>
+            <div class="progress-steps">
+                <div class="step active" id="step1"><div class="icon">📡</div><div class="label">端口扫描</div></div>
+                <div class="step" id="step2"><div class="icon">🐛</div><div class="label">漏洞扫描</div></div>
+                <div class="step" id="step3"><div class="icon">🌐</div><div class="label">Web检测</div></div>
+                <div class="step" id="step4"><div class="icon">📊</div><div class="label">风险评级</div></div>
+                <div class="step" id="step5"><div class="icon">📄</div><div class="label">生成报告</div></div>
+            </div>
+        </div>
+
+        <!-- 结果卡片 -->
+        <div class="card result-section" id="resultCard">
+            <h2>✅ 评估结果</h2>
+            <div id="resultContent"></div>
+        </div>
+
+        <!-- 历史任务 -->
+        <div class="card">
+            <h2>📋 历史任务</h2>
+            <div id="taskList">
+                <div class="empty-state">
+                    <div class="icon">📭</div>
+                    <div>暂无评估任务</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentScanType = 'quick';
+        let currentTaskId = null;
+        let pollTimer = null;
+
+        // 页面加载时检查工具状态
+        window.onload = function() {
+            loadToolsStatus();
+            loadTaskList();
+        };
+
+        function selectScanType(el) {
+            document.querySelectorAll('.scan-type').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            currentScanType = el.dataset.type;
+        }
+
+        async function loadToolsStatus() {
+            try {
+                const resp = await fetch('/api/v1/assessment/tools/status');
+                const data = await resp.json();
+                document.getElementById('nmapDot').className = 'dot ' + (data.nmap.available ? 'ok' : 'fail');
+                document.getElementById('nucleiDot').className = 'dot ' + (data.nuclei.available ? 'ok' : 'fail');
+            } catch(e) {
+                document.getElementById('nmapDot').className = 'dot fail';
+                document.getElementById('nucleiDot').className = 'dot fail';
+            }
+        }
+
+        function showError(msg) {
+            const box = document.getElementById('errorBox');
+            box.textContent = '❌ ' + msg;
+            box.classList.add('show');
+            setTimeout(() => box.classList.remove('show'), 5000);
+        }
+
+        async function startAssessment() {
+            const target = document.getElementById('targetInput').value.trim();
+            if (!target) {
+                showError('请输入目标IP或域名');
+                return;
+            }
+
+            const btn = document.getElementById('startBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ 正在启动...';
+
+            try {
+                const resp = await fetch('/api/v1/assessment/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target, scan_type: currentScanType, async_mode: true })
+                });
+                const data = await resp.json();
+
+                if (resp.ok && data.task_id) {
+                    currentTaskId = data.task_id;
+                    document.getElementById('inputCard').style.display = 'none';
+                    document.getElementById('progressCard').classList.add('show');
+                    startPolling();
+                } else {
+                    showError(data.detail || '启动失败');
+                    btn.disabled = false;
+                    btn.textContent = '🚀 开始评估';
+                }
+            } catch(e) {
+                showError('网络错误: ' + e.message);
+                btn.disabled = false;
+                btn.textContent = '🚀 开始评估';
+            }
+        }
+
+        function startPolling() {
+            let step = 0;
+            const steps = ['step1', 'step2', 'step3', 'step4', 'step5'];
+            const stepNames = ['正在进行端口扫描...', '正在进行漏洞扫描...', '正在进行Web安全检测...', '正在计算风险评级...', '正在生成评估报告...'];
+
+            pollTimer = setInterval(async () => {
+                try {
+                    const resp = await fetch('/api/v1/assessment/status/' + currentTaskId);
+                    const data = await resp.json();
+
+                    // 更新进度
+                    const progress = Math.min(step * 20 + 10, 90);
+                    document.getElementById('progressFill').style.width = progress + '%';
+
+                    if (data.status === 'running') {
+                        // 推进步骤显示
+                        if (step < 4) {
+                            document.getElementById(steps[step]).classList.remove('active');
+                            document.getElementById(steps[step]).classList.add('done');
+                            step++;
+                            document.getElementById(steps[step]).classList.add('active');
+                        }
+                        document.getElementById('progressText').textContent = stepNames[step] || '正在处理...';
+                    } else if (data.status === 'completed') {
+                        clearInterval(pollTimer);
+                        document.getElementById('progressFill').style.width = '100%';
+                        steps.forEach(s => {
+                            document.getElementById(s).classList.remove('active');
+                            document.getElementById(s).classList.add('done');
+                        });
+                        document.getElementById('progressText').textContent = '评估完成！';
+                        setTimeout(() => loadResult(), 500);
+                    } else if (data.status === 'failed') {
+                        clearInterval(pollTimer);
+                        document.getElementById('progressText').textContent = '评估失败: ' + (data.error || '未知错误');
+                        document.getElementById('progressFill').style.background = '#ef4444';
+                        setTimeout(() => {
+                            document.getElementById('progressCard').classList.remove('show');
+                            document.getElementById('inputCard').style.display = 'block';
+                            document.getElementById('startBtn').disabled = false;
+                            document.getElementById('startBtn').textContent = '🚀 开始评估';
+                        }, 3000);
+                    }
+                } catch(e) {
+                    console.error('轮询错误:', e);
+                }
+            }, 3000);
+        }
+
+        async function loadResult() {
+            try {
+                const resp = await fetch('/api/v1/assessment/result/' + currentTaskId);
+                const data = await resp.json();
+                renderResult(data);
+                loadTaskList();
+            } catch(e) {
+                showError('加载结果失败');
+            }
+        }
+
+        function renderResult(data) {
+            document.getElementById('progressCard').classList.remove('show');
+            document.getElementById('resultCard').classList.add('show');
+
+            const riskClass = { '严重': 'severe', '高危': 'high', '中危': 'medium', '低危': 'low', '安全': 'safe' }[data.risk_level] || 'medium';
+
+            let html = `
+                <div class="risk-banner ${riskClass}">
+                    <div>
+                        <div class="level">风险等级: ${data.risk_level}</div>
+                        <div class="summary">${data.summary || ''}</div>
+                        <div style="font-size:12px;opacity:0.8;margin-top:8px;">目标: ${data.target} | 耗时: ${data.duration}秒 | 工具: ${(data.tools_used||[]).join(', ')}</div>
+                    </div>
+                    <div class="score">${data.risk_score}<span style="font-size:18px;">/100</span></div>
+                </div>
+                <div class="result-stats">
+                    <div class="result-stat"><div class="num">${(data.ports||[]).length}</div><div class="label">开放端口</div></div>
+                    <div class="result-stat"><div class="num">${(data.vulnerabilities||[]).length}</div><div class="label">发现漏洞</div></div>
+                    <div class="result-stat"><div class="num">${(data.web_findings||[]).length}</div><div class="label">Web问题</div></div>
+                    <div class="result-stat"><div class="num">${(data.recommendations||[]).length}</div><div class="label">修复建议</div></div>
+                </div>
+            `;
+
+            // 端口列表
+            if (data.ports && data.ports.length > 0) {
+                html += `<h3 style="margin:20px 0 10px;font-size:16px;">🔌 开放端口</h3>
+                <table class="result-table">
+                    <thead><tr><th>端口</th><th>协议</th><th>服务</th><th>版本</th></tr></thead>
+                    <tbody>${data.ports.map(p => `<tr><td>${p.port}</td><td>${p.protocol}</td><td>${p.service||'-'}</td><td>${p.version||'-'}</td></tr>`).join('')}</tbody>
+                </table>`;
+            }
+
+            // 漏洞列表
+            if (data.vulnerabilities && data.vulnerabilities.length > 0) {
+                html += `<h3 style="margin:20px 0 10px;font-size:16px;">🐛 漏洞列表</h3>
+                <table class="result-table">
+                    <thead><tr><th>漏洞名称</th><th>严重程度</th><th>目标</th></tr></thead>
+                    <tbody>${data.vulnerabilities.map(v => `<tr><td>${v.name}</td><td><span class="severity-tag sev-${v.severity}">${v.severity}</span></td><td style="font-size:12px;word-break:break-all;">${v.target||'-'}</td></tr>`).join('')}</tbody>
+                </table>`;
+            } else {
+                html += `<div style="padding:15px;background:rgba(16,185,129,0.1);border-radius:8px;margin:15px 0;color:#6ee7b7;">✅ 未发现已知漏洞</div>`;
+            }
+
+            // 修复建议
+            if (data.recommendations && data.recommendations.length > 0) {
+                html += `<h3 style="margin:20px 0 10px;font-size:16px;">💡 修复建议</h3>
+                <ul class="rec-list">${data.recommendations.map(r => `<li>${r}</li>`).join('')}</ul>`;
+            }
+
+            // 错误信息
+            if (data.errors && data.errors.length > 0) {
+                html += `<div style="margin-top:15px;padding:12px;background:rgba(251,191,36,0.1);border-radius:8px;color:#fcd34d;font-size:13px;">⚠️ 部分工具未正常执行: ${data.errors.join('; ')}</div>`;
+            }
+
+            // 报告下载
+            if (data.report_url) {
+                html += `<a href="${data.report_url}" target="_blank" class="report-link">📄 查看完整HTML报告</a>`;
+            }
+
+            // 重新评估按钮
+            html += `<button class="btn btn-secondary" style="margin-top:20px;" onclick="resetForm()">🔄 重新评估</button>`;
+
+            document.getElementById('resultContent').innerHTML = html;
+        }
+
+        function resetForm() {
+            document.getElementById('resultCard').classList.remove('show');
+            document.getElementById('inputCard').style.display = 'block';
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('startBtn').textContent = '🚀 开始评估';
+            currentTaskId = null;
+        }
+
+        async function loadTaskList() {
+            try {
+                const resp = await fetch('/api/v1/assessment/tasks');
+                const data = await resp.json();
+                const list = document.getElementById('taskList');
+
+                if (data.tasks && data.tasks.length > 0) {
+                    list.innerHTML = data.tasks.map(t => `
+                        <div class="task-item" onclick="viewTask('${t.task_id}')">
+                            <div>
+                                <div class="target">${t.target}</div>
+                                <div class="meta">${t.created_at} | ${t.scan_type} ${t.risk_level ? '| 风险: ' + t.risk_level : ''}</div>
+                            </div>
+                            <span class="task-status status-${t.status}">${t.status === 'running' ? '运行中' : t.status === 'completed' ? '已完成' : '失败'}</span>
+                        </div>
+                    `).join('');
+                }
+            } catch(e) {}
+        }
+
+        async function viewTask(taskId) {
+            currentTaskId = taskId;
+            const resp = await fetch('/api/v1/assessment/status/' + taskId);
+            const data = await resp.json();
+            if (data.status === 'completed') {
+                await loadResult();
+                document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+            } else if (data.status === 'running') {
+                document.getElementById('inputCard').style.display = 'none';
+                document.getElementById('progressCard').classList.add('show');
+                startPolling();
+            }
+        }
+    </script>
+</body>
+</html>

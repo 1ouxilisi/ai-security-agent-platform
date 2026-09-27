@@ -1,0 +1,24 @@
+{
+  "report-c0e96dd2": {
+    "report_id": "report-c0e96dd2",
+    "project_id": "proj-1cedcc8b",
+    "client_id": "client-73ea32d9",
+    "title": "渗透测试报告",
+    "report_type": "pentest",
+    "status": "draft",
+    "file_path": "",
+    "created_by": "",
+    "created_at": 1788079077.6247504,
+    "updated_at": 1788079077.624751,
+    "version": "1.0",
+    "findings_count": 1,
+    "summary": {},
+    "content": "# 测试报告",
+    "findings": [
+      {
+        "name": "SQL注入",
+        "severity": "high"
+      }
+    ]
+  }
+}

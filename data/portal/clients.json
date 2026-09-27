@@ -1,0 +1,15 @@
+{
+  "client-73ea32d9": {
+    "client_id": "client-73ea32d9",
+    "name": "测试客户",
+    "contact_person": "张三",
+    "email": "test@test.com",
+    "phone": "13800138000",
+    "company": "测试公司",
+    "address": "",
+    "notes": "",
+    "created_at": 1788079077.0604753,
+    "status": "active",
+    "custom_fields": {}
+  }
+}

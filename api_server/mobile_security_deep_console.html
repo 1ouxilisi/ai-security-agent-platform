@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>移动端安全深度控制台</title>
+<style>
+:root{
+  --bg:#0d1117; --bg2:#161b22; --bg3:#1f2630; --border:#30363d;
+  --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950;
+  --yellow:#d29922; --red:#f85149; --purple:#bc8cff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",Segoe UI,sans-serif;font-size:14px;line-height:1.6}
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+header h1{font-size:18px;color:var(--accent)}
+header .sub{color:var(--muted);font-size:12px}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;padding:10px 20px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.tab{padding:8px 14px;cursor:pointer;border-radius:6px;color:var(--muted);border:1px solid transparent;font-size:13px}
+.tab:hover{color:var(--text);background:var(--bg3)}
+.tab.active{color:var(--accent);border-color:var(--accent);background:var(--bg3)}
+main{padding:20px;max-width:1400px;margin:0 auto}
+.panel{display:none}
+.panel.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card .k{color:var(--muted);font-size:12px}
+.card .v{font-size:26px;font-weight:600;margin-top:4px}
+.card .v.crit{color:var(--red)}.card .v.high{color:var(--yellow)}
+.card .v.ok{color:var(--green)}.card .v.acc{color:var(--accent)}
+.section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.section h3{font-size:15px;margin-bottom:12px;color:var(--accent);border-left:3px solid var(--accent);padding-left:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500;background:var(--bg3)}
+tr:hover td{background:var(--bg3)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge.critical{background:#5a1d1d;color:#ff7b72}
+.badge.high{background:#4d3a08;color:#e3b341}
+.badge.medium{background:#0d2d4d;color:#58a6ff}
+.badge.low{background:#1f3a1f;color:#3fb950}
+.badge.info{background:#2d2d3d;color:#bc8cff}
+.btn{background:var(--accent);color:#0d1117;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
+.btn:hover{filter:brightness(1.1)}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+textarea,input,select{background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px;width:100%;font-family:inherit}
+textarea{min-height:90px;font-family:Consolas,monospace;font-size:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.row>div{flex:1;min-width:140px}
+pre{background:#0a0d12;border:1px solid var(--border);border-radius:6px;padding:12px;overflow:auto;font-size:12px;max-height:340px;white-space:pre-wrap;word-break:break-all}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.muted{color:var(--muted);font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:768px){.grid2{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}main{padding:12px}}
+.progress{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-top:6px}
+.progress>span{display:block;height:100%;background:var(--accent)}
+.li{padding:6px 0;border-bottom:1px dashed var(--border)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🛡️ 移动端安全深度控制台</h1>
+    <div class="sub">第29轮升级方向2 · Android / iOS / 鸿蒙 · 漏洞POC · 隐私合规 · 测试评测</div>
+  </div>
+  <div class="muted" id="healthDot">连接中…</div>
+</header>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" data-p="overview">移动安全总览</div>
+  <div class="tab" data-p="android">Android安全</div>
+  <div class="tab" data-p="ios">iOS安全</div>
+  <div class="tab" data-p="harmonyos">鸿蒙安全</div>
+  <div class="tab" data-p="vuln">漏洞与POC</div>
+  <div class="tab" data-p="privacy">隐私合规</div>
+  <div class="tab" data-p="test">测试评测</div>
+  <div class="tab" data-p="settings">系统设置</div>
+</div>
+
+<main>
+<!-- 总览 -->
+<div class="panel active" id="p-overview">
+  <div class="cards" id="ovCards"></div>
+  <div class="grid2">
+    <div class="section"><h3>平台分布</h3><div id="ovPlatform"></div></div>
+    <div class="section"><h3>待处理告警</h3><div id="ovAlerts"></div></div>
+  </div>
+</div>
+
+<!-- Android -->
+<div class="panel" id="p-android">
+  <div class="section">
+    <h3>Android 一键综合评估</h3>
+    <div class="row"><div>包名<input id="anPkg" value="com.example.shop"></div></div>
+    <div class="row"><div><label class="muted">Manifest 文本（留空用内置样本）</label><textarea id="anManifest" placeholder="粘贴 AndroidManifest.xml 文本"></textarea></div></div>
+    <div class="row"><div><label class="muted">反编译代码文本（Smali/Java）</label><textarea id="anCode" placeholder="粘贴代码片段"></textarea></div></div>
+    <button class="btn" onclick="androidAssess()">开始深度分析</button>
+  </div>
+  <div class="section"><h3>分析结果</h3><pre id="anOut">点击"开始深度分析"…</pre></div>
+</div>
+
+<!-- iOS -->
+<div class="panel" id="p-ios">
+  <div class="section">
+    <h3>iOS 一键综合评估</h3>
+    <div class="row"><div>Bundle ID<input id="ioPkg" value="com.example.iosapp"></div></div>
+    <div class="row"><div><label class="muted">Info.plist 文本</label><textarea id="ioPlist" placeholder="粘贴 Info.plist XML"></textarea></div></div>
+    <div class="row"><div><label class="muted">二进制/类文本</label><textarea id="ioCode" placeholder="粘贴 class-dump / 反汇编片段"></textarea></div></div>
+    <button class="btn" onclick="iosAssess()">开始深度分析</button>
+  </div>
+  <div class="section"><h3>分析结果</h3><pre id="ioOut">点击"开始深度分析"…</pre></div>
+</div>
+
+<!-- 鸿蒙 -->
+<div class="panel" id="p-harmonyos">
+  <div class="section">
+    <h3>鸿蒙(HarmonyOS) 一键综合评估</h3>
+    <div class="row"><div>Bundle Name<input id="hmPkg" value="com.example.harmonyapp"></div></div>
+    <div class="row"><div><label class="muted">module.json5 文本</label><textarea id="hmCfg" placeholder="粘贴 module.json5"></textarea></div></div>
+    <div class="row"><div><label class="muted">ArkTS 代码文本</label><textarea id="hmCode" placeholder="粘贴 .ets 片段"></textarea></div></div>
+    <button class="btn" onclick="hmosAssess()">开始深度分析</button>
+  </div>
+  <div class="section"><h3>分析结果</h3><pre id="hmOut">点击"开始深度分析"…</pre></div>
+</div>
+
+<!-- 漏洞与POC -->
+<div class="panel" id="p-vuln">
+  <div class="section">
+    <h3>移动漏洞库</h3>
+    <div class="toolbar">
+      <select id="vPlatform" style="width:auto"><option value="">全部平台</option><option>Android</option><option>iOS</option><option>HarmonyOS</option><option>通用</option></select>
+      <select id="vSev" style="width:auto"><option value="">全部等级</option><option value="critical">严重</option><option value="high">高危</option><option value="medium">中危</option></select>
+      <button class="btn ghost" onclick="loadVulns()">查询</button>
+      <button class="btn" onclick="runScan()">执行扫描</button>
+    </div>
+    <div id="vTable"></div>
+  </div>
+  <div class="section"><h3>POC 库</h3><div id="pocTable"></div></div>
+</div>
+
+<!-- 隐私合规 -->
+<div class="panel" id="p-privacy">
+  <div class="section">
+    <h3>个人信息识别 & SDK 合规</h3>
+    <div class="row"><div><label class="muted">粘贴样本文本（自动识别手机号/身份证/邮箱/银行卡/MAC）</label>
+      <textarea id="prText" placeholder="用户 13812345678 身份证 530102199001011234 邮箱 a@b.com"></textarea></div></div>
+    <div class="row">
+      <div><button class="btn" onclick="piiDetect()">识别个人信息</button></div>
+      <div><button class="btn ghost" onclick="sdkScan()">扫描第三方SDK</button></div>
+      <div><button class="btn ghost" onclick="privacyReport()">生成合规报告</button></div>
+    </div>
+    <pre id="prOut">操作结果…</pre>
+  </div>
+  <div class="section"><h3>数据跨境</h3><div id="cbOut"></div></div>
+</div>
+
+<!-- 测试评测 -->
+<div class="panel" id="p-test">
+  <div class="grid2">
+    <div class="section"><h3>安全评测打分</h3>
+      <div class="row"><div>安全<input type="number" id="evSec" value="82"></div><div>合规<input type="number" id="evComp" value="78"></div></div>
+      <div class="row"><div>质量<input type="number" id="evQual" value="88"></div><div>体验<input type="number" id="evUx" value="85"></div></div>
+      <button class="btn" onclick="evaluate()">生成评测</button>
+      <pre id="evOut"></pre>
+    </div>
+    <div class="section"><h3>OWASP Mobile Top 10</h3><div id="owasp"></div></div>
+  </div>
+  <div class="section"><h3>安全标准 & 最佳实践</h3><div id="stdList"></div></div>
+</div>
+
+<!-- 设置 -->
+<div class="panel" id="p-settings">
+  <div class="section"><h3>系统设置</h3><div id="setList"></div></div>
+  <div class="section"><h3>引擎状态</h3><div id="engList"></div></div>
+</div>
+</main>
+
+<script>
+const BASE='/api/v1/mobile-security-deep';
+async function api(path,opts={}){
+  try{
+    const r=await fetch(BASE+path,{headers:{'Content-Type':'application/json'},...opts});
+    const j=await r.json();
+    return j;
+  }catch(e){return {success:false,error:String(e)}}
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function sevBadge(s){const m={critical:'严重',high:'高危',medium:'中危',low:'低危',info:'信息'};return `<span class="badge ${s||'info'}">${m[s]||s||'-'}</span>`}
+function kv(o){return Object.entries(o||{}).map(([k,v])=>`<div class="li"><b>${esc(k)}</b>: <span class="muted">${esc(typeof v==='object'?JSON.stringify(v):v)}</span></div>`).join('')}
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('p-'+t.dataset.p).classList.add('active');
+  if(t.dataset.p==='overview')loadOverview();
+});
+
+async function loadOverview(){
+  const j=await api('/dashboard');
+  if(!j.success)return;
+  const o=j.data.overview, pv=j.data.platform_view;
+  document.getElementById('ovCards').innerHTML=`
+    <div class="card"><div class="k">受管应用</div><div class="v acc">${o.apps_tracked}</div></div>
+    <div class="card"><div class="k">漏洞总数</div><div class="v high">${o.vulns_total}</div></div>
+    <div class="card"><div class="k">未修严重漏洞</div><div class="v crit">${o.critical_open}</div></div>
+    <div class="card"><div class="k">隐私合规均分</div><div class="v ok">${o.compliance_score}</div></div>
+    <div class="card"><div class="k">待处理告警</div><div class="v high">${o.open_alerts}</div></div>`;
+  document.getElementById('ovPlatform').innerHTML=`<table><tr><th>平台</th><th>应用数</th></tr>
+    <tr><td>Android</td><td>${o.platforms.android}</td></tr>
+    <tr><td>iOS</td><td>${o.platforms.ios}</td></tr>
+    <tr><td>鸿蒙</td><td>${o.platforms.harmonyos}</td></tr></table>`;
+  const al=await api('/alerts');
+  document.getElementById('ovAlerts').innerHTML=(al.data||[]).map(a=>
+    `<div class="li">${sevBadge(a.level)} ${esc(a.title)} <span class="muted">[${a.source}]</span></div>`).join('');
+}
+async function loadHealth(){
+  const j=await api('/health');
+  const d=document.getElementById('healthDot');
+  if(j.success&&j.data.status==='healthy'){d.textContent='● 服务正常';d.style.color='var(--green)'}
+  else{d.textContent='● 服务异常';d.style.color='var(--red)'}
+}
+
+async function androidAssess(){
+  const j=await api('/android/assessment/full',{method:'POST',body:JSON.stringify({package:anPkg.value,manifest_text:anManifest.value,code_text:anCode.value})});
+  anOut.textContent=JSON.stringify(j.data||j.error,null,2);
+}
+async function iosAssess(){
+  const j=await api('/ios/assessment/full',{method:'POST',body:JSON.stringify({bundle_id:ioPkg.value,plist_text:ioPlist.value,code_text:ioCode.value})});
+  ioOut.textContent=JSON.stringify(j.data||j.error,null,2);
+}
+async function hmosAssess(){
+  const j=await api('/harmonyos/assessment/full',{method:'POST',body:JSON.stringify({bundle:hmPkg.value,config_text:hmCfg.value,code_text:hmCode.value})});
+  hmOut.textContent=JSON.stringify(j.data||j.error,null,2);
+}
+
+async function loadVulns(){
+  const p=vPlatform.value,s=vSev.value;
+  const j=await api(`/vuln/list?platform=${encodeURIComponent(p)}&severity=${encodeURIComponent(s)}`);
+  const rows=(j.data||[]).map(v=>`<tr><td>${esc(v.cve)}</td><td>${esc(v.title)}</td><td>${sevBadge(v.severity)}</td><td>${v.cvss}</td><td>${esc(v.platform)}</td></tr>`).join('');
+  vTable.innerHTML=`<table><tr><th>CVE/编号</th><th>标题</th><th>等级</th><th>CVSS</th><th>平台</th></tr>${rows}</table>`;
+  const pj=await api('/poc/list');
+  pocTable.innerHTML=`<table><tr><th>ID</th><th>名称</th><th>语言</th><th>已验证</th></tr>`+
+    (pj.data||[]).map(x=>`<tr><td>${esc(x.id)}</td><td>${esc(x.name)}</td><td>${esc(x.language)}</td><td>${x.verified?'是':'否'}</td></tr>`).join('')+`</table>`;
+}
+async function runScan(){
+  const j=await api('/vuln/scan',{method:'POST',body:JSON.stringify({target:anPkg.value||'com.example.shop',scan_type:'深度扫描',platforms:['Android','iOS']})});
+  vTable.innerHTML=`<pre>${esc(JSON.stringify(j.data||j.error,null,2))}</pre>`;
+}
+
+async function piiDetect(){
+  const j=await api('/privacy/identify-pii',{method:'POST',body:JSON.stringify({text:prText.value})});
+  prOut.textContent=JSON.stringify(j.data||j.error,null,2);
+}
+async function sdkScan(){
+  const j=await api('/privacy/scan-sdks',{method:'POST',body:JSON.stringify({text:prText.value})});
+  prOut.textContent=JSON.stringify(j.data||j.error,null,2);
+}
+async function privacyReport(){
+  const j=await api('/privacy/report',{method:'POST',body:JSON.stringify({app_name:'示例App',scan_text:prText.value})});
+  prOut.textContent=JSON.stringify(j.data||j.error,null,2);
+  const cb=await api('/privacy/cross-border');
+  cbOut.innerHTML=kv(cb.data);
+}
+
+async function evaluate(){
+  const j=await api('/test/evaluate',{method:'POST',body:JSON.stringify({app:'示例App',security:+evSec.value,compliance:+evComp.value,quality:+evQual.value,ux:+evUx.value})});
+  evOut.textContent=JSON.stringify(j.data||j.error,null,2);
+}
+async function loadTest(){
+  const oj=await api('/test/owasp-top10');
+  owasp.innerHTML=(oj.data||[]).map(x=>`<div class="li"><b>${x.id}</b> ${esc(x.name)} <span class="muted">— ${esc(x.desc)}</span></div>`).join('');
+  const sj=await api('/test/standards');
+  stdList.innerHTML=Object.entries(sj.data||{}).map(([k,v])=>`<div class="li"><b>${esc(k)}</b> <span class="muted">${esc(v)}</span></div>`).join('');
+}
+
+async function loadSettings(){
+  const j=await api('/settings');
+  setList.innerHTML=kv(j.data.current||{});
+  const a=await api('/android/info'), b=await api('/ios/info'), c=await api('/harmonyos/info'), d=await api('/vuln/stats');
+  engList.innerHTML=`<div class="li">Android 引擎: ${JSON.stringify(a.data)}</div><div class="li">iOS 引擎: ${JSON.stringify(b.data)}</div><div class="li">鸿蒙引擎: ${JSON.stringify(c.data)}</div><div class="li">漏洞库: ${JSON.stringify(d.data)}</div>`;
+}
+
+loadHealth();loadOverview();loadVulns();loadTest();loadSettings();
+</script>
+</body>
+</html>

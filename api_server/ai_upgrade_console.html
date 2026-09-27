@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 能力升级控制台</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--border:#30363d;--fg:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--orange:#ff9800;--yellow:#ffd33d;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:"Segoe UI",system-ui,sans-serif;padding:24px;font-size:14px}
+h1{font-size:26px;margin-bottom:4px}
+h2{font-size:18px;margin:20px 0 12px;color:var(--accent)}
+.sub{color:var(--muted);margin-bottom:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px}
+.stat{font-size:30px;font-weight:700}
+.label{color:var(--muted);font-size:12px;margin-top:4px}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600}
+.b-llm{background:#1f6feb33;color:var(--accent)}
+.b-rule{background:#8b949e33;color:var(--muted)}
+button{background:var(--accent);color:#0d1117;border:none;padding:9px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;margin:4px 0}
+button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+input,textarea,select{background:#0d1117;color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:8px;width:100%;margin:4px 0 8px;font-size:13px}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:12px;overflow:auto;max-height:320px;font-size:12px;white-space:pre-wrap}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mono{font-family:ui-monospace,monospace}
+.pill-critical{color:var(--red)}.pill-high{color:var(--orange)}.pill-medium{color:var(--yellow)}.pill-low{color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+th{color:var(--muted)}
+</style>
+</head>
+<body>
+<h1>⚡ AI 能力大升级控制台</h1>
+<div class="sub">LLM 真实接入 · 漏洞智能分析 · 报告自动生成 · 智能问答 · 智能攻击链 · AI 辅助挖 SRC</div>
+
+<div class="grid" id="stats"></div>
+
+<h2>① LLM 接入状态</h2>
+<div class="card">
+  <div class="row">
+    <span id="llm-badge" class="badge b-rule">检测中…</span>
+    <span id="llm-detail" class="sub"></span>
+    <button class="ghost" onclick="llmRefresh()">刷新状态</button>
+    <button class="ghost" onclick="llmTest()">测试连接</button>
+  </div>
+</div>
+
+<h2>② 漏洞智能分析</h2>
+<div class="card">
+  <div class="row">
+    <input id="vname" placeholder="漏洞名称，如：SQL 注入" value="SQL 注入">
+    <input id="vtype" placeholder="类型(type)，如 sql_injection" value="sql_injection">
+  </div>
+  <div class="row">
+    <label><input type="checkbox" id="vpoc" checked> 有 PoC</label>
+    <label><input type="checkbox" id="vauth"> 需登录</label>
+  </div>
+  <button onclick="analyzeVuln()">智能分析该漏洞</button>
+  <button class="ghost" onclick="analyzeBatch()">批量分析演示</button>
+  <pre id="vout">点击按钮查看结果…</pre>
+</div>
+
+<h2>③ 报告自动生成</h2>
+<div class="card">
+  <input id="rtarget" value="https://demo.target.com" placeholder="目标">
+  <button onclick="genReport()">生成自然语言报告</button>
+  <pre id="rout">报告结果…</pre>
+</div>
+
+<h2>④ 智能问答</h2>
+<div class="card">
+  <div class="row">
+    <input id="q" placeholder="问：这个网站有什么风险？" value="这个网站有什么风险？" style="flex:1">
+    <button onclick="ask()">提问</button>
+  </div>
+  <div id="qsug" class="sub"></div>
+  <pre id="qout">回答结果…</pre>
+</div>
+
+<h2>⑤ 智能攻击链规划</h2>
+<div class="card">
+  <div class="row">
+    <input id="ctarget" value="demo.target.com" style="flex:1">
+    <button onclick="planChain()">规划攻击链</button>
+  </div>
+  <pre id="cout">攻击链结果…</pre>
+</div>
+
+<h2>⑥ AI 辅助挖 SRC</h2>
+<div class="card">
+  <div class="row">
+    <input id="sdomain" value="example.com" style="flex:1">
+    <button onclick="analyzeTarget()">分析攻击面</button>
+    <button class="ghost" onclick="writeSub('butian')">写补天报告</button>
+    <button class="ghost" onclick="writeSub('hackerone')">写 HackerOne 报告</button>
+  </div>
+  <pre id="sout">SRC 结果…</pre>
+</div>
+
+<h2>⑦ AI 决策日志（依据可视化）</h2>
+<div class="card"><pre id="dout">决策记录…</pre></div>
+
+<script>
+const B="/api/v1/ai-upgrade";
+async function j(u,opt){const r=await fetch(B+u,opt);return r.json();}
+function show(id,data){document.getElementById(id).textContent=JSON.stringify(data,null,2);}
+
+async function loadStats(){
+  const o=await j("/overview");const d=o.data||{};const s=d.stats||{};const llm=d.llm||{};
+  document.getElementById('llm-badge').textContent=llm.mode==='llm'?'LLM 已接入':'规则模式(无Key)';
+  document.getElementById('llm-badge').className='badge '+(llm.mode==='llm'?'b-llm':'b-rule');
+  document.getElementById('llm-detail').textContent='model='+(llm.config?.model||'n/a')+' provider='+(llm.config?.provider||'?');
+  document.getElementById('stats').innerHTML=[
+    ['LLM 模式',llm.mode],['漏洞分析',s.vuln_analysis?'✓':'✗'],
+    ['报告数',s.reports],['问答条数',s.qa_history],['SRC目标',s.src_targets],
+    ['攻击链',s.chains],['AI决策记录',s.decisions]
+  ].map(x=>`<div class="card"><div class="stat">${x[1]}</div><div class="label">${x[0]}</div></div>`).join('');
+  const dl=await j("/decisions?limit=15");show('dout',dl.data||[]);
+}
+async function llmRefresh(){const r=await j("/llm/refresh",{method:"POST"});show('vout',r.data);loadStats();}
+async function llmTest(){const r=await j("/llm/test");show('vout',r.data);}
+async function analyzeVuln(){
+  const body={name:vname.value,type:vtype.value,has_poc:vpoc.checked,requires_auth:vauth.checked,detail:"手动触发智能分析"};
+  const r=await j("/vuln/analyze",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  show('vout',r.data||r.error);
+}
+async function analyzeBatch(){
+  const body={vulns:[
+    {name:"SQL注入",type:"sql_injection",has_poc:true},
+    {name:"SSRF",type:"ssrf",requires_auth:false},
+    {name:"反射型XSS",type:"xss"},
+    {name:"目录穿越",type:"path_traversal"}]};
+  const r=await j("/vuln/analyze-batch",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  show('vout',r.data||r.error);
+}
+async function genReport(){
+  const body={target:rtarget.value,vulns:[
+    {name:"SQL注入",type:"sql_injection"},{name:"SSRF",type:"ssrf"},
+    {name:"XSS",type:"xss"},{name:"目录穿越",type:"path_traversal"}],author:"AI 升级演示"};
+  const r=await j("/report/generate",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  show('rout',r.data||r.error);loadStats();
+}
+async function ask(){
+  const r=await j("/qa/ask",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q.value})});
+  show('qout',r.data||r.error);loadStats();
+}
+async function planChain(){
+  const body={target:ctarget.value,findings:[{name:"SQL注入",type:"sql_injection"},{name:"SSRF",type:"ssrf"}]};
+  const r=await j("/chain/plan",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  show('cout',r.data||r.error);loadStats();
+}
+async function analyzeTarget(){const r=await j("/src/analyze-target",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({domain:sdomain.value})});show('sout',r.data||r.error);}
+async function writeSub(p){
+  const body={domain:sdomain.value,platform:p,vuln:{name:"未授权API访问",type:"weak_auth",severity:"high",detail:"/api/v1/user 可未授权列出全部用户"}};
+  const r=await j("/src/write-submission",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  show('sout',r.data||r.error);loadStats();
+}
+async function suggestions(){const r=await j("/qa/suggestions");document.getElementById('qsug').textContent='推荐问法：'+(r.data?.suggestions||[]).join(' | ');}
+loadStats();suggestions();
+</script>
+</body>
+</html>

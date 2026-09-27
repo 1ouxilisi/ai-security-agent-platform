@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SaaS 管理控制台 — AI Hacking Agent</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#2d3645;
+    --txt:#e6edf3; --muted:#8b949e; --accent:#2f81f7; --green:#3fb950;
+    --red:#f85149; --yellow:#d29922; --purple:#a371f7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);
+       display:flex;min-height:100vh;font-size:14px}
+  /* 侧边导航 */
+  aside{width:210px;background:var(--panel);border-right:1px solid var(--border);
+        padding:18px 0;flex-shrink:0}
+  aside h1{font-size:15px;padding:0 18px 16px;color:var(--accent);border-bottom:1px solid var(--border);
+           margin-bottom:10px}
+  nav button{display:block;width:100%;text-align:left;padding:11px 18px;background:none;border:none;
+             color:var(--muted);cursor:pointer;font-size:14px;border-left:3px solid transparent}
+  nav button:hover{background:var(--panel2);color:var(--txt)}
+  nav button.active{color:var(--accent);border-left-color:var(--accent);background:var(--panel2)}
+  /* 主区 */
+  main{flex:1;padding:24px;overflow:auto}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+  .topbar h2{font-size:20px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px}
+  .card .num{font-size:26px;font-weight:700;color:var(--accent)}
+  .card .lbl{color:var(--muted);font-size:12px;margin-top:4px}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:18px;margin-bottom:18px}
+  .panel h3{margin-bottom:12px;font-size:15px;color:var(--txt)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:600;background:var(--panel2)}
+  tr:hover td{background:var(--panel2)}
+  .tag{padding:2px 8px;border-radius:10px;font-size:11px}
+  .tag.active{background:rgba(63,185,80,.15);color:var(--green)}
+  .tag.locked{background:rgba(248,81,73,.15);color:var(--red)}
+  .tag.pending{background:rgba(210,153,34,.15);color:var(--yellow)}
+  .tag.admin{background:rgba(163,113,247,.15);color:var(--purple)}
+  .toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+  input,select{background:var(--panel2);border:1px solid var(--border);color:var(--txt);
+               padding:7px 10px;border-radius:6px;font-size:13px}
+  input:focus{outline:none;border-color:var(--accent)}
+  button.btn{background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:6px;
+             cursor:pointer;font-size:13px}
+  button.btn:hover{filter:brightness(1.1)}
+  button.btn.danger{background:var(--red)}
+  button.btn.ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
+  .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;
+         align-items:center;justify-content:center}
+  .modal.show{display:flex}
+  .modal .box{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+              padding:24px;width:420px;max-width:92vw}
+  .modal .box h3{margin-bottom:14px}
+  .modal .box label{display:block;margin:10px 0 4px;color:var(--muted);font-size:12px}
+  .modal .box input,.modal .box select{width:100%}
+  .row{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
+  .hidden{display:none}
+  .toast{position:fixed;top:20px;right:20px;background:var(--panel);border:1px solid var(--green);
+         padding:12px 18px;border-radius:8px;z-index:99;display:none}
+  .anomaly{color:var(--red);font-weight:600}
+  .pagination{margin-top:12px;color:var(--muted);font-size:12px}
+  @media(max-width:760px){aside{width:60px} aside h1,nav button span{display:none}}
+</style>
+</head>
+<body>
+<aside>
+  <h1>🛡 SaaS 控制台</h1>
+  <nav>
+    <button data-tab="users" class="active">👥 <span>用户管理</span></button>
+    <button data-tab="roles">🔐 <span>角色权限</span></button>
+    <button data-tab="tenants">🏢 <span>租户管理</span></button>
+    <button data-tab="mfa">🔑 <span>MFA 管理</span></button>
+    <button data-tab="invitations">✉️ <span>邀请管理</span></button>
+    <button data-tab="logs">📋 <span>登录日志</span></button>
+  </nav>
+</aside>
+
+<main>
+  <div class="topbar"><h2 id="pageTitle">用户管理</h2>
+    <button class="btn ghost" onclick="loadAll()">刷新</button>
+  </div>
+
+  <!-- 用户统计卡片 -->
+  <div class="cards" id="statCards">
+    <div class="card"><div class="num" id="cTotal">-</div><div class="lbl">总用户</div></div>
+    <div class="card"><div class="num" id="cActive">-</div><div class="lbl">活跃用户</div></div>
+    <div class="card"><div class="num" id="cLocked">-</div><div class="lbl">锁定用户</div></div>
+    <div class="card"><div class="num" id="cGrowth">-</div><div class="lbl">本月新增 %</div></div>
+  </div>
+
+  <!-- 用户管理 -->
+  <section id="tab-users" class="tab">
+    <div class="panel">
+      <div class="toolbar">
+        <input id="uKeyword" placeholder="搜索用户名/邮箱/姓名" style="width:220px">
+        <select id="uStatus"><option value="">全部状态</option>
+          <option>active</option><option>locked</option><option>pending</option><option>inactive</option>
+        </select>
+        <button class="btn" onclick="loadUsers(1)">查询</button>
+        <button class="btn" onclick="openUserModal()">+ 创建用户</button>
+        <button class="btn ghost" onclick="exportUsers()">导出CSV</button>
+        <button class="btn ghost" onclick="openImportModal()">批量导入</button>
+      </div>
+      <table><thead><tr>
+        <th>用户名</th><th>邮箱</th><th>部门</th><th>状态</th><th>最后登录</th><th>操作</th>
+      </tr></thead><tbody id="userBody"></tbody></table>
+      <div class="pagination" id="userPage"></div>
+    </div>
+  </section>
+
+  <!-- 角色权限 -->
+  <section id="tab-roles" class="tab hidden">
+    <div class="panel">
+      <h3>角色与权限</h3>
+      <table><thead><tr><th>角色</th><th>名称</th><th>权限点</th><th>说明</th></tr></thead>
+      <tbody id="roleBody"></tbody></table>
+    </div>
+  </section>
+
+  <!-- 租户管理 -->
+  <section id="tab-tenants" class="tab hidden">
+    <div class="panel">
+      <div class="toolbar">
+        <button class="btn" onclick="openTenantModal()">+ 创建租户</button>
+      </div>
+      <table><thead><tr>
+        <th>租户名</th><th>套餐</th><th>状态</th><th>用户数</th><th>过期时间</th><th>操作</th>
+      </tr></thead><tbody id="tenantBody"></tbody></table>
+    </div>
+  </section>
+
+  <!-- MFA 管理 -->
+  <section id="tab-mfa" class="tab hidden">
+    <div class="panel">
+      <h3>MFA 状态总览</h3>
+      <div class="toolbar">
+        <input id="mfaUserId" placeholder="输入 user_id 查询" style="width:220px">
+        <button class="btn" onclick="loadMfaStatus()">查询状态</button>
+      </div>
+      <pre id="mfaResult" style="background:var(--panel2);padding:12px;border-radius:6px;color:var(--green)"></pre>
+    </div>
+  </section>
+
+  <!-- 邀请管理 -->
+  <section id="tab-invitations" class="tab hidden">
+    <div class="cards">
+      <div class="card"><div class="num" id="iPending">-</div><div class="lbl">待处理</div></div>
+      <div class="card"><div class="num" id="iAccepted">-</div><div class="lbl">已接受</div></div>
+      <div class="card"><div class="num" id="iRate">-</div><div class="lbl">接受率 %</div></div>
+      <div class="card"><div class="num" id="iRevoked">-</div><div class="lbl">已撤销</div></div>
+    </div>
+    <div class="panel">
+      <div class="toolbar">
+        <button class="btn" onclick="openInviteModal()">+ 创建邀请</button>
+        <select id="invStatus"><option value="">全部状态</option>
+          <option>pending</option><option>accepted</option><option>expired</option><option>revoked</option>
+        </select>
+        <button class="btn ghost" onclick="loadInvitations(1)">查询</button>
+      </div>
+      <table><thead><tr>
+        <th>邮箱</th><th>角色</th><th>状态</th><th>使用</th><th>过期</th><th>操作</th>
+      </tr></thead><tbody id="invBody"></tbody></table>
+      <div class="pagination" id="invPage"></div>
+    </div>
+  </section>
+
+  <!-- 登录日志 -->
+  <section id="tab-logs" class="tab hidden">
+    <div class="panel">
+      <h3>登录日志</h3>
+      <table><thead><tr>
+        <th>时间</th><th>用户</th><th>IP</th><th>结果</th><th>原因</th><th>异常</th>
+      </tr></thead><tbody id="logBody"></tbody></table>
+    </div>
+  </section>
+</main>
+
+<!-- 创建用户弹窗 -->
+<div class="modal" id="userModal"><div class="box">
+  <h3>创建用户</h3>
+  <label>用户名</label><input id="nuUsername">
+  <label>邮箱</label><input id="nuEmail">
+  <label>密码</label><input id="nuPwd" type="password">
+  <label>姓名</label><input id="nuName">
+  <label>部门</label><input id="nuDept">
+  <div class="row">
+    <button class="btn ghost" onclick="closeModal('userModal')">取消</button>
+    <button class="btn" onclick="createUser()">创建</button>
+  </div>
+</div></div>
+
+<!-- 导入弹窗 -->
+<div class="modal" id="importModal"><div class="box">
+  <h3>批量导入（CSV）</h3>
+  <label>CSV 内容（表头: username,email,password,display_name,department,position,phone）</label>
+  <textarea id="csvData" rows="6" style="width:100%;background:var(--panel2);color:var(--txt);
+    border:1px solid var(--border);border-radius:6px;padding:8px"></textarea>
+  <div class="row">
+    <button class="btn ghost" onclick="closeModal('importModal')">取消</button>
+    <button class="btn" onclick="doImport()">导入</button>
+  </div>
+</div></div>
+
+<!-- 创建租户弹窗 -->
+<div class="modal" id="tenantModal"><div class="box">
+  <h3>创建租户</h3>
+  <label>租户名称</label><input id="ntName">
+  <label>套餐</label><select id="ntPlan">
+    <option value="free">免费版</option><option value="starter">入门版</option>
+    <option value="professional">专业版</option><option value="enterprise">企业版</option>
+  </select>
+  <label>负责人邮箱</label><input id="ntEmail">
+  <label>负责人姓名</label><input id="ntOwner">
+  <div class="row">
+    <button class="btn ghost" onclick="closeModal('tenantModal')">取消</button>
+    <button class="btn" onclick="createTenant()">创建</button>
+  </div>
+</div></div>
+
+<!-- 创建邀请弹窗 -->
+<div class="modal" id="inviteModal"><div class="box">
+  <h3>创建邀请</h3>
+  <label>邮箱</label><input id="niEmail">
+  <label>角色</label><select id="niRole">
+    <option value="user">普通用户</option><option value="security_analyst">安全分析师</option>
+    <option value="auditor">审计员</option><option value="admin">管理员</option>
+  </select>
+  <label>有效期（天）</label><input id="niDays" value="7">
+  <label>自定义消息</label><input id="niMsg">
+  <div class="row">
+    <button class="btn ghost" onclick="closeModal('inviteModal')">取消</button>
+    <button class="btn" onclick="createInvitation()">发送邀请</button>
+  </div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = '/api/v1/saas';
+async function api(path, opts={}){
+  const r = await fetch(BASE+path, {headers:{'Content-Type':'application/json'}, ...opts});
+  return r.json();
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.display='block';
+  setTimeout(()=>t.style.display='none',2500);
+}
+function openModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+function openUserModal(){openModal('userModal');}
+function openImportModal(){openModal('importModal');}
+function openTenantModal(){openModal('tenantModal');}
+function openInviteModal(){openModal('inviteModal');}
+
+// 导航切换
+document.querySelectorAll('nav button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    const tab=b.dataset.tab;
+    document.querySelectorAll('.tab').forEach(s=>s.classList.add('hidden'));
+    document.getElementById('tab-'+tab).classList.remove('hidden');
+    document.getElementById('pageTitle').textContent=b.querySelector('span').textContent;
+    loadTab(tab);
+  };
+});
+function loadTab(t){
+  if(t==='users'){loadUserStats();loadUsers(1);}
+  if(t==='roles')loadRoles();
+  if(t==='tenants')loadTenants();
+  if(t==='invitations'){loadInvStats();loadInvitations(1);}
+  if(t==='logs')loadLogs();
+}
+function loadAll(){loadTab(document.querySelector('nav button.active').dataset.tab);}
+
+// 用户
+async function loadUserStats(){
+  const d=await api('/users/stats');
+  if(d.success){
+    document.getElementById('cTotal').textContent=d.data.total_users;
+    document.getElementById('cActive').textContent=d.data.active_users;
+    document.getElementById('cLocked').textContent=d.data.locked_users;
+    document.getElementById('cGrowth').textContent=d.data.growth_rate;
+  }
+}
+async function loadUsers(page){
+  const kw=document.getElementById('uKeyword').value;
+  const st=document.getElementById('uStatus').value;
+  const q=new URLSearchParams({page,page_size:15});
+  if(kw)q.set('keyword',kw); if(st)q.set('status',st);
+  const d=await api('/users?'+q);
+  const body=document.getElementById('userBody'); body.innerHTML='';
+  if(!d.success){toast(d.error);return;}
+  d.data.items.forEach(u=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${u.username}</td><td>${u.email}</td><td>${u.department||'-'}</td>
+      <td><span class="tag ${u.status}">${u.status}</span></td>
+      <td>${u.last_login_at||'-'}</td><td>
+      ${u.status==='locked'
+        ?`<button class="btn" onclick="actUser('${u.user_id}','unlock')">解锁</button>`
+        :`<button class="btn danger" onclick="actUser('${u.user_id}','lock')">锁定</button>`}
+      </td>`;
+    body.appendChild(tr);
+  });
+  document.getElementById('userPage').textContent=
+    `共 ${d.data.total} 条，第 ${d.data.page} 页`;
+}
+async function actUser(id,act){
+  await api(`/users/${id}/${act}`,{method:'POST'});
+  toast(act==='lock'?'已锁定':'已解锁');
+  loadUsers(1);
+}
+async function createUser(){
+  const body={username:nuUsername.value,email:nuEmail.value,password:nuPwd.value,
+    display_name:nuName.value,department:nuDept.value};
+  const d=await api('/users',{method:'POST',body:JSON.stringify(body)});
+  toast(d.success?'创建成功':d.error);
+  if(d.success){closeModal('userModal');loadUsers(1);}
+}
+async function doImport(){
+  const d=await api('/users/import',{method:'POST',
+    body:JSON.stringify({csv_data:document.getElementById('csvData').value})});
+  toast(d.success?`导入 ${d.data.imported} / 跳过 ${d.data.skipped}`:d.error);
+  if(d.success){closeModal('importModal');loadUsers(1);}
+}
+async function exportUsers(){window.location=BASE+'/users/export?format=csv';}
+
+// 角色
+async function loadRoles(){
+  // 角色由后端单例管理，这里调用 users 统计与 roles（无独立列表端点则用统计）
+  const d=await api('/users/stats');
+  const body=document.getElementById('roleBody'); body.innerHTML='';
+  if(d.success){
+    Object.entries(d.data.by_role||{}).forEach(([role,cnt])=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td><span class="tag admin">${role}</span></td><td>${role}</td>
+        <td>${cnt} 人</td><td>内置/自定义角色</td>`;
+      body.appendChild(tr);
+    });
+    if(!Object.keys(d.data.by_role||{}).length)
+      body.innerHTML='<tr><td colspan=4>暂无角色数据</td></tr>';
+  }
+}
+
+// 租户
+async function loadTenants(){
+  const d=await api('/tenants');
+  const body=document.getElementById('tenantBody'); body.innerHTML='';
+  if(!d.success){toast(d.error);return;}
+  d.data.items.forEach(t=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${t.name}</td><td>${t.plan}</td>
+      <td><span class="tag ${t.status}">${t.status}</span></td>
+      <td>${(t.usage||{}).total_users||1}</td><td>${t.expires_at}</td>
+      <td><button class="btn ghost" onclick="tenantStats('${t.tenant_id}')">详情</button></td>`;
+    body.appendChild(tr);
+  });
+}
+async function createTenant(){
+  const body={name:ntName.value,plan:ntPlan.value,
+    owner_email:ntEmail.value,owner_name:ntOwner.value};
+  const d=await api('/tenants',{method:'POST',body:JSON.stringify(body)});
+  toast(d.success?'租户创建成功':d.error);
+  if(d.success){closeModal('tenantModal');loadTenants();}
+}
+async function tenantStats(id){
+  const d=await api(`/tenants/${id}/stats`);
+  toast(d.success?`${d.data.tenant} 套餐:${d.data.plan}`:d.error);
+}
+
+// MFA
+async function loadMfaStatus(){
+  const id=document.getElementById('mfaUserId').value;
+  const d=await api('/mfa/status?user_id='+encodeURIComponent(id));
+  document.getElementById('mfaResult').textContent=
+    d.success?JSON.stringify(d.data,null,2):d.error;
+}
+
+// 邀请
+async function loadInvStats(){
+  const d=await api('/invitations/stats');
+  if(d.success){
+    document.getElementById('iPending').textContent=d.data.pending;
+    document.getElementById('iAccepted').textContent=d.data.accepted;
+    document.getElementById('iRate').textContent=d.data.accept_rate;
+    document.getElementById('iRevoked').textContent=d.data.revoked;
+  }
+}
+async function loadInvitations(page){
+  const st=document.getElementById('invStatus').value;
+  const q=new URLSearchParams({page,page_size:15});
+  if(st)q.set('status',st);
+  const d=await api('/invitations?'+q);
+  const body=document.getElementById('invBody'); body.innerHTML='';
+  if(!d.success){toast(d.error);return;}
+  d.data.items.forEach(v=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${v.email}</td><td>${v.role}</td>
+      <td><span class="tag ${v.status}">${v.status}</span></td>
+      <td>${v.used_count}/${v.max_uses}</td><td>${v.expires_at}</td><td>
+      <button class="btn ghost" onclick="actInv('${v.invitation_id}','resend')">重发</button>
+      <button class="btn danger" onclick="actInv('${v.invitation_id}','revoke')">撤销</button></td>`;
+    body.appendChild(tr);
+  });
+  document.getElementById('invPage').textContent=`共 ${d.data.total} 条`;
+}
+async function createInvitation(){
+  const body={email:niEmail.value,role:niRole.value,
+    expires_in_days:parseInt(niDays.value)||7,message:niMsg.value};
+  const d=await api('/invitations',{method:'POST',body:JSON.stringify(body)});
+  toast(d.success?'邀请已创建并发送':d.error);
+  if(d.success){closeModal('inviteModal');loadInvitations(1);loadInvStats();}
+}
+async function actInv(id,act){
+  await api(`/invitations/${id}/${act}`,{method:'POST'});
+  toast(act==='resend'?'已重发':'已撤销');
+  loadInvitations(1); loadInvStats();
+}
+
+// 日志
+async function loadLogs(){
+  const d=await api('/auth/login-logs?limit=80');
+  const body=document.getElementById('logBody'); body.innerHTML='';
+  if(!d.success){toast(d.error);return;}
+  d.data.forEach(l=>{
+    const tr=document.createElement('tr');
+    const anom=l.is_anomaly?`<span class="anomaly">⚠ ${l.anomaly_type}</span>`:'-';
+    tr.innerHTML=`<td>${l.created_at}</td><td>${l.username}</td><td>${l.ip||'-'}</td>
+      <td>${l.result}</td><td>${l.reason||'-'}</td><td>${anom}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+// 初始化
+loadTab('users');
+</script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>技术深度大升级控制台</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d;
+    --fg: #e6edf3; --muted: #8b949e; --accent: #58a6ff;
+    --green: #3fb950; --red: #f85149; --yellow: #d29922;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--fg);
+         font-family: -apple-system, "Segoe UI", sans-serif;
+         margin: 0; padding: 20px; }
+  h1 { color: var(--accent); margin: 0 0 4px; }
+  .sub { color: var(--muted); margin-bottom: 20px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+          gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--border);
+          border-radius: 8px; padding: 16px; }
+  .card h2 { font-size: 15px; margin: 0 0 12px; color: var(--accent);
+             border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  input, button, select, textarea {
+    background: #0d1117; color: var(--fg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 10px; font-size: 13px; margin: 4px 0;
+  }
+  input { width: 100%; }
+  button { background: #21262d; cursor: pointer; }
+  button:hover { background: #30363d; border-color: var(--accent); }
+  button.primary { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+  pre { background: #010409; border: 1px solid var(--border);
+        border-radius: 6px; padding: 10px; max-height: 300px;
+        overflow: auto; font-size: 12px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px;
+          font-size: 11px; margin-right: 4px; }
+  .pill.ok { background: rgba(63,185,80,.15); color: var(--green); }
+  .pill.bad { background: rgba(248,81,73,.15); color: var(--red); }
+  .score-big { font-size: 36px; font-weight: bold; color: var(--green); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { border-bottom: 1px solid var(--border); padding: 6px 8px;
+           text-align: left; }
+  th { color: var(--muted); }
+</style>
+</head>
+<body>
+  <h1>技术深度大升级控制台</h1>
+  <div class="sub">方向1：Web 渗透做深 / 内网做实 / 移动做实 / 云做实 · 6.5 → 9.0 · 真实 subprocess 调用</div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>1. 技术深度总览</h2>
+      <div>评分: <span class="score-big" id="score">--</span> / 9.0</div>
+      <div id="cap-matrix" style="margin-top:10px;"></div>
+      <button onclick="loadOverview()">刷新</button>
+    </div>
+
+    <div class="card">
+      <h2>2. Web 指纹识别</h2>
+      <input id="fp-url" placeholder="http://target" value="http://testphp.vulnweb.com">
+      <button class="primary" onclick="runFingerprint()">识别指纹</button>
+      <pre id="fp-out">—</pre>
+    </div>
+
+    <div class="card">
+      <h2>3. nuclei 全量扫描</h2>
+      <input id="nuclei-url" placeholder="http://target">
+      <div class="row">
+        <select id="nuclei-sev">
+          <option value="">全部</option>
+          <option value="critical">critical</option>
+          <option value="high">high</option>
+          <option value="medium">medium</option>
+        </select>
+        <button class="primary" onclick="runNuclei()">开始扫描</button>
+      </div>
+      <pre id="nuclei-out">—</pre>
+    </div>
+
+    <div class="card">
+      <h2>4. SQL 注入深度利用</h2>
+      <input id="sqli-url" placeholder="http://target/page.php?id=1">
+      <div class="row">
+        <button onclick="runSqli('detect')">检测</button>
+        <button onclick="runSqli('dbs')">枚举库</button>
+      </div>
+      <pre id="sqli-out">—</pre>
+    </div>
+
+    <div class="card">
+      <h2>5. XSS 检测</h2>
+      <input id="xss-url" placeholder="http://target/search?q=">
+      <button class="primary" onclick="runXss()">检测 XSS</button>
+      <pre id="xss-out">—</pre>
+    </div>
+
+    <div class="card">
+      <h2>6. 多字典目录扫描</h2>
+      <input id="dir-url" placeholder="http://target">
+      <div class="row">
+        <select id="dir-wl">
+          <option value="common">common</option>
+          <option value="big">big</option>
+          <option value="dirb_common">dirb/common</option>
+          <option value="raft_medium">raft-medium</option>
+        </select>
+        <button class="primary" onclick="runDir()">扫描</button>
+      </div>
+      <pre id="dir-out">—</pre>
+    </div>
+
+    <div class="card">
+      <h2>7. 内网 SMB 扫描</h2>
+      <input id="smb-host" placeholder="192.168.1.10">
+      <div class="row">
+        <button onclick="runSmb('scan')">扫描</button>
+        <button onclick="runSmb('shares')">列共享</button>
+        <button onclick="runSmb('users')">列用户</button>
+      </div>
+      <pre id="smb-out">—</pre>
+    </div>
+
+    <div class="card">
+      <h2>8. AD LDAP 查询</h2>
+      <input id="ad-dc" placeholder="DC 主机">
+      <input id="ad-base" placeholder="base DN, 如 dc=corp,dc=com">
+      <button onclick="runAd()">查询</button>
+      <pre id="ad-out">—</pre>
+    </div>
+
+    <div class="card">
+      <h2>9. 横向移动检测</h2>
+      <input id="lat-host" placeholder="目标主机">
+      <button class="primary" onclick="runLateral()">检测向量</button>
+      <pre id="lat-out">—</pre>
+    </div>
+
+    <div class="card">
+      <h2>10. APK 静态分析</h2>
+      <input id="apk-path" placeholder="/path/to/app.apk">
+      <button class="primary" onclick="runApk()">分析</button>
+      <pre id="apk-out">—</pre>
+    </div>
+
+    <div class="card">
+      <h2>11. 云安全（AWS）</h2>
+      <div class="row">
+        <button onclick="runCloud('users')">IAM 用户</button>
+        <button onclick="runCloud('buckets')">S3 桶</button>
+        <button onclick="runCloud('instances')">EC2 实例</button>
+        <button onclick="runCloud('rules')">配置基线</button>
+      </div>
+      <pre id="cloud-out">—</pre>
+    </div>
+
+    <div class="card">
+      <h2>12. 工具状态</h2>
+      <button onclick="loadTools()">刷新</button>
+      <pre id="tools-out">—</pre>
+    </div>
+  </div>
+
+<script>
+const API = "/api/v1/tech-deep";
+async function post(p, body) {
+  const r = await fetch(API + p, {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify(body)});
+  return r.json();
+}
+async function get(p) {
+  const r = await fetch(API + p);
+  return r.json();
+}
+function show(id, data) {
+  document.getElementById(id).textContent =
+    typeof data === "string" ? data : JSON.stringify(data, null, 2);
+}
+
+async function loadOverview() {
+  const d = await get("/overview");
+  if (d.success) {
+    document.getElementById("score").textContent =
+      d.data.baseline.after;
+    document.getElementById("cap-matrix").innerHTML =
+      d.data.capability_matrix.map(c =>
+        `<div><span class="pill ok">${c.level}</span>
+        ${c.module}: ${c.capability}</div>`).join("");
+  }
+}
+async function runFingerprint() {
+  const url = document.getElementById("fp-url").value;
+  show("fp-out", await post("/web/fingerprint", {url}));
+}
+async function runNuclei() {
+  const url = document.getElementById("nuclei-url").value;
+  const sev = document.getElementById("nuclei-sev").value || null;
+  show("nuclei-out", "扫描中（可能需要几分钟）...");
+  show("nuclei-out", await post("/web/nuclei/scan", {url, severity: sev}));
+}
+async function runSqli(kind) {
+  const url = document.getElementById("sqli-url").value;
+  const ep = {detect:"/web/sqli/detect", dbs:"/web/sqli/dbs"}[kind];
+  show("sqli-out", await post(ep, {url}));
+}
+async function runXss() {
+  const url = document.getElementById("xss-url").value;
+  show("xss-out", await post("/web/xss/scan", {url}));
+}
+async function runDir() {
+  const url = document.getElementById("dir-url").value;
+  const wl = document.getElementById("dir-wl").value;
+  show("dir-out", "扫描中...");
+  show("dir-out", await post("/web/dir/scan", {url, wordlist: wl}));
+}
+async function runSmb(kind) {
+  const host = document.getElementById("smb-host").value;
+  const ep = {scan:"/internal/smb/scan", shares:"/internal/smb/shares",
+             users:"/internal/smb/users"}[kind];
+  show("smb-out", await post(ep, {host}));
+}
+async function runAd() {
+  const dc = document.getElementById("ad-dc").value;
+  const base = document.getElementById("ad-base").value;
+  show("ad-out", await post("/internal/ad/query", {dc, base_dn: base}));
+}
+async function runLateral() {
+  const host = document.getElementById("lat-host").value;
+  show("lat-out", await post("/internal/lateral/detect", {host}));
+}
+async function runApk() {
+  const p = document.getElementById("apk-path").value;
+  show("apk-out", await post("/mobile/apk/analyze", {apk_path: p}));
+}
+async function runCloud(kind) {
+  const ep = {users:"/cloud/aws/users", buckets:"/cloud/aws/buckets",
+             instances:"/cloud/aws/instances",
+             rules:"/cloud/config/rules"}[kind];
+  show("cloud-out", await get(ep));
+}
+async function loadTools() {
+  show("tools-out", await get("/tools/status"));
+}
+loadOverview();
+</script>
+</body>
+</html>
