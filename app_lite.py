@@ -41,138 +41,42 @@ async def health():
 async def root():
     return '<html><body style="background:#0a0e17;color:#e2e8f0;font-family:system-ui;padding:40px"><h1>AI Hacking Agent v9.0 Core</h1><p>统一控制台: <a href="/console" style="color:#38bdf8">/console</a></p><p>API文档: <a href="/docs" style="color:#38bdf8">/docs</a></p><p>健康检查: <a href="/health" style="color:#38bdf8">/health</a></p></body></html>'
 
-# 注册核心路由
-from api_server.real_tools_routes import router as real_tools_router
-from api_server.mcp_server_routes import router as mcp_router
-from api_server.agent_team_routes import router as agent_team_router
-from api_server.weapon_manual_routes import router as weapon_manual_router
-from api_server.recon_workflow_routes import router as recon_workflow_router
-from api_server.target_lab_routes import router as target_lab_router
-from api_server.report_engine_routes import router as report_router
-from api_server.scan_history_routes import router as scan_history_router
-from api_server.monitor_routes import router as monitor_router
-from api_server.vuln_management_routes import router as vuln_mgmt_router
-from api_server.asset_management_routes import router as asset_mgmt_router
-from api_server.system_config_routes import router as system_config_router
-from api_server.export_routes import router as export_router
-from api_server.webhook_routes import router as webhook_router
-from api_server.audit_log_routes import router as audit_router
-from api_server.approval_routes import router as approval_router
-from api_server.kill_chain_routes import router as killchain_router
-from api_server.rag_knowledge_routes import router as rag_router
-from api_server.workflow_engine_routes import router as workflow_router
-from api_server.mobile_security_routes import router as mobile_router
-from api_server.recon_enhanced_routes import router as recon_enhanced_router
-from api_server.report_v2_routes import router as report_v2_router
-from api_server.deep_pentest_routes import router as deep_pentest_router
-from api_server.core_upgrade_routes import router as core_upgrade_router
-from api_server.deep_upgrade_routes import router as deep_upgrade_router
-from api_server.autoloop_routes import router as autoloop_router
-from api_server.range_manager_routes import router as range_manager_router
-from api_server.exploit_engine_routes import router as exploit_engine_router
-from api_server.api_security_scan_routes import router as api_security_scan_router
-from api_server.internal_scan_routes import router as internal_scan_router
-from api_server.vuln_kb_routes import router as vuln_kb_router
+# 注册核心路由 — v14: 砍掉Web渗透，聚焦AI安全/移动/区块链
+# 保留产品基础（v12: DB+登录+任务队列+报告）和v13新方向
 from api_server.v10_ultimate_routes import router as v10_router
 from api_server.v11_mcp_routes import router as v11_router
 from api_server.v12_product_routes import router as v12_router
 from api_server.v13_ai_mobile_chain import router as v13_router
+from api_server.system_config_routes import router as system_config_router
+from api_server.audit_log_routes import router as audit_router
+from api_server.export_routes import router as export_router
 
-# === 批量注册高价值模块（try-except容错，单个失败不影响启动） ===
+# === 只保留AI安全相关的高价值模块 ===
 _EXTRA_ROUTERS = []
 for _mod in [
-    "api_server.api_security_routes",
-    "api_server.compliance_routes",
-    "api_server.soc_routes",
-    "api_server.soc_center_routes",
-    "api_server.soc_deep_routes",
-    "api_server.soc_pro_routes",
-    "api_server.cloud_security_v2_routes",
-    "api_server.cloud_security_real_routes",
-    "api_server.cloud_native_security_routes",
-    "api_server.container_security_routes",
-    "api_server.soar_routes",
-    "api_server.soar_deep_routes",
-    "api_server.devsecops_routes",
-    "api_server.devsecops_deep_routes",
-    "api_server.threat_hunt_routes",
-    "api_server.llm_provider_routes",
-    "api_server.rbac_routes",
-    "api_server.health_check_routes",
-    "api_server.ai_decision_engine_routes",
-    "api_server.report_v3_routes",
-    "api_server.vuln_verification_routes",
-    "api_server.blockchain_security_routes",
-    # === 对标CyberStrike四大升级 - 新模块路由 ===
-    "api_server.scanner_engine_routes",
-    "api_server.exploit_framework_routes",
-    "api_server.report_engine_v2_routes",
-    "api_server.owasp_library_routes",
-    "api_server.intelligence_layer_routes",
-    "api_server.pipeline_routes",
-    # === 多领域智能体编排层（新增 v2.0） ===
-    "api_server.multi_domain_routes",
-    # === 高级模块 v4.0（知识图谱/红蓝绿/MITRE/PoC/Agent安全/任务流） ===
-    "api_server.advanced_modules_routes",
-    # === 靶场与实战验证 v4.1（DVWA/Juice Shop/端到端验证） ===
-    "api_server.range_validation_routes",
-    # === API渗透引擎 + Agent守卫 v4.2（JS分析/Katana/Source Map/Jev审批） ===
-    "api_server.api_pentest_guardian_routes",
-    # === LLM智能引擎 v4.3（真实大模型驱动/自然语言指挥/AI分析） ===
-    "api_server.llm_engine_routes",
-    # === v4.4 防御增强（AI恶意软件检测/Agentic SOC/MCP安全扫描） ===
-    "api_server.v44_defense_routes",
-    # === v4.5 统一平台+知识库（安全运营中心/PoC库/攻击链/修复方案/指纹） ===
-    "api_server.knowledge_base_routes",
-    # === v4.6 AI大模型安全评估（提示注入/数据泄露/Agent安全/赏金报告） ===
     "api_server.ai_assessment_routes",
-    # === v4.7 GitHub搜索升级（遗传算法进化/多轮攻击/MCP深度扫描） ===
+    "api_server.llm_engine_routes",
+    "api_server.blockchain_security_routes",
     "api_server.ai_v47_routes",
+    "api_server.ai_decision_engine_routes",
 ]:
     try:
         _m = __import__(_mod, fromlist=["router"])
         _EXTRA_ROUTERS.append(_m.router)
         print(f"[OK] 已注册: {_mod}")
     except Exception as _e:
-        print(f"[WARN] {_mod} 注册失败: {_e}")
+        print(f"[SKIP] {_mod}: {_e}")
 
-app.include_router(real_tools_router)
-app.include_router(mcp_router)
-app.include_router(agent_team_router)
-app.include_router(weapon_manual_router)
-app.include_router(recon_workflow_router)
-app.include_router(target_lab_router)
-app.include_router(report_router)
-app.include_router(scan_history_router)
-app.include_router(monitor_router)
-app.include_router(vuln_mgmt_router)
-app.include_router(asset_mgmt_router)
-app.include_router(system_config_router)
-app.include_router(export_router)
-app.include_router(webhook_router)
-app.include_router(audit_router)
-app.include_router(approval_router)
-app.include_router(killchain_router)
-app.include_router(rag_router)
-app.include_router(workflow_router)
-app.include_router(mobile_router)
-app.include_router(recon_enhanced_router)
-app.include_router(report_v2_router)
-app.include_router(deep_pentest_router)
-app.include_router(core_upgrade_router)
-app.include_router(deep_upgrade_router)
-app.include_router(autoloop_router)
-app.include_router(range_manager_router)
-app.include_router(exploit_engine_router)
-app.include_router(api_security_scan_router)
-app.include_router(internal_scan_router)
-app.include_router(vuln_kb_router)
+# 注册保留的路由
 app.include_router(v10_router)
 app.include_router(v11_router)
 app.include_router(v12_router)
 app.include_router(v13_router)
+app.include_router(system_config_router)
+app.include_router(audit_router)
+app.include_router(export_router)
 
-# 批量注册高价值模块
+# 批量注册AI安全模块
 for _r in _EXTRA_ROUTERS:
     app.include_router(_r)
 
