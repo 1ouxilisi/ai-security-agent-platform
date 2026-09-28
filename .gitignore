@@ -146,3 +146,6 @@ scripts/error_audit_report.json
 security_platform.db
 reports/
 *.log
+
+*.db-shm
+*.db-wal
