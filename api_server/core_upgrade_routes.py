@@ -1,4 +1,4 @@
-"""
+﻿"""
 v9.0 核心升级模块 - 真AI决策 + 自动渗透 + 移动分析 + 红队执行
 从框架代码变成真能用的引擎
 """
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/v9", tags=["v9-core"])
 
 # ============ 配置 ============
 PROJECT_DIR = Path(__file__).parent.parent
-AI_API_KEY = os.environ.get("SILICONFLOW_API_KEY", "sk-ajkdkwjrumdancjpshjathguvfmmqhbsbnpmnetqwkbftkyv")
+AI_API_KEY = os.environ.get("SILICONFLOW_API_KEY", "")
 AI_BASE_URL = "https://api.siliconflow.cn/v1/chat/completions"
 AI_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 

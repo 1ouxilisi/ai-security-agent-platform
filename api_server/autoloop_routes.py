@@ -1,4 +1,4 @@
-"""
+﻿"""
 v9.2 自动渗透循环引擎 - AI多轮自动执行
 从单次扫描升级到AI自动决策循环
 """
@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix="/api/v9", tags=["v9-autoloop"])
 
-AI_API_KEY = os.environ.get("SILICONFLOW_API_KEY", "sk-ajkdkwjrumdancjpshjathguvfmmqhbsbnpmnetqwkbftkyv")
+AI_API_KEY = os.environ.get("SILICONFLOW_API_KEY", "")
 AI_BASE_URL = "https://api.siliconflow.cn/v1/chat/completions"
 AI_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 

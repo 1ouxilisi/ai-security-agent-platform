@@ -1,4 +1,4 @@
-"""
+﻿"""
 v9.1 深度升级 - 端到端渗透 + AI多轮推理 + 漏洞验证
 从5.5分继续提升
 """
@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix="/api/v9", tags=["v9-deep"])
 
-AI_API_KEY = os.environ.get("SILICONFLOW_API_KEY", "sk-ajkdkwjrumdancjpshjathguvfmmqhbsbnpmnetqwkbftkyv")
+AI_API_KEY = os.environ.get("SILICONFLOW_API_KEY", "")
 AI_BASE_URL = "https://api.siliconflow.cn/v1/chat/completions"
 AI_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
