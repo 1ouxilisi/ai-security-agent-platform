@@ -1,36 +1,11 @@
-name: CI - 持续集成
-
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-
+name: CI
+on: [push, pull_request]
 jobs:
-  lint:
-    name: 代码质量检查
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: 语法检查
-        run: |
-          python -m compileall -q . || echo "语法检查完成"
-          echo "✓ 代码语法检查通过"
-
-  docs:
-    name: 文档检查
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: 检查必要文档
-        run: |
-          for file in README.md requirements.txt; do
-            if [ -f "$file" ]; then
-              echo "✓ $file 存在"
-            else
-              echo "✗ $file 缺失"
-            fi
-          done
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements.txt
+      - run: python tests/test_core.py

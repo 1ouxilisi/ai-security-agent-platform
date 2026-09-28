@@ -1,0 +1,47 @@
+{"vulns": [
+  {
+    "name": "The DAO重入攻击 (2016)",
+    "chain": "以太坊",
+    "severity": "critical",
+    "loss": "$60M",
+    "year": 2016,
+    "pattern": "call.value",
+    "description": "攻击者通过递归调用withdraw()反复提取ETH，利用了checks-effects-interacts顺序错误。"
+  },
+  {
+    "name": "Parity钱包自毁 (2017)",
+    "chain": "以太坊",
+    "severity": "critical",
+    "loss": "$300M冻结",
+    "year": 2017,
+    "pattern": "selfdestruct",
+    "description": "未保护的库合约被初始化后调用selfdestruct，导致多签钱包永久冻结。"
+  },
+  {
+    "name": "OpenAI提示注入绕过 (2023)",
+    "chain": "LLM",
+    "severity": "high",
+    "loss": "N/A",
+    "year": 2023,
+    "pattern": "prompt_injection",
+    "description": "攻击者通过特殊prompt绕过ChatGPT安全限制，生成恶意代码。"
+  },
+  {
+    "name": "GitHub Copilot数据泄露 (2022)",
+    "chain": "LLM",
+    "severity": "high",
+    "loss": "N/A",
+    "year": 2022,
+    "pattern": "data_exfiltration",
+    "description": "Copilot训练数据中包含公开仓库中的API密钥和敏感代码。"
+  },
+  {
+    "name": "Android StrandHogg 2.0 (2020)",
+    "chain": "Mobile",
+    "severity": "high",
+    "loss": "N/A",
+    "year": 2020,
+    "pattern": "task_hijacking",
+    "description": "恶意应用伪装成合法应用覆盖任务栈，窃取用户输入。"
+  }
+]}
