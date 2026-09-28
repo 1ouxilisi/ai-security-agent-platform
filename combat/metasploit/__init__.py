@@ -1,2 +1,0 @@
-# combat/metasploit module
-

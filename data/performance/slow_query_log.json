@@ -1,9 +1,0 @@
-[
-  {
-    "id": "sq_1789344643853_0",
-    "sql": "SELECT * FROM tasks",
-    "execution_time_ms": 120.0,
-    "params": [],
-    "timestamp": 1789344643.8538957
-  }
-]

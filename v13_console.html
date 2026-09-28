@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>AI Security Console v14</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
+.header { background: #1a1d27; padding: 16px 32px; border-bottom: 1px solid #2a2d3a; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 18px; color: #7c5cff; }
+.header .ver { font-size: 12px; color: #666; }
+.container { max-width: 1200px; margin: 24px auto; padding: 0 24px; }
+.tabs { display: flex; gap: 4px; margin-bottom: 24px; }
+.tab { padding: 10px 20px; background: #1a1d27; border: 1px solid #2a2d3a; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 14px; }
+.tab.active { background: #7c5cff; color: white; border-color: #7c5cff; }
+.panel { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 8px; padding: 24px; margin-bottom: 20px; }
+.panel h2 { font-size: 16px; margin-bottom: 16px; color: #fff; }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 12px; color: #888; margin-bottom: 6px; }
+.form-group input, .form-group textarea, .form-group select {
+  width: 100%; padding: 10px 12px; background: #0f1117; border: 1px solid #2a2d3a; border-radius: 6px; color: #e0e0e0; font-size: 14px; font-family: monospace;
+}
+.form-group textarea { min-height: 120px; resize: vertical; }
+.btn { background: #7c5cff; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+.btn:hover { background: #6a4ce0; }
+.btn:disabled { background: #444; cursor: not-allowed; }
+.result { margin-top: 20px; padding: 16px; background: #0f1117; border-radius: 6px; border: 1px solid #2a2d3a; display: none; }
+.result.show { display: block; }
+.result h3 { font-size: 14px; margin-bottom: 12px; color: #7c5cff; }
+.issue { padding: 10px; margin-bottom: 8px; border-radius: 4px; font-size: 13px; }
+.issue.critical { background: rgba(220,38,38,0.15); border-left: 3px solid #dc2626; }
+.issue.high { background: rgba(234,88,12,0.15); border-left: 3px solid #ea580c; }
+.issue.medium { background: rgba(234,179,8,0.15); border-left: 3px solid #eab308; }
+.issue.low { background: rgba(34,197,94,0.15); border-left: 3px solid #22c55e; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat { background: #0f1117; padding: 16px; border-radius: 6px; text-align: center; }
+.stat .num { font-size: 28px; font-weight: bold; color: #7c5cff; }
+.stat .label { font-size: 11px; color: #888; margin-top: 4px; }
+.hidden { display: none; }
+.status { font-size: 13px; color: #888; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>AI Security Console</h1>
+  <span class="ver">v14 · LLM Security + Mobile + Blockchain</span>
+</div>
+<div class="container">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-critical">0</div><div class="label">Critical</div></div>
+    <div class="stat"><div class="num" id="s-high">0</div><div class="label">High</div></div>
+    <div class="stat"><div class="num" id="s-medium">0</div><div class="label">Medium</div></div>
+    <div class="stat"><div class="num" id="s-low">0</div><div class="label">Low</div></div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-tab="llm">LLM Security</div>
+    <div class="tab" data-tab="mobile">Mobile APK</div>
+    <div class="tab" data-tab="chain">Smart Contract</div>
+  </div>
+
+  <div class="panel" id="tab-llm">
+    <h2>LLM Security Scanner — OWASP LLM Top 10</h2>
+    <div class="form-group"><label>Target API URL (OpenAI-compatible /v1/chat/completions)</label>
+      <input id="llm-url" placeholder="https://api.siliconflow.cn/v1/chat/completions" value="https://api.siliconflow.cn/v1/chat/completions"></div>
+    <div class="form-group"><label>API Key</label>
+      <input id="llm-key" type="password" placeholder="sk-..."></div>
+    <div class="form-group"><label>Model</label>
+      <input id="llm-model" placeholder="Qwen/Qwen2.5-7B-Instruct" value="Qwen/Qwen2.5-7B-Instruct"></div>
+    <button class="btn" onclick="runLLM()">Run Security Scan</button>
+    <div class="status" id="llm-status"></div>
+    <div class="result" id="llm-result"><h3>Results</h3><div id="llm-issues"></div></div>
+  </div>
+
+  <div class="panel hidden" id="tab-mobile">
+    <h2>Mobile APK Analysis</h2>
+    <div class="form-group"><label>APK File Path</label>
+      <input id="mobile-path" placeholder="C:\path\to\app.apk" value="test_sample.apk"></div>
+    <button class="btn" onclick="runMobile()">Analyze APK</button>
+    <div class="status" id="mobile-status"></div>
+    <div class="result" id="mobile-result"><h3>Results</h3><div id="mobile-issues"></div></div>
+  </div>
+
+  <div class="panel hidden" id="tab-chain">
+    <h2>Smart Contract Auditor</h2>
+    <div class="form-group"><label>Solidity Source Code</label>
+      <textarea id="chain-code" placeholder="pragma solidity ^0.7.0; ...">// Example vulnerable contract
+pragma solidity ^0.7.0;
+contract EtherBank {
+    mapping(address => uint256) balances;
+    function withdraw() public {
+        msg.sender.call.value(balances[msg.sender])();
+        balances[msg.sender] = 0;
+    }
+    function deposit() public payable { balances[msg.sender] += msg.value; }
+}</textarea></div>
+    <button class="btn" onclick="runChain()">Audit Contract</button>
+    <div class="status" id="chain-status"></div>
+    <div class="result" id="chain-result"><h3>Results</h3><div id="chain-issues"></div></div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  ['llm','mobile','chain'].forEach(k => document.getElementById('tab-'+k).classList.add('hidden'));
+  document.getElementById('tab-'+t.dataset.tab).classList.remove('hidden');
+});
+
+async function api(path, body) {
+  const r = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  return r.json();
+}
+
+function showIssues(el, issues) {
+  el.innerHTML = '';
+  let c=0,h=0,m=0,l=0;
+  issues.forEach(i => {
+    const d = document.createElement('div');
+    d.className = 'issue ' + (i.severity||'low').toLowerCase();
+    d.textContent = `[${(i.severity||'?').toUpperCase()}] ${i.type||i.issue||i.message||i}`;
+    el.appendChild(d);
+    const s = (i.severity||'low').toLowerCase();
+    if(s==='critical')c++; else if(s==='high')h++; else if(s==='medium')m++; else l++;
+  });
+  document.getElementById('s-critical').textContent=c;
+  document.getElementById('s-high').textContent=h;
+  document.getElementById('s-medium').textContent=m;
+  document.getElementById('s-low').textContent=l;
+}
+
+async function runLLM() {
+  const st = document.getElementById('llm-status');
+  st.textContent = 'Running LLM security tests... this may take 30-60s';
+  document.getElementById('llm-result').classList.remove('show');
+  try {
+    const r = await api('/api/v13/llm/scan', {
+      target_url: document.getElementById('llm-url').value,
+      api_key: document.getElementById('llm-key').value,
+      model: document.getElementById('llm-model').value
+    });
+    st.textContent = 'Done. ' + (r.results||[]).length + ' tests executed.';
+    showIssues(document.getElementById('llm-issues'), r.results||r.issues||[]);
+    document.getElementById('llm-result').classList.add('show');
+  } catch(e) { st.textContent = 'Error: ' + e.message; }
+}
+
+async function runMobile() {
+  const st = document.getElementById('mobile-status');
+  st.textContent = 'Analyzing APK...';
+  try {
+    const r = await api('/api/v13/mobile/analyze', {apk_path: document.getElementById('mobile-path').value});
+    st.textContent = 'Done.';
+    showIssues(document.getElementById('mobile-issues'), r.issues||r.findings||[]);
+    document.getElementById('mobile-result').classList.add('show');
+  } catch(e) { st.textContent = 'Error: ' + e.message; }
+}
+
+async function runChain() {
+  const st = document.getElementById('chain-status');
+  st.textContent = 'Auditing contract...';
+  try {
+    const r = await api('/api/v13/blockchain/analyze', {source_code: document.getElementById('chain-code').value});
+    st.textContent = 'Done. Risk score: ' + (r.risk_score||'?');
+    showIssues(document.getElementById('chain-issues'), r.issues||[]);
+    document.getElementById('chain-result').classList.add('show');
+  } catch(e) { st.textContent = 'Error: ' + e.message; }
+}
+</script>
+</body>
+</html>
