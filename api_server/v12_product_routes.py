@@ -310,8 +310,8 @@ async def v12_dashboard():
     total_tasks = conn.execute("SELECT COUNT(*) FROM scan_tasks").fetchone()[0]
     conn.close()
     return {
-        "version": "12.0-product",
-        "features": ["SQLite持久化", "漏洞生命周期管理", "后台任务队列", "PDF报告", "用户登录"],
+        "version": "12.3-product",
+        "features": ["SQLite持久化", "漏洞生命周期", "后台任务队列", "报告导出", "用户登录", "定时扫描", "任务历史"],
         "stats": {
             "assets": total_assets,
             "total_vulns": total_vulns,
@@ -321,3 +321,89 @@ async def v12_dashboard():
         "db_path": DB_PATH,
         "timestamp": datetime.now().isoformat()
     }
+
+# ============ 定时扫描 ============
+
+SCHEDULED_TASKS: Dict[str, dict] = {}
+
+class ScheduleRequest(BaseModel):
+    target: str
+    scan_type: Optional[str] = "nmap"
+    interval_hours: Optional[int] = 24
+
+@router.post("/schedule/add")
+async def add_schedule(req: ScheduleRequest):
+    sid = uuid.uuid4().hex[:12]
+    SCHEDULED_TASKS[sid] = {
+        "target": req.target, "scan_type": req.scan_type,
+        "interval_hours": req.interval_hours,
+        "created_at": datetime.now().isoformat(),
+        "last_run": None, "enabled": True
+    }
+    return {"schedule_id": sid, "status": "added"}
+
+@router.get("/schedule/list")
+async def list_schedule():
+    return {"schedules": SCHEDULED_TASKS, "total": len(SCHEDULED_TASKS)}
+
+# ============ 任务历史 ============
+
+@router.get("/tasks/history")
+async def task_history(limit: int = 50):
+    conn = get_db()
+    rows = conn.execute("SELECT task_id,target,scan_type,status,created_at,finished_at FROM scan_tasks ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+    conn.close()
+    return {"tasks": [dict(r) for r in rows], "total": len(rows)}
+
+# ============ 增强报告 ============
+
+@router.get("/report/full/{target}")
+async def full_report(target: str):
+    conn = get_db()
+    assets = conn.execute("SELECT * FROM assets WHERE hostname=? ORDER BY port", (target,)).fetchall()
+    vulns = conn.execute("SELECT * FROM vulnerabilities WHERE target=?", (target,)).fetchall()
+    conn.close()
+
+    crit = sum(1 for v in vulns if v["severity"] == "critical")
+    high = sum(1 for v in vulns if v["severity"] == "high")
+    med = sum(1 for v in vulns if v["severity"] == "medium")
+    low = sum(1 for v in vulns if v["severity"] == "low")
+    risk_score = crit*10 + high*5 + med*2 + low*1
+
+    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>安全报告 {target}</title>
+<style>
+body{{font-family:Arial;max-width:900px;margin:30px auto;color:#222;line-height:1.6}}
+h1{{color:#1a365d;border-bottom:3px solid #1a365d;padding-bottom:10px}}
+h2{{color:#2c5282;margin-top:30px}}
+table{{width:100%;border-collapse:collapse;margin:15px 0}}
+th,td{{border:1px solid #ddd;padding:8px 12px;text-align:left;font-size:14px}}
+th{{background:#f7fafc}}
+.print-btn{{position:fixed;top:20px;right:20px;background:#2c5282;color:#fff;padding:10px 20px;border:none;border-radius:6px;cursor:pointer}}
+@media print{{.print-btn{{display:none}}}}
+</style></head><body>
+<button class="print-btn" onclick="window.print()">打印/存PDF</button>
+<h1>安全评估报告</h1>
+<p>目标: <b>{target}</b> | 时间: {datetime.now().strftime('%Y-%m-%d %H:%M')} | AI安全平台v12</p>
+<h2>风险评分: <span style="color:{'#c53030' if risk_score>20 else '#d69e2e' if risk_score>5 else '#38a169'};font-size:36px">{risk_score}</span></h2>
+<h2>资产 ({len(assets)}个)</h2>
+<table><tr><th>IP</th><th>端口</th><th>服务</th><th>产品</th></tr>"""
+    for a in assets:
+        html += f"<tr><td>{a['ip']}</td><td>{a['port']}</td><td>{a['service']}</td><td>{a['product']}</td></tr>"
+    html += f"""</table>
+<h2>漏洞统计: Critical={crit} High={high} Medium={med} Low={low}</h2>
+<h2>漏洞详情</h2>"""
+    for v in vulns:
+        html += f"<p><b>[{v['severity'].upper()}]</b> {v['title']}<br><span style='color:#666;font-size:13px'>{v['url']}</span></p>"
+    if not vulns:
+        html += "<p style='color:#888'>未发现已知漏洞。</p>"
+    html += """<h2>修复建议</h2><ol><li>更新所有软件到最新版本</li><li>关闭不必要端口</li><li>最小权限原则</li><li>部署WAF</li></ol>
+<p style="color:#999;font-size:12px;margin-top:30px">AI安全平台自动生成 | 仅供授权测试</p>
+</body></html>"""
+
+    report_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "reports")
+    os.makedirs(report_dir, exist_ok=True)
+    safe = target.replace(':','_').replace('/','_')
+    path = os.path.join(report_dir, f"full_{safe}.html")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(html)
+    return FileResponse(path, media_type="text/html")
