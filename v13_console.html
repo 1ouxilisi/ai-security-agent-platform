@@ -117,8 +117,11 @@ function showIssues(el, issues) {
   let c=0,h=0,m=0,l=0;
   issues.forEach(i => {
     const d = document.createElement('div');
-    d.className = 'issue ' + (i.severity||'low').toLowerCase();
-    d.textContent = `[${(i.severity||'?').toUpperCase()}] ${i.type||i.issue||i.message||i}`;
+    const sev = (i.severity||'low').toLowerCase();
+    d.className = 'issue ' + sev;
+    const label = i.vuln || i.type || i.issue || i.test_name || i.detail || i.message || JSON.stringify(i);
+    const fix = i.fix ? ' <span style="color:#888;font-size:12px">→ ' + i.fix + '</span>' : '';
+    d.innerHTML = '<strong>[' + sev.toUpperCase() + ']</strong> ' + label + fix;
     el.appendChild(d);
     const s = (i.severity||'low').toLowerCase();
     if(s==='critical')c++; else if(s==='high')h++; else if(s==='medium')m++; else l++;
