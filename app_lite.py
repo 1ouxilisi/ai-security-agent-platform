@@ -67,6 +67,8 @@ from api_server.report_v2_routes import router as report_v2_router
 from api_server.deep_pentest_routes import router as deep_pentest_router
 from api_server.core_upgrade_routes import router as core_upgrade_router
 from api_server.deep_upgrade_routes import router as deep_upgrade_router
+from api_server.autoloop_routes import router as autoloop_router
+from api_server.range_manager_routes import router as range_manager_router
 
 # === 批量注册高价值模块（try-except容错，单个失败不影响启动） ===
 _EXTRA_ROUTERS = []
@@ -151,6 +153,8 @@ app.include_router(report_v2_router)
 app.include_router(deep_pentest_router)
 app.include_router(core_upgrade_router)
 app.include_router(deep_upgrade_router)
+app.include_router(autoloop_router)
+app.include_router(range_manager_router)
 
 # 批量注册高价值模块
 for _r in _EXTRA_ROUTERS:
