@@ -142,3 +142,7 @@ scripts/error_audit_report.json
 
 # 宝贝图片和发布素材
 宝贝图片/
+
+security_platform.db
+reports/
+*.log

@@ -75,6 +75,7 @@ from api_server.internal_scan_routes import router as internal_scan_router
 from api_server.vuln_kb_routes import router as vuln_kb_router
 from api_server.v10_ultimate_routes import router as v10_router
 from api_server.v11_mcp_routes import router as v11_router
+from api_server.v12_product_routes import router as v12_router
 
 # === 批量注册高价值模块（try-except容错，单个失败不影响启动） ===
 _EXTRA_ROUTERS = []
@@ -167,6 +168,7 @@ app.include_router(internal_scan_router)
 app.include_router(vuln_kb_router)
 app.include_router(v10_router)
 app.include_router(v11_router)
+app.include_router(v12_router)
 
 # 批量注册高价值模块
 for _r in _EXTRA_ROUTERS:
@@ -249,5 +251,6 @@ if __name__ == "__main__":
     print("  API文档:   http://127.0.0.1:8001/docs")
     print("=" * 60)
     uvicorn.run(app, host="127.0.0.1", port=8001, log_level="info")
+
 
 
