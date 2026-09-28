@@ -114,18 +114,35 @@ def run_scan_task(task_id: str, target: str, scan_type: str):
 
     results = {"assets": [], "vulns": []}
     try:
-        if scan_type in ("nmap", "quick"):
-            cmd = f"nmap -F -sV -oX - {target}"
-            r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
-            # 解析简单输出
-            for line in r.stdout.split("\n"):
-                if "open" in line and "/" in line:
-                    results["assets"].append({"raw": line.strip()[:200]})
+        if scan_type in ("nmap", "quick", "full"):
+            cmd = f'nmap -F -sV {target}'
+            r = subprocess.run(cmd, shell=True, capture_output=True, timeout=60, encoding="utf-8", errors="replace")
+            output = r.stdout or ""
+            current_ip = target
+            for line in output.split("\n"):
+                if "Nmap scan report for" in line:
+                    current_ip = line.split("for ")[-1].strip()
+                if "/tcp" in line and "open" in line:
+                    parts = line.split()
+                    try:
+                        port = int(parts[0].split("/")[0])
+                        service = parts[2] if len(parts) > 2 else "unknown"
+                        product = " ".join(parts[3:]) if len(parts) > 3 else ""
+                        asset = {"ip": current_ip, "port": port, "service": service, "product": product}
+                        results["assets"].append(asset)
+                        conn.execute("""INSERT INTO assets (ip,hostname,url,port,service,product,version,scan_id,first_seen,last_seen,status)
+                            VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                            (current_ip, target, f"http://{target}:{port}", port, service, product, "",
+                             task_id, now, now, "active"))
+                        conn.commit()
+                    except:
+                        pass
 
         if scan_type in ("nuclei", "quick", "full"):
-            cmd = f"nuclei -u {target} -json -silent"
-            r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=60)
-            for line in r.stdout.split("\n"):
+            url = target if target.startswith("http") else f"http://{target}"
+            cmd = f'nuclei -u {url} -json -silent -timeout 10'
+            r = subprocess.run(cmd, shell=True, capture_output=True, timeout=120, encoding="utf-8", errors="replace")
+            for line in (r.stdout or "").split("\n"):
                 if line.strip():
                     try:
                         item = json.loads(line)
