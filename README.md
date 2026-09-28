@@ -8,7 +8,11 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)]()
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688.svg)]()
 [![LLM Security](https://img.shields.io/badge/OWASP-LLM%20Top%2010-purple.svg)]()
-[![Version](https://img.shields.io/badge/Version-14.0-orange.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.0.0-orange.svg)]()
+
+![LLM Security Scan Result](docs/screenshot_llm_scan.png)
+
+*Real scan against Qwen2.5-7B-Instruct: 3 Critical, 7 High, 15 Low findings.*
 
 ## Why This Project?
 

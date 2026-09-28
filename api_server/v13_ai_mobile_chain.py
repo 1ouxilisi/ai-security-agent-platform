@@ -1,4 +1,4 @@
-"""
+﻿"""
 v13.0 - AI大模型安全 + 移动安全 + 区块链安全
 不再做Web渗透（已卷死），转向新兴高价值领域
 
@@ -406,6 +406,34 @@ async def contract_analyze(req: ContractAnalysisRequest):
             "fix": "锁定具体编译器版本"
         })
 
+    # 11. delegatecall危险调用
+    if "delegatecall" in code:
+        issues.append({
+            "vuln": "delegatecall危险调用",
+            "severity": "critical",
+            "description": "使用delegatecall可被用来执行任意代码，可篡改存储",
+            "fix": "避免使用delegatecall，或只调用可信地址"
+        })
+
+    # 12. 未保护的公开mint函数
+    if re.search(r'function\s+(mint|airdrop|claim)\w*\s*\([^)]*\)\s*public', code):
+        if "onlyOwner" not in code and "require(msg.sender" not in code:
+            issues.append({
+                "vuln": "公开铸造函数无访问控制",
+                "severity": "high",
+                "description": "任何人可调用mint/airdrop，可无限铸造代币",
+                "fix": "添加onlyOwner或访问控制修饰符"
+            })
+
+    # 13. 硬编码地址
+    if re.search(r'0x[a-fA-F0-9]{40}', code) and "address(" not in code:
+        issues.append({
+            "vuln": "硬编码地址",
+            "severity": "low",
+            "description": "合约中硬编码了地址，部署后不可更改",
+            "fix": "使用构造函数参数或可设置的状态变量"
+        })
+
     crit = sum(1 for i in issues if i["severity"] == "critical")
     high = sum(1 for i in issues if i["severity"] == "high")
     risk_score = crit * 10 + high * 5
@@ -440,3 +468,4 @@ async def v13_dashboard():
         },
         "timestamp": datetime.now().isoformat()
     }
+
