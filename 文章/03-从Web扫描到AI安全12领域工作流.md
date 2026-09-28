@@ -241,3 +241,10 @@ docker run -d -p 5000:5000 ehess/vampi
 ---
 
 *未经授权扫描他人系统违法。本平台仅用于授权测试和靶场练习。*
+
+---
+
+**项目开源地址**：https://github.com/1ouxilisi/ai-security-agent-platform
+
+*v45.0 · 12领域59个安全代理 · MIT许可证*
+
