@@ -185,6 +185,13 @@ async def console_page():
     with open(console_path, "r", encoding="utf-8") as f:
         return f.read()
 
+
+@app.get("/v12-console", response_class=HTMLResponse)
+async def v12_console_page():
+    console_path = os.path.join(os.path.dirname(__file__), "v12_console.html")
+    with open(console_path, "r", encoding="utf-8") as f:
+        return f.read()
+
 @app.get("/ai-console", response_class=HTMLResponse)
 async def ai_decision_console_page():
     console_path = os.path.join(os.path.dirname(__file__), "api_server", "ai_decision_console.html")
@@ -251,6 +258,7 @@ if __name__ == "__main__":
     print("  API文档:   http://127.0.0.1:8001/docs")
     print("=" * 60)
     uvicorn.run(app, host="127.0.0.1", port=8001, log_level="info")
+
 
 
 

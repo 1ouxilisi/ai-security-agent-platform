@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>AI安全作战平台 v12</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,sans-serif; background:#0d1117; color:#c9d1d9; min-height:100vh; }
+.header { background:#161b22; padding:16px 24px; border-bottom:1px solid #30363d; display:flex; justify-content:space-between; align-items:center; }
+.header h1 { font-size:18px; color:#58a6ff; }
+.header .user { font-size:13px; color:#8b949e; }
+.container { max-width:1200px; margin:20px auto; padding:0 20px; }
+.cards { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+.card { background:#161b22; border:1px solid #30363d; border-radius:8px; padding:20px; }
+.card .num { font-size:32px; font-weight:bold; }
+.card .label { font-size:13px; color:#8b949e; margin-top:4px; }
+.crit { color:#f85149; } .high { color:#d29922; } .med { color:#e3b341; } .low { color:#3fb950; }
+.panel { background:#161b22; border:1px solid #30363d; border-radius:8px; padding:20px; margin-bottom:20px; }
+.panel h2 { font-size:16px; margin-bottom:16px; color:#58a6ff; }
+input, select, button { background:#0d1117; border:1px solid #30363d; color:#c9d1d9; padding:8px 12px; border-radius:6px; font-size:14px; }
+button { background:#238636; border:none; cursor:pointer; }
+button:hover { background:#2ea043; }
+button.secondary { background:#21262d; }
+.row { display:flex; gap:8px; margin-bottom:12px; }
+.row input { flex:1; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th, td { text-align:left; padding:8px 12px; border-bottom:1px solid #21262d; }
+th { color:#8b949e; font-weight:normal; }
+.badge { padding:2px 8px; border-radius:12px; font-size:11px; }
+.badge.open { background:#f8514933; color:#f85149; }
+.badge.fixed { background:#3fb95033; color:#3fb950; }
+#login { max-width:400px; margin:100px auto; }
+#login input { width:100%; margin-bottom:12px; padding:12px; }
+#login button { width:100%; padding:12px; }
+#main { display:none; }
+.scan-log { background:#0d1117; padding:12px; border-radius:6px; font-family:monospace; font-size:12px; max-height:200px; overflow-y:auto; margin-top:12px; }
+</style>
+</head>
+<body>
+
+<div id="login" class="panel">
+  <h2>登录 AI安全作战平台</h2>
+  <input type="text" id="username" placeholder="用户名" value="admin">
+  <input type="password" id="password" placeholder="密码" value="admin123">
+  <button onclick="doLogin()">登 录</button>
+</div>
+
+<div id="main">
+  <div class="header">
+    <h1>AI全栈安全作战平台 v12.0</h1>
+    <span class="user" id="userinfo"></span>
+  </div>
+  <div class="container">
+    <div class="cards">
+      <div class="card"><div class="num" id="d-assets">0</div><div class="label">资产总数</div></div>
+      <div class="card"><div class="num crit" id="d-crit">0</div><div class="label">严重漏洞</div></div>
+      <div class="card"><div class="num high" id="d-high">0</div><div class="label">高危漏洞</div></div>
+      <div class="card"><div class="num" id="d-tasks">0</div><div class="label">扫描任务</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>启动扫描</h2>
+      <div class="row">
+        <input type="text" id="target" placeholder="目标 IP 或域名，如 127.0.0.1">
+        <select id="scanType">
+          <option value="quick">快速扫描</option>
+          <option value="nmap">端口扫描</option>
+          <option value="nuclei">漏洞扫描</option>
+          <option value="full">完整扫描</option>
+        </select>
+        <button onclick="startScan()">开始扫描</button>
+      </div>
+      <div id="scanStatus"></div>
+    </div>
+
+    <div class="panel">
+      <h2>资产列表</h2>
+      <table id="assetTable">
+        <thead><tr><th>IP</th><th>端口</th><th>服务</th><th>产品</th><th>URL</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>漏洞列表</h2>
+      <table id="vulnTable">
+        <thead><tr><th>严重度</th><th>标题</th><th>URL</th><th>CVE</th><th>状态</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v12';
+let token = localStorage.getItem('token');
+
+async function doLogin() {
+  const r = await fetch(`${API}/auth/login`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username:document.getElementById('username').value, password:document.getElementById('password').value})
+  });
+  if(r.ok){ const d = await r.json(); token = d.token; localStorage.setItem('token', token); showMain(d); }
+  else alert('登录失败');
+}
+
+function showMain(d) {
+  document.getElementById('login').style.display='none';
+  document.getElementById('main').style.display='block';
+  document.getElementById('userinfo').textContent = d.username + ' (' + d.role + ')';
+  refresh();
+}
+
+async function refresh() {
+  const dash = await (await fetch(`${API}/dashboard`)).json();
+  document.getElementById('d-assets').textContent = dash.stats.assets;
+  document.getElementById('d-tasks').textContent = dash.stats.scan_tasks;
+  const vulns = await (await fetch(`${API}/vulns/list`)).json();
+  document.getElementById('d-crit').textContent = vulns.by_severity.critical;
+  document.getElementById('d-high').textContent = vulns.by_severity.high;
+  // 资产表
+  const assets = await (await fetch(`${API}/assets/list`)).json();
+  document.querySelector('#assetTable tbody').innerHTML = assets.assets.map(a =>
+    `<tr><td>${a.ip}</td><td>${a.port}</td><td>${a.service}</td><td>${a.product}</td><td>${a.url}</td></tr>`).join('');
+  // 漏洞表
+  document.querySelector('#vulnTable tbody').innerHTML = vulns.vulns.map(v =>
+    `<tr><td><span class="badge open">${v.severity}</span></td><td>${v.title}</td><td>${v.url}</td><td>${v.cve||'-'}</td><td>${v.status}</td></tr>`).join('') || '<tr><td colspan=5 style="color:#8b949e">暂无漏洞</td></tr>';
+}
+
+async function startScan() {
+  const target = document.getElementById('target').value;
+  if(!target) return alert('输入目标');
+  const type = document.getElementById('scanType').value;
+  const r = await fetch(`${API}/scan/start`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({target, scan_type:type})
+  });
+  const d = await r.json();
+  document.getElementById('scanStatus').innerHTML = `扫描任务已启动: <code>${d.task_id}</code>，状态: ${d.status}`;
+  pollTask(d.task_id);
+}
+
+async function pollTask(tid) {
+  const check = async () => {
+    const t = await (await fetch(`${API}/scan/status/${tid}`)).json();
+    document.getElementById('scanStatus').innerHTML = `任务 ${tid}: ${t.status}`;
+    if(t.status === 'done' || t.status === 'error') { refresh(); return; }
+    setTimeout(check, 3000);
+  };
+  check();
+}
+
+// 自动登录
+if(token) showMain({username:localStorage.getItem('username')||'admin', role:'admin'});
+</script>
+</body>
+</html>
