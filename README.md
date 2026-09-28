@@ -1,19 +1,35 @@
-# AI Hacking Agent v10.0
+﻿# AI Security Agent Platform
 
-> **企业级全栈安全测试平台 - 终极完整版**
-> 整合 **内网渗透 + 域渗透 + 外网渗透 + AI安全分析 + 密码安全 + 流量分析 + 后渗透 + 护网专项 + 漏洞验证 + 高级漏洞利用 + 内存取证 + 恶意代码分析 + 高级密码破解 + 真实工具深度集成 + 动态沙箱管理 + 内存镜像分析 + 漏洞利用实战验证 + 企业级管理** 完整Kill Chain
-> 基于 **FastAPI + MCP协议 + 插件系统 + 多智能体 + ReAct推理 + RAG知识库 + Web UI + 多租户 + RBAC + 审计日志 + SSO**
+> **Enterprise Full-Stack Security Testing Platform**
+> Web Pentest + Mobile Security + Cloud Security + Blockchain + LLM Security Assessment
+> 1133+ API Endpoints - FastAPI - AI Agent - Real Toolchain (nmap/nuclei/sqlmap)
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/Version-10.0-orange.svg)]()
-[![Tools](https://img.shields.io/badge/MCP_Tools-33-red.svg)]()
-[![Pentest_Modules](https://img.shields.io/badge/Pentest_Modules-18-purple.svg)]()
-[![Plugins](https://img.shields.io/badge/Plugins-8-cyan.svg)]()
-[![API](https://img.shields.io/badge/REST_API-84+-brightgreen.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-104-blue.svg)]()
-[![Code_Size](https://img.shields.io/badge/Code-2.0MB-yellow.svg)]()
-[![Enterprise](https://img.shields.io/badge/Enterprise-Ready-brightgreen.svg)]()
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688.svg)](https://fastapi.tiangolo.com/)
+[![AI](https://img.shields.io/badge/AI-Qwen2.5--7B-purple.svg)]()
+[![Tools](https://img.shields.io/badge/Tools-nmap%7Cnuclei%7Csqlmap-red.svg)]()
+[![API](https://img.shields.io/badge/API-1133+-brightgreen.svg)]()
+
+## Quick Start
+
+```bash
+git clone https://github.com/1ouxilisi/ai-security-agent-platform.git
+cd ai-security-agent-platform
+pip install -r requirements.txt
+python app_lite.py
+# Open http://127.0.0.1:8001
+```
+
+## Features
+
+- **12 Security Domains**: Web, Mobile, Cloud, Blockchain, LLM Security, Internal Pentest
+- **Real Toolchain**: nmap, nuclei, sqlmap, httpx, subfinder, aapt, apktool
+- **AI Engine**: Qwen2.5-7B-Instruct
+- **Auto Pentest Loop**: AI plans then scans then verifies then reports
+- **Vulnerability KB**: 8+ CVE entries, searchable
+- **Range Management**: Docker-based DVWA/Juice Shop/WebGoat
 
 ---
 
@@ -677,3 +693,4 @@ LOG_FILE=data/logs/agent.log
 **💡 提示：API文档位于 http://127.0.0.1:8000/docs，18个核心模块全部可用，可以直接体验！**
 
 **🏆 v10.0 终极完整版 - 10/10评分 - 企业级全栈安全测试平台的终极形态！**
+
