@@ -103,3 +103,4 @@ After starting, visit:
 ## License
 
 MIT — For authorized security testing only. Do not scan systems you do not own or have explicit permission to test.
+
